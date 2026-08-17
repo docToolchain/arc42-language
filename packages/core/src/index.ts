@@ -1,15 +1,13 @@
 // Core barrel export
 export {
   validateWorkspace,
-  listElements,
-  showElement,
+  getElements,
 } from "./arc42.ts";
 
 export type {
   ValidateOptions,
   ValidateResult,
-  ListOptions,
-  ShowResult,
+  GetOptions,
 } from "./arc42.ts";
 
 export type {
@@ -29,6 +27,12 @@ export type {
   SourceLocation,
 } from "./model/types.ts";
 
+export {
+  ELEMENT_KIND_ORDER,
+  ELEMENT_CHAPTER,
+  CHAPTER_TITLE,
+} from "./model/types.ts";
+
 export type { ReferenceIndex } from "./resolver/types.ts";
 export type { BlockType, AstNode, DocumentAst } from "./ast.ts";
 
@@ -41,3 +45,19 @@ export type {
   RuleType,
   Arc42Chapter,
 } from "./validator/types.ts";
+
+// Renderer registry
+export { builtinGetRenderers, rendererById } from "./renderer/index.ts";
+export type {
+  GetQuery,
+  GetResult,
+  WorkspaceQuery,
+  ElementQuery,
+  WorkspaceView,
+  ElementView,
+  Edge,
+  ResolvedRef,
+  GetRenderer,
+  RendererMeta,
+  ElementRenderers,
+} from "./renderer/types.ts";

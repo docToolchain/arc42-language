@@ -4,29 +4,33 @@ import { MarkdownParser } from "./parser/markdown-parser.ts";
 import { buildWorkspace } from "./model/builder.ts";
 import { buildIndex } from "./resolver/index.ts";
 import { validate } from "./validator/index.ts";
+import { ELEMENT_KIND_ORDER } from "./model/types.ts";
 import type { Diagnostic } from "./validator/types.ts";
 import type { Element } from "./model/types.ts";
 import type { BlockType } from "./ast.ts";
 import type { ReferenceIndex } from "./resolver/types.ts";
+import type {
+  GetQuery,
+  GetResult,
+  WorkspaceView,
+  ElementView,
+  Edge,
+  ResolvedRef,
+} from "./renderer/types.ts";
 
 export interface ValidateOptions {
   dir: string;
 }
 
 export interface ValidateResult {
+  version: 1;
   valid: boolean;
   diagnostics: Diagnostic[];
 }
 
-export interface ListOptions {
+export interface GetOptions {
   dir: string;
-  type: BlockType;
-}
-
-export interface ShowResult {
-  element: Element;
-  refsFrom: Element[];
-  refsTo: Element[];
+  query: GetQuery;
 }
 
 async function runPipeline(dir: string) {
@@ -49,36 +53,105 @@ export async function validateWorkspace(
   const { workspace, index } = await runPipeline(opts.dir);
   const diagnostics = validate(workspace, index);
   const valid = !diagnostics.some((d) => d.severity === "error");
-  return { valid, diagnostics };
+  return { version: 1, valid, diagnostics };
 }
 
-export async function listElements(opts: ListOptions): Promise<Element[]> {
-  const { workspace } = await runPipeline(opts.dir);
-  return workspace.elements.filter((e) => e.kind === opts.type);
+/** Build all edges from the reference index */
+function buildEdges(workspace: { elements: Element[] }, index: ReferenceIndex): Edge[] {
+  const edges: Edge[] = [];
+  for (const el of workspace.elements) {
+    if (el.kind === "building-block") {
+      if (el.parent) {
+        edges.push({ from: el.id, to: el.parent, relation: "parent" });
+      }
+      for (const ref of el.implements) {
+        edges.push({ from: el.id, to: ref, relation: "implements" });
+      }
+    } else if (el.kind === "interface") {
+      edges.push({ from: el.id, to: el.between[0], relation: "between" });
+      edges.push({ from: el.id, to: el.between[1], relation: "between" });
+    } else if (el.kind === "decision") {
+      for (const ref of el.addresses) {
+        edges.push({ from: el.id, to: ref, relation: "addresses" });
+      }
+    }
+  }
+  return edges;
 }
 
-export async function showElement(opts: {
-  dir: string;
-  id: string;
-}): Promise<ShowResult | null> {
+/** Sort elements: canonical kind order, then alphabetical by id within kind */
+function sortElements(elements: Element[]): Element[] {
+  const kindRank = new Map(ELEMENT_KIND_ORDER.map((k, i) => [k, i]));
+  return [...elements].sort((a, b) => {
+    const kindDiff = (kindRank.get(a.kind) ?? 99) - (kindRank.get(b.kind) ?? 99);
+    if (kindDiff !== 0) return kindDiff;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+export async function getElements(opts: GetOptions): Promise<GetResult> {
   const { workspace, index } = await runPipeline(opts.dir);
-  const element = index.byId.get(opts.id);
-  if (!element) return null;
 
-  const refsFromIds = index.refsFrom.get(opts.id) ?? [];
-  const refsToIds = index.refsTo.get(opts.id) ?? [];
+  if (opts.query.kind === "element") {
+    const element = index.byId.get(opts.query.id);
+    if (!element) return null as unknown as GetResult; // caller handles null
 
-  const refsFrom = refsFromIds
-    .map((id) => index.byId.get(id))
-    .filter((e): e is Element => e !== undefined);
-  const refsTo = refsToIds
-    .map((id) => index.byId.get(id))
-    .filter((e): e is Element => e !== undefined);
+    const refsFromIds = index.refsFrom.get(element.id) ?? [];
+    const refsToIds = index.refsTo.get(element.id) ?? [];
 
-  return { element, refsFrom, refsTo };
+    const refsFrom: ResolvedRef[] = refsFromIds.map((id) => ({
+      id,
+      element: index.byId.get(id),
+    }));
+    const refsTo: ResolvedRef[] = refsToIds.map((id) => ({
+      id,
+      element: index.byId.get(id),
+    }));
+
+    const view: ElementView = { kind: "element", element, refsFrom, refsTo };
+    return view;
+  }
+
+  // Workspace query
+  let elements = workspace.elements;
+  if (opts.query.typeFilter) {
+    elements = elements.filter((e) => e.kind === opts.query.typeFilter);
+  }
+  elements = sortElements(elements);
+  const edges = buildEdges(workspace, index);
+
+  const view: WorkspaceView = {
+    kind: "workspace",
+    elements,
+    edges,
+    typeFilter: opts.query.typeFilter,
+  };
+  return view;
 }
 
 export type { Diagnostic, Severity } from "./validator/types.ts";
-export type { Element, QualityGoal, BuildingBlock, Interface, Concept, Decision, Workspace, ParseError } from "./model/types.ts";
+export type {
+  Element,
+  QualityGoal,
+  BuildingBlock,
+  Interface,
+  Concept,
+  Decision,
+  Workspace,
+  ParseError,
+} from "./model/types.ts";
 export type { ReferenceIndex } from "./resolver/types.ts";
 export type { BlockType } from "./ast.ts";
+export type {
+  GetQuery,
+  GetResult,
+  WorkspaceQuery,
+  ElementQuery,
+  WorkspaceView,
+  ElementView,
+  Edge,
+  ResolvedRef,
+  GetRenderer,
+  RendererMeta,
+  ElementRenderers,
+} from "./renderer/types.ts";

@@ -1,9 +1,47 @@
 // Meta-model element types
 
+import type { BlockType } from "../ast.ts";
+
 export interface SourceLocation {
   file: string;
   line: number;
 }
+
+/**
+ * Canonical arc42 chapter order for element kinds.
+ * Drives rendering order in `get` (workspace view) and all renderers.
+ * Alphabetical-by-id sort is applied within each kind.
+ *
+ * Chapter mapping:
+ *   1 — Quality Goals
+ *   5 — Building Blocks (includes interfaces)
+ *   8 — Cross-cutting Concepts
+ *   9 — Architecture Decisions
+ */
+export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
+  "quality-goal",    // arc42 ch. 1
+  "building-block",  // arc42 ch. 5
+  "interface",       // arc42 ch. 5
+  "concept",         // arc42 ch. 8
+  "decision",        // arc42 ch. 9
+] as const;
+
+/** arc42 chapter each element kind belongs to */
+export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = {
+  "quality-goal":   1,
+  "building-block": 5,
+  "interface":      5,
+  "concept":        8,
+  "decision":       9,
+};
+
+/** Human-readable arc42 chapter titles */
+export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
+  1: "Quality Goals",
+  5: "Building Blocks",
+  8: "Cross-cutting Concepts",
+  9: "Architecture Decisions",
+};
 
 export interface QualityGoal {
   kind: "quality-goal";
