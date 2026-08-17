@@ -609,8 +609,10 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 
 ## Implement
 ### Tasks
-- [ ] P9.1–P9.5 End-to-end tests for `list` / `show` / `check` query commands (Slice 2)
-- [ ] P10 Slice 3: SKILL.md + LSP server (post-MVP)
+- [ ] P11 — Renderer registry: `WorkspaceRenderer` + `ElementRenderers` in `packages/core/src/renderer/`; implement `TextRenderer` (chapter-grouped, compact) and `JsonRenderer` (flat array + edges); export `builtinRenderers` + `rendererById`
+- [ ] P12 — Rewrite CLI to final surface: `arc42 [--dir] validate|get|rules`; wire renderer registry; implement `get` (workspace + single-element), global `--dir` flag + `ARC42_DIR` env var, exit code table
+- [ ] P13 — Tests for `get` command: workspace view (ordering, edges), single-element view (1-hop bidirectional), `--type` filter, not-found exit 1
+- [ ] P10 — Slice 3: SKILL.md + LSP server (post-MVP)
 
 ### Key Decisions (Implement phase)
 - **Rule registry pattern (ESLint-inspired)** — Each rule is a self-describing `Rule` object with `meta: { code, severity, type, docs: { description, arc42Chapter, recommended } }` and a `check()` function. The `validate()` function is now just `builtinRules.flatMap(r => r.check(ws, idx))`. Rules live in `packages/core/src/validator/rules/` one file per rule, named `e001-duplicate-id.ts` etc. Enables `arc42 rules` CLI command and chapter-grouped output. Decided against taking `@eslint/core` as a dependency — it exports only types and its `RuleDefinition` is coupled to AST visitor/traversal model which doesn't fit our graph-based validation.
@@ -618,20 +620,40 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - **Test imports use `../src/` (not `../../src/`)** — Tests live in `packages/core/tests/`; source is `packages/core/src/`. One level up is enough.
 - **TDD approach followed** — E2E fixture test written first (red), then all implementation written to make it green. Unit tests for parser, builder, resolver, and validator written alongside.
 - **CLI entry configured explicitly** — `vite.config.ts` for `@arc42/cli` sets `pack.entry: "src/cli.ts"` explicitly (auto-detection only picks up `src/index.ts`).
+- **CLI surface revised after design review** — Dropped `list`, `show`, `check`, `overview` in favour of three commands: `validate`, `get`, `rules`. Reviewed by two independent agent reviewers. Key decisions:
+  - `get` alone (not `get` + `show`) — splitting only adds value when contracts differ; both would return "element with full detail", so distinction belongs to `--format` not command name. Precedent: `kubectl get`.
+  - `get` always returns an array — `get <id>` returns `[element]`, `get` returns all elements. Uniform contract for agents; no branching on return type.
+  - `get` without `<id>` = workspace overview — no-arg means all resources (cf. `docker ps`, `terraform state list`).
+  - `get --type <type>` filters by element kind — `--type` preferred over `--kind` (K8s jargon) or positional (ambiguous with id).
+  - Workspace JSON includes `edges` array — flat element list alone is insufficient for graph reasoning; edges are free to produce from the existing index.
+  - `get <id>` resolves 1-hop neighbors bidirectionally — a building-block shows interfaces it participates in even though `between[]` lives on the interface.
+  - `--dir` is a global flag — workspace-scoping is not command-specific; also supports `ARC42_DIR` env var. Resolution: `--dir` > `ARC42_DIR` > cwd.
+  - Exit codes: 0 = success, 1 = validation errors / not found, 2 = usage error.
+  - `--format text` always as default — no isatty auto-detection (breaks reproducibility for agents).
+  - `--quiet` on `validate` for CI gates (suppress hints/warnings output, just exit code).
+- **Element kind order modelled as first-class data** — `ELEMENT_KIND_ORDER`, `ELEMENT_CHAPTER`, `CHAPTER_TITLE` exported from `packages/core/src/model/types.ts`. All renderers and CLI commands import from this single source rather than duplicating the arc42 chapter ordering. Order: quality-goal → building-block → interface → concept → decision (arc42 chapters 1 → 5 → 5 → 8 → 9). Within each kind: alphabetical by id for stable, reproducible output and clean diffs.
+- **Renderer registry pattern** — `WorkspaceRenderer.render(workspace, index): string` is the only public contract. Internal `ElementRenderers` per format (text, json) for composability. Graphviz/HTML are future work and specifically not constrained to the element-per-element pattern (graphviz needs separate node + edge passes). The registry (`builtinRenderers`, `rendererById`) mirrors the rule registry pattern.
+- **`check` command dropped** — was: show + filter diagnostics to one element. Redundant with `validate` + `get`. Consistency is a workspace property, not an element property. If element-scoped filtering is needed later, add `--scope <id>` to `validate`.
+- **`list` command replaced by `get --type`** — `list` was a flat filter over the model; `get` with optional `--type` covers the same use case with a more composable interface. `list` as a separate command added noise without adding capability.
 
 ### Completed
-- [x] P0 — Monorepo scaffold (pnpm-workspace.yaml, root package.json, vite.config.ts, .gitignore, tsconfig.json) using `vp create vite:monorepo` as reference
-- [x] P1 — AST types (`packages/core/src/ast.ts`)
-- [x] P2 — MarkdownParser + Parser interface (`packages/core/src/parser/markdown-parser.ts`) + unit tests
-- [x] P3 — Meta-model types (`packages/core/src/model/types.ts`) + builder (`packages/core/src/model/builder.ts`) + unit tests
-- [x] P4 — Reference resolver + index (`packages/core/src/resolver/index.ts`, `resolver/types.ts`) + unit tests
-- [x] P5 — Validator with all 11 rules E001–E005, W001–W003, H001–H003 (`packages/core/src/validator/`) + unit tests (one per rule, positive + negative)
-- [x] P6 — File discovery (`packages/core/src/discovery.ts`, recursive fs.readdir, no third-party glob)
-- [x] P7 — Top-level API (`packages/core/src/arc42.ts`: `validateWorkspace`, `listElements`, `showElement`) + barrel export (`src/index.ts`)
-- [x] P8 — CLI `validate` command + `list` / `show` / `check` commands (`packages/cli/src/cli.ts`, Node.js `util.parseArgs`, no third-party arg parser)
-- [x] P8.4 — E2E fixture test (`packages/core/tests/validate-workspace.test.ts`) against `__fixtures__/mini-arch/`
-- [x] Build verified: `vp pack` succeeds for both packages; `dist/cli.mjs` runs end-to-end
-- [x] All 37 tests pass (`vp test`)
+- [x] P0 — Monorepo scaffold
+- [x] P1 — AST types
+- [x] P2 — MarkdownParser + unit tests
+- [x] P3 — Meta-model types + builder + unit tests
+- [x] P4 — Reference resolver + index + unit tests
+- [x] P5 — Validator with all 11 rules + unit tests
+- [x] P6 — File discovery
+- [x] P7 — Top-level API (`validateWorkspace`, `getElements`) + barrel export
+- [x] P8 — CLI initial implementation (superseded by P12)
+- [x] P8.4 — E2E fixture test against `__fixtures__/mini-arch/`
+- [x] P11 — Renderer registry: `GetRenderer` interface, `WorkspaceView`/`ElementView`/`Edge`/`ResolvedRef` types, `TextGetRenderer`, `JsonGetRenderer`, `builtinGetRenderers`/`rendererById` registry
+- [x] P12 — CLI rewritten to final surface: `arc42 [--dir] validate|get|rules`; global `--dir` + `ARC42_DIR` env; `get` always returns array via renderer; exit codes 0/1/2
+- [x] P13 — Tests for renderer + `getElements` API (26 tests, TDD red→green via separate agents)
+- [x] Element kind order modelled: `ELEMENT_KIND_ORDER`, `ELEMENT_CHAPTER`, `CHAPTER_TITLE`
+- [x] Build verified: `vp pack` succeeds for both packages; CLI end-to-end verified
+- [x] All 63 tests pass (`vp test`)
+- [ ] P10 — Slice 3: SKILL.md + LSP server (post-MVP)
 
 ## Commit
 ### Tasks
