@@ -9,6 +9,7 @@ export const e003CircularParent: Rule = {
     type: "problem",
     docs: {
       description: "Circular parent reference — building-block parent chain must be acyclic",
+      rationale: "The parent hierarchy reconstructs the arc42 building-block decomposition tree. A cycle (A is parent of B, B is parent of A) means there is no valid root and the tree cannot be rendered or navigated. It is always a modelling error.",
       arc42Chapter: 5,
       recommended: true,
     },

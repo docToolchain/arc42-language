@@ -1,6 +1,6 @@
 // Meta-model element types
 
-import type { BlockType } from "../ast.ts";
+import type { BlockType, DocumentAst } from "../ast.ts";
 
 export interface SourceLocation {
   file: string;
@@ -105,4 +105,6 @@ export interface ParseError {
 export interface Workspace {
   elements: Element[];
   parseErrors: ParseError[];
+  /** Raw parsed documents — used by structure-aware validation rules (W004, W005) */
+  documents: DocumentAst[];
 }

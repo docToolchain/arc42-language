@@ -138,5 +138,5 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
     }
   }
 
-  return { elements, parseErrors };
+  return { elements, parseErrors, documents };
 }

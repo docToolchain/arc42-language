@@ -635,6 +635,10 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - **Renderer registry pattern** — `WorkspaceRenderer.render(workspace, index): string` is the only public contract. Internal `ElementRenderers` per format (text, json) for composability. Graphviz/HTML are future work and specifically not constrained to the element-per-element pattern (graphviz needs separate node + edge passes). The registry (`builtinRenderers`, `rendererById`) mirrors the rule registry pattern.
 - **`check` command dropped** — was: show + filter diagnostics to one element. Redundant with `validate` + `get`. Consistency is a workspace property, not an element property. If element-scoped filtering is needed later, add `--scope <id>` to `validate`.
 - **`list` command replaced by `get --type`** — `list` was a flat filter over the model; `get` with optional `--type` covers the same use case with a more composable interface. `list` as a separate command added noise without adding capability.
+- **Workspace carries `documents: DocumentAst[]`** — Structure-aware rules (W004, W005) need the raw AST to scan node sequences. Rather than re-parsing, the `Workspace` struct now carries the documents array from `buildWorkspace`. Rules that don't need it ignore it; tests that construct workspaces inline pass `documents: []`.
+- **W004 / W005 — two new structural warnings** — W004: block has no prose introduction between it and the preceding heading (naked block). W005: heading section contains more than one block (should split into sub-sections). Both are `type: "suggestion"` and `arc42Chapter: 0` (cross-cutting, all chapters). Convention enforced: one block per sub-heading, always with narrative prose before it.
+- **`Arc42Chapter` extended to include 0** — 0 = cross-cutting / document-structure rules that apply to all chapters. Previously only 1, 5, 8, 9 were valid. `arc42 rules --chapter` does not expose 0 as a filter option (it's internal metadata only).
+- **`examples/bookstore-backend/`** — Clean, valid 4-file example workspace (quality-goals, building-blocks, concepts, decisions). All elements valid. Each block is embedded in a prose chapter (validates W004/W005 pattern). Ships as the reference template for human authors and agents.
 
 ### Completed
 - [x] P0 — Monorepo scaffold
@@ -653,6 +657,9 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - [x] Element kind order modelled: `ELEMENT_KIND_ORDER`, `ELEMENT_CHAPTER`, `CHAPTER_TITLE`
 - [x] Build verified: `vp pack` succeeds for both packages; CLI end-to-end verified
 - [x] All 63 tests pass (`vp test`)
+- [x] W004 + W005 — two new structural warnings: block-without-prose and multiple-blocks-under-heading; `Arc42Chapter` extended with 0 for cross-cutting rules; 5 new tests; 68 total passing
+- [x] `examples/bookstore-backend/` — 4-file clean example workspace; each block has its own sub-section with prose; validates with 0 errors/warnings/hints
+- [x] `rationale` field added to `RuleDocs` — each of the 13 rules carries a plain-English explanation of why the rule exists; shown in `arc42 rules --format text`; `Chapter 0 — Document Structure` label added for cross-cutting rules (W004/W005)
 - [ ] P10 — Slice 3: SKILL.md + LSP server (post-MVP)
 
 ## Commit

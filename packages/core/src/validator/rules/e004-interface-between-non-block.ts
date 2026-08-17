@@ -9,6 +9,7 @@ export const e004InterfaceBetweenNonBlock: Rule = {
     type: "problem",
     docs: {
       description: "interface.between must reference building-blocks only",
+      rationale: "An interface models a communication channel between two building-blocks. Referencing a quality-goal, concept, or decision in 'between' is a category error — those element types have no deployment boundary and cannot participate in a runtime interface. Allowing it would corrupt the building-block graph.",
       arc42Chapter: 5,
       recommended: true,
     },

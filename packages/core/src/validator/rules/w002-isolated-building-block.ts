@@ -9,6 +9,7 @@ export const w002IsolatedBuildingBlock: Rule = {
     type: "problem",
     docs: {
       description: "Building-block has no interface on either side — it is isolated",
+      rationale: "A building-block with no interfaces defined is an island in the architecture graph. It cannot send or receive data, which is either a modelling omission (the interfaces were not written yet) or a design smell (the component has no defined communication contract). Isolated components are invisible to graph-based queries and diagram generation.",
       arc42Chapter: 5,
       recommended: true,
     },

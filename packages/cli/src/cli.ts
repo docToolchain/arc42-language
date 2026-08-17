@@ -22,6 +22,7 @@ function isBlockType(s: string): s is BlockType {
 }
 
 const CHAPTER_NAMES: Record<number, string> = {
+  0: "Document Structure",
   1: "Quality Goals",
   5: "Building Blocks",
   8: "Cross-cutting Concepts",
@@ -240,6 +241,7 @@ function runRules(args: string[]) {
     for (const rule of chRules) {
       const { code, severity, type, docs } = rule.meta;
       console.log(`  ${code}  [${severity}/${type}]  ${docs.description}`);
+      console.log(`         ${docs.rationale}`);
     }
   }
   process.exit(0);

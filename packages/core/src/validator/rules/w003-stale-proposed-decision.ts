@@ -11,6 +11,7 @@ export const w003StaleProposedDecision: Rule = {
     type: "problem",
     docs: {
       description: "Decision has been in 'proposed' status for more than 90 days",
+      rationale: "A proposed decision is unresolved — the team has not yet committed to it. After 90 days, a proposed decision is likely either forgotten or actively avoided. Both are harmful: forgotten decisions leave the architecture in limbo; avoided decisions signal a disagreement that needs surfacing. The 90-day threshold is a prompt to revisit, not a hard deadline.",
       arc42Chapter: 9,
       recommended: true,
     },

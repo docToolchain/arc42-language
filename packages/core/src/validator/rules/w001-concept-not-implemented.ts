@@ -9,6 +9,7 @@ export const w001ConceptNotImplemented: Rule = {
     type: "problem",
     docs: {
       description: "Cross-cutting concept has no implementing building-block",
+      rationale: "A concept defined in arc42 section 8 only has value if at least one building-block explicitly implements it. An orphaned concept — declared but never referenced by any building-block via 'implements:' — is either dead documentation or a gap: the concern exists but nobody is responsible for it.",
       arc42Chapter: 8,
       recommended: true,
     },

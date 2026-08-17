@@ -32,6 +32,12 @@ describe("validateWorkspace — mini-arch fixture", () => {
     // W003: dec-auth-strategy is 'proposed' with date older than 90 days
     expect(codes).toContain("W003");
 
+    // W004: all blocks in mini-arch lack prose introductions
+    expect(codes).toContain("W004");
+
+    // W005: multiple blocks under the same top-level heading in each file
+    expect(codes).toContain("W005");
+
     // H002: qg-maintainability is not addressed by any decision
     expect(codes).toContain("H002");
   });

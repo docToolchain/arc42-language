@@ -9,6 +9,7 @@ export const e002UnresolvedReference: Rule = {
     type: "problem",
     docs: {
       description: "Unresolved reference — all referenced ids must exist in the workspace",
+      rationale: "A reference to a non-existent id is a broken link. It means the architecture model is internally inconsistent — a building-block claims to implement a concept that was never defined, or a decision addresses a quality goal that does not exist. These broken links prevent graph traversal and make the model untrustworthy.",
       arc42Chapter: 5,
       recommended: true,
     },

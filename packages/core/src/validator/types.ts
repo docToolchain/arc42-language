@@ -14,8 +14,11 @@ export interface Diagnostic {
   line: number;
 }
 
-/** Which arc42 chapter this rule primarily relates to */
-export type Arc42Chapter = 1 | 5 | 8 | 9;
+/**
+ * Which arc42 chapter this rule primarily relates to.
+ * 0 = cross-cutting (applies to all chapters / document structure)
+ */
+export type Arc42Chapter = 0 | 1 | 5 | 8 | 9;
 
 /**
  * Rule type — mirrors ESLint's RuleType vocabulary:
@@ -28,7 +31,12 @@ export type RuleType = "problem" | "suggestion";
 export interface RuleDocs {
   /** One-line description, usable in `arc42 rules` output and SKILL.md */
   description: string;
-  /** Which arc42 chapter this rule belongs to (1=QualityGoals, 5=BuildingBlocks, 8=Concepts, 9=Decisions) */
+  /**
+   * Why this rule exists — the design reasoning behind it.
+   * Shown in `arc42 rules --format text` and surfaced in the SKILL.md.
+   */
+  rationale: string;
+  /** Which arc42 chapter this rule belongs to (0=cross-cutting, 1=QualityGoals, 5=BuildingBlocks, 8=Concepts, 9=Decisions) */
   arc42Chapter: Arc42Chapter;
   /** Whether the rule is enabled by default in the built-in rule set */
   recommended: boolean;
