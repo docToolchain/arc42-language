@@ -71,7 +71,7 @@ Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` =
 
 ### Validation rules
 
-The validator enforces 13 built-in rules across four categories. Run `arc42 rules` to see each rule with its rationale. The short summary:
+The validator enforces built-in rules across four categories. Run `arc42 rules` to see each rule with its rationale. The short summary:
 
 - **Errors** (broken model): duplicate ids, unresolved references, circular parent chains, interface pointing at non-building-blocks, missing required attributes
 - **Warnings** (inconsistencies): orphaned concepts, isolated building-blocks, stale proposed decisions, blocks without prose, multiple blocks under one heading
@@ -118,16 +118,10 @@ discoverFiles(dir)
 
 ```bash
 pnpm install
-
-# Build both packages
-cd packages/core && vp pack
-cd packages/cli  && vp pack
-
-# Run all tests (68 tests, ~200ms)
-vp test
-
-# Lint + type-check
-vp check
+pnpm run build   # build core + cli
+pnpm run test    # run all tests
+pnpm run check   # lint + type-check
+pnpm run ready   # check + test + build in one pass
 ```
 
 ### Adding a validation rule
@@ -147,3 +141,22 @@ The `Rule` interface is ESLint-inspired: a self-describing `meta` object and a `
 - **Same pipeline for all commands** — `validate`, `get`, and `rules` all run the full discover→parse→build→index pipeline. No caching in v1.
 - **Rule registry** — each rule is a self-describing object. `arc42 rules` is a free by-product. Rules are composable and independently testable.
 - **`Workspace.documents[]`** — structure-aware rules (W004, W005) need the raw AST to scan node sequences. The workspace carries the parsed documents for this purpose.
+
+### This project's own architecture
+
+`docs/arc42/` contains the arc42 documentation for arc42-language itself — quality goals, building blocks, concepts, and decisions, all written in the DSL this toolchain validates.
+
+```bash
+pnpm run validate:docs   # validate the project's own arc42 docs
+pnpm run validate:all    # validate docs + examples
+```
+
+### Setup
+
+```bash
+pnpm install
+pnpm run build          # builds core + cli
+
+# Install the pre-commit hook (validates arc42 workspaces before every commit)
+pnpm run hooks:install
+```

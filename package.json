@@ -4,7 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp run -r test && vp run -r build"
+    "build": "vp run -r build",
+    "test": "vp test",
+    "check": "vp check",
+    "ready": "pnpm run check && pnpm run test && pnpm run build",
+    "validate:docs": "node packages/cli/dist/cli.mjs --dir docs/arc42 validate",
+    "validate:examples": "node packages/cli/dist/cli.mjs --dir examples/bookstore-backend validate",
+    "validate:all": "pnpm run validate:docs && pnpm run validate:examples",
+    "hooks:install": "cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit && echo 'pre-commit hook installed'"
   },
   "engines": {
     "node": ">=20"
