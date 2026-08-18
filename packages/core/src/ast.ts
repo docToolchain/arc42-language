@@ -2,10 +2,13 @@
 
 export type BlockType =
   | "quality-goal"
+  | "constraint"
   | "building-block"
   | "interface"
   | "concept"
-  | "decision";
+  | "decision"
+  | "risk"
+  | "glossary-term";
 
 export interface HeadingNode {
   kind: "heading";

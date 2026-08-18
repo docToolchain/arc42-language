@@ -8,14 +8,20 @@ import type {
   Interface,
   Concept,
   Decision,
+  Constraint,
+  Risk,
+  GlossaryTerm,
 } from "./types.ts";
 
 const KNOWN_BLOCK_TYPES = new Set([
   "quality-goal",
+  "constraint",
   "building-block",
   "interface",
   "concept",
   "decision",
+  "risk",
+  "glossary-term",
 ]);
 
 function splitList(value: string | undefined): string[] {
@@ -131,9 +137,65 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           status: statusRaw as Decision["status"],
           date: attributes["date"],
           addresses: splitList(attributes["addresses"]),
+          supersedes: attributes["supersedes"] || undefined,
           loc,
         };
         elements.push(decision);
+
+      } else if (blockType === "constraint") {
+        const categoryRaw = attributes["category"];
+        if (!categoryRaw) {
+          parseErrors.push({ message: "Missing required attribute 'category' on constraint", file, line: startLine });
+          continue;
+        }
+        if (!["technical", "organizational", "convention"].includes(categoryRaw)) {
+          parseErrors.push({ message: `Invalid category '${categoryRaw}' — must be technical | organizational | convention`, file, line: startLine });
+          continue;
+        }
+        const constraint: Constraint = {
+          kind: "constraint",
+          id,
+          title,
+          category: categoryRaw as Constraint["category"],
+          source: attributes["source"] || undefined,
+          loc,
+        };
+        elements.push(constraint);
+
+      } else if (blockType === "risk") {
+        const severityRaw = attributes["severity"];
+        if (!severityRaw) {
+          parseErrors.push({ message: "Missing required attribute 'severity' on risk", file, line: startLine });
+          continue;
+        }
+        if (!["high", "medium", "low"].includes(severityRaw)) {
+          parseErrors.push({ message: `Invalid severity '${severityRaw}' — must be high | medium | low`, file, line: startLine });
+          continue;
+        }
+        const risk: Risk = {
+          kind: "risk",
+          id,
+          title,
+          severity: severityRaw as Risk["severity"],
+          mitigation: attributes["mitigation"] || undefined,
+          loc,
+        };
+        elements.push(risk);
+
+      } else if (blockType === "glossary-term") {
+        const definition = attributes["definition"];
+        if (!definition) {
+          parseErrors.push({ message: "Missing required attribute 'definition' on glossary-term", file, line: startLine });
+          continue;
+        }
+        const term: GlossaryTerm = {
+          kind: "glossary-term",
+          id,
+          title,
+          definition,
+          loc,
+        };
+        elements.push(term);
       }
     }
   }

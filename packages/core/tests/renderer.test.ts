@@ -3,8 +3,12 @@ import { getElements } from "../src/arc42.ts";
 import type { GetResult, WorkspaceView, ElementView, Edge, ResolvedRef } from "../src/renderer/types.ts";
 import { ELEMENT_KIND_ORDER } from "../src/model/types.ts";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const fixtureDir = join(process.cwd(), "packages", "core", "src", "__fixtures__", "mini-arch");
+const fixtureDir = join(
+  fileURLToPath(import.meta.url),
+  "../../src/__fixtures__/mini-arch",
+);
 
 describe("getElements API - workspace view", () => {
   test("returns WorkspaceView with kind workspace", async () => {

@@ -11,10 +11,13 @@ import type { BlockType } from "@arc42/core";
 
 const BLOCK_TYPES: BlockType[] = [
   "quality-goal",
+  "constraint",
   "building-block",
   "interface",
   "concept",
   "decision",
+  "risk",
+  "glossary-term",
 ];
 
 function isBlockType(s: string): s is BlockType {
@@ -22,11 +25,14 @@ function isBlockType(s: string): s is BlockType {
 }
 
 const CHAPTER_NAMES: Record<number, string> = {
-  0: "Document Structure",
-  1: "Quality Goals",
-  5: "Building Blocks",
-  8: "Cross-cutting Concepts",
-  9: "Architecture Decisions",
+  0:  "Document Structure",
+  1:  "Quality Goals",
+  2:  "Constraints",
+  5:  "Building Blocks",
+  8:  "Cross-cutting Concepts",
+  9:  "Architecture Decisions",
+  11: "Risks and Technical Debt",
+  12: "Glossary",
 };
 
 // ---------------------------------------------------------------------------
