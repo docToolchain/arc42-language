@@ -1,0 +1,9 @@
+Architecture was something only architects cared about.
+Developers read the docs. Hopefully. Once. At the start.
+Then reality kicked in — and the docs stayed behind.
+
+Architecture drift has always existed.
+Agents just made it worse: change accelerates, docs don't.
+
+arc42-language makes architecture a first-class citizen —
+readable by humans, checkable by machines, visible to agents.

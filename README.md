@@ -1,5 +1,19 @@
 # arc42-language
 
+Architecture was something only architects cared about.
+Developers read the docs. Hopefully. Once. At the start.
+Then reality kicked in — and the docs stayed behind.
+
+Architecture drift has always existed.
+Agents just made it worse: change accelerates, docs don't.
+
+**arc42-language makes architecture a first-class citizen —
+readable by humans, checkable by machines, visible to agents.**
+
+![arc42-language demo](demo/demo.gif)
+
+---
+
 A structured language for arc42 software architecture documentation.
 Human-readable first — Markdown prose with typed `:::block` fences for structured metadata.
 Machine-verifiable second — a CLI validates consistency and coherence across all elements.
