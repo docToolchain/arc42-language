@@ -7,7 +7,6 @@ import { validate } from "./validator/index.ts";
 import { ELEMENT_KIND_ORDER } from "./model/types.ts";
 import type { Diagnostic } from "./validator/types.ts";
 import type { Element } from "./model/types.ts";
-import type { BlockType } from "./ast.ts";
 import type { ReferenceIndex } from "./resolver/types.ts";
 import type {
   GetQuery,
@@ -47,9 +46,7 @@ async function runPipeline(dir: string) {
   return { workspace, index };
 }
 
-export async function validateWorkspace(
-  opts: ValidateOptions,
-): Promise<ValidateResult> {
+export async function validateWorkspace(opts: ValidateOptions): Promise<ValidateResult> {
   const { workspace, index } = await runPipeline(opts.dir);
   const diagnostics = validate(workspace, index);
   const valid = !diagnostics.some((d) => d.severity === "error");
@@ -57,7 +54,7 @@ export async function validateWorkspace(
 }
 
 /** Build all edges from the reference index */
-function buildEdges(workspace: { elements: Element[] }, index: ReferenceIndex): Edge[] {
+function buildEdges(workspace: { elements: Element[] }, _index: ReferenceIndex): Edge[] {
   const edges: Edge[] = [];
   for (const el of workspace.elements) {
     if (el.kind === "building-block") {
@@ -71,6 +68,10 @@ function buildEdges(workspace: { elements: Element[] }, index: ReferenceIndex): 
       edges.push({ from: el.id, to: el.between[0], relation: "between" });
       edges.push({ from: el.id, to: el.between[1], relation: "between" });
     } else if (el.kind === "decision") {
+      for (const ref of el.addresses) {
+        edges.push({ from: el.id, to: ref, relation: "addresses" });
+      }
+    } else if (el.kind === "solution-strategy") {
       for (const ref of el.addresses) {
         edges.push({ from: el.id, to: ref, relation: "addresses" });
       }
@@ -91,9 +92,10 @@ function sortElements(elements: Element[]): Element[] {
 
 export async function getElements(opts: GetOptions): Promise<GetResult> {
   const { workspace, index } = await runPipeline(opts.dir);
+  const query = opts.query;
 
-  if (opts.query.kind === "element") {
-    const element = index.byId.get(opts.query.id);
+  if (query.kind === "element") {
+    const element = index.byId.get(query.id);
     if (!element) return null as unknown as GetResult; // caller handles null
 
     const refsFromIds = index.refsFrom.get(element.id) ?? [];
@@ -114,8 +116,8 @@ export async function getElements(opts: GetOptions): Promise<GetResult> {
 
   // Workspace query
   let elements = workspace.elements;
-  if (opts.query.typeFilter) {
-    elements = elements.filter((e) => e.kind === opts.query.typeFilter);
+  if (query.typeFilter) {
+    elements = elements.filter((e) => e.kind === query.typeFilter);
   }
   elements = sortElements(elements);
   const edges = buildEdges(workspace, index);
@@ -124,7 +126,7 @@ export async function getElements(opts: GetOptions): Promise<GetResult> {
     kind: "workspace",
     elements,
     edges,
-    typeFilter: opts.query.typeFilter,
+    typeFilter: query.typeFilter,
   };
   return view;
 }
@@ -134,6 +136,7 @@ export type {
   Element,
   QualityGoal,
   Actor,
+  SolutionStrategy,
   Constraint,
   BuildingBlock,
   Interface,

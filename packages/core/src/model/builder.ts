@@ -5,6 +5,7 @@ import type {
   ParseError,
   QualityGoal,
   Actor,
+  SolutionStrategy,
   BuildingBlock,
   Interface,
   Concept,
@@ -18,6 +19,7 @@ const KNOWN_BLOCK_TYPES = new Set([
   "quality-goal",
   "constraint",
   "actor",
+  "solution-strategy",
   "building-block",
   "interface",
   "concept",
@@ -28,7 +30,10 @@ const KNOWN_BLOCK_TYPES = new Set([
 
 function splitList(value: string | undefined): string[] {
   if (!value || value.trim() === "") return [];
-  return value.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 export function buildWorkspace(documents: DocumentAst[]): Workspace {
@@ -67,11 +72,19 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
       if (blockType === "quality-goal") {
         const priorityRaw = attributes["priority"];
         if (!priorityRaw) {
-          parseErrors.push({ message: "Missing required attribute 'priority' on quality-goal", file, line: startLine });
+          parseErrors.push({
+            message: "Missing required attribute 'priority' on quality-goal",
+            file,
+            line: startLine,
+          });
           continue;
         }
         if (!["high", "medium", "low"].includes(priorityRaw)) {
-          parseErrors.push({ message: `Invalid priority '${priorityRaw}' — must be high | medium | low`, file, line: startLine });
+          parseErrors.push({
+            message: `Invalid priority '${priorityRaw}' — must be high | medium | low`,
+            file,
+            line: startLine,
+          });
           continue;
         }
         const qg: QualityGoal = {
@@ -83,15 +96,22 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(qg);
-
       } else if (blockType === "actor") {
         const typeRaw = attributes["type"];
         if (!typeRaw) {
-          parseErrors.push({ message: "Missing required attribute 'type' on actor — must be person | system", file, line: startLine });
+          parseErrors.push({
+            message: "Missing required attribute 'type' on actor — must be person | system",
+            file,
+            line: startLine,
+          });
           continue;
         }
         if (!["person", "system"].includes(typeRaw)) {
-          parseErrors.push({ message: `Invalid type '${typeRaw}' on actor — must be person | system`, file, line: startLine });
+          parseErrors.push({
+            message: `Invalid type '${typeRaw}' on actor — must be person | system`,
+            file,
+            line: startLine,
+          });
           continue;
         }
         const actor: Actor = {
@@ -103,7 +123,15 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(actor);
-
+      } else if (blockType === "solution-strategy") {
+        const strategy: SolutionStrategy = {
+          kind: "solution-strategy",
+          id,
+          title,
+          addresses: splitList(attributes["addresses"]),
+          loc,
+        };
+        elements.push(strategy);
       } else if (blockType === "building-block") {
         const bb: BuildingBlock = {
           kind: "building-block",
@@ -115,11 +143,14 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(bb);
-
       } else if (blockType === "interface") {
         const betweenList = splitList(attributes["between"]);
         if (betweenList.length !== 2) {
-          parseErrors.push({ message: `interface.between must have exactly 2 ids (got ${betweenList.length})`, file, line: startLine });
+          parseErrors.push({
+            message: `interface.between must have exactly 2 ids (got ${betweenList.length})`,
+            file,
+            line: startLine,
+          });
           continue;
         }
         const iface: Interface = {
@@ -131,7 +162,6 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(iface);
-
       } else if (blockType === "concept") {
         const concept: Concept = {
           kind: "concept",
@@ -141,15 +171,22 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(concept);
-
       } else if (blockType === "decision") {
         const statusRaw = attributes["status"];
         if (!statusRaw) {
-          parseErrors.push({ message: "Missing required attribute 'status' on decision", file, line: startLine });
+          parseErrors.push({
+            message: "Missing required attribute 'status' on decision",
+            file,
+            line: startLine,
+          });
           continue;
         }
         if (!["proposed", "accepted", "deprecated", "superseded"].includes(statusRaw)) {
-          parseErrors.push({ message: `Invalid status '${statusRaw}' — must be proposed | accepted | deprecated | superseded`, file, line: startLine });
+          parseErrors.push({
+            message: `Invalid status '${statusRaw}' — must be proposed | accepted | deprecated | superseded`,
+            file,
+            line: startLine,
+          });
           continue;
         }
         const decision: Decision = {
@@ -163,15 +200,22 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(decision);
-
       } else if (blockType === "constraint") {
         const categoryRaw = attributes["category"];
         if (!categoryRaw) {
-          parseErrors.push({ message: "Missing required attribute 'category' on constraint", file, line: startLine });
+          parseErrors.push({
+            message: "Missing required attribute 'category' on constraint",
+            file,
+            line: startLine,
+          });
           continue;
         }
         if (!["technical", "organizational", "convention"].includes(categoryRaw)) {
-          parseErrors.push({ message: `Invalid category '${categoryRaw}' — must be technical | organizational | convention`, file, line: startLine });
+          parseErrors.push({
+            message: `Invalid category '${categoryRaw}' — must be technical | organizational | convention`,
+            file,
+            line: startLine,
+          });
           continue;
         }
         const constraint: Constraint = {
@@ -183,15 +227,22 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(constraint);
-
       } else if (blockType === "risk") {
         const severityRaw = attributes["severity"];
         if (!severityRaw) {
-          parseErrors.push({ message: "Missing required attribute 'severity' on risk", file, line: startLine });
+          parseErrors.push({
+            message: "Missing required attribute 'severity' on risk",
+            file,
+            line: startLine,
+          });
           continue;
         }
         if (!["high", "medium", "low"].includes(severityRaw)) {
-          parseErrors.push({ message: `Invalid severity '${severityRaw}' — must be high | medium | low`, file, line: startLine });
+          parseErrors.push({
+            message: `Invalid severity '${severityRaw}' — must be high | medium | low`,
+            file,
+            line: startLine,
+          });
           continue;
         }
         const risk: Risk = {
@@ -203,11 +254,14 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(risk);
-
       } else if (blockType === "glossary-term") {
         const definition = attributes["definition"];
         if (!definition) {
-          parseErrors.push({ message: "Missing required attribute 'definition' on glossary-term", file, line: startLine });
+          parseErrors.push({
+            message: "Missing required attribute 'definition' on glossary-term",
+            file,
+            line: startLine,
+          });
           continue;
         }
         const term: GlossaryTerm = {

@@ -1,14 +1,13 @@
 import { expect, test, describe } from "vite-plus/test";
 import { getElements } from "../src/arc42.ts";
-import type { GetResult, WorkspaceView, ElementView, Edge, ResolvedRef } from "../src/renderer/types.ts";
+import type { WorkspaceView, ElementView } from "../src/renderer/types.ts";
 import { ELEMENT_KIND_ORDER } from "../src/model/types.ts";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 
-const fixtureDir = join(
-  fileURLToPath(import.meta.url),
-  "../../src/__fixtures__/mini-arch",
-);
+const fixtureDir = join(fileURLToPath(import.meta.url), "../../src/__fixtures__/mini-arch");
 
 describe("getElements API - workspace view", () => {
   test("returns WorkspaceView with kind workspace", async () => {
@@ -72,6 +71,30 @@ describe("getElements API - workspace view", () => {
     // The mini-arch fixture doesn't contain any interface elements
   });
 
+  test("solution strategy is ordered in chapter 4 and exposes address edges", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "arc42-strategy-"));
+    try {
+      await writeFile(
+        join(dir, "strategy.arc42.md"),
+        `# Quality Goals\n\n## Performance\n\nImportant.\n\n:::quality-goal\nid: qg-performance\ntitle: Performance\npriority: high\n:::\n\n# Solution Strategy\n\nOverview.\n\n:::solution-strategy\nid: strategy-architecture\ntitle: Layered architecture\naddresses: qg-performance\n:::\n`,
+      );
+      const result = await getElements({ dir, query: { kind: "workspace" } });
+      const view = result as WorkspaceView;
+      const strategy = view.elements.find((el) => el.kind === "solution-strategy");
+      const goal = view.elements.find((el) => el.kind === "quality-goal");
+      expect(strategy).toBeDefined();
+      expect(goal).toBeDefined();
+      expect(view.elements.indexOf(goal!)).toBeLessThan(view.elements.indexOf(strategy!));
+      expect(view.edges).toContainEqual({
+        from: "strategy-architecture",
+        to: "qg-performance",
+        relation: "addresses",
+      });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test("typeFilter narrows elements but edges still cover full workspace", async () => {
     const result = await getElements({
       dir: fixtureDir,
@@ -85,7 +108,7 @@ describe("getElements API - workspace view", () => {
     // Edges should still include all workspace edges (not just quality-goal ones)
     // The dec-rest addresses qg-perf edge should be there
     const addressesToQg = view.edges.filter(
-      (e) => e.relation === "addresses" && e.to === "qg-perf"
+      (e) => e.relation === "addresses" && e.to === "qg-perf",
     );
     expect(addressesToQg.length).toBe(1);
   });
@@ -253,6 +276,26 @@ describe("TextGetRenderer", () => {
     const output = renderer.render(result);
     // Should show qg-perf as it addresses it
     expect(output).toContain("qg-perf");
+  });
+
+  test("single element view: renders solution strategy fields", async () => {
+    const { TextGetRenderer } = await import("../src/renderer/text.ts");
+    const renderer = new TextGetRenderer();
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "solution-strategy",
+        id: "strategy-1",
+        title: "Layered architecture",
+        addresses: ["qg-perf"],
+        loc: { file: "strategy.arc42.md", line: 4 },
+      },
+      refsFrom: [{ id: "qg-perf" }],
+      refsTo: [],
+    };
+    const output = renderer.render(result);
+    expect(output).toContain("[solution-strategy] strategy-1  Layered architecture");
+    expect(output).toContain("addresses: qg-perf");
   });
 });
 

@@ -4,6 +4,7 @@ export type BlockType =
   | "quality-goal"
   | "constraint"
   | "actor"
+  | "solution-strategy"
   | "building-block"
   | "interface"
   | "concept"

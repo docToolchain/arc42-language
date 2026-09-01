@@ -31,6 +31,8 @@ export function buildIndex(workspace: Workspace): ReferenceIndex {
     } else if (el.kind === "decision") {
       for (const ref of el.addresses) addRef(el.id, ref);
       if (el.supersedes) addRef(el.id, el.supersedes);
+    } else if (el.kind === "solution-strategy") {
+      for (const ref of el.addresses) addRef(el.id, ref);
     }
   }
 

@@ -40,17 +40,52 @@ describe("validator", () => {
 
   test("E002 — unresolved reference", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-1", title: "X", parent: "bb-missing", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-1",
+        title: "X",
+        parent: "bb-missing",
+        implements: [],
+        loc: loc(1),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
     expect(diags.some((d) => d.code === "E002")).toBe(true);
   });
 
+  test("E002 — solution strategy unresolved address", () => {
+    const ws = makeWorkspace([
+      {
+        kind: "solution-strategy",
+        id: "strategy-1",
+        title: "Strategy",
+        addresses: ["qg-missing"],
+        loc: loc(1),
+      },
+    ]);
+    const diags = validate(ws, buildIndex(ws));
+    expect(diags.some((d) => d.code === "E002")).toBe(true);
+  });
+
   test("E003 — circular parent reference", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-a", title: "A", parent: "bb-b", implements: [], loc: loc(1) },
-      { kind: "building-block", id: "bb-b", title: "B", parent: "bb-a", implements: [], loc: loc(5) },
+      {
+        kind: "building-block",
+        id: "bb-a",
+        title: "A",
+        parent: "bb-b",
+        implements: [],
+        loc: loc(1),
+      },
+      {
+        kind: "building-block",
+        id: "bb-b",
+        title: "B",
+        parent: "bb-a",
+        implements: [],
+        loc: loc(5),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -111,9 +146,7 @@ describe("validator", () => {
   });
 
   test("W001 — concept with no implementing building-block", () => {
-    const ws = makeWorkspace([
-      { kind: "concept", id: "c-1", title: "Logging", loc: loc(1) },
-    ]);
+    const ws = makeWorkspace([{ kind: "concept", id: "c-1", title: "Logging", loc: loc(1) }]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
     expect(diags.some((d) => d.code === "W001")).toBe(true);
@@ -132,7 +165,14 @@ describe("validator", () => {
   test("W002 — isolated leaf building-block (has parent, no interface)", () => {
     const ws = makeWorkspace([
       { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: loc(1) },
-      { kind: "building-block", id: "bb-1", title: "Lonely Child", parent: "bb-parent", implements: [], loc: loc(5) },
+      {
+        kind: "building-block",
+        id: "bb-1",
+        title: "Lonely Child",
+        parent: "bb-parent",
+        implements: [],
+        loc: loc(5),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -151,8 +191,22 @@ describe("validator", () => {
   test("W002 — NOT emitted when leaf building-block appears in an interface", () => {
     const ws = makeWorkspace([
       { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: loc(1) },
-      { kind: "building-block", id: "bb-1", title: "A", parent: "bb-parent", implements: [], loc: loc(5) },
-      { kind: "building-block", id: "bb-2", title: "B", parent: "bb-parent", implements: [], loc: loc(9) },
+      {
+        kind: "building-block",
+        id: "bb-1",
+        title: "A",
+        parent: "bb-parent",
+        implements: [],
+        loc: loc(5),
+      },
+      {
+        kind: "building-block",
+        id: "bb-2",
+        title: "B",
+        parent: "bb-parent",
+        implements: [],
+        loc: loc(9),
+      },
       { kind: "interface", id: "i-1", title: "I", between: ["bb-1", "bb-2"], loc: loc(13) },
     ]);
     const idx = buildIndex(ws);
@@ -163,7 +217,15 @@ describe("validator", () => {
   test("W003 — proposed decision older than 90 days", () => {
     const old = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]!;
     const ws = makeWorkspace([
-      { kind: "decision", id: "d-1", title: "D", status: "proposed", date: old, addresses: [], loc: loc(1) },
+      {
+        kind: "decision",
+        id: "d-1",
+        title: "D",
+        status: "proposed",
+        date: old,
+        addresses: [],
+        loc: loc(1),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -173,7 +235,15 @@ describe("validator", () => {
   test("W003 — NOT emitted for recent proposed decision", () => {
     const recent = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]!;
     const ws = makeWorkspace([
-      { kind: "decision", id: "d-1", title: "D", status: "proposed", date: recent, addresses: [], loc: loc(1) },
+      {
+        kind: "decision",
+        id: "d-1",
+        title: "D",
+        status: "proposed",
+        date: recent,
+        addresses: [],
+        loc: loc(1),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -201,11 +271,95 @@ describe("validator", () => {
   test("H002 — NOT emitted when decision addresses the goal", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
-      { kind: "decision", id: "d-1", title: "D", status: "accepted", addresses: ["qg-1"], loc: loc(5) },
+      {
+        kind: "decision",
+        id: "d-1",
+        title: "D",
+        status: "accepted",
+        addresses: ["qg-1"],
+        loc: loc(5),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
     expect(diags.some((d) => d.code === "H002")).toBe(false);
+  });
+
+  test("H009 — solution strategy without addresses", () => {
+    const ws = makeWorkspace([
+      {
+        kind: "solution-strategy",
+        id: "strategy-1",
+        title: "Strategy",
+        addresses: [],
+        loc: loc(1),
+      },
+    ]);
+    const diags = validate(ws, buildIndex(ws));
+    expect(diags.some((d) => d.code === "H009")).toBe(true);
+    expect(diags.find((d) => d.code === "H009")!.severity).toBe("hint");
+  });
+
+  test("H009 — NOT emitted for an addressed strategy or duplicate strategies", () => {
+    const addressed = makeWorkspace([
+      {
+        kind: "solution-strategy",
+        id: "strategy-1",
+        title: "Strategy",
+        addresses: ["qg-1"],
+        loc: loc(1),
+      },
+    ]);
+    const duplicate = makeWorkspace([
+      {
+        kind: "solution-strategy",
+        id: "strategy-1",
+        title: "Strategy",
+        addresses: [],
+        loc: loc(1),
+      },
+      {
+        kind: "solution-strategy",
+        id: "strategy-2",
+        title: "Duplicate",
+        addresses: [],
+        loc: loc(5),
+      },
+    ]);
+    expect(validate(addressed, buildIndex(addressed)).some((d) => d.code === "H009")).toBe(false);
+    const duplicateCodes = validate(duplicate, buildIndex(duplicate)).map((d) => d.code);
+    expect(duplicateCodes).toContain("E007");
+    expect(duplicateCodes).not.toContain("H009");
+  });
+
+  test("H010 — quality goal must be addressed by solution strategy, not decision", () => {
+    const decisionOnly = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
+      {
+        kind: "decision",
+        id: "d-1",
+        title: "D",
+        status: "accepted",
+        addresses: ["qg-1"],
+        loc: loc(5),
+      },
+    ]);
+    const strategyLinked = makeWorkspace([
+      ...decisionOnly.elements,
+      {
+        kind: "solution-strategy",
+        id: "strategy-1",
+        title: "Strategy",
+        addresses: ["qg-1"],
+        loc: loc(9),
+      },
+    ]);
+    expect(validate(decisionOnly, buildIndex(decisionOnly)).some((d) => d.code === "H010")).toBe(
+      true,
+    );
+    expect(
+      validate(strategyLinked, buildIndex(strategyLinked)).some((d) => d.code === "H010"),
+    ).toBe(false);
   });
 
   test("H003 — building-block without technology", () => {
@@ -219,7 +373,14 @@ describe("validator", () => {
 
   test("H003 — NOT emitted when technology is set", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-1", title: "X", technology: "Go", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-1",
+        title: "X",
+        technology: "Go",
+        implements: [],
+        loc: loc(1),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
