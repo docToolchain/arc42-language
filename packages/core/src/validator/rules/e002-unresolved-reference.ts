@@ -9,7 +9,8 @@ export const e002UnresolvedReference: Rule = {
     type: "problem",
     docs: {
       description: "Unresolved reference — all referenced ids must exist in the workspace",
-      rationale: "A reference to a non-existent id is a broken link. It means the architecture model is internally inconsistent — a building-block claims to implement a concept that was never defined, or a decision addresses a quality goal that does not exist. These broken links prevent graph traversal and make the model untrustworthy.",
+      rationale:
+        "A reference to a non-existent id is a broken link. It means the architecture model is internally inconsistent — a building-block claims to implement a concept that was never defined, or a decision addresses a quality goal that does not exist. These broken links prevent graph traversal and make the model untrustworthy.",
       arc42Chapter: 5,
       recommended: true,
     },
@@ -19,11 +20,18 @@ export const e002UnresolvedReference: Rule = {
     for (const el of workspace.elements) {
       const refs = index.refsFrom.get(el.id) ?? [];
       for (const ref of refs) {
-        if (!index.byId.has(ref)) {
+        const target = index.byId.get(ref);
+        const invalidRuntimeTarget =
+          el.kind === "runtime-scenario" &&
+          target !== undefined &&
+          target.kind !== "building-block";
+        if (!target || invalidRuntimeTarget) {
           diagnostics.push({
             code: "E002",
             severity: "error",
-            message: `Unresolved reference '${ref}' in element '${el.id}'`,
+            message: invalidRuntimeTarget
+              ? `Invalid involves reference '${ref}' in runtime scenario '${el.id}' — target must be a building-block`
+              : `Unresolved reference '${ref}' in element '${el.id}'`,
             file: el.loc.file,
             line: el.loc.line,
           });

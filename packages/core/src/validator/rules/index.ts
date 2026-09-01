@@ -13,6 +13,7 @@ import { e004InterfaceBetweenNonBlock } from "./e004-interface-between-non-block
 import { e005ParseError } from "./e005-parse-error.ts";
 import { e006SupersededDecisionNoSupersedes } from "./e006-superseded-decision-no-supersedes.ts";
 import { e007MultipleSolutionStrategies } from "./e007-multiple-solution-strategies.ts";
+import { e008DiagramValidation } from "./e008-diagram-validation.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
@@ -22,6 +23,7 @@ import { w006TooFewQualityGoals } from "./w006-too-few-quality-goals.ts";
 import { w007TooManyQualityGoals } from "./w007-too-many-quality-goals.ts";
 import { w008DecisionNoDate } from "./w008-decision-no-date.ts";
 import { w009RiskNoMitigation } from "./w009-risk-no-mitigation.ts";
+import { w011RuntimeScenarioNoInvolves } from "./w011-runtime-scenario-no-involves.ts";
 import { h001DecisionNoAddresses } from "./h001-decision-no-addresses.ts";
 import { h002QualityGoalUnaddressed } from "./h002-quality-goal-unaddressed.ts";
 import { h003BuildingBlockNoTechnology } from "./h003-building-block-no-technology.ts";
@@ -32,6 +34,7 @@ import { h007RiskUnaddressed } from "./h007-risk-unaddressed.ts";
 import { h008ActorNoInterface } from "./h008-actor-no-interface.ts";
 import { h009SolutionStrategyNoAddresses } from "./h009-solution-strategy-no-addresses.ts";
 import { h010QualityGoalUnaddressedBySolutionStrategy } from "./h010-quality-goal-unaddressed-by-solution-strategy.ts";
+import { h011InterfaceNotCoveredByRuntimeScenario } from "./h011-interface-not-covered-by-runtime-scenario.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -42,6 +45,7 @@ export const builtinRules: readonly Rule[] = [
   e004InterfaceBetweenNonBlock, // Chapter 5
   e006SupersededDecisionNoSupersedes, // Chapter 9
   e007MultipleSolutionStrategies, // Chapter 4
+  e008DiagramValidation, // Chapter 6
 
   // Warnings — inconsistencies
   w001ConceptNotImplemented, // Chapter 8
@@ -53,6 +57,7 @@ export const builtinRules: readonly Rule[] = [
   w007TooManyQualityGoals, // Chapter 1
   w008DecisionNoDate, // Chapter 9
   w009RiskNoMitigation, // Chapter 11
+  w011RuntimeScenarioNoInvolves, // Chapter 6
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9
@@ -65,6 +70,7 @@ export const builtinRules: readonly Rule[] = [
   h008ActorNoInterface, // Chapter 3
   h009SolutionStrategyNoAddresses, // Chapter 4
   h010QualityGoalUnaddressedBySolutionStrategy, // Chapter 1
+  h011InterfaceNotCoveredByRuntimeScenario, // Chapter 6
 ];
 
 /** All rules indexed by code for O(1) lookup */

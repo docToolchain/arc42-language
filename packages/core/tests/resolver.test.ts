@@ -24,6 +24,7 @@ describe("buildIndex", () => {
       ],
       parseErrors: [],
       documents: [],
+      diagrams: [],
     };
     const idx = buildIndex(ws);
     expect(idx.byId.has("qg-1")).toBe(true);
@@ -51,6 +52,7 @@ describe("buildIndex", () => {
       ],
       parseErrors: [],
       documents: [],
+      diagrams: [],
     };
     const idx = buildIndex(ws);
     expect(idx.refsFrom.get("d-1")).toContain("qg-1");
@@ -77,6 +79,7 @@ describe("buildIndex", () => {
       ],
       parseErrors: [],
       documents: [],
+      diagrams: [],
     };
     const idx = buildIndex(ws);
     expect(idx.refsFrom.get("strategy-1")).toContain("qg-1");
@@ -96,6 +99,7 @@ describe("buildIndex", () => {
       ],
       parseErrors: [],
       documents: [],
+      diagrams: [],
     };
     const idx = buildIndex(ws);
     expect(idx.byId.has("qg-1")).toBe(true);
@@ -124,10 +128,38 @@ describe("buildIndex", () => {
       ],
       parseErrors: [],
       documents: [],
+      diagrams: [],
     };
     const idx = buildIndex(ws);
     expect(idx.refsFrom.get("bb-child")).toContain("bb-parent");
     expect(idx.refsFrom.get("bb-child")).toContain("c-1");
     expect(idx.refsTo.get("bb-parent")).toContain("bb-child");
+  });
+
+  test("runtime-scenario.involves populates both refsFrom and refsTo", () => {
+    const ws: Workspace = {
+      elements: [
+        {
+          kind: "runtime-scenario",
+          id: "scenario-checkout",
+          title: "Checkout",
+          involves: ["bb-api"],
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "building-block",
+          id: "bb-api",
+          title: "API",
+          implements: [],
+          loc: { file: "f", line: 5 },
+        },
+      ],
+      parseErrors: [],
+      documents: [],
+      diagrams: [],
+    };
+    const idx = buildIndex(ws);
+    expect(idx.refsFrom.get("scenario-checkout")).toContain("bb-api");
+    expect(idx.refsTo.get("bb-api")).toContain("scenario-checkout");
   });
 });

@@ -12,6 +12,7 @@ import type {
   Constraint,
   Risk,
   GlossaryTerm,
+  RuntimeScenario,
 } from "../model/types.ts";
 
 export class TextGetRenderer implements GetRenderer {
@@ -84,6 +85,8 @@ export class TextGetRenderer implements GetRenderer {
         return this.renderBuildingBlock(el);
       case "interface":
         return this.renderInterface(el);
+      case "runtime-scenario":
+        return this.renderRuntimeScenario(el);
       case "concept":
         return this.renderConcept(el);
       case "decision":
@@ -156,6 +159,13 @@ export class TextGetRenderer implements GetRenderer {
     lines.push(line);
     lines.push(`    between: ${el.between[0]} ↔ ${el.between[1]}`);
 
+    return lines.join("\n");
+  }
+
+  private renderRuntimeScenario(el: RuntimeScenario): string {
+    const lines = [`  ${el.id}  ${el.title}`];
+    if (el.trigger) lines.push(`    trigger: ${el.trigger}`);
+    if (el.involves.length > 0) lines.push(`    involves: ${el.involves.join(", ")}`);
     return lines.join("\n");
   }
 
@@ -238,6 +248,10 @@ export class TextGetRenderer implements GetRenderer {
       case "interface":
         if (el.protocol) lines.push(`  protocol: ${el.protocol}`);
         lines.push(`  between: ${el.between[0]} ↔ ${el.between[1]}`);
+        break;
+      case "runtime-scenario":
+        if (el.trigger) lines.push(`  trigger: ${el.trigger}`);
+        if (el.involves.length > 0) lines.push(`  involves: ${el.involves.join(", ")}`);
         break;
       case "concept":
         if (el.category) lines.push(`  category: ${el.category}`);

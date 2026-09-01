@@ -23,6 +23,7 @@ import type {
   Decision,
   Risk,
   GlossaryTerm,
+  RuntimeScenario,
 } from "../model/types.ts";
 import type { BlockType } from "../ast.ts";
 
@@ -60,7 +61,7 @@ export interface Edge {
   from: string;
   to: string;
   /** The semantic relationship type */
-  relation: "implements" | "parent" | "between" | "addresses";
+  relation: "implements" | "parent" | "between" | "addresses" | "involves";
 }
 
 /** Result of a workspace-level get query */
@@ -137,4 +138,9 @@ export interface ElementRenderers {
   decision: (el: Decision, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
   risk: (el: Risk, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
   "glossary-term": (el: GlossaryTerm, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  "runtime-scenario": (
+    el: RuntimeScenario,
+    refsFrom: ResolvedRef[],
+    refsTo: ResolvedRef[],
+  ) => string;
 }

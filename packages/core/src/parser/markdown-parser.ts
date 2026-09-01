@@ -1,14 +1,47 @@
-import type { DocumentAst, AstNode } from "../ast.ts";
+import type { DocumentAst, AstNode, DiagramNode } from "../ast.ts";
+
+interface DiagramMetadata {
+  id: string;
+  scenario?: string;
+  notation: string;
+  startLine: number;
+}
+
+function createDiagramNode(
+  metadata: DiagramMetadata,
+  source: string,
+  endLine: number,
+): DiagramNode {
+  if (metadata.notation === "mermaid-sequence") {
+    return {
+      kind: "diagram",
+      diagramType: "sequence",
+      id: metadata.id,
+      scenario: metadata.scenario ?? "",
+      notation: "mermaid-sequence",
+      source,
+      startLine: metadata.startLine,
+      endLine,
+    };
+  }
+
+  return {
+    kind: "diagram",
+    diagramType: "generic",
+    id: metadata.id,
+    notation: metadata.notation,
+    source,
+    startLine: metadata.startLine,
+    endLine,
+  };
+}
 
 /**
  * Line-oriented parser for .arc42.md files.
  * Parser is intentionally dumb — unknown block types are emitted as-is;
  * the meta-model builder rejects them.
  */
-export function parseMarkdown(
-  filePath: string,
-  content: string,
-): DocumentAst {
+export function parseMarkdown(filePath: string, content: string): DocumentAst {
   const lines = content.split("\n");
   const nodes: AstNode[] = [];
 
@@ -16,6 +49,12 @@ export function parseMarkdown(
     blockType: string;
     attributes: Record<string, string>;
     startLine: number;
+  } | null = null;
+
+  let pendingDiagram: DiagramMetadata | null = null;
+  let openDiagram: {
+    metadata: DiagramMetadata;
+    source: string[];
   } | null = null;
 
   let inHtmlComment = false;
@@ -45,16 +84,47 @@ export function parseMarkdown(
       continue;
     }
 
+    if (openDiagram) {
+      if (/^```\s*$/.test(line)) {
+        nodes.push(createDiagramNode(openDiagram.metadata, openDiagram.source.join("\n"), lineNo));
+        openDiagram = null;
+      } else {
+        openDiagram.source.push(line);
+      }
+      continue;
+    }
+
+    if (pendingDiagram) {
+      if (line.trim() === "") continue;
+      const fenceMatch = /^```([a-zA-Z0-9_-]+)?\s*$/.exec(line);
+      if (fenceMatch) {
+        openDiagram = { metadata: pendingDiagram, source: [] };
+        pendingDiagram = null;
+        continue;
+      }
+      nodes.push(createDiagramNode(pendingDiagram, "", pendingDiagram.startLine));
+      pendingDiagram = null;
+    }
+
     if (openBlock !== null) {
       // Closing fence: ::: optionally followed only by whitespace
       if (/^:::\s*$/.test(line)) {
-        nodes.push({
-          kind: "block",
-          blockType: openBlock.blockType,
-          attributes: openBlock.attributes,
-          startLine: openBlock.startLine,
-          endLine: lineNo,
-        });
+        if (openBlock.blockType === "diagram") {
+          pendingDiagram = {
+            id: openBlock.attributes["id"] ?? "",
+            scenario: openBlock.attributes["scenario"] ?? "",
+            notation: openBlock.attributes["notation"] ?? "",
+            startLine: openBlock.startLine,
+          };
+        } else {
+          nodes.push({
+            kind: "block",
+            blockType: openBlock.blockType,
+            attributes: openBlock.attributes,
+            startLine: openBlock.startLine,
+            endLine: lineNo,
+          });
+        }
         openBlock = null;
         continue;
       }

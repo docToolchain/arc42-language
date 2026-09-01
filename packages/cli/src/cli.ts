@@ -20,6 +20,7 @@ const BLOCK_TYPES: BlockType[] = [
   "decision",
   "risk",
   "glossary-term",
+  "runtime-scenario",
 ];
 
 function isBlockType(s: string): s is BlockType {
@@ -33,6 +34,7 @@ const CHAPTER_NAMES: Record<number, string> = {
   3: "System Scope and Context",
   4: "Solution Strategy",
   5: "Building Blocks",
+  6: "Runtime View",
   8: "Cross-cutting Concepts",
   9: "Architecture Decisions",
   11: "Risks and Technical Debt",
@@ -102,7 +104,7 @@ function printHelp() {
 Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
-  arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|8|9|11|12>] [--format json|text]
+  arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|8|9|11|12>] [--format json|text]
 
 Global options:
   --dir <path>   Workspace root (default: $ARC42_DIR or cwd)

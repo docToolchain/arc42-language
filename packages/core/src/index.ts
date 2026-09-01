@@ -13,6 +13,11 @@ export type {
   Constraint,
   BuildingBlock,
   Interface,
+  RuntimeScenario,
+  Diagram,
+  GenericDiagram,
+  SequenceDiagram,
+  DiagramArtifact,
   Concept,
   Decision,
   Risk,
@@ -25,7 +30,15 @@ export type {
 export { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "./model/types.ts";
 
 export type { ReferenceIndex } from "./resolver/types.ts";
-export type { BlockType, AstNode, DocumentAst } from "./ast.ts";
+export type {
+  BlockType,
+  AstNode,
+  DocumentAst,
+  DiagramNode,
+  DiagramNodeBase,
+  GenericDiagramNode,
+  SequenceDiagramNode,
+} from "./ast.ts";
 
 // Rule registry
 export { builtinRules, rulesByCode } from "./validator/rules/index.ts";

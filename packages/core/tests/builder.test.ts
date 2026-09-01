@@ -100,6 +100,27 @@ describe("buildWorkspace", () => {
     expect(missingTitle.parseErrors[0]!.message).toMatch(/title/);
   });
 
+  test("runtime-scenario parses trigger and involved building blocks", () => {
+    const ws = buildWorkspace([
+      doc(
+        "runtime-scenario\nid: scenario-checkout\ntitle: Customer checkout\ntrigger: Customer submits an order\ninvolves: bb-api, bb-orders",
+      ),
+    ]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements).toHaveLength(1);
+    const scenario = ws.elements[0]!;
+    if (scenario.kind !== "runtime-scenario") throw new Error();
+    expect(scenario.involves).toEqual(["bb-api", "bb-orders"]);
+    expect(scenario.trigger).toBe("Customer submits an order");
+  });
+
+  test("runtime-scenario without involves gets an empty list", () => {
+    const ws = buildWorkspace([doc("runtime-scenario\nid: scenario-empty\ntitle: Empty")]);
+    const scenario = ws.elements[0]!;
+    if (scenario.kind !== "runtime-scenario") throw new Error();
+    expect(scenario.involves).toEqual([]);
+  });
+
   test("valid actor → correct element with type and description", () => {
     const ws = buildWorkspace([
       doc("actor\nid: actor-1\ntitle: End User\ntype: person\ndescription: Primary human user"),

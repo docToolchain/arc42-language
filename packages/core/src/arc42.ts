@@ -75,6 +75,10 @@ function buildEdges(workspace: { elements: Element[] }, _index: ReferenceIndex):
       for (const ref of el.addresses) {
         edges.push({ from: el.id, to: ref, relation: "addresses" });
       }
+    } else if (el.kind === "runtime-scenario") {
+      for (const ref of el.involves) {
+        edges.push({ from: el.id, to: ref, relation: "involves" });
+      }
     }
   }
   return edges;
@@ -140,6 +144,11 @@ export type {
   Constraint,
   BuildingBlock,
   Interface,
+  RuntimeScenario,
+  Diagram,
+  GenericDiagram,
+  SequenceDiagram,
+  DiagramArtifact,
   Concept,
   Decision,
   Risk,

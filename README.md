@@ -23,7 +23,7 @@ Machine-verifiable second — a CLI validates consistency and coherence across a
 ### What this gives you
 
 - Write architecture documentation in plain Markdown (`.arc42.md` files)
-- Embed structured elements — quality goals, solution strategy, building blocks, interfaces, concepts, decisions — as typed blocks alongside narrative prose
+- Embed structured elements — quality goals, solution strategy, building blocks, interfaces, runtime scenarios, concepts, decisions — as typed blocks alongside narrative prose
 - Validate that your architecture model is internally consistent: no broken references, no isolated components, no unaddressed quality goals, no forgotten proposed decisions
 - Query the model from the command line or pipe JSON into other tools
 
@@ -45,18 +45,60 @@ implements: concept-logging, concept-error-handling
 :::
 ```
 
-The block types cover arc42 sections 1 through 5, 8, and 9:
+The block types cover arc42 sections 1 through 6, 8, and 9:
 
-| Block | Section | Required attributes |
-|-------|---------|---------------------|
-| `:::quality-goal` | 1 — Quality Goals | `id`, `title`, `priority` (high\|medium\|low) |
-| `:::solution-strategy` | 4 — Solution Strategy (one per workspace) | `id`, `title` |
-| `:::building-block` | 5 — Building Blocks | `id`, `title` |
-| `:::interface` | 5 — Building Blocks | `id`, `title`, `between` (two building-block ids) |
-| `:::concept` | 8 — Cross-cutting Concepts | `id`, `title` |
-| `:::decision` | 9 — Architecture Decisions | `id`, `title`, `status` (proposed\|accepted\|deprecated\|superseded) |
+| Block                  | Section                                   | Required attributes                                                  |
+| ---------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| `:::quality-goal`      | 1 — Quality Goals                         | `id`, `title`, `priority` (high\|medium\|low)                        |
+| `:::solution-strategy` | 4 — Solution Strategy (one per workspace) | `id`, `title`                                                        |
+| `:::building-block`    | 5 — Building Blocks                       | `id`, `title`                                                        |
+| `:::interface`         | 5 — Building Blocks                       | `id`, `title`, `between` (two building-block ids)                    |
+| `:::runtime-scenario`  | 6 — Runtime View                          | `id`, `title`                                                        |
+| `:::concept`           | 8 — Cross-cutting Concepts                | `id`, `title`                                                        |
+| `:::decision`          | 9 — Architecture Decisions                | `id`, `title`, `status` (proposed\|accepted\|deprecated\|superseded) |
 
 See `examples/bookstore-backend/` for a complete, valid workspace with all five block types and realistic prose.
+
+### Runtime scenarios and diagrams
+
+Use `runtime-scenario` for a representative runtime flow. Keep the structured metadata small and
+put the detailed steps in prose or an explicitly associated diagram:
+
+```markdown
+:::runtime-scenario
+id: scenario-checkout
+title: Customer checkout
+trigger: Customer submits an order
+involves: bb-api, bb-order-service, bb-payment-service
+:::
+```
+
+Mermaid sequence diagrams can be associated with a scenario using a `diagram` metadata block. Use
+stable model IDs (or underscore aliases normalized to model IDs) for participants; `as` labels are
+presentation only:
+
+````markdown
+:::diagram
+id: checkout-sequence
+scenario: scenario-checkout
+notation: mermaid-sequence
+:::
+
+```mermaid
+sequenceDiagram
+    participant bb_api as API Gateway
+    participant bb_order_service as Order Service
+    bb_api->>bb_order_service: Create order
+```
+````
+
+State diagrams may remain ordinary Markdown artifacts, but state-diagram parsing and validation are
+out of scope. State names are lifecycle states, not building-block references.
+
+The Mermaid validator intentionally checks a bounded sequence-diagram subset: declarations,
+participants, the common `->>`, `-->>`, `->`, `-->`, `-x`, `--x`, `-)`, and `--)` message arrows,
+and message endpoints. Notes, activation commands, grouping keywords, quoted participant forms,
+and detailed Mermaid rendering semantics remain source content rather than architecture validation.
 
 ### The CLI
 
@@ -142,7 +184,7 @@ pnpm run ready   # check + test + build in one pass
 ### Adding a validation rule
 
 1. Create `packages/core/src/validator/rules/<code>-<name>.ts` — implement the `Rule` interface
-2. Fill in `meta.docs.rationale` — explain *why* the rule exists, not just what it checks
+2. Fill in `meta.docs.rationale` — explain _why_ the rule exists, not just what it checks
 3. Register it in `packages/core/src/validator/rules/index.ts`
 4. Add unit tests in `packages/core/tests/validator.test.ts`
 5. If the rule needs the raw AST (not just the element model), use `workspace.documents` — see W004/W005 for examples

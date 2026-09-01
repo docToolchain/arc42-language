@@ -18,6 +18,7 @@ export interface SourceLocation {
  *   3 — System Scope and Context
  *   4 — Solution Strategy
  *   5 — Building Blocks (includes interfaces)
+ *   6 — Runtime View
  *   8 — Cross-cutting Concepts
  *   9 — Architecture Decisions
  *  11 — Risks and Technical Debt
@@ -30,6 +31,7 @@ export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
   "solution-strategy", // arc42 ch. 4
   "building-block", // arc42 ch. 5
   "interface", // arc42 ch. 5
+  "runtime-scenario", // arc42 ch. 6
   "concept", // arc42 ch. 8
   "decision", // arc42 ch. 9
   "risk", // arc42 ch. 11
@@ -44,6 +46,7 @@ export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = {
   "solution-strategy": 4,
   "building-block": 5,
   interface: 5,
+  "runtime-scenario": 6,
   concept: 8,
   decision: 9,
   risk: 11,
@@ -57,6 +60,7 @@ export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
   3: "System Scope and Context",
   4: "Solution Strategy",
   5: "Building Blocks",
+  6: "Runtime View",
   8: "Cross-cutting Concepts",
   9: "Architecture Decisions",
   11: "Risks and Technical Debt",
@@ -108,6 +112,38 @@ export interface Interface {
   protocol?: string;
   loc: SourceLocation;
 }
+
+export interface RuntimeScenario {
+  kind: "runtime-scenario";
+  id: string;
+  title: string;
+  involves: string[];
+  trigger?: string;
+  loc: SourceLocation;
+}
+
+/** Abstract diagram artifact shared by all notation adapters. */
+export interface Diagram {
+  kind: "diagram";
+  id: string;
+  notation: string;
+  /** Raw, untrusted fenced source; never interpreted by the model itself. */
+  source: string;
+  loc: SourceLocation;
+}
+
+export interface GenericDiagram extends Diagram {
+  diagramType: "generic";
+}
+
+/** Sequence diagrams are the Runtime View-specific diagram subtype. */
+export interface SequenceDiagram extends Diagram {
+  diagramType: "sequence";
+  notation: "mermaid-sequence";
+  scenario: string;
+}
+
+export type DiagramArtifact = GenericDiagram | SequenceDiagram;
 
 export interface Concept {
   kind: "concept";
@@ -161,6 +197,7 @@ export type Element =
   | SolutionStrategy
   | BuildingBlock
   | Interface
+  | RuntimeScenario
   | Concept
   | Decision
   | Risk
@@ -177,4 +214,5 @@ export interface Workspace {
   parseErrors: ParseError[];
   /** Raw parsed documents — used by structure-aware validation rules (W004, W005) */
   documents: DocumentAst[];
+  diagrams: DiagramArtifact[];
 }

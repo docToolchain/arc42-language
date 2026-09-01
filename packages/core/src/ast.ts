@@ -10,7 +10,8 @@ export type BlockType =
   | "concept"
   | "decision"
   | "risk"
-  | "glossary-term";
+  | "glossary-term"
+  | "runtime-scenario";
 
 export interface HeadingNode {
   kind: "heading";
@@ -33,7 +34,31 @@ export interface BlockNode {
   endLine: number;
 }
 
-export type AstNode = HeadingNode | ProseNode | BlockNode;
+/** Common parser representation for any diagram artifact. */
+export interface DiagramNodeBase {
+  kind: "diagram";
+  id: string;
+  notation: string;
+  source: string;
+  startLine: number;
+  endLine: number;
+}
+
+/** Generic diagram syntax whose notation is handled by a future adapter. */
+export interface GenericDiagramNode extends DiagramNodeBase {
+  diagramType: "generic";
+}
+
+/** Mermaid sequence diagram metadata explicitly owned by a Runtime View scenario. */
+export interface SequenceDiagramNode extends DiagramNodeBase {
+  diagramType: "sequence";
+  notation: "mermaid-sequence";
+  scenario: string;
+}
+
+export type DiagramNode = GenericDiagramNode | SequenceDiagramNode;
+
+export type AstNode = HeadingNode | ProseNode | BlockNode | DiagramNode;
 
 export interface DocumentAst {
   filePath: string;

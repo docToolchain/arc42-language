@@ -1,6 +1,6 @@
 ---
 name: arc42-language
-description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, solution strategy, building block, actor, concept, decision, ADR, constraint, risk, glossary.
+description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, solution strategy, building block, actor, sequence diagram, concept, decision, ADR, constraint, risk, glossary.
 allowed-tools: Bash(arc42:*)
 ---
 
@@ -48,18 +48,18 @@ implements: concept-logging, concept-error-handling
 
 ## Block type reference
 
-| Block type | Arc42 chapter | Required fields | Optional fields |
-|------------|--------------|-----------------|-----------------|
-| `quality-goal` | 1 | `id`, `title`, `priority` | `scenario` |
-| `constraint` | 2 | `id`, `title`, `category` | `source` |
-| `actor` | 3 | `id`, `title`, `type` | `description` |
-| `solution-strategy` | 4 | `id`, `title` | `addresses` |
-| `building-block` | 5 | `id`, `title` | `technology`, `parent`, `implements` |
-| `interface` | 5 | `id`, `title`, `between` | `protocol` |
-| `concept` | 8 | `id`, `title` | `category` |
-| `decision` | 9 | `id`, `title`, `status` | `date`, `addresses`, `supersedes` |
-| `risk` | 11 | `id`, `title`, `severity` | `mitigation` |
-| `glossary-term` | 12 | `id`, `title`, `definition` | — |
+| Block type          | Arc42 chapter | Required fields             | Optional fields                      |
+| ------------------- | ------------- | --------------------------- | ------------------------------------ |
+| `quality-goal`      | 1             | `id`, `title`, `priority`   | `scenario`                           |
+| `constraint`        | 2             | `id`, `title`, `category`   | `source`                             |
+| `actor`             | 3             | `id`, `title`, `type`       | `description`                        |
+| `solution-strategy` | 4             | `id`, `title`               | `addresses`                          |
+| `building-block`    | 5             | `id`, `title`               | `technology`, `parent`, `implements` |
+| `interface`         | 5             | `id`, `title`, `between`    | `protocol`                           |
+| `concept`           | 8             | `id`, `title`               | `category`                           |
+| `decision`          | 9             | `id`, `title`, `status`     | `date`, `addresses`, `supersedes`    |
+| `risk`              | 11            | `id`, `title`, `severity`   | `mitigation`                         |
+| `glossary-term`     | 12            | `id`, `title`, `definition` | —                                    |
 
 ### Field value constraints
 
@@ -68,18 +68,18 @@ implements: concept-logging, concept-error-handling
 - `actor.type`: `person` | `system` — `person` for human roles (user, operator, team); `system` for external software systems or services. All actors are external by definition in chapter 3.
 - `decision.status`: `proposed` | `accepted` | `deprecated` | `superseded`
 - `risk.severity`: `high` | `medium` | `low`
-- `decision.supersedes`: on the *new* decision — points to the id of the decision it replaces
+- `decision.supersedes`: on the _new_ decision — points to the id of the decision it replaces
 
 ### Cross-reference fields
 
-| Field | On type | References |
-|-------|---------|------------|
-| `parent` | `building-block` | another `building-block` id |
-| `implements` | `building-block` | one or more `concept` ids (comma-separated) |
-| `between` | `interface` | one `building-block` id and one `actor` id, or two `building-block` ids (comma-separated) |
-| `addresses` | `decision` | one or more `quality-goal`, `constraint`, or `risk` ids |
-| `addresses` | `solution-strategy` | one or more `quality-goal` ids |
-| `supersedes` | `decision` | another `decision` id |
+| Field        | On type             | References                                                                                |
+| ------------ | ------------------- | ----------------------------------------------------------------------------------------- |
+| `parent`     | `building-block`    | another `building-block` id                                                               |
+| `implements` | `building-block`    | one or more `concept` ids (comma-separated)                                               |
+| `between`    | `interface`         | one `building-block` id and one `actor` id, or two `building-block` ids (comma-separated) |
+| `addresses`  | `decision`          | one or more `quality-goal`, `constraint`, or `risk` ids                                   |
+| `addresses`  | `solution-strategy` | one or more `quality-goal` ids                                                            |
+| `supersedes` | `decision`          | another `decision` id                                                                     |
 
 All referenced IDs must resolve to an existing element (rule E002). IDs are unique across the
 entire workspace (all `*.arc42.md` files in the directory).
@@ -87,7 +87,16 @@ entire workspace (all `*.arc42.md` files in the directory).
 ## Validation rules
 
 Run `arc42 rules` to see the full list of rules with rationale, grouped by chapter.
-Filter by chapter with `--chapter <0|1|2|3|4|5|8|9|11|12>`. Use `--format json` for machine-readable output.
+Filter by chapter with `--chapter <0|1|2|3|4|5|6|8|9|11|12>`. Use `--format json` for machine-readable output.
+
+### Diagram annotation convention
+
+When a diagram is explicitly associated with a documented element, use a `:::diagram` metadata
+block with a stable diagram `id`, the owning element `scenario` id, and a `notation` value. In
+Mermaid sequence diagrams, use stable model IDs—or explicit safe aliases normalized to model IDs—
+for participant identifiers; human-readable `as` labels are presentation text, not references.
+Keep this association and identifier convention consistent across diagram notations. Notation
+specific authoring guidance belongs in the relevant starter template comments.
 
 Fix all errors before committing. Warnings should be resolved before merging. Hints are
 best-practice suggestions — address them when the context allows.
@@ -103,6 +112,7 @@ block example. The comments are ignored by the parser and validator — they are
 guidance only, not part of the document.
 
 To use a template:
+
 1. Copy the relevant file(s) into your workspace directory
 2. Read the HTML comment at the top of each file — it explains the arc42 intent for that chapter
 3. Add `##` sections with your actual content, following the example in the comment

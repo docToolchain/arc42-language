@@ -95,6 +95,42 @@ describe("getElements API - workspace view", () => {
     }
   });
 
+  test("runtime scenario is ordered in chapter 6 and exposes involves edges", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "arc42-runtime-"));
+    try {
+      await writeFile(
+        join(dir, "runtime.arc42.md"),
+        `# Runtime View
+
+Scenario prose.
+
+:::building-block
+id: bb-api
+title: API
+:::
+
+:::runtime-scenario
+id: scenario-api
+title: API request
+trigger: Request arrives
+involves: bb-api
+:::
+`,
+      );
+      const result = await getElements({ dir, query: { kind: "workspace" } });
+      const view = result as WorkspaceView;
+      const scenario = view.elements.find((el) => el.kind === "runtime-scenario");
+      expect(scenario).toBeDefined();
+      expect(view.edges).toContainEqual({
+        from: "scenario-api",
+        to: "bb-api",
+        relation: "involves",
+      });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test("typeFilter narrows elements but edges still cover full workspace", async () => {
     const result = await getElements({
       dir: fixtureDir,
@@ -296,6 +332,27 @@ describe("TextGetRenderer", () => {
     const output = renderer.render(result);
     expect(output).toContain("[solution-strategy] strategy-1  Layered architecture");
     expect(output).toContain("addresses: qg-perf");
+  });
+
+  test("single element view: renders runtime scenario fields", async () => {
+    const { TextGetRenderer } = await import("../src/renderer/text.ts");
+    const renderer = new TextGetRenderer();
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "runtime-scenario",
+        id: "scenario-1",
+        title: "Checkout",
+        trigger: "Customer submits an order",
+        involves: ["bb-api"],
+        loc: { file: "runtime.arc42.md", line: 4 },
+      },
+      refsFrom: [{ id: "bb-api" }],
+      refsTo: [],
+    };
+    const output = renderer.render(result);
+    expect(output).toContain("trigger: Customer submits an order");
+    expect(output).toContain("involves: bb-api");
   });
 });
 

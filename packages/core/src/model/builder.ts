@@ -13,6 +13,8 @@ import type {
   Constraint,
   Risk,
   GlossaryTerm,
+  RuntimeScenario,
+  DiagramArtifact,
 } from "./types.ts";
 
 const KNOWN_BLOCK_TYPES = new Set([
@@ -26,6 +28,7 @@ const KNOWN_BLOCK_TYPES = new Set([
   "decision",
   "risk",
   "glossary-term",
+  "runtime-scenario",
 ]);
 
 function splitList(value: string | undefined): string[] {
@@ -39,9 +42,44 @@ function splitList(value: string | undefined): string[] {
 export function buildWorkspace(documents: DocumentAst[]): Workspace {
   const elements: Element[] = [];
   const parseErrors: ParseError[] = [];
+  const diagrams: DiagramArtifact[] = [];
 
   for (const doc of documents) {
     for (const node of doc.nodes) {
+      if (node.kind === "diagram") {
+        if (!node.id || !node.notation || (node.diagramType === "sequence" && !node.scenario)) {
+          parseErrors.push({
+            message:
+              node.diagramType === "sequence"
+                ? "Sequence diagram requires 'id', 'scenario', and 'notation'"
+                : "Diagram requires 'id' and 'notation'",
+            file: doc.filePath,
+            line: node.startLine,
+          });
+          continue;
+        }
+        if (node.diagramType === "sequence") {
+          diagrams.push({
+            kind: "diagram",
+            diagramType: "sequence",
+            id: node.id,
+            scenario: node.scenario,
+            notation: node.notation,
+            source: node.source,
+            loc: { file: doc.filePath, line: node.startLine },
+          });
+        } else {
+          diagrams.push({
+            kind: "diagram",
+            diagramType: "generic",
+            id: node.id,
+            notation: node.notation,
+            source: node.source,
+            loc: { file: doc.filePath, line: node.startLine },
+          });
+        }
+        continue;
+      }
       if (node.kind !== "block") continue;
 
       const { blockType, attributes, startLine } = node;
@@ -162,6 +200,16 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(iface);
+      } else if (blockType === "runtime-scenario") {
+        const scenario: RuntimeScenario = {
+          kind: "runtime-scenario",
+          id,
+          title,
+          involves: splitList(attributes["involves"]),
+          trigger: attributes["trigger"] || undefined,
+          loc,
+        };
+        elements.push(scenario);
       } else if (blockType === "concept") {
         const concept: Concept = {
           kind: "concept",
@@ -276,5 +324,5 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
     }
   }
 
-  return { elements, parseErrors, documents };
+  return { elements, parseErrors, documents, diagrams };
 }
