@@ -69,3 +69,7 @@ title: CLI Usability for Agents and CI
 priority: medium
 scenario: arc42 validate --format json produces valid JSON on stdout regardless of terminal context; exit code 1 when errors exist, 0 when clean.
 :::
+
+## Stakeholders
+
+The current repository context identifies agents, architects, maintainers, and CI as important users of the documentation and CLI. A complete stakeholder map, including operational and external stakeholders, is not currently captured in the codebase.

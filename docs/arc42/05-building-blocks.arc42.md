@@ -1,7 +1,7 @@
 # Building Blocks
 
 The arc42-language toolchain is a pnpm monorepo. Each package is a vertical slice of the system —
-the core library owns all logic; the CLI, skill, and future LSP server are thin consumers of it.
+the core library owns all logic; the CLI and skill are thin consumers of it.
 
 ## Core Library
 
@@ -33,10 +33,10 @@ implements: concept-pipeline
 
 ## Meta-model Builder
 
-Turns `DocumentAst[]` into a typed `Workspace` — a flat list of `Element` objects (QualityGoal,
-BuildingBlock, Interface, Concept, Decision) plus parse errors for missing or invalid required
-attributes. Unknown block types and structural problems are recorded as `ParseError` entries,
-which the E005 rule surfaces as diagnostics.
+Turns `DocumentAst[]` into a typed `Workspace` — a flat list of `Element` objects covering quality
+goals, constraints, building blocks, interfaces, concepts, decisions, risks, and glossary terms,
+plus parse errors for missing or invalid required attributes. Unknown block types and structural
+problems are recorded as `ParseError` entries, which the E005 rule surfaces as diagnostics.
 
 :::building-block
 id: bb-builder
@@ -115,6 +115,7 @@ and points agents at the CLI to discover current state and rules. Installed by c
 id: bb-skill
 title: Opencode Skill
 technology: Markdown
+implements: concept-prose-first
 :::
 
 ## Skill → Agent Runtime Interface

@@ -114,5 +114,41 @@ id: dec-prose-first
 title: Enforce prose-first authoring convention with W004 and W005 rules
 status: accepted
 date: 2026-08-17
-addresses: qg-readability, qg-verifiability
+addresses: qg-readability, qg-verifiability, con-markdown-authoring
+:::
+
+## Runtime Without Production Dependencies
+
+The core library and CLI use Node.js built-ins at runtime. The project accepts the resulting dependency constraints because a small, locked-down toolchain is easier to install and audit.
+
+:::decision
+id: dec-runtime-builtins
+title: Use Node.js built-ins for runtime functionality
+status: accepted
+date: 2026-08-14
+addresses: qg-cli-usability, qg-extensibility, con-node-runtime, con-no-runtime-dependencies
+:::
+
+## Focused v1 Element Model
+
+The v1 model covers the arc42 sections that can be represented as typed, cross-referenceable elements. Diagram-heavy context, runtime, deployment, and solution views remain prose-only until the AST supports richer graph structures.
+
+:::decision
+id: dec-focused-v1-model
+title: Keep the v1 element model focused on typed cross-referenceable content
+status: accepted
+date: 2026-08-18
+addresses: qg-agent-writability, qg-extensibility, risk-unmodeled-views
+:::
+
+## Starter Templates as Authoring Guidance
+
+The starter files provide complete examples for every supported block type and use the same one-heading-per-element convention as the project documentation. They are intentionally neutral so agents can copy the structure without copying domain-specific architecture.
+
+:::decision
+id: dec-starter-templates
+title: Maintain neutral starter templates for supported arc42 chapters
+status: accepted
+date: 2026-08-18
+addresses: qg-agent-writability, qg-readability, risk-template-drift
 :::
