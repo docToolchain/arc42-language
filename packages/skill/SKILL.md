@@ -1,6 +1,6 @@
 ---
 name: arc42-language
-description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, building block, actor, concept, decision, ADR, constraint, risk, glossary.
+description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, solution strategy, building block, actor, concept, decision, ADR, constraint, risk, glossary.
 allowed-tools: Bash(arc42:*)
 ---
 
@@ -53,6 +53,7 @@ implements: concept-logging, concept-error-handling
 | `quality-goal` | 1 | `id`, `title`, `priority` | `scenario` |
 | `constraint` | 2 | `id`, `title`, `category` | `source` |
 | `actor` | 3 | `id`, `title`, `type` | `description` |
+| `solution-strategy` | 4 | `id`, `title` | `addresses` |
 | `building-block` | 5 | `id`, `title` | `technology`, `parent`, `implements` |
 | `interface` | 5 | `id`, `title`, `between` | `protocol` |
 | `concept` | 8 | `id`, `title` | `category` |
@@ -77,6 +78,7 @@ implements: concept-logging, concept-error-handling
 | `implements` | `building-block` | one or more `concept` ids (comma-separated) |
 | `between` | `interface` | one `building-block` id and one `actor` id, or two `building-block` ids (comma-separated) |
 | `addresses` | `decision` | one or more `quality-goal`, `constraint`, or `risk` ids |
+| `addresses` | `solution-strategy` | one or more `quality-goal` ids |
 | `supersedes` | `decision` | another `decision` id |
 
 All referenced IDs must resolve to an existing element (rule E002). IDs are unique across the
@@ -85,7 +87,7 @@ entire workspace (all `*.arc42.md` files in the directory).
 ## Validation rules
 
 Run `arc42 rules` to see the full list of rules with rationale, grouped by chapter.
-Filter by chapter with `--chapter <0|1|2|3|5|8|9|11|12>`. Use `--format json` for machine-readable output.
+Filter by chapter with `--chapter <0|1|2|3|4|5|8|9|11|12>`. Use `--format json` for machine-readable output.
 
 Fix all errors before committing. Warnings should be resolved before merging. Hints are
 best-practice suggestions — address them when the context allows.

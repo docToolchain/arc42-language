@@ -6,10 +6,24 @@ describe("buildIndex", () => {
   test("byId contains all elements", () => {
     const ws: Workspace = {
       elements: [
-        { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: { file: "f", line: 1 } },
-        { kind: "decision", id: "d-1", title: "D", status: "accepted", addresses: ["qg-1"], loc: { file: "f", line: 5 } },
+        {
+          kind: "quality-goal",
+          id: "qg-1",
+          title: "Q",
+          priority: "high",
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "decision",
+          id: "d-1",
+          title: "D",
+          status: "accepted",
+          addresses: ["qg-1"],
+          loc: { file: "f", line: 5 },
+        },
       ],
       parseErrors: [],
+      documents: [],
     };
     const idx = buildIndex(ws);
     expect(idx.byId.has("qg-1")).toBe(true);
@@ -19,22 +33,69 @@ describe("buildIndex", () => {
   test("decision.addresses populates both refsFrom and refsTo", () => {
     const ws: Workspace = {
       elements: [
-        { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: { file: "f", line: 1 } },
-        { kind: "decision", id: "d-1", title: "D", status: "accepted", addresses: ["qg-1"], loc: { file: "f", line: 5 } },
+        {
+          kind: "quality-goal",
+          id: "qg-1",
+          title: "Q",
+          priority: "high",
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "decision",
+          id: "d-1",
+          title: "D",
+          status: "accepted",
+          addresses: ["qg-1"],
+          loc: { file: "f", line: 5 },
+        },
       ],
       parseErrors: [],
+      documents: [],
     };
     const idx = buildIndex(ws);
     expect(idx.refsFrom.get("d-1")).toContain("qg-1");
     expect(idx.refsTo.get("qg-1")).toContain("d-1");
   });
 
+  test("solution-strategy.addresses populates both refsFrom and refsTo", () => {
+    const ws: Workspace = {
+      elements: [
+        {
+          kind: "quality-goal",
+          id: "qg-1",
+          title: "Q",
+          priority: "high",
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "solution-strategy",
+          id: "strategy-1",
+          title: "Strategy",
+          addresses: ["qg-1"],
+          loc: { file: "f", line: 5 },
+        },
+      ],
+      parseErrors: [],
+      documents: [],
+    };
+    const idx = buildIndex(ws);
+    expect(idx.refsFrom.get("strategy-1")).toContain("qg-1");
+    expect(idx.refsTo.get("qg-1")).toContain("strategy-1");
+  });
+
   test("element with no references appears in byId but not refsFrom", () => {
     const ws: Workspace = {
       elements: [
-        { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: { file: "f", line: 1 } },
+        {
+          kind: "quality-goal",
+          id: "qg-1",
+          title: "Q",
+          priority: "high",
+          loc: { file: "f", line: 1 },
+        },
       ],
       parseErrors: [],
+      documents: [],
     };
     const idx = buildIndex(ws);
     expect(idx.byId.has("qg-1")).toBe(true);
@@ -44,11 +105,25 @@ describe("buildIndex", () => {
   test("building-block parent + implements both indexed", () => {
     const ws: Workspace = {
       elements: [
-        { kind: "building-block", id: "bb-child", title: "Child", parent: "bb-parent", implements: ["c-1"], loc: { file: "f", line: 1 } },
-        { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: { file: "f", line: 5 } },
+        {
+          kind: "building-block",
+          id: "bb-child",
+          title: "Child",
+          parent: "bb-parent",
+          implements: ["c-1"],
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "building-block",
+          id: "bb-parent",
+          title: "Parent",
+          implements: [],
+          loc: { file: "f", line: 5 },
+        },
         { kind: "concept", id: "c-1", title: "C", loc: { file: "f", line: 9 } },
       ],
       parseErrors: [],
+      documents: [],
     };
     const idx = buildIndex(ws);
     expect(idx.refsFrom.get("bb-child")).toContain("bb-parent");

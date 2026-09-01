@@ -12,6 +12,7 @@ import { e003CircularParent } from "./e003-circular-parent.ts";
 import { e004InterfaceBetweenNonBlock } from "./e004-interface-between-non-block.ts";
 import { e005ParseError } from "./e005-parse-error.ts";
 import { e006SupersededDecisionNoSupersedes } from "./e006-superseded-decision-no-supersedes.ts";
+import { e007MultipleSolutionStrategies } from "./e007-multiple-solution-strategies.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
@@ -29,36 +30,41 @@ import { h005ConceptsNeverImplemented } from "./h005-concepts-never-implemented.
 import { h006ConstraintUnaddressed } from "./h006-constraint-unaddressed.ts";
 import { h007RiskUnaddressed } from "./h007-risk-unaddressed.ts";
 import { h008ActorNoInterface } from "./h008-actor-no-interface.ts";
+import { h009SolutionStrategyNoAddresses } from "./h009-solution-strategy-no-addresses.ts";
+import { h010QualityGoalUnaddressedBySolutionStrategy } from "./h010-quality-goal-unaddressed-by-solution-strategy.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
-  e005ParseError,                       // All chapters (parse errors)
-  e001DuplicateId,                      // All chapters
-  e002UnresolvedReference,              // All chapters
-  e003CircularParent,                   // Chapter 5
-  e004InterfaceBetweenNonBlock,         // Chapter 5
-  e006SupersededDecisionNoSupersedes,   // Chapter 9
+  e005ParseError, // All chapters (parse errors)
+  e001DuplicateId, // All chapters
+  e002UnresolvedReference, // All chapters
+  e003CircularParent, // Chapter 5
+  e004InterfaceBetweenNonBlock, // Chapter 5
+  e006SupersededDecisionNoSupersedes, // Chapter 9
+  e007MultipleSolutionStrategies, // Chapter 4
 
   // Warnings — inconsistencies
-  w001ConceptNotImplemented,            // Chapter 8
-  w002IsolatedBuildingBlock,            // Chapter 5
-  w003StaleProposedDecision,            // Chapter 9
-  w004BlockWithoutProse,                // All chapters
-  w005MultipleBlocksUnderHeading,       // All chapters
-  w006TooFewQualityGoals,               // Chapter 1
-  w007TooManyQualityGoals,              // Chapter 1
-  w008DecisionNoDate,                   // Chapter 9
-  w009RiskNoMitigation,                 // Chapter 11
+  w001ConceptNotImplemented, // Chapter 8
+  w002IsolatedBuildingBlock, // Chapter 5
+  w003StaleProposedDecision, // Chapter 9
+  w004BlockWithoutProse, // All chapters
+  w005MultipleBlocksUnderHeading, // All chapters
+  w006TooFewQualityGoals, // Chapter 1
+  w007TooManyQualityGoals, // Chapter 1
+  w008DecisionNoDate, // Chapter 9
+  w009RiskNoMitigation, // Chapter 11
 
   // Hints — best practices
-  h001DecisionNoAddresses,              // Chapter 9
-  h002QualityGoalUnaddressed,           // Chapter 1
-  h003BuildingBlockNoTechnology,        // Chapter 5
+  h001DecisionNoAddresses, // Chapter 9
+  h002QualityGoalUnaddressed, // Chapter 1
+  h003BuildingBlockNoTechnology, // Chapter 5
   h004BuildingBlockUnreferencedByInterface, // Chapter 5
-  h005ConceptsNeverImplemented,         // Chapter 8
-  h006ConstraintUnaddressed,            // Chapter 2
-  h007RiskUnaddressed,                  // Chapter 11
-  h008ActorNoInterface,                 // Chapter 3
+  h005ConceptsNeverImplemented, // Chapter 8
+  h006ConstraintUnaddressed, // Chapter 2
+  h007RiskUnaddressed, // Chapter 11
+  h008ActorNoInterface, // Chapter 3
+  h009SolutionStrategyNoAddresses, // Chapter 4
+  h010QualityGoalUnaddressedBySolutionStrategy, // Chapter 1
 ];
 
 /** All rules indexed by code for O(1) lookup */

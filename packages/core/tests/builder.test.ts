@@ -26,9 +26,7 @@ function doc(content: string): DocumentAst {
 
 describe("buildWorkspace", () => {
   test("valid quality-goal → correct element", () => {
-    const ws = buildWorkspace([
-      doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high"),
-    ]);
+    const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high")]);
     expect(ws.elements).toHaveLength(1);
     const el = ws.elements[0]!;
     expect(el.kind).toBe("quality-goal");
@@ -51,25 +49,19 @@ describe("buildWorkspace", () => {
   });
 
   test("interface.between with 3 items → ParseError", () => {
-    const ws = buildWorkspace([
-      doc("interface\nid: i-1\ntitle: I\nbetween: a, b, c"),
-    ]);
+    const ws = buildWorkspace([doc("interface\nid: i-1\ntitle: I\nbetween: a, b, c")]);
     expect(ws.elements).toHaveLength(0);
     expect(ws.parseErrors[0]!.message).toMatch(/between.*exactly 2/);
   });
 
   test("invalid priority → ParseError", () => {
-    const ws = buildWorkspace([
-      doc("quality-goal\nid: qg-1\ntitle: P\npriority: critical"),
-    ]);
+    const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: P\npriority: critical")]);
     expect(ws.elements).toHaveLength(0);
     expect(ws.parseErrors[0]!.message).toMatch(/priority/);
   });
 
   test("building-block implements parsed as array", () => {
-    const ws = buildWorkspace([
-      doc("building-block\nid: bb-1\ntitle: X\nimplements: c-a, c-b"),
-    ]);
+    const ws = buildWorkspace([doc("building-block\nid: bb-1\ntitle: X\nimplements: c-a, c-b")]);
     const el = ws.elements[0]!;
     if (el.kind !== "building-block") throw new Error();
     expect(el.implements).toEqual(["c-a", "c-b"]);
@@ -82,6 +74,30 @@ describe("buildWorkspace", () => {
     const el = ws.elements[0]!;
     if (el.kind !== "decision") throw new Error();
     expect(el.addresses).toEqual(["qg-1", "qg-2"]);
+  });
+
+  test("solution strategy parses addresses and empty addresses", () => {
+    const ws = buildWorkspace([
+      doc("solution-strategy\nid: strategy-1\ntitle: Layered architecture\naddresses: qg-1, qg-2"),
+      doc("solution-strategy\nid: strategy-2\ntitle: Unlinked strategy\naddresses:   "),
+    ]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements).toHaveLength(2);
+    const first = ws.elements[0]!;
+    const second = ws.elements[1]!;
+    if (first.kind !== "solution-strategy" || second.kind !== "solution-strategy")
+      throw new Error();
+    expect(first.addresses).toEqual(["qg-1", "qg-2"]);
+    expect(second.addresses).toEqual([]);
+  });
+
+  test("solution strategy still requires id and title", () => {
+    const missingId = buildWorkspace([doc("solution-strategy\ntitle: Strategy")]);
+    const missingTitle = buildWorkspace([doc("solution-strategy\nid: strategy-1")]);
+    expect(missingId.elements).toHaveLength(0);
+    expect(missingId.parseErrors[0]!.message).toMatch(/id/);
+    expect(missingTitle.elements).toHaveLength(0);
+    expect(missingTitle.parseErrors[0]!.message).toMatch(/title/);
   });
 
   test("valid actor → correct element with type and description", () => {
@@ -99,26 +115,20 @@ describe("buildWorkspace", () => {
   });
 
   test("actor without type → ParseError (type is required)", () => {
-    const ws = buildWorkspace([
-      doc("actor\nid: actor-1\ntitle: External Service"),
-    ]);
+    const ws = buildWorkspace([doc("actor\nid: actor-1\ntitle: External Service")]);
     expect(ws.elements).toHaveLength(0);
     expect(ws.parseErrors[0]!.message).toMatch(/type.*actor/i);
   });
 
   test("actor with system type → correct enum value", () => {
-    const ws = buildWorkspace([
-      doc("actor\nid: actor-2\ntitle: Payment API\ntype: system"),
-    ]);
+    const ws = buildWorkspace([doc("actor\nid: actor-2\ntitle: Payment API\ntype: system")]);
     const el = ws.elements[0]!;
     if (el.kind !== "actor") throw new Error();
     expect(el.type).toBe("system");
   });
 
   test("actor with invalid type enum → ParseError", () => {
-    const ws = buildWorkspace([
-      doc("actor\nid: actor-1\ntitle: X\ntype: external-system"),
-    ]);
+    const ws = buildWorkspace([doc("actor\nid: actor-1\ntitle: X\ntype: external-system")]);
     expect(ws.elements).toHaveLength(0);
     expect(ws.parseErrors[0]!.message).toMatch(/type.*actor.*person.*system/i);
   });

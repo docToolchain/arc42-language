@@ -13,6 +13,7 @@ const BLOCK_TYPES: BlockType[] = [
   "quality-goal",
   "constraint",
   "actor",
+  "solution-strategy",
   "building-block",
   "interface",
   "concept",
@@ -26,13 +27,14 @@ function isBlockType(s: string): s is BlockType {
 }
 
 const CHAPTER_NAMES: Record<number, string> = {
-  0:  "Document Structure",
-  1:  "Quality Goals",
-  2:  "Constraints",
-  3:  "System Scope and Context",
-  5:  "Building Blocks",
-  8:  "Cross-cutting Concepts",
-  9:  "Architecture Decisions",
+  0: "Document Structure",
+  1: "Quality Goals",
+  2: "Constraints",
+  3: "System Scope and Context",
+  4: "Solution Strategy",
+  5: "Building Blocks",
+  8: "Cross-cutting Concepts",
+  9: "Architecture Decisions",
   11: "Risks and Technical Debt",
   12: "Glossary",
 };
@@ -100,7 +102,7 @@ function printHelp() {
 Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
-  arc42 [--dir <path>] rules [--chapter <0|1|2|3|5|8|9|11|12>] [--format json|text]
+  arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|8|9|11|12>] [--format json|text]
 
 Global options:
   --dir <path>   Workspace root (default: $ARC42_DIR or cwd)
@@ -183,7 +185,9 @@ async function runGet(dir: string, args: string[]) {
 
   const renderer = rendererById.get(format);
   if (!renderer) {
-    console.error(`Unknown --format '${format}'. Available: ${builtinGetRenderers.map((r) => r.meta.id).join(", ")}`);
+    console.error(
+      `Unknown --format '${format}'. Available: ${builtinGetRenderers.map((r) => r.meta.id).join(", ")}`,
+    );
     process.exit(2);
   }
 
@@ -231,7 +235,13 @@ function runRules(args: string[]) {
   }
 
   if (format === "json") {
-    console.log(JSON.stringify(rules.map((r) => r.meta), null, 2));
+    console.log(
+      JSON.stringify(
+        rules.map((r) => r.meta),
+        null,
+        2,
+      ),
+    );
     process.exit(0);
   }
 

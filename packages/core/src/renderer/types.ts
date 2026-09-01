@@ -13,9 +13,9 @@
 
 import type {
   Element,
-  Workspace,
   QualityGoal,
   Actor,
+  SolutionStrategy,
   Constraint,
   BuildingBlock,
   Interface,
@@ -24,7 +24,6 @@ import type {
   Risk,
   GlossaryTerm,
 } from "../model/types.ts";
-import type { ReferenceIndex } from "../resolver/types.ts";
 import type { BlockType } from "../ast.ts";
 
 // ---------------------------------------------------------------------------
@@ -125,12 +124,17 @@ export interface GetRenderer {
  */
 export interface ElementRenderers {
   "quality-goal": (el: QualityGoal, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
-  "actor": (el: Actor, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
-  "constraint": (el: Constraint, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  actor: (el: Actor, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  "solution-strategy": (
+    el: SolutionStrategy,
+    refsFrom: ResolvedRef[],
+    refsTo: ResolvedRef[],
+  ) => string;
+  constraint: (el: Constraint, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
   "building-block": (el: BuildingBlock, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
-  "interface": (el: Interface, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
-  "concept": (el: Concept, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
-  "decision": (el: Decision, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
-  "risk": (el: Risk, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  interface: (el: Interface, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  concept: (el: Concept, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  decision: (el: Decision, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  risk: (el: Risk, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
   "glossary-term": (el: GlossaryTerm, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
 }

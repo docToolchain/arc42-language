@@ -4,9 +4,7 @@ import type { BlockNode, HeadingNode, ProseNode } from "../src/ast.ts";
 
 // Helpers
 function blocks(md: string) {
-  return parseMarkdown("test.arc42.md", md).nodes.filter(
-    (n): n is BlockNode => n.kind === "block",
-  );
+  return parseMarkdown("test.arc42.md", md).nodes.filter((n): n is BlockNode => n.kind === "block");
 }
 function headings(md: string) {
   return parseMarkdown("test.arc42.md", md).nodes.filter(
@@ -14,9 +12,7 @@ function headings(md: string) {
   );
 }
 function prose(md: string) {
-  return parseMarkdown("test.arc42.md", md).nodes.filter(
-    (n): n is ProseNode => n.kind === "prose",
-  );
+  return parseMarkdown("test.arc42.md", md).nodes.filter((n): n is ProseNode => n.kind === "prose");
 }
 
 describe("parser — basic structure", () => {

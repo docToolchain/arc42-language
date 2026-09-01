@@ -1,6 +1,18 @@
-import type { GetRenderer, GetResult, WorkspaceView, ElementView, ResolvedRef } from "./types.ts";
-import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
-import type { Element, QualityGoal, Actor, BuildingBlock, Interface, Concept, Decision, Constraint, Risk, GlossaryTerm } from "../model/types.ts";
+import type { GetRenderer, GetResult, WorkspaceView, ElementView } from "./types.ts";
+import { ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
+import type {
+  Element,
+  QualityGoal,
+  Actor,
+  SolutionStrategy,
+  BuildingBlock,
+  Interface,
+  Concept,
+  Decision,
+  Constraint,
+  Risk,
+  GlossaryTerm,
+} from "../model/types.ts";
 
 export class TextGetRenderer implements GetRenderer {
   meta = {
@@ -66,6 +78,8 @@ export class TextGetRenderer implements GetRenderer {
         return this.renderConstraint(el);
       case "actor":
         return this.renderActor(el);
+      case "solution-strategy":
+        return this.renderSolutionStrategy(el);
       case "building-block":
         return this.renderBuildingBlock(el);
       case "interface":
@@ -102,6 +116,14 @@ export class TextGetRenderer implements GetRenderer {
       line += `  — ${el.description}`;
     }
     return line;
+  }
+
+  private renderSolutionStrategy(el: SolutionStrategy): string {
+    const lines = [`  ${el.id}  ${el.title}`];
+    if (el.addresses.length > 0) {
+      lines.push(`    addresses: ${el.addresses.join(", ")}`);
+    }
+    return lines.join("\n");
   }
 
   private renderBuildingBlock(el: BuildingBlock): string {
@@ -204,6 +226,9 @@ export class TextGetRenderer implements GetRenderer {
       case "actor":
         lines.push(`  type: ${el.type}`);
         if (el.description) lines.push(`  description: ${el.description}`);
+        break;
+      case "solution-strategy":
+        if (el.addresses.length > 0) lines.push(`  addresses: ${el.addresses.join(", ")}`);
         break;
       case "building-block":
         if (el.technology) lines.push(`  technology: ${el.technology}`);

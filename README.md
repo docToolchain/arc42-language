@@ -23,7 +23,7 @@ Machine-verifiable second — a CLI validates consistency and coherence across a
 ### What this gives you
 
 - Write architecture documentation in plain Markdown (`.arc42.md` files)
-- Embed structured elements — quality goals, building blocks, interfaces, concepts, decisions — as typed blocks alongside narrative prose
+- Embed structured elements — quality goals, solution strategy, building blocks, interfaces, concepts, decisions — as typed blocks alongside narrative prose
 - Validate that your architecture model is internally consistent: no broken references, no isolated components, no unaddressed quality goals, no forgotten proposed decisions
 - Query the model from the command line or pipe JSON into other tools
 
@@ -45,11 +45,12 @@ implements: concept-logging, concept-error-handling
 :::
 ```
 
-Five block types cover arc42 sections 1, 5, 8, and 9:
+The block types cover arc42 sections 1 through 5, 8, and 9:
 
 | Block | Section | Required attributes |
 |-------|---------|---------------------|
 | `:::quality-goal` | 1 — Quality Goals | `id`, `title`, `priority` (high\|medium\|low) |
+| `:::solution-strategy` | 4 — Solution Strategy (one per workspace) | `id`, `title` |
 | `:::building-block` | 5 — Building Blocks | `id`, `title` |
 | `:::interface` | 5 — Building Blocks | `id`, `title`, `between` (two building-block ids) |
 | `:::concept` | 8 — Cross-cutting Concepts | `id`, `title` |
@@ -89,7 +90,7 @@ The validator enforces built-in rules across four categories. Run `arc42 rules` 
 
 - **Errors** (broken model): duplicate ids, unresolved references, circular parent chains, interface pointing at non-building-blocks, missing required attributes
 - **Warnings** (inconsistencies): orphaned concepts, isolated building-blocks, stale proposed decisions, blocks without prose, multiple blocks under one heading
-- **Hints** (gaps): decisions without quality goal links, quality goals without decisions, building-blocks without a technology
+- **Hints** (gaps): decisions or solution strategies without quality-goal links, quality goals without decisions or a solution strategy, building-blocks without a technology
 
 ### AI agent use
 
