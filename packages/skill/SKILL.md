@@ -80,44 +80,16 @@ implements: concept-logging, concept-error-handling
 All referenced IDs must resolve to an existing element (rule E002). IDs are unique across the
 entire workspace (all `*.arc42.md` files in the directory).
 
-## Validation rules summary
+## Validation rules
 
-### Errors (E) — fix before committing
+Run `arc42 rules` to see the full list of rules with rationale, grouped by chapter.
+Filter by chapter with `--chapter <0|1|2|5|8|9|11|12>`. Use `--format json` for machine-readable output.
 
-| Code | What it checks |
-|------|---------------|
-| E001 | Duplicate element id |
-| E002 | Unresolved cross-reference |
-| E003 | Circular parent chain in building blocks |
-| E004 | Interface `between` references a non-building-block id |
-| E005 | Parse error (unknown block type, missing required field, invalid enum value) |
-| E006 | Decision carries `supersedes` but the referenced decision does not have `status: superseded` |
+Fix all errors before committing. Warnings should be resolved before merging. Hints are
+best-practice suggestions — address them when the context allows.
 
-### Warnings (W) — should fix
-
-| Code | What it checks |
-|------|---------------|
-| W001 | Concept has no building block implementing it |
-| W002 | Leaf building block (with a parent) is isolated (no interfaces in or out) |
-| W003 | Decision has been `proposed` for more than 90 days |
-| W004 | Block has no prose paragraph above it |
-| W005 | Multiple blocks under the same `##` heading |
-| W006 | Fewer than 3 quality goals (arc42 recommends 3–5) |
-| W007 | More than 5 quality goals (arc42 recommends 3–5) |
-| W008 | Decision has no `date` field |
-| W009 | Risk has no `mitigation` field |
-
-### Hints (H) — best-practice suggestions
-
-| Code | What it checks |
-|------|---------------|
-| H001 | Decision has no `addresses` field |
-| H002 | Quality goal is not addressed by any decision |
-| H003 | Building block has no `technology` field |
-| H004 | Root building block is not referenced by any interface (workspace-level; leaf blocks checked by W002) |
-| H005 | Workspace-level: workspace has concepts but no building block uses `implements` at all |
-| H006 | Constraint is not addressed by any decision |
-| H007 | Risk is not addressed by any decision |
+If you are unsure what a rule requires, run `arc42 rules` for the full rationale.
+If you are unsure what already exists, run `arc42 get` or `arc42 get <id>`.
 
 ## Starter templates
 
@@ -142,6 +114,3 @@ system's specifics, and run `arc42 validate` to confirm 0 errors.
 After any change to the system — adding a component, making a technology decision,
 introducing a cross-cutting concern — update or add the relevant arc42 elements and
 run `arc42 validate` to confirm 0 errors.
-
-If you are unsure what a rule requires, run `arc42 rules` for the full rationale.
-If you are unsure what already exists, run `arc42 get` or `arc42 get <id>`.
