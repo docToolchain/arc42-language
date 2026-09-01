@@ -93,20 +93,17 @@ If you are unsure what already exists, run `arc42 get` or `arc42 get <id>`.
 
 ## Starter templates
 
-`templates/starter/` contains ready-to-use files for each chapter:
+`templates/starter/` contains ready-to-use files for each chapter. Each file is a blank
+template with HTML comments (`<!-- ... -->`) explaining what to write and showing a DSL
+block example. The comments are ignored by the parser and validator — they are authoring
+guidance only, not part of the document.
 
-| File | Chapter |
-|------|---------|
-| `01-quality-goals.arc42.md` | Chapter 1 — Quality Goals |
-| `02-constraints.arc42.md` | Chapter 2 — Constraints |
-| `05-building-blocks.arc42.md` | Chapter 5 — Building Blocks + Interfaces |
-| `08-concepts.arc42.md` | Chapter 8 — Cross-cutting Concepts |
-| `09-decisions.arc42.md` | Chapter 9 — Architecture Decisions |
-| `11-risks.arc42.md` | Chapter 11 — Risks and Technical Debt |
-| `12-glossary.arc42.md` | Chapter 12 — Glossary |
-
-Copy the relevant files into your workspace directory, replace placeholder content with your
-system's specifics, and run `arc42 validate` to confirm 0 errors.
+To use a template:
+1. Copy the relevant file(s) into your workspace directory
+2. Read the HTML comment at the top of each file — it explains the arc42 intent for that chapter
+3. Add `##` sections with your actual content, following the example in the comment
+4. Remove the comment block once you no longer need the guidance
+5. Run `arc42 validate` to confirm 0 errors
 
 ## Your responsibility
 

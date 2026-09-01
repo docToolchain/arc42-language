@@ -1,60 +1,61 @@
 # Architecture Decisions
 
-Arc42 chapter 9: document the significant architecture decisions as Architecture Decision Records (ADRs).
-Each decision captures a choice, the status it is in, the date it was made, and the quality goals
-or constraints it addresses. Decisions can also supersede earlier decisions when the team revisits
-and changes course.
+<!--
+Arc42 chapter 9. Document the significant architecture decisions as Architecture Decision
+Records (ADRs). Capture any choice that was expensive, risky, or that future maintainers
+will wonder about.
 
-Status values: `proposed` (under discussion), `accepted` (in force), `deprecated` (no longer
-recommended but not replaced), `superseded` (replaced by another decision).
+Avoid redundancy with section 4 (solution strategy) — refer to it for the highest-level
+choices and use this chapter for detail and rationale.
 
-## Use Kubernetes for All Deployments
+For each decision, write a ## section with a prose paragraph explaining the context,
+the alternatives considered, and the rationale for the chosen option, followed by a DSL block.
+Document rejected alternatives so future readers understand what was considered.
 
-The team evaluated bare-metal, VM-based, and container-orchestrated deployments.
-Kubernetes was selected because it matches the existing infrastructure investment and satisfies
-the deployment platform constraint. It provides declarative rollout, self-healing, and
-horizontal autoscaling without requiring a proprietary runtime.
+Status values:
+  proposed   — under discussion, not yet in force
+  accepted   — in force
+  deprecated — no longer recommended but not yet replaced
+  superseded — replaced by another decision
 
-The `addresses` field links this decision to the quality goals and constraints it responds to.
-Use IDs from `01-quality-goals.arc42.md` and `02-constraints.arc42.md`.
-The `date` field should be ISO 8601 (YYYY-MM-DD) — it enables the W003 staleness check.
+When a new decision replaces an old one, set status: superseded on the old decision
+and add supersedes: <old-id> on the new decision.
+
+The `date` field should be ISO 8601 (YYYY-MM-DD).
+The `addresses` field links to quality goals and constraints this decision responds to.
+
+See https://docs.arc42.org/section-9/ for further guidance.
+
+Example:
+
+## Stateless Token Authentication
+
+The team evaluated session-based (server-side store) and token-based (stateless) authentication.
+Stateless tokens were chosen to avoid a shared session store that would introduce a single point
+of failure and complicate horizontal scaling.
 
 :::decision
-id: dec-kubernetes
-title: Use Kubernetes for All Deployments
+id: dec-auth-stateless
+title: Stateless Token Authentication
 status: accepted
-date: 2025-06-15
-addresses: con-kubernetes, qg-performance
-:::
-
-## Stateless JWT Authentication
-
-The team considered session-based authentication (server-side session store) and token-based
-authentication (stateless JWT). Stateless JWT was selected to avoid a shared session store that
-would become a single point of failure and a horizontal scaling bottleneck.
-
-:::decision
-id: dec-auth-jwt
-title: Stateless JWT Authentication
-status: superseded
 date: 2025-07-01
-addresses: qg-security, qg-performance, con-data-residency
+addresses: qg-security, qg-performance
 :::
 
-## Opaque Token Authentication
-
-After a security review, the team moved away from self-signed JWTs to short-lived opaque tokens
-issued by a central authorization service. This reduces the risk of token forgery and simplifies
-key rotation.
-
-The `supersedes` field on the *new* decision points to the decision it replaces (rule E006
-checks that the referenced decision has `status: superseded`).
+To supersede a decision, mark the old one and point to it from the new one:
 
 :::decision
-id: dec-auth-opaque-token
-title: Opaque Token Authentication
+id: dec-auth-old
+title: Session-based Authentication
+status: superseded
+date: 2024-01-15
+:::
+
+:::decision
+id: dec-auth-new
+title: OAuth2 Token Authentication
 status: accepted
 date: 2025-09-01
-addresses: qg-security, con-data-residency
-supersedes: dec-auth-jwt
+supersedes: dec-auth-old
 :::
+-->

@@ -1,46 +1,38 @@
 # Cross-cutting Concepts
 
-Arc42 chapter 8: document the cross-cutting concerns that apply consistently across multiple
-building blocks. Each concept captures a design decision, pattern, or technology that cuts
-across component boundaries. Building blocks reference concepts via the `implements` field,
-making coverage explicit and machine-verifiable.
+<!--
+Arc42 chapter 8. Document the cross-cutting concerns, patterns, and principles that apply
+consistently across multiple building blocks. Concepts form the basis for conceptual integrity —
+the consistency and homogeneity of your architecture.
 
-## Authentication and Authorisation
+A concept is anything that cuts across component boundaries: security patterns, error handling
+strategies, logging conventions, persistence approaches, messaging patterns, deployment
+conventions, testing strategies, and so on.
 
-All write endpoints require a valid JWT bearer token. Services validate tokens locally
-using a shared public key — no service calls the auth service at request time.
-This keeps validation stateless, low-latency, and resilient to auth service downtime.
+Do not attempt to cover every possible topic. Pick only the concepts that are architecturally
+significant for your system — those that building blocks must implement consistently, and where
+a central description is more useful than repeating the same text in each building block.
 
-The `category` field groups concepts into themes that can be filtered with `arc42 get`.
-Common values include `security`, `observability`, `error-handling`, `persistence`,
-`messaging`, `deployment`. Choose a value that matches your team's vocabulary.
+For each concept, write a ## section with a prose paragraph describing the concept, the
+decision behind it, and its implications for the building blocks that must implement it,
+followed by a DSL block.
 
-:::concept
-id: concept-auth
-title: Authentication and Authorisation
-category: security
-:::
+Building blocks reference concepts via the `implements` field in chapter 5, making coverage
+explicit and verifiable.
+
+See https://docs.arc42.org/section-8/ for further guidance.
+
+Example:
 
 ## Structured Logging
 
-Every service emits structured JSON log entries including `traceId`, `service`, `duration`,
-`outcome`, and `timestamp`. The `traceId` is propagated via the `X-Trace-Id` HTTP header
-and is copied from incoming requests to all outbound calls and log entries.
+Every service emits structured JSON log entries including traceId, service, duration,
+outcome, and timestamp. The traceId is propagated via the X-Trace-Id HTTP header
+and copied to all outbound calls and log entries.
 
 :::concept
 id: concept-logging
 title: Structured Logging
 category: observability
 :::
-
-## Error Handling
-
-All services return RFC 7807 `problem+json` error responses. Unexpected exceptions are caught
-at the framework middleware layer, logged with full context, and returned as HTTP 500 with a
-correlation id. Business errors are 4xx responses with a machine-readable `type` URI field.
-
-:::concept
-id: concept-error-handling
-title: Error Handling
-category: error-handling
-:::
+-->

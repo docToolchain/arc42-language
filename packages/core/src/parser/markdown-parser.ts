@@ -18,9 +18,32 @@ export function parseMarkdown(
     startLine: number;
   } | null = null;
 
+  let inHtmlComment = false;
+
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1; // 1-indexed
     const line = lines[i]!;
+
+    // Track HTML comment blocks (<!-- ... -->) and skip their contents.
+    // This allows template guidance to include example :::blocks without them being parsed.
+    // Handle both single-line (<!-- foo -->) and multi-line comments.
+    if (!inHtmlComment) {
+      const openIdx = line.indexOf("<!--");
+      if (openIdx !== -1) {
+        const closeIdx = line.indexOf("-->", openIdx + 4);
+        if (closeIdx === -1) {
+          // Opens but does not close on this line — enter comment mode
+          inHtmlComment = true;
+        }
+        // Skip this line regardless (comment open on this line)
+        continue;
+      }
+    } else {
+      if (line.includes("-->")) {
+        inHtmlComment = false;
+      }
+      continue;
+    }
 
     if (openBlock !== null) {
       // Closing fence: ::: optionally followed only by whitespace

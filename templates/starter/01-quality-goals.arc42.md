@@ -1,48 +1,36 @@
 # Quality Goals
 
-Arc42 chapter 1: capture the top 3–5 quality goals that drive the architecture.
-Quality goals are the non-functional requirements that constrain and shape every significant
-architectural decision. Each goal gets its own section with a brief explanation of why it matters
-and a DSL block that makes it machine-readable.
+<!--
+Arc42 chapter 1. Capture the top three to five quality goals that drive the architecture.
+Quality goals are non-functional requirements whose fulfilment is of highest importance to
+your major stakeholders. They are not project goals — they describe properties the running
+system must exhibit.
+
+Focus on what matters most: if you had to choose between conflicting requirements, these
+goals tell you which wins. Base them on ISO 25010 characteristics: performance efficiency,
+reliability, security, maintainability, usability, portability, compatibility.
+
+Make each goal concrete and testable. A vague goal like "the system should be fast" gives
+architects no guidance. A scenario that names a stimulus, a response, and a measurable
+threshold is far more useful.
+
+For each goal, write a ## section with a prose paragraph explaining why this quality
+matters for your system and which stakeholders care about it, followed by a DSL block.
+
+See https://docs.arc42.org/section-1/ for further guidance.
+
+Example:
 
 ## Performance
 
-The system must respond to user-facing requests within the time budget expected at peak load.
-This goal drives caching, async processing, and service decomposition decisions.
-
-Priority is `high` — performance is required, not aspirational. The `scenario` field holds an
-example scenario in quality-attribute-scenario format (stimulus → response → measure). Use the
-`addresses` field on a decision to link back to this goal.
+The system must handle peak load without degrading the user experience.
+Response time directly affects user retention and is a contractual obligation
+with our enterprise customers.
 
 :::quality-goal
 id: qg-performance
 title: Performance
 priority: high
-scenario: Under peak load (1000 concurrent users) the p95 response time for user-facing operations stays below 500ms
+scenario: Under peak load (1000 concurrent users) the p95 response time stays below 500ms
 :::
-
-## Modifiability
-
-Individual components can be changed or replaced without cascading impact across the system.
-This goal drives the use of well-defined interfaces and the single-responsibility principle.
-
-Priority is `medium` — important but not the primary constraint shaping day-to-day decisions.
-
-:::quality-goal
-id: qg-modifiability
-title: Modifiability
-priority: medium
-scenario: A developer can change the persistence layer of a single service and deploy it within one working day without touching other services
-:::
-
-## Security
-
-The system protects user data and prevents unauthorised access to write operations.
-This goal drives authentication, authorisation, and data-at-rest encryption decisions.
-
-:::quality-goal
-id: qg-security
-title: Security
-priority: high
-scenario: All write endpoints reject requests without a valid auth token; token validation completes in under 5ms without network calls
-:::
+-->
