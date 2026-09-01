@@ -15,6 +15,7 @@ export interface SourceLocation {
  * Chapter mapping:
  *   1 — Quality Goals
  *   2 — Constraints
+ *   3 — System Scope and Context
  *   5 — Building Blocks (includes interfaces)
  *   8 — Cross-cutting Concepts
  *   9 — Architecture Decisions
@@ -24,6 +25,7 @@ export interface SourceLocation {
 export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
   "quality-goal",    // arc42 ch. 1
   "constraint",      // arc42 ch. 2
+  "actor",           // arc42 ch. 3
   "building-block",  // arc42 ch. 5
   "interface",       // arc42 ch. 5
   "concept",         // arc42 ch. 8
@@ -36,6 +38,7 @@ export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
 export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = {
   "quality-goal":   1,
   "constraint":     2,
+  "actor":          3,
   "building-block": 5,
   "interface":      5,
   "concept":        8,
@@ -48,6 +51,7 @@ export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = {
 export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
   1:  "Quality Goals",
   2:  "Constraints",
+  3:  "System Scope and Context",
   5:  "Building Blocks",
   8:  "Cross-cutting Concepts",
   9:  "Architecture Decisions",
@@ -61,6 +65,15 @@ export interface QualityGoal {
   title: string;
   priority: "high" | "medium" | "low";
   scenario?: string;
+  loc: SourceLocation;
+}
+
+export interface Actor {
+  kind: "actor";
+  id: string;
+  title: string;
+  type: "person" | "system";
+  description?: string;
   loc: SourceLocation;
 }
 
@@ -131,6 +144,7 @@ export interface GlossaryTerm {
 export type Element =
   | QualityGoal
   | Constraint
+  | Actor
   | BuildingBlock
   | Interface
   | Concept

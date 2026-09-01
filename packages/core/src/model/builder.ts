@@ -4,6 +4,7 @@ import type {
   Element,
   ParseError,
   QualityGoal,
+  Actor,
   BuildingBlock,
   Interface,
   Concept,
@@ -16,6 +17,7 @@ import type {
 const KNOWN_BLOCK_TYPES = new Set([
   "quality-goal",
   "constraint",
+  "actor",
   "building-block",
   "interface",
   "concept",
@@ -81,6 +83,26 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(qg);
+
+      } else if (blockType === "actor") {
+        const typeRaw = attributes["type"];
+        if (!typeRaw) {
+          parseErrors.push({ message: "Missing required attribute 'type' on actor — must be person | system", file, line: startLine });
+          continue;
+        }
+        if (!["person", "system"].includes(typeRaw)) {
+          parseErrors.push({ message: `Invalid type '${typeRaw}' on actor — must be person | system`, file, line: startLine });
+          continue;
+        }
+        const actor: Actor = {
+          kind: "actor",
+          id,
+          title,
+          type: typeRaw as Actor["type"],
+          description: attributes["description"] || undefined,
+          loc,
+        };
+        elements.push(actor);
 
       } else if (blockType === "building-block") {
         const bb: BuildingBlock = {

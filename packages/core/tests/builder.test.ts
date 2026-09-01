@@ -83,4 +83,43 @@ describe("buildWorkspace", () => {
     if (el.kind !== "decision") throw new Error();
     expect(el.addresses).toEqual(["qg-1", "qg-2"]);
   });
+
+  test("valid actor → correct element with type and description", () => {
+    const ws = buildWorkspace([
+      doc("actor\nid: actor-1\ntitle: End User\ntype: person\ndescription: Primary human user"),
+    ]);
+    expect(ws.elements).toHaveLength(1);
+    const el = ws.elements[0]!;
+    expect(el.kind).toBe("actor");
+    if (el.kind !== "actor") throw new Error();
+    expect(el.id).toBe("actor-1");
+    expect(el.title).toBe("End User");
+    expect(el.type).toBe("person");
+    expect(el.description).toBe("Primary human user");
+  });
+
+  test("actor without type → ParseError (type is required)", () => {
+    const ws = buildWorkspace([
+      doc("actor\nid: actor-1\ntitle: External Service"),
+    ]);
+    expect(ws.elements).toHaveLength(0);
+    expect(ws.parseErrors[0]!.message).toMatch(/type.*actor/i);
+  });
+
+  test("actor with system type → correct enum value", () => {
+    const ws = buildWorkspace([
+      doc("actor\nid: actor-2\ntitle: Payment API\ntype: system"),
+    ]);
+    const el = ws.elements[0]!;
+    if (el.kind !== "actor") throw new Error();
+    expect(el.type).toBe("system");
+  });
+
+  test("actor with invalid type enum → ParseError", () => {
+    const ws = buildWorkspace([
+      doc("actor\nid: actor-1\ntitle: X\ntype: external-system"),
+    ]);
+    expect(ws.elements).toHaveLength(0);
+    expect(ws.parseErrors[0]!.message).toMatch(/type.*actor.*person.*system/i);
+  });
 });

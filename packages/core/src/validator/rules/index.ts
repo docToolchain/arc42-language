@@ -28,6 +28,7 @@ import { h004BuildingBlockUnreferencedByInterface } from "./h004-building-block-
 import { h005ConceptsNeverImplemented } from "./h005-concepts-never-implemented.ts";
 import { h006ConstraintUnaddressed } from "./h006-constraint-unaddressed.ts";
 import { h007RiskUnaddressed } from "./h007-risk-unaddressed.ts";
+import { h008ActorNoInterface } from "./h008-actor-no-interface.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -57,6 +58,7 @@ export const builtinRules: readonly Rule[] = [
   h005ConceptsNeverImplemented,         // Chapter 8
   h006ConstraintUnaddressed,            // Chapter 2
   h007RiskUnaddressed,                  // Chapter 11
+  h008ActorNoInterface,                 // Chapter 3
 ];
 
 /** All rules indexed by code for O(1) lookup */

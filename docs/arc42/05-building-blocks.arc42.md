@@ -188,3 +188,30 @@ title: Validator → Renderer
 between: bb-validator, bb-renderer
 protocol: In-process TypeScript function call
 :::
+
+## arc42 Documentation Workspace
+
+The set of `.arc42.md` files that make up a project's architecture documentation.
+Written by architects and AI agents, read by architects, the CLI, and CI pipelines.
+The CLI discovers, parses, and validates these files — they are both the input to the
+toolchain and the primary human-readable output it produces and maintains.
+
+:::building-block
+id: bb-workspace
+title: arc42 Documentation Workspace
+technology: Markdown (.arc42.md files)
+implements: concept-prose-first, concept-pipeline
+:::
+
+## CLI → Documentation Workspace Interface
+
+The CLI reads `.arc42.md` files from the workspace directory on every `validate` or
+`get` invocation. It does not write to them — that is the responsibility of the
+architect or AI agent.
+
+:::interface
+id: if-cli-workspace
+title: CLI → Documentation Workspace
+between: bb-cli, bb-workspace
+protocol: File system read (glob + parse)
+:::

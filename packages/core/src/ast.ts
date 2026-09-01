@@ -3,6 +3,7 @@
 export type BlockType =
   | "quality-goal"
   | "constraint"
+  | "actor"
   | "building-block"
   | "interface"
   | "concept"

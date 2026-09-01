@@ -133,10 +133,14 @@ export type { Diagnostic, Severity } from "./validator/types.ts";
 export type {
   Element,
   QualityGoal,
+  Actor,
+  Constraint,
   BuildingBlock,
   Interface,
   Concept,
   Decision,
+  Risk,
+  GlossaryTerm,
   Workspace,
   ParseError,
 } from "./model/types.ts";

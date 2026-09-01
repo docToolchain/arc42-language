@@ -1,6 +1,6 @@
 import type { GetRenderer, GetResult, WorkspaceView, ElementView, ResolvedRef } from "./types.ts";
 import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
-import type { Element, QualityGoal, BuildingBlock, Interface, Concept, Decision, Constraint, Risk, GlossaryTerm } from "../model/types.ts";
+import type { Element, QualityGoal, Actor, BuildingBlock, Interface, Concept, Decision, Constraint, Risk, GlossaryTerm } from "../model/types.ts";
 
 export class TextGetRenderer implements GetRenderer {
   meta = {
@@ -64,6 +64,8 @@ export class TextGetRenderer implements GetRenderer {
         return this.renderQualityGoal(el);
       case "constraint":
         return this.renderConstraint(el);
+      case "actor":
+        return this.renderActor(el);
       case "building-block":
         return this.renderBuildingBlock(el);
       case "interface":
@@ -92,6 +94,14 @@ export class TextGetRenderer implements GetRenderer {
     // This is handled at workspace level with edges array
 
     return lines.join("\n");
+  }
+
+  private renderActor(el: Actor): string {
+    let line = `  ${el.id}  ${el.title}  [${el.type}]`;
+    if (el.description) {
+      line += `  — ${el.description}`;
+    }
+    return line;
   }
 
   private renderBuildingBlock(el: BuildingBlock): string {
@@ -190,6 +200,10 @@ export class TextGetRenderer implements GetRenderer {
       case "quality-goal":
         if (el.priority) lines.push(`  priority: ${el.priority}`);
         if (el.scenario) lines.push(`  scenario: ${el.scenario}`);
+        break;
+      case "actor":
+        lines.push(`  type: ${el.type}`);
+        if (el.description) lines.push(`  description: ${el.description}`);
         break;
       case "building-block":
         if (el.technology) lines.push(`  technology: ${el.technology}`);

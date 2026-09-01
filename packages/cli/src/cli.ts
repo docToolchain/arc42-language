@@ -12,6 +12,7 @@ import type { BlockType } from "@arc42/core";
 const BLOCK_TYPES: BlockType[] = [
   "quality-goal",
   "constraint",
+  "actor",
   "building-block",
   "interface",
   "concept",
@@ -28,6 +29,7 @@ const CHAPTER_NAMES: Record<number, string> = {
   0:  "Document Structure",
   1:  "Quality Goals",
   2:  "Constraints",
+  3:  "System Scope and Context",
   5:  "Building Blocks",
   8:  "Cross-cutting Concepts",
   9:  "Architecture Decisions",
@@ -98,7 +100,7 @@ function printHelp() {
 Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
-  arc42 [--dir <path>] rules [--chapter <0|1|2|5|8|9|11|12>] [--format json|text]
+  arc42 [--dir <path>] rules [--chapter <0|1|2|3|5|8|9|11|12>] [--format json|text]
 
 Global options:
   --dir <path>   Workspace root (default: $ARC42_DIR or cwd)

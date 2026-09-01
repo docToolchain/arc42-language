@@ -68,6 +68,48 @@ describe("validator", () => {
     expect(diags.some((d) => d.code === "E004")).toBe(true);
   });
 
+  test("E004 — NOT emitted for valid actor↔building-block interface", () => {
+    const ws = makeWorkspace([
+      { kind: "actor", id: "actor-1", title: "User", type: "person", loc: loc(1) },
+      { kind: "building-block", id: "bb-1", title: "B", implements: [], loc: loc(5) },
+      { kind: "interface", id: "i-1", title: "I", between: ["actor-1", "bb-1"], loc: loc(9) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "E004")).toBe(false);
+  });
+
+  test("E004 — emitted for actor↔actor interface (no building-block on either side)", () => {
+    const ws = makeWorkspace([
+      { kind: "actor", id: "actor-1", title: "User", type: "person", loc: loc(1) },
+      { kind: "actor", id: "actor-2", title: "Partner", type: "system", loc: loc(5) },
+      { kind: "interface", id: "i-1", title: "I", between: ["actor-1", "actor-2"], loc: loc(9) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "E004")).toBe(true);
+  });
+
+  test("H008 — actor not connected to any interface", () => {
+    const ws = makeWorkspace([
+      { kind: "actor", id: "actor-1", title: "User", type: "person", loc: loc(1) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "H008")).toBe(true);
+  });
+
+  test("H008 — NOT emitted when actor is connected via interface", () => {
+    const ws = makeWorkspace([
+      { kind: "actor", id: "actor-1", title: "User", type: "person", loc: loc(1) },
+      { kind: "building-block", id: "bb-1", title: "B", implements: [], loc: loc(5) },
+      { kind: "interface", id: "i-1", title: "I", between: ["actor-1", "bb-1"], loc: loc(9) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "H008")).toBe(false);
+  });
+
   test("W001 — concept with no implementing building-block", () => {
     const ws = makeWorkspace([
       { kind: "concept", id: "c-1", title: "Logging", loc: loc(1) },
