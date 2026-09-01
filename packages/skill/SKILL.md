@@ -65,7 +65,7 @@ implements: concept-logging, concept-error-handling
 - `constraint.category`: `technical` | `organizational` | `convention`
 - `decision.status`: `proposed` | `accepted` | `deprecated` | `superseded`
 - `risk.severity`: `high` | `medium` | `low`
-- `decision.supersedes`: required (E006) when `status: superseded`
+- `decision.supersedes`: on the *new* decision — points to the id of the decision it replaces; E006 checks that the referenced decision has `status: superseded`
 
 ### Cross-reference fields
 
@@ -91,14 +91,14 @@ entire workspace (all `*.arc42.md` files in the directory).
 | E003 | Circular parent chain in building blocks |
 | E004 | Interface `between` references a non-building-block id |
 | E005 | Parse error (unknown block type, missing required field, invalid enum value) |
-| E006 | Decision with `status: superseded` is missing `supersedes` |
+| E006 | Decision carries `supersedes` but the referenced decision does not have `status: superseded` |
 
 ### Warnings (W) — should fix
 
 | Code | What it checks |
 |------|---------------|
 | W001 | Concept has no building block implementing it |
-| W002 | Building block is isolated (no interfaces in or out) |
+| W002 | Leaf building block (with a parent) is isolated (no interfaces in or out) |
 | W003 | Decision has been `proposed` for more than 90 days |
 | W004 | Block has no prose paragraph above it |
 | W005 | Multiple blocks under the same `##` heading |
@@ -114,8 +114,8 @@ entire workspace (all `*.arc42.md` files in the directory).
 | H001 | Decision has no `addresses` field |
 | H002 | Quality goal is not addressed by any decision |
 | H003 | Building block has no `technology` field |
-| H004 | Root building block is not referenced by any interface |
-| H005 | Workspace has concepts but no building block uses `implements` |
+| H004 | Root building block is not referenced by any interface (workspace-level; leaf blocks checked by W002) |
+| H005 | Workspace-level: workspace has concepts but no building block uses `implements` at all |
 | H006 | Constraint is not addressed by any decision |
 | H007 | Risk is not addressed by any decision |
 

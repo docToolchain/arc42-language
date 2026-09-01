@@ -16,7 +16,10 @@ export const w006TooFewQualityGoals: Rule = {
   },
   check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
     const goals = workspace.elements.filter((el) => el.kind === "quality-goal");
-    // Zero goals is a distinct gap; this rule fires only for 1–2 goals.
+    // Zero goals is a distinct gap covered at the project level (a workspace with no quality-goal
+    // blocks at all will also never trigger H002 targets). W006 intentionally fires only for 1–2
+    // goals because that signals elicitation is in progress. Zero goals is flagged differently
+    // (users are expected to notice the absence via arc42 get --type quality-goal).
     if (goals.length === 0 || goals.length >= 3) return [];
     return [
       {

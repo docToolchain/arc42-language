@@ -8,8 +8,8 @@ export const w002IsolatedBuildingBlock: Rule = {
     severity: "warning",
     type: "problem",
     docs: {
-      description: "Building-block has no interface on either side — it is isolated",
-      rationale: "A building-block with no interfaces defined is an island in the architecture graph. It cannot send or receive data, which is either a modelling omission (the interfaces were not written yet) or a design smell (the component has no defined communication contract). Isolated components are invisible to graph-based queries and diagram generation.",
+      description: "Leaf building-block (with a parent) has no interface on either side — it is isolated",
+      rationale: "A leaf building-block nested inside a parent should have at least one interface, otherwise it contributes no visible communication contract to the architecture graph. Root blocks are checked at hint level (H004) because a top-level component may intentionally be connected only through its children.",
       arc42Chapter: 5,
       recommended: true,
     },
@@ -24,6 +24,9 @@ export const w002IsolatedBuildingBlock: Rule = {
     }
     for (const el of workspace.elements) {
       if (el.kind !== "building-block") continue;
+      // Root blocks (no parent) are checked by H004 at hint level.
+      // W002 applies only to leaf blocks (those nested inside a parent).
+      if (!el.parent) continue;
       if (!interfaceIds.has(el.id)) {
         diagnostics.push({
           code: "W002",

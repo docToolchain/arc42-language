@@ -98,7 +98,7 @@ function printHelp() {
 Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
-  arc42 [--dir <path>] rules [--chapter <1|5|8|9>] [--format json|text]
+  arc42 [--dir <path>] rules [--chapter <0|1|2|5|8|9|11|12>] [--format json|text]
 
 Global options:
   --dir <path>   Workspace root (default: $ARC42_DIR or cwd)

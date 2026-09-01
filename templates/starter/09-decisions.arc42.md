@@ -6,7 +6,7 @@ or constraints it addresses. Decisions can also supersede earlier decisions when
 and changes course.
 
 Status values: `proposed` (under discussion), `accepted` (in force), `deprecated` (no longer
-recommended but not replaced), `superseded` (replaced by another decision — must set `supersedes`).
+recommended but not replaced), `superseded` (replaced by another decision).
 
 ## Use Kubernetes for All Deployments
 
@@ -33,13 +33,28 @@ The team considered session-based authentication (server-side session store) and
 authentication (stateless JWT). Stateless JWT was selected to avoid a shared session store that
 would become a single point of failure and a horizontal scaling bottleneck.
 
-The `supersedes` field names the ID of the decision this one replaces. It is required when
-`status` is `superseded` (rule E006), and optional otherwise.
-
 :::decision
 id: dec-auth-jwt
 title: Stateless JWT Authentication
-status: accepted
+status: superseded
 date: 2025-07-01
 addresses: qg-security, qg-performance, con-data-residency
+:::
+
+## Opaque Token Authentication
+
+After a security review, the team moved away from self-signed JWTs to short-lived opaque tokens
+issued by a central authorization service. This reduces the risk of token forgery and simplifies
+key rotation.
+
+The `supersedes` field on the *new* decision points to the decision it replaces (rule E006
+checks that the referenced decision has `status: superseded`).
+
+:::decision
+id: dec-auth-opaque-token
+title: Opaque Token Authentication
+status: accepted
+date: 2025-09-01
+addresses: qg-security, con-data-residency
+supersedes: dec-auth-jwt
 :::

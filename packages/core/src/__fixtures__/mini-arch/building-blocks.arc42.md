@@ -19,6 +19,12 @@ technology: PostgreSQL
 implements: concept-logging
 :::
 
+:::building-block
+id: bb-db-reader
+title: Database Reader
+parent: bb-db
+:::
+
 :::concept
 id: concept-logging
 title: Logging
