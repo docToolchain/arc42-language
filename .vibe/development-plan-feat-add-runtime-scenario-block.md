@@ -65,6 +65,9 @@ The block represents runtime scenarios as structured, cross-referenceable elemen
 - `docs/arc42/06-runtime-view.md` is the project's own Runtime View and must describe the agent-driven architecture-evolution flow using the project's actual chapter-3 actors and chapter-5 building blocks; generic checkout examples belong in the starter guidance or plan examples, not in this project architecture document.
 - The general skill intentionally does not document `runtime-scenario` fields, W011, or H011; those are chapter-specific authoring details provided by the chapter-6 starter-template comments. The skill only documents the reusable diagram association and identifier convention.
 - The project Runtime View models the architect as the primary reader/editor of the workspace. Validation is a quality gate invoked implicitly by the pre-commit hook or CI/merge-request pipeline, not a routine manual architect interaction.
+- The pre-commit hook validates the repository's own documentation and example workspace through `scripts/validate-source.ts`, which imports the core TypeScript source directly. It must not depend on `packages/cli/dist`; compiled CLI validation remains available for release/manual checks.
+- The source validation runner uses Node's native type stripping, so the supported Node engine is `>=22.6`. This avoids adding a runtime transpiler dependency while ensuring a fresh checkout can validate before any build.
+- Chapter 6 is included in `Arc42Chapter` so the runtime-scenario and diagram rule metadata is type-safe; the chapter had previously been present in model/CLI metadata but omitted from the validator union.
 - The representative scenario set is intentionally schematic: the agent-evolution scenario covers the external workflow, while the core validation-pipeline scenario covers parser→builder, builder→resolver, resolver→validator, and validator→renderer. H011 coverage must be achieved by one scenario containing both building-block endpoints of each interface.
 - Follow-up bug filed as GitHub issue #8: add structural validation for required top-level arc42 chapter `h1` headings and scenario/element `h2` hierarchy. This is deferred from the runtime-scenario implementation; the current W004/W005 rules do not validate heading levels or chapter headings.
 - The `DiagramNode`/`Diagram` AST and model remain notation-independent: `source` is raw fenced text and `notation` selects a future adapter. Runtime View ownership is intentionally present only on `SequenceDiagramNode`/`SequenceDiagram`; it does not encode Mermaid participants or messages. Mermaid participants/messages belong only in the adapter's intermediate representation and validator.
@@ -148,7 +151,7 @@ Three integration shapes were considered:
 2. **Add an explicit diagram metadata block** — use a structured block carrying `id`, `scenario`, `notation`, and diagram source. This gives robust ownership and locations, but requires a multiline-source convention in the parser.
 3. **Use explicit metadata plus Markdown source** — keep the source in a normal fenced code block while adding a small structured declaration that names the diagram, scenario, notation, and source location. This avoids embedding a second language in attributes but requires source-location linking.
 
-The recommended implementation is option 2 for the first version if the parser can safely support multiline block bodies; otherwise use option 3 as an interim representation. In both cases, the model should expose a notation-independent `Diagram` artifact with `id`, `scenario`, `notation`, `source`, and `loc`, while adapters convert source into a validated intermediate representation. The exact authoring syntax is an implementation prerequisite and must be covered by parser fixtures before coding begins.
+The selected implementation is explicit diagram metadata followed by the next fenced Markdown source. The model exposes notation-independent diagram artifacts with raw source and source location; adapters convert supported source into a validated intermediate representation. This avoids inferring ownership from heading proximity and keeps multiline Mermaid content out of block attributes.
 
 ### Model annotation convention
 
@@ -298,6 +301,7 @@ state names such as `pending` or `confirmed` are not component references.
 - [x] Define and implement the diagram artifact AST and explicit scenario association
 - [x] Implement the Mermaid sequence adapter and layered diagnostics
 - [x] Add diagram fixtures, integration tests, README/skill guidance, and starter examples
+- [x] Add a source-based self-validation runner and make it the pre-commit gate
 
 ### Completed
 - Implemented `runtime-scenario` chapter-6 model support with `trigger` and comma-separated `involves` references.
@@ -308,14 +312,21 @@ state names such as `pending` or `confirmed` are not component references.
 - Incorporated the follow-up documentation review: removed runtime-scenario field guidance from the general skill, retained only cross-cutting diagram annotation guidance there, and aligned the project's Runtime View sequence with its actual agent-driven architecture-evolution workflow.
 - Added representative Runtime View coverage derived from the previous development plans: the architect/agent workspace-editing flow, implicit pre-commit/CI validation, and the internal core pipeline covering parser→builder, builder→resolver, resolver→validator, and validator→renderer. The renamed `06-runtime-view.arc42.md` now validates with 0 errors, warnings, and hints.
 - The Runtime View document follows the chapter structure convention: `# Runtime View` is the chapter heading and every scenario starts under its own `##` heading. The current linter does not enforce this naming/level convention; W004 and W005 only use headings as structural boundaries for prose and block grouping.
-- Verification passed: `pnpm exec vp check`, `pnpm test` (7 files, 103 tests), `pnpm build`, `pnpm run validate:docs` (0 errors, 0 warnings, 13 hints), and starter-template validation (0 errors, 0 warnings, 0 hints).
+- Earlier verification passed: `pnpm test` (7 files, 103 tests), `pnpm build`, `pnpm run validate:docs` (0 errors, 0 warnings, 13 hints), and starter-template validation (0 errors, 0 warnings, 0 hints). The repository-wide formatter baseline was later found to include unrelated pre-existing findings; targeted formatting checks remain clean.
+- Added `scripts/validate-source.ts`, `validate:source`, and a pre-commit hook path that imports `packages/core/src/arc42.ts` directly and validates both `docs/arc42` and `examples/bookstore-backend` without requiring compiled output.
+- Source validation verification passed: `pnpm run validate:source` and the installed `.git/hooks/pre-commit` both validate the two workspaces successfully (0 errors; the example retains 10 existing hints). Targeted source lint/format checks, package type checks, `pnpm test` (7 files, 104 tests), and `pnpm run build` also pass. The full `pnpm exec vp check` remains blocked by formatter findings in unrelated pre-existing files, which were intentionally not changed.
 
 ## Commit
 ### Tasks
-- [x] Create a commit after explicit user request
+- [x] Review feature-scope code for debug output, TODO/FIXME markers, and commented-out development code
+- [x] Review final documentation against the implemented runtime-scenario and diagram behavior
+- [x] Run final tests, type checks, build, source validation, and installed pre-commit validation
+- [x] Create commits after explicit user request
 
 ### Completed
-- The feature implementation commit includes this completed development plan and the final verification state.
+- Feature implementation commit `1a611d8` contains the runtime-scenario and Mermaid sequence-diagram implementation.
+- The follow-up commit contains the source-based validation runner, pre-commit integration, the chapter-6 validator type correction, documentation updates, and the final verification record.
+- `pnpm run validate:source`, the installed pre-commit hook, `pnpm test` (7 files, 104 tests), package type checks, targeted lint/format checks, and `pnpm run build` pass. `pnpm run validate:all` validates the docs target but cannot validate the example in the current checkout because the built CLI cannot resolve the missing workspace link `packages/cli/node_modules/@arc42/core/dist/index.mjs`; source validation is the supported pre-commit path and passes both targets with 0 errors.
 
 
 

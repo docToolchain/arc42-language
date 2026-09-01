@@ -11,13 +11,14 @@
     "validate:docs": "node packages/cli/dist/cli.mjs --dir docs/arc42 validate",
     "validate:examples": "node packages/cli/dist/cli.mjs --dir examples/bookstore-backend validate",
     "validate:all": "pnpm run validate:docs && pnpm run validate:examples",
+    "validate:source": "node --experimental-strip-types --no-warnings scripts/validate-source.ts",
     "hooks:install": "cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit && echo 'pre-commit hook installed'"
-  },
-  "engines": {
-    "node": ">=20"
   },
   "devDependencies": {
     "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22.6"
   },
   "packageManager": "pnpm@10.32.1"
 }

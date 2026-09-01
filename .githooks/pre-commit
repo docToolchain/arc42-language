@@ -4,16 +4,8 @@
 # Install via: pnpm run hooks:install
 # Or set globally: git config core.hooksPath .githooks
 
-CLI="packages/cli/dist/cli.mjs"
-
-if [ ! -f "$CLI" ]; then
-  echo "arc42 pre-commit: CLI not built. Run: pnpm run build"
-  exit 1
-fi
-
-pnpm run --silent validate:all
-if [ $? -ne 0 ]; then
+if ! pnpm run --silent validate:source; then
   echo ""
-  echo "Fix arc42 errors before committing. Run: pnpm run validate:all"
+  echo "Fix arc42 errors before committing. Run: pnpm run validate:source"
   exit 1
 fi

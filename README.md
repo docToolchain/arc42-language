@@ -206,6 +206,7 @@ The `Rule` interface is ESLint-inspired: a self-describing `meta` object and a `
 ```bash
 pnpm run validate:docs   # validate the project's own arc42 docs
 pnpm run validate:all    # validate docs + examples
+pnpm run validate:source # validate docs + examples using TypeScript source
 ```
 
 ### Setup
@@ -214,6 +215,6 @@ pnpm run validate:all    # validate docs + examples
 pnpm install
 pnpm run build          # builds core + cli
 
-# Install the pre-commit hook (validates arc42 workspaces before every commit)
+# Install the pre-commit hook (validates arc42 workspaces from TypeScript source before every commit)
 pnpm run hooks:install
 ```
