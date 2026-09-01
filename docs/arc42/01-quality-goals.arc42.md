@@ -72,4 +72,6 @@ scenario: arc42 validate --format json produces valid JSON on stdout regardless 
 
 ## Stakeholders
 
-The current repository context identifies agents, architects, maintainers, and CI as important users of the documentation and CLI. A complete stakeholder map, including operational and external stakeholders, is not currently captured in the codebase.
+The stakeholders are architects, maintainers, and agents. Architects care about communicating and
+evolving the system's design, maintainers care about keeping the toolchain consistent and reliable,
+and agents care about understanding and updating the architecture correctly.
