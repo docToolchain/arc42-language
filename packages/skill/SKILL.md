@@ -1,14 +1,15 @@
 ---
 name: arc42-language
-description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, building block, concept, decision, ADR.
+description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, building block, concept, decision, ADR, constraint, risk, glossary.
 allowed-tools: Bash(arc42:*)
 ---
 
 # arc42 Language
 
-This project documents its architecture in the arc42 DSL — Markdown files with typed `:::block` fences
-for structured elements. The format is human-readable first: prose explains intent, the block records
-the machine-readable summary. The CLI validates consistency and coherence across all elements.
+This project documents its architecture in the arc42 DSL — Markdown files with typed `:::block`
+fences for structured elements. The format is human-readable first: prose explains intent, the
+block records the machine-readable summary. The CLI validates consistency and coherence across
+all elements.
 
 ## Getting started
 
@@ -24,10 +25,13 @@ arc42 rules             # understand what the validator enforces and why
 
 ## Authoring convention
 
-Each element lives in its own `##` section: heading, then prose explaining purpose and rationale,
-then the `:::block` as the machine-readable summary at the end of the section.
+Each element lives in its own `##` section: one heading → one prose paragraph explaining purpose
+and rationale → one `:::block` as the machine-readable summary at the end of the section.
+**Never put two blocks under the same `##` heading.** Prose without a block is valid (for
+sections that do not need a machine-readable record).
 
 Example:
+
 ```markdown
 ## Catalog Service
 
@@ -42,12 +46,68 @@ implements: concept-logging, concept-error-handling
 :::
 ```
 
+## Block type reference
+
+| Block type | Arc42 chapter | Required fields | Optional fields |
+|------------|--------------|-----------------|-----------------|
+| `quality-goal` | 1 | `id`, `title`, `priority` | `scenario` |
+| `constraint` | 2 | `id`, `title`, `category` | `source` |
+| `building-block` | 5 | `id`, `title` | `technology`, `parent`, `implements` |
+| `interface` | 5 | `id`, `title`, `between` | `protocol` |
+| `concept` | 8 | `id`, `title` | `category` |
+| `decision` | 9 | `id`, `title`, `status` | `date`, `addresses`, `supersedes` |
+| `risk` | 11 | `id`, `title`, `severity` | `mitigation` |
+| `glossary-term` | 12 | `id`, `title`, `definition` | — |
+
+### Field value constraints
+
+- `quality-goal.priority`: `high` | `medium` | `low`
+- `constraint.category`: `technical` | `organizational` | `convention`
+- `decision.status`: `proposed` | `accepted` | `deprecated` | `superseded`
+- `risk.severity`: `high` | `medium` | `low`
+- `decision.supersedes`: on the *new* decision — points to the id of the decision it replaces; E006 checks that the referenced decision has `status: superseded`
+
+### Cross-reference fields
+
+| Field | On type | References |
+|-------|---------|------------|
+| `parent` | `building-block` | another `building-block` id |
+| `implements` | `building-block` | one or more `concept` ids (comma-separated) |
+| `between` | `interface` | exactly two `building-block` ids (comma-separated) |
+| `addresses` | `decision` | one or more `quality-goal`, `constraint`, or `risk` ids |
+| `supersedes` | `decision` | another `decision` id |
+
+All referenced IDs must resolve to an existing element (rule E002). IDs are unique across the
+entire workspace (all `*.arc42.md` files in the directory).
+
+## Validation rules
+
+Run `arc42 rules` to see the full list of rules with rationale, grouped by chapter.
+Filter by chapter with `--chapter <0|1|2|5|8|9|11|12>`. Use `--format json` for machine-readable output.
+
+Fix all errors before committing. Warnings should be resolved before merging. Hints are
+best-practice suggestions — address them when the context allows.
+
+If you are unsure what a rule requires, run `arc42 rules` for the full rationale.
+If you are unsure what already exists, run `arc42 get` or `arc42 get <id>`.
+
+## Starter templates
+
+`templates/starter/` contains ready-to-use files for each chapter. Each file is a blank
+template with HTML comments (`<!-- ... -->`) explaining what to write and showing a DSL
+block example. The comments are ignored by the parser and validator — they are authoring
+guidance only, not part of the document.
+
+To use a template:
+1. Copy the relevant file(s) into your workspace directory
+2. Read the HTML comment at the top of each file — it explains the arc42 intent for that chapter
+3. Add `##` sections with your actual content, following the example in the comment
+4. Remove the comment block once you no longer need the guidance
+5. Run `arc42 validate` to confirm 0 errors
+
 ## Your responsibility
 
 **Every architectural change must be reflected in the arc42 files.**
 After any change to the system — adding a component, making a technology decision,
 introducing a cross-cutting concern — update or add the relevant arc42 elements and
 run `arc42 validate` to confirm 0 errors.
-
-If you are unsure what a rule requires, run `arc42 rules` for the full rationale.
-If you are unsure what already exists, run `arc42 get` or `arc42 get <id>`.

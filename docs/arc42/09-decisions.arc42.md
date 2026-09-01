@@ -3,6 +3,42 @@
 Key decisions made during the design and implementation of the arc42-language toolchain.
 Each decision is linked to the quality goals it serves via `addresses:`.
 
+## Machine-readable Architecture Without Sacrificing Human Readability
+
+The primary goal of arc42-language is to make architecture documentation machine-readable
+for tooling and AI agents — while keeping it fully readable and writable by humans without
+special tooling. This rules out pure YAML/JSON (not human-readable prose), XML-based formats
+(too verbose), and embedded code annotations (tied to one language). Markdown was the
+natural host format: ubiquitous, renderable everywhere, and familiar to developers and agents
+alike. The `:::type` fenced block syntax adds structured data as a lightweight extension that
+does not break standard Markdown renderers.
+
+:::decision
+id: dec-primary-goal
+title: Machine-readable architecture as an extension of human-readable Markdown
+status: accepted
+date: 2026-08-14
+addresses: qg-readability, qg-agent-writability
+:::
+
+## Monorepo to Ship One Source of Truth to Multiple Audiences
+
+The toolchain is split into `@arc42/core` (parser, model, validator, renderer),
+`@arc42/cli` (human-facing command-line tool), and `@arc42/skill` (agent-facing skill and
+templates) — all in one monorepo. This structure lets a single source of truth produce
+artefacts for three distinct audiences: agents consuming the skill and templates, humans
+using the CLI, and documentation consumers reading the rendered output. A separate-repo
+approach would require synchronising the model across repos and risk the skill diverging
+from the validator.
+
+:::decision
+id: dec-monorepo
+title: Use a monorepo to deliver tooling for agents, humans, and documentation from one truth
+status: accepted
+date: 2026-08-14
+addresses: qg-extensibility, qg-agent-writability, qg-verifiability
+:::
+
 ## Markdown-flavored DSL with :::type fences
 
 We evaluated pure YAML/JSON, AsciiDoc delimited blocks, MDX (JSX in Markdown), and
@@ -10,14 +46,15 @@ We evaluated pure YAML/JSON, AsciiDoc delimited blocks, MDX (JSX in Markdown), a
 requires a JSX parser and is too complex for agents to generate reliably. AsciiDoc is a
 different ecosystem entirely. `:::type` fences are the lightest Markdown extension: simple
 delimiters, no nested complexity, compatible with standard renderers that pass through
-unknown divs, and friendly to line-oriented parsers.
+unknown divs, and friendly to line-oriented parsers. Crucially, the same syntax can be
+adopted in AsciiDoc or other host formats in the future without changing the DSL semantics.
 
 :::decision
 id: dec-markdown-dsl
 title: Use Markdown with :::type fenced blocks as the DSL format
 status: accepted
 date: 2026-08-14
-addresses: qg-readability, qg-agent-writability
+addresses: qg-readability, qg-agent-writability, qg-extensibility
 :::
 
 ## Line-oriented parser, not tree-sitter
@@ -114,5 +151,41 @@ id: dec-prose-first
 title: Enforce prose-first authoring convention with W004 and W005 rules
 status: accepted
 date: 2026-08-17
-addresses: qg-readability, qg-verifiability
+addresses: qg-readability, qg-verifiability, con-markdown-authoring
+:::
+
+## Runtime Without Production Dependencies
+
+The core library and CLI use Node.js built-ins at runtime. The project accepts the resulting dependency constraints because a small, locked-down toolchain is easier to install and audit.
+
+:::decision
+id: dec-runtime-builtins
+title: Use Node.js built-ins for runtime functionality
+status: accepted
+date: 2026-08-14
+addresses: qg-cli-usability, qg-extensibility, con-node-runtime, con-no-runtime-dependencies
+:::
+
+## Focused v1 Element Model
+
+The v1 model covers the arc42 sections that can be represented as typed, cross-referenceable elements. Diagram-heavy context, runtime, deployment, and solution views remain prose-only until the AST supports richer graph structures.
+
+:::decision
+id: dec-focused-v1-model
+title: Keep the v1 element model focused on typed cross-referenceable content
+status: accepted
+date: 2026-08-18
+addresses: qg-agent-writability, qg-extensibility, risk-unmodeled-views
+:::
+
+## Starter Templates as Authoring Guidance
+
+The starter files provide complete examples for every supported block type and use the same one-heading-per-element convention as the project documentation. They are intentionally neutral so agents can copy the structure without copying domain-specific architecture.
+
+:::decision
+id: dec-starter-templates
+title: Maintain neutral starter templates for supported arc42 chapters
+status: accepted
+date: 2026-08-18
+addresses: qg-agent-writability, qg-readability, risk-template-drift
 :::

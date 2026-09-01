@@ -1,6 +1,6 @@
 import type { GetRenderer, GetResult, WorkspaceView, ElementView, ResolvedRef } from "./types.ts";
 import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
-import type { Element, QualityGoal, BuildingBlock, Interface, Concept, Decision } from "../model/types.ts";
+import type { Element, QualityGoal, BuildingBlock, Interface, Concept, Decision, Constraint, Risk, GlossaryTerm } from "../model/types.ts";
 
 export class TextGetRenderer implements GetRenderer {
   meta = {
@@ -62,6 +62,8 @@ export class TextGetRenderer implements GetRenderer {
     switch (el.kind) {
       case "quality-goal":
         return this.renderQualityGoal(el);
+      case "constraint":
+        return this.renderConstraint(el);
       case "building-block":
         return this.renderBuildingBlock(el);
       case "interface":
@@ -70,6 +72,10 @@ export class TextGetRenderer implements GetRenderer {
         return this.renderConcept(el);
       case "decision":
         return this.renderDecision(el);
+      case "risk":
+        return this.renderRisk(el);
+      case "glossary-term":
+        return this.renderGlossaryTerm(el);
     }
   }
 
@@ -144,7 +150,32 @@ export class TextGetRenderer implements GetRenderer {
       lines.push(`    addresses: ${el.addresses.join(", ")}`);
     }
 
+    if (el.supersedes) {
+      lines.push(`    supersedes: ${el.supersedes}`);
+    }
+
     return lines.join("\n");
+  }
+
+  private renderConstraint(el: Constraint): string {
+    let line = `  ${el.id}  ${el.title}  [${el.category}]`;
+    if (el.source) {
+      line += `  (${el.source})`;
+    }
+    return line;
+  }
+
+  private renderRisk(el: Risk): string {
+    const lines: string[] = [];
+    lines.push(`  ${el.id}  ${el.title}  [${el.severity}]`);
+    if (el.mitigation) {
+      lines.push(`    mitigation: ${el.mitigation}`);
+    }
+    return lines.join("\n");
+  }
+
+  private renderGlossaryTerm(el: GlossaryTerm): string {
+    return `  ${el.id}  ${el.title}: ${el.definition}`;
   }
 
   private renderElement(view: ElementView): string {
@@ -176,6 +207,18 @@ export class TextGetRenderer implements GetRenderer {
         lines.push(`  status: ${el.status}`);
         if (el.date) lines.push(`  date: ${el.date}`);
         if (el.addresses.length > 0) lines.push(`  addresses: ${el.addresses.join(", ")}`);
+        if (el.supersedes) lines.push(`  supersedes: ${el.supersedes}`);
+        break;
+      case "constraint":
+        lines.push(`  category: ${el.category}`);
+        if (el.source) lines.push(`  source: ${el.source}`);
+        break;
+      case "risk":
+        lines.push(`  severity: ${el.severity}`);
+        if (el.mitigation) lines.push(`  mitigation: ${el.mitigation}`);
+        break;
+      case "glossary-term":
+        lines.push(`  definition: ${el.definition}`);
         break;
     }
 

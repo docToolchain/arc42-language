@@ -19,6 +19,16 @@ title: Single-pass Pipeline
 category: architecture
 :::
 
+## Prose-first Documentation
+
+Every machine-readable element is introduced by prose in its own `##` section. This keeps the architecture useful in a Markdown viewer while allowing the parser and validator to index typed elements, references, and diagnostics.
+
+:::concept
+id: concept-prose-first
+title: Prose-first Documentation
+category: authoring
+:::
+
 ## Rule Registry Pattern
 
 Validation rules are self-describing objects registered in a central index. Each rule carries

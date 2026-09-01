@@ -69,3 +69,9 @@ title: CLI Usability for Agents and CI
 priority: medium
 scenario: arc42 validate --format json produces valid JSON on stdout regardless of terminal context; exit code 1 when errors exist, 0 when clean.
 :::
+
+## Stakeholders
+
+The stakeholders are architects, maintainers, and agents. Architects care about communicating and
+evolving the system's design, maintainers care about keeping the toolchain consistent and reliable,
+and agents care about understanding and updating the architecture correctly.

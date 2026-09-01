@@ -18,7 +18,7 @@ export interface Diagnostic {
  * Which arc42 chapter this rule primarily relates to.
  * 0 = cross-cutting (applies to all chapters / document structure)
  */
-export type Arc42Chapter = 0 | 1 | 5 | 8 | 9;
+export type Arc42Chapter = 0 | 1 | 2 | 5 | 8 | 9 | 11 | 12;
 
 /**
  * Rule type — mirrors ESLint's RuleType vocabulary:
@@ -36,7 +36,7 @@ export interface RuleDocs {
    * Shown in `arc42 rules --format text` and surfaced in the SKILL.md.
    */
   rationale: string;
-  /** Which arc42 chapter this rule belongs to (0=cross-cutting, 1=QualityGoals, 5=BuildingBlocks, 8=Concepts, 9=Decisions) */
+  /** Which arc42 chapter this rule belongs to (0=cross-cutting, 1=QualityGoals, 2=Constraints, 5=BuildingBlocks, 8=Concepts, 9=Decisions, 11=Risks, 12=Glossary) */
   arc42Chapter: Arc42Chapter;
   /** Whether the rule is enabled by default in the built-in rule set */
   recommended: boolean;
