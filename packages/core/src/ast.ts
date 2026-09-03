@@ -6,6 +6,7 @@ export type BlockType =
   | "actor"
   | "solution-strategy"
   | "building-block"
+  | "deployment-node"
   | "interface"
   | "concept"
   | "decision"
@@ -39,6 +40,8 @@ export interface DiagramNodeBase {
   kind: "diagram";
   id: string;
   notation: string;
+  /** Raw aliases string; the owning rule owns key-value parsing and diagnostics. */
+  aliases: string;
   source: string;
   startLine: number;
   endLine: number;
@@ -56,7 +59,14 @@ export interface SequenceDiagramNode extends DiagramNodeBase {
   scenario: string;
 }
 
-export type DiagramNode = GenericDiagramNode | SequenceDiagramNode;
+/** Deployment View diagram metadata; source semantics are validated by E010 adapters. */
+export interface DeploymentDiagramNode extends DiagramNodeBase {
+  diagramType: "deployment";
+  view: "deployment";
+  roots: string[];
+}
+
+export type DiagramNode = GenericDiagramNode | SequenceDiagramNode | DeploymentDiagramNode;
 
 export type AstNode = HeadingNode | ProseNode | BlockNode | DiagramNode;
 

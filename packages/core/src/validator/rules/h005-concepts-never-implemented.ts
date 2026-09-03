@@ -9,7 +9,8 @@ export const h005ConceptsNeverImplemented: Rule = {
     type: "suggestion",
     docs: {
       description: "Workspace has concepts but no building block uses 'implements'",
-      rationale: "Cross-cutting concepts in arc42 chapter 8 are only useful if they are applied consistently. The 'implements' attribute on building blocks makes concept coverage explicit and machine-verifiable. If no building block implements any concept, the concepts are floating abstractions — they may describe intent but provide no traceability to which parts of the system actually apply them.",
+      rationale:
+        "Cross-cutting concepts in arc42 chapter 8 are only useful if they are applied consistently. The 'implements' attribute on building blocks makes concept coverage explicit and machine-verifiable. If no building block implements any concept, the concepts are floating abstractions — they may describe intent but provide no traceability to which parts of the system actually apply them.",
       arc42Chapter: 8,
       recommended: true,
     },

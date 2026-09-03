@@ -68,6 +68,133 @@ describe("validator", () => {
     expect(diags.some((d) => d.code === "E002")).toBe(true);
   });
 
+  test("E002 — deployment references require correct target kinds", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
+      {
+        kind: "deployment-node",
+        id: "node-1",
+        title: "Node",
+        hosts: ["qg-1", "bb-missing"],
+        parent: "qg-1",
+        loc: loc(5),
+      },
+    ]);
+    const e002 = validate(ws, buildIndex(ws)).filter((diagnostic) => diagnostic.code === "E002");
+    expect(e002).toHaveLength(3);
+    expect(e002.filter((diagnostic) => diagnostic.message.includes("deployment"))).toHaveLength(2);
+    expect(e002.some((diagnostic) => diagnostic.message.includes("bb-missing"))).toBe(true);
+  });
+
+  test("E009 — deployment parent cycles", () => {
+    const ws = makeWorkspace([
+      {
+        kind: "deployment-node",
+        id: "node-a",
+        title: "A",
+        hosts: [],
+        parent: "node-b",
+        loc: loc(1),
+      },
+      {
+        kind: "deployment-node",
+        id: "node-b",
+        title: "B",
+        hosts: [],
+        parent: "node-a",
+        loc: loc(5),
+      },
+    ]);
+    expect(
+      validate(ws, buildIndex(ws)).filter((diagnostic) => diagnostic.code === "E009"),
+    ).toHaveLength(2);
+  });
+
+  test("E009 — deployment self-cycle", () => {
+    const ws = makeWorkspace([
+      {
+        kind: "deployment-node",
+        id: "node-self",
+        title: "Self",
+        hosts: [],
+        parent: "node-self",
+        loc: loc(1),
+      },
+    ]);
+    expect(
+      validate(ws, buildIndex(ws)).filter((diagnostic) => diagnostic.code === "E009"),
+    ).toHaveLength(1);
+  });
+
+  test("W012 and H012 activate only for deployment workspaces and exempt composites/groups", () => {
+    const inactive = makeWorkspace([
+      { kind: "building-block", id: "bb-api", title: "API", implements: [], loc: loc(1) },
+    ]);
+    expect(
+      validate(inactive, buildIndex(inactive)).some((diagnostic) =>
+        ["W012", "H012"].includes(diagnostic.code),
+      ),
+    ).toBe(false);
+
+    const active = makeWorkspace([
+      {
+        kind: "building-block",
+        id: "bb-composite",
+        title: "Composite",
+        implements: [],
+        loc: loc(1),
+      },
+      {
+        kind: "building-block",
+        id: "bb-leaf",
+        title: "Leaf",
+        parent: "bb-composite",
+        implements: [],
+        loc: loc(5),
+      },
+      { kind: "building-block", id: "bb-unmapped", title: "Unmapped", implements: [], loc: loc(9) },
+      { kind: "deployment-node", id: "node-root", title: "Root", hosts: [], loc: loc(13) },
+      {
+        kind: "deployment-node",
+        id: "node-empty",
+        title: "Empty",
+        hosts: [],
+        parent: "node-root",
+        loc: loc(17),
+      },
+    ]);
+    const diagnostics = validate(active, buildIndex(active));
+    expect(
+      diagnostics.filter((diagnostic) => diagnostic.code === "W012").map((d) => d.message),
+    ).toEqual([expect.stringContaining("bb-leaf"), expect.stringContaining("bb-unmapped")]);
+    expect(
+      diagnostics.filter((diagnostic) => diagnostic.code === "H012").map((d) => d.message),
+    ).toEqual([expect.stringContaining("node-empty")]);
+  });
+
+  test("W012 accepts many-to-many deployment mappings", () => {
+    const ws = makeWorkspace([
+      { kind: "building-block", id: "bb-api", title: "API", implements: [], loc: loc(1) },
+      {
+        kind: "deployment-node",
+        id: "node-a",
+        title: "A",
+        hosts: ["bb-api", "bb-api"],
+        loc: loc(5),
+      },
+      {
+        kind: "deployment-node",
+        id: "node-b",
+        title: "B",
+        hosts: ["bb-api"],
+        loc: loc(9),
+      },
+    ]);
+    expect(
+      validate(ws, buildIndex(ws)).filter((diagnostic) => diagnostic.code === "W012"),
+    ).toHaveLength(0);
+  });
+
   test("E003 — circular parent reference", () => {
     const ws = makeWorkspace([
       {

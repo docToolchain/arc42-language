@@ -3,8 +3,19 @@ import type { DocumentAst, AstNode, DiagramNode } from "../ast.ts";
 interface DiagramMetadata {
   id: string;
   scenario?: string;
+  view?: string;
   notation: string;
+  roots: string[];
+  aliases: string;
   startLine: number;
+}
+
+function splitList(value: string | undefined): string[] {
+  if (!value || value.trim() === "") return [];
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
 }
 
 function createDiagramNode(
@@ -12,6 +23,21 @@ function createDiagramNode(
   source: string,
   endLine: number,
 ): DiagramNode {
+  if (metadata.view === "deployment") {
+    return {
+      kind: "diagram",
+      diagramType: "deployment",
+      view: "deployment",
+      id: metadata.id,
+      notation: metadata.notation,
+      roots: metadata.roots,
+      aliases: metadata.aliases,
+      source,
+      startLine: metadata.startLine,
+      endLine,
+    };
+  }
+
   if (metadata.notation === "mermaid-sequence") {
     return {
       kind: "diagram",
@@ -19,6 +45,7 @@ function createDiagramNode(
       id: metadata.id,
       scenario: metadata.scenario ?? "",
       notation: "mermaid-sequence",
+      aliases: metadata.aliases,
       source,
       startLine: metadata.startLine,
       endLine,
@@ -30,6 +57,7 @@ function createDiagramNode(
     diagramType: "generic",
     id: metadata.id,
     notation: metadata.notation,
+    aliases: metadata.aliases,
     source,
     startLine: metadata.startLine,
     endLine,
@@ -113,7 +141,10 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           pendingDiagram = {
             id: openBlock.attributes["id"] ?? "",
             scenario: openBlock.attributes["scenario"] ?? "",
+            view: openBlock.attributes["view"],
             notation: openBlock.attributes["notation"] ?? "",
+            roots: splitList(openBlock.attributes["roots"]),
+            aliases: openBlock.attributes["aliases"] ?? "",
             startLine: openBlock.startLine,
           };
         } else {

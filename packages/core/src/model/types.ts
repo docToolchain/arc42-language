@@ -19,6 +19,7 @@ export interface SourceLocation {
  *   4 — Solution Strategy
  *   5 — Building Blocks (includes interfaces)
  *   6 — Runtime View
+ *   7 — Deployment View
  *   8 — Cross-cutting Concepts
  *   9 — Architecture Decisions
  *  11 — Risks and Technical Debt
@@ -32,6 +33,7 @@ export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
   "building-block", // arc42 ch. 5
   "interface", // arc42 ch. 5
   "runtime-scenario", // arc42 ch. 6
+  "deployment-node", // arc42 ch. 7
   "concept", // arc42 ch. 8
   "decision", // arc42 ch. 9
   "risk", // arc42 ch. 11
@@ -47,6 +49,7 @@ export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = {
   "building-block": 5,
   interface: 5,
   "runtime-scenario": 6,
+  "deployment-node": 7,
   concept: 8,
   decision: 9,
   risk: 11,
@@ -61,6 +64,7 @@ export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
   4: "Solution Strategy",
   5: "Building Blocks",
   6: "Runtime View",
+  7: "Deployment View",
   8: "Cross-cutting Concepts",
   9: "Architecture Decisions",
   11: "Risks and Technical Debt",
@@ -122,6 +126,16 @@ export interface RuntimeScenario {
   loc: SourceLocation;
 }
 
+export interface DeploymentNode {
+  kind: "deployment-node";
+  id: string;
+  title: string;
+  type?: "server" | "container" | "device" | "cloud-region" | "environment";
+  hosts: string[];
+  parent?: string;
+  loc: SourceLocation;
+}
+
 /** Abstract diagram artifact shared by all notation adapters. */
 export interface Diagram {
   kind: "diagram";
@@ -129,6 +143,8 @@ export interface Diagram {
   notation: string;
   /** Raw, untrusted fenced source; never interpreted by the model itself. */
   source: string;
+  /** Raw aliases string; the owning notation rule owns key-value parsing and diagnostics. */
+  aliases: string;
   loc: SourceLocation;
 }
 
@@ -143,7 +159,13 @@ export interface SequenceDiagram extends Diagram {
   scenario: string;
 }
 
-export type DiagramArtifact = GenericDiagram | SequenceDiagram;
+export interface DeploymentDiagram extends Diagram {
+  diagramType: "deployment";
+  view: "deployment";
+  roots: string[];
+}
+
+export type DiagramArtifact = GenericDiagram | SequenceDiagram | DeploymentDiagram;
 
 export interface Concept {
   kind: "concept";
@@ -198,6 +220,7 @@ export type Element =
   | BuildingBlock
   | Interface
   | RuntimeScenario
+  | DeploymentNode
   | Concept
   | Decision
   | Risk

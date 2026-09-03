@@ -9,7 +9,8 @@ export const e001DuplicateId: Rule = {
     type: "problem",
     docs: {
       description: "Duplicate element id — each id must be unique across the workspace",
-      rationale: "All cross-references in the arc42 DSL are resolved by id. A duplicate id makes references ambiguous — the validator cannot determine which element was intended, and any tooling that indexes by id will produce unpredictable results.",
+      rationale:
+        "All cross-references in the arc42 DSL are resolved by id. A duplicate id makes references ambiguous — the validator cannot determine which element was intended, and any tooling that indexes by id will produce unpredictable results.",
       arc42Chapter: 5,
       recommended: true,
     },

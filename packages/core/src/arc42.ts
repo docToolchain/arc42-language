@@ -79,6 +79,11 @@ function buildEdges(workspace: { elements: Element[] }, _index: ReferenceIndex):
       for (const ref of el.involves) {
         edges.push({ from: el.id, to: ref, relation: "involves" });
       }
+    } else if (el.kind === "deployment-node") {
+      if (el.parent) edges.push({ from: el.id, to: el.parent, relation: "parent" });
+      for (const ref of el.hosts) {
+        edges.push({ from: el.id, to: ref, relation: "hosts" });
+      }
     }
   }
   return edges;
@@ -145,9 +150,11 @@ export type {
   BuildingBlock,
   Interface,
   RuntimeScenario,
+  DeploymentNode,
   Diagram,
   GenericDiagram,
   SequenceDiagram,
+  DeploymentDiagram,
   DiagramArtifact,
   Concept,
   Decision,

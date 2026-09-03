@@ -9,7 +9,8 @@ export const h006ConstraintUnaddressed: Rule = {
     type: "suggestion",
     docs: {
       description: "Constraint is not addressed by any architecture decision",
-      rationale: "arc42 chapter 2 constraints should drive architecture decisions. A constraint with no decision addressing it is either ignored or its impact was never made explicit. Linking constraints to decisions via 'addresses' creates an auditable trace from obligation to architectural response.",
+      rationale:
+        "arc42 chapter 2 constraints should drive architecture decisions. A constraint with no decision addressing it is either ignored or its impact was never made explicit. Linking constraints to decisions via 'addresses' creates an auditable trace from obligation to architectural response.",
       arc42Chapter: 2,
       recommended: true,
     },
@@ -19,7 +20,9 @@ export const h006ConstraintUnaddressed: Rule = {
     for (const el of workspace.elements) {
       if (el.kind !== "constraint") continue;
       const referencedBy = index.refsTo.get(el.id) ?? [];
-      const addressedByDecision = referencedBy.some((id) => index.byId.get(id)?.kind === "decision");
+      const addressedByDecision = referencedBy.some(
+        (id) => index.byId.get(id)?.kind === "decision",
+      );
       if (!addressedByDecision) {
         diagnostics.push({
           code: "H006",

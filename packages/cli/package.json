@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "description": "CLI for validating and querying arc42 DSL files.",
   "license": "MIT",
-  "type": "module",
   "bin": {
     "cli": "./dist/cli.mjs"
   },
   "files": [
     "dist"
   ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/cli.mjs",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
@@ -24,9 +28,5 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"
-  },
-  "exports": {
-    ".": "./dist/cli.mjs",
-    "./package.json": "./package.json"
   }
 }

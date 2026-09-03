@@ -9,7 +9,8 @@ export const w006TooFewQualityGoals: Rule = {
     type: "problem",
     docs: {
       description: "Workspace has fewer than 3 quality goals — arc42 recommends 3–5",
-      rationale: "arc42 chapter 1 recommends capturing 3–5 quality goals to make the most important non-functional requirements explicit and comparable. Fewer than 3 goals usually means either the goals have not been elicited yet or some are buried in prose without a machine-readable block.",
+      rationale:
+        "arc42 chapter 1 recommends capturing 3–5 quality goals to make the most important non-functional requirements explicit and comparable. Fewer than 3 goals usually means either the goals have not been elicited yet or some are buried in prose without a machine-readable block.",
       arc42Chapter: 1,
       recommended: true,
     },

@@ -9,7 +9,8 @@ export const w007TooManyQualityGoals: Rule = {
     type: "problem",
     docs: {
       description: "Workspace has more than 5 quality goals — arc42 recommends 3–5",
-      rationale: "arc42 chapter 1 recommends 3–5 quality goals. More than 5 makes it difficult to prioritise and compare them — everything becomes equally important, which means nothing is prioritised. Consider consolidating or removing goals that are not genuinely architecture-driving.",
+      rationale:
+        "arc42 chapter 1 recommends 3–5 quality goals. More than 5 makes it difficult to prioritise and compare them — everything becomes equally important, which means nothing is prioritised. Consider consolidating or removing goals that are not genuinely architecture-driving.",
       arc42Chapter: 1,
       recommended: true,
     },

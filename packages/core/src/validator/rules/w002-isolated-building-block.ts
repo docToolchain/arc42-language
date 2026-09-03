@@ -8,8 +8,10 @@ export const w002IsolatedBuildingBlock: Rule = {
     severity: "warning",
     type: "problem",
     docs: {
-      description: "Leaf building-block (with a parent) has no interface on either side — it is isolated",
-      rationale: "A leaf building-block nested inside a parent should have at least one interface, otherwise it contributes no visible communication contract to the architecture graph. Root blocks are checked at hint level (H004) because a top-level component may intentionally be connected only through its children.",
+      description:
+        "Leaf building-block (with a parent) has no interface on either side — it is isolated",
+      rationale:
+        "A leaf building-block nested inside a parent should have at least one interface, otherwise it contributes no visible communication contract to the architecture graph. Root blocks are checked at hint level (H004) because a top-level component may intentionally be connected only through its children.",
       arc42Chapter: 5,
       recommended: true,
     },

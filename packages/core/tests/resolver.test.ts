@@ -162,4 +162,46 @@ describe("buildIndex", () => {
     expect(idx.refsFrom.get("scenario-checkout")).toContain("bb-api");
     expect(idx.refsTo.get("bb-api")).toContain("scenario-checkout");
   });
+
+  test("deployment-node parent and hosts populate both directions", () => {
+    const ws: Workspace = {
+      elements: [
+        {
+          kind: "deployment-node",
+          id: "node-child",
+          title: "Child",
+          parent: "node-root",
+          hosts: ["bb-api", "bb-db"],
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "deployment-node",
+          id: "node-root",
+          title: "Root",
+          hosts: [],
+          loc: { file: "f", line: 5 },
+        },
+        {
+          kind: "building-block",
+          id: "bb-api",
+          title: "API",
+          implements: [],
+          loc: { file: "f", line: 9 },
+        },
+        {
+          kind: "building-block",
+          id: "bb-db",
+          title: "DB",
+          implements: [],
+          loc: { file: "f", line: 13 },
+        },
+      ],
+      parseErrors: [],
+      documents: [],
+      diagrams: [],
+    };
+    const idx = buildIndex(ws);
+    expect(idx.refsFrom.get("node-child")).toEqual(["node-root", "bb-api", "bb-db"]);
+    expect(idx.refsTo.get("bb-api")).toEqual(["node-child"]);
+  });
 });

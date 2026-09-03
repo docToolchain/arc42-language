@@ -18,6 +18,31 @@ export const e002UnresolvedReference: Rule = {
   check(workspace: Workspace, index: ReferenceIndex): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     for (const el of workspace.elements) {
+      if (el.kind === "deployment-node") {
+        const references: Array<{
+          id: string;
+          expected: "building-block" | "deployment-node";
+        }> = [];
+        if (el.parent) references.push({ id: el.parent, expected: "deployment-node" });
+        for (const host of el.hosts) references.push({ id: host, expected: "building-block" });
+
+        for (const reference of references) {
+          const target = index.byId.get(reference.id);
+          if (!target || target.kind !== reference.expected) {
+            diagnostics.push({
+              code: "E002",
+              severity: "error",
+              message: target
+                ? `Invalid deployment reference '${reference.id}' in deployment node '${el.id}' — target must be a ${reference.expected}`
+                : `Unresolved reference '${reference.id}' in element '${el.id}'`,
+              file: el.loc.file,
+              line: el.loc.line,
+            });
+          }
+        }
+        continue;
+      }
+
       const refs = index.refsFrom.get(el.id) ?? [];
       for (const ref of refs) {
         const target = index.byId.get(ref);

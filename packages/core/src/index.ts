@@ -14,9 +14,11 @@ export type {
   BuildingBlock,
   Interface,
   RuntimeScenario,
+  DeploymentNode,
   Diagram,
   GenericDiagram,
   SequenceDiagram,
+  DeploymentDiagram,
   DiagramArtifact,
   Concept,
   Decision,
@@ -38,6 +40,7 @@ export type {
   DiagramNodeBase,
   GenericDiagramNode,
   SequenceDiagramNode,
+  DeploymentDiagramNode,
 } from "./ast.ts";
 
 // Rule registry

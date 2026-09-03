@@ -9,7 +9,8 @@ export const w009RiskNoMitigation: Rule = {
     type: "problem",
     docs: {
       description: "Risk has no mitigation strategy",
-      rationale: "Identifying a risk without documenting a mitigation strategy is only half the work. arc42 chapter 11 expects risks to be paired with how they are addressed — even if the mitigation is 'accepted without action'. An undocumented mitigation leaves the team without guidance on what to do if the risk materialises.",
+      rationale:
+        "Identifying a risk without documenting a mitigation strategy is only half the work. arc42 chapter 11 expects risks to be paired with how they are addressed — even if the mitigation is 'accepted without action'. An undocumented mitigation leaves the team without guidance on what to do if the risk materialises.",
       arc42Chapter: 11,
       recommended: true,
     },

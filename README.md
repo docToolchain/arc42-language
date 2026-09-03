@@ -45,60 +45,7 @@ implements: concept-logging, concept-error-handling
 :::
 ```
 
-The block types cover arc42 sections 1 through 6, 8, and 9:
-
-| Block                  | Section                                   | Required attributes                                                  |
-| ---------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
-| `:::quality-goal`      | 1 — Quality Goals                         | `id`, `title`, `priority` (high\|medium\|low)                        |
-| `:::solution-strategy` | 4 — Solution Strategy (one per workspace) | `id`, `title`                                                        |
-| `:::building-block`    | 5 — Building Blocks                       | `id`, `title`                                                        |
-| `:::interface`         | 5 — Building Blocks                       | `id`, `title`, `between` (two building-block ids)                    |
-| `:::runtime-scenario`  | 6 — Runtime View                          | `id`, `title`                                                        |
-| `:::concept`           | 8 — Cross-cutting Concepts                | `id`, `title`                                                        |
-| `:::decision`          | 9 — Architecture Decisions                | `id`, `title`, `status` (proposed\|accepted\|deprecated\|superseded) |
-
-See `examples/bookstore-backend/` for a complete, valid workspace with all five block types and realistic prose.
-
-### Runtime scenarios and diagrams
-
-Use `runtime-scenario` for a representative runtime flow. Keep the structured metadata small and
-put the detailed steps in prose or an explicitly associated diagram:
-
-```markdown
-:::runtime-scenario
-id: scenario-checkout
-title: Customer checkout
-trigger: Customer submits an order
-involves: bb-api, bb-order-service, bb-payment-service
-:::
-```
-
-Mermaid sequence diagrams can be associated with a scenario using a `diagram` metadata block. Use
-stable model IDs (or underscore aliases normalized to model IDs) for participants; `as` labels are
-presentation only:
-
-````markdown
-:::diagram
-id: checkout-sequence
-scenario: scenario-checkout
-notation: mermaid-sequence
-:::
-
-```mermaid
-sequenceDiagram
-    participant bb_api as API Gateway
-    participant bb_order_service as Order Service
-    bb_api->>bb_order_service: Create order
-```
-````
-
-State diagrams may remain ordinary Markdown artifacts, but state-diagram parsing and validation are
-out of scope. State names are lifecycle states, not building-block references.
-
-The Mermaid validator intentionally checks a bounded sequence-diagram subset: declarations,
-participants, the common `->>`, `-->>`, `->`, `-->`, `-x`, `--x`, `-)`, and `--)` message arrows,
-and message endpoints. Notes, activation commands, grouping keywords, quoted participant forms,
-and detailed Mermaid rendering semantics remain source content rather than architecture validation.
+The block types cover the main arc42 sections. See `templates/starter/` for ready-to-use files — each template has an HTML comment explaining the arc42 intent for that section and showing a worked example. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.
 
 ### The CLI
 

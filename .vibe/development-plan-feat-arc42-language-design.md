@@ -1,10 +1,12 @@
 # Development Plan: arc42-language (feat/arc42-language-design branch)
 
-*Generated on 2026-08-14 by Vibe Feature MCP*
-*Workflow: [qrspi](https://codemcp.github.io/workflows/workflows/qrspi)*
+_Generated on 2026-08-14 by Vibe Feature MCP_
+_Workflow: [qrspi](https://codemcp.github.io/workflows/workflows/qrspi)_
 
 ## Goal
+
 Design and implement a structured language for arc42 software architecture documentation that:
+
 - Is human-readable first, machine-parseable second
 - Enables formal verification of correctness, coherence and consistency
 - Can be used by both humans (in editors) and AI agents (via CLI + opencode skill)
@@ -30,20 +32,25 @@ Design and implement a structured language for arc42 software architecture docum
 ## Notes
 
 ### Consistency rules for v1
+
 - Components must reference defined building blocks
 - Architecture decisions must reference at least one quality goal
 - Cross-cutting concerns should be implemented by ideally one component (warning if multiple, error if none)
 - All referenced IDs must resolve to defined elements
 
 ### Agent interaction model
+
 Agents interact via file read/write (the DSL files) + CLI tool calls for validation and querying.
 Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/logging"`
 
 ## Questions
+
 ### Tasks
-*All resolved*
+
+_All resolved_
 
 ### Completed
+
 - [x] Created development plan file
 - [x] Established that human readability is the primary design constraint
 - [x] Decided on Markdown-flavored DSL over pure YAML/JSON
@@ -59,11 +66,13 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 ## Research
 
 ### Tasks
-*All resolved*
+
+_All resolved_
 
 ### Existing Architecture DSLs
 
 **Structurizr DSL**
+
 - Text-based DSL for C4 model architecture description
 - Block-structured syntax with `{` / `}` scoping; identifiers: `u = person "User"`, `ss = softwareSystem "..." { ... }`
 - Validates: identifier uniqueness, relationship consistency, workspace integrity
@@ -72,17 +81,20 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 - Learning: Block structure + IDs work well; DSL parser decoupled from renderer; relationships can reference IDs across files
 
 **ArchUnit**
+
 - Java bytecode analysis library — rules expressed in Java fluent DSL: `classes().that(...).should(...)`
 - Validates at compile-time: package deps, layer boundaries, cycle detection, annotation checks
 - Not text-based; not directly applicable — but shows fluent validation rule syntax is readable
 - Learning: Error messages must include exact file/line locations; validation should be fast and incremental
 
 **PlantUML**
+
 - Text-based diagram language: `@startuml ... @enduml` blocks; ANTLR-based parser, renders via Graphviz
 - Can be embedded in Markdown via fenced blocks; rendering engine is separate from parsing
 - Learning: Fenced block embedding in Markdown is an established pattern; parser and renderer can be separate concerns
 
 **C4 Model**
+
 - Hierarchical abstractions: Software System → Container → Component → Code
 - Notation-independent; Structurizr DSL is the primary text-based C4 format
 - Learning: Clear hierarchy simplifies validation; cross-level consistency checks are a known pattern
@@ -90,21 +102,26 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 ### Markdown Extension Formats
 
 **Fenced directive syntax (`:::type`)** — used by MyST-Parser (Python), Pandoc `fenced_divs`, markdig (.NET), MystMD (JS)
+
 - Syntax: `:::type` / `:::` open+close, or `:::{type}` variant
 - LSP-friendliness: **High** — simple delimiters, no nested parsing complexity
 
 **GFM fenced code blocks with info string** (` ```building-block `)
+
 - Widely supported (GitHub, remark-gfm, Pandoc CommonMark)
 - Renders as `<pre><code class="language-building-block">` — content is treated as code, not rendered prose
 - LSP-friendliness: **High** — but semantic interpretation is non-standard
 
 **MDX** — JSX components in Markdown
+
 - LSP-friendliness: **Medium-Low** — requires JSX parser; complex expressions and nesting
 
 **AsciiDoc delimited blocks** — `[role="..."]` + `====` delimiters
+
 - LSP-friendliness: **High** — but AsciiDoc not Markdown; different ecosystem
 
 **MyST directive syntax** — ` ```{directive} ` with `:key: value` options
+
 - Mature ecosystem (Sphinx, Jupyter Book); VS Code extension (`myst-highlight`) proves LSP feasibility
 - Consistent fence-based syntax; well-documented AST
 
@@ -113,18 +130,21 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 ### LSP Implementation Options
 
 **TypeScript / vscode-languageserver-node**
+
 - Official Microsoft LSP library; 1.8k+ stars, widely adopted in production
 - Supports stdio, TCP, Node IPC transports — same core logic as CLI binary (`bin` field in package.json)
 - Dual-use pattern: same TS library, two entry points (LSP server and CLI tool)
 - Runtime: Node.js (available everywhere); startup slightly slower than native binaries
 
 **Rust / tower-lsp**
+
 - Async Rust LSP framework built on Tower; 1.4k stars, actively maintained
 - Single binary for both CLI and LSP (via `[bin]` sections in Cargo.toml sharing a library)
 - Excellent dual-use support; fast startup; safe memory model
 - Steeper learning curve; smaller ecosystem than TS for LSP specifically
 
 **Python / pygls**
+
 - Based on python-language-server (2.6k stars); used by Spyder IDE
 - `LanguageServer` class supports `--stdio`, `--tcp`, `--ws` modes
 - Good for prototyping; higher latency than async Rust/Node for large files
@@ -132,6 +152,7 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 **Go** — no widely adopted general-purpose LSP framework (gopls is Go-specific)
 
 **How existing LSPs handle embedded structured content** (yaml-language-server, marksman):
+
 - Schema association via modeline comments or workspace config
 - Virtual document mapping for nested code blocks (e.g. `file://doc.md#embedded-yaml`)
 - Language ID overriding in editor config (`"files.associations": {"*.arc42": "arc42"}`)
@@ -146,6 +167,7 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 - LSP integration: language server uses tree-sitter bindings to generate + query syntax trees; semantic analysis is a separate layer on top
 
 **Viability for Markdown+`:::building-block` hybrid**: Yes — viable approach:
+
 1. Host grammar for Markdown-like prose (headings, paragraphs, lists)
 2. Additional rule for `:::type` fenced blocks with open/close pattern
 3. Sub-grammar or token-based parse for key-value content inside blocks
@@ -156,12 +178,14 @@ Example: `arc42 validate`, `arc42 query "components implementing cross-cutting/l
 ### Opencode Skill Format
 
 Skills are directories with a `SKILL.md` file. Format:
+
 - YAML frontmatter with `name`, `description`, and optionally `allowed-tools`
 - `description` field is used for skill activation — determines when the skill is loaded; can include trigger keywords
 - `allowed-tools` restricts which CLI commands the skill can invoke (e.g. `Bash(arc42:*)`)
 - Body is plain Markdown: sections for quick start, commands, examples, references
 
 Example frontmatter:
+
 ```yaml
 ---
 name: arc42-language
@@ -177,12 +201,14 @@ Skill locations: `~/.agents/skills/`, `~/.opencode/skills/`, `~/.config/opencode
 ### Existing arc42 Tooling
 
 **arc42-template** (https://github.com/arc42/arc42-template)
+
 - Master source in AsciiDoc; 15+ output formats (HTML, PDF, DOCX, Markdown, Confluence, LaTeX, EA EAP, etc.)
 - 12 languages; two flavours: `plain` (bare structure) and `withhelp` (embedded explanations)
 - Validation: CommonMark compliance checks, image reference validation — no structural/semantic validation
 - Section 10 (Quality Requirements) added July 2025 (v9.0); separates quality goals (section 1) from detailed quality scenarios (section 10)
 
 **DocToolchain**
+
 - docs-as-code toolchain for arc42; input: AsciiDoc; output: HTML, PDF, Confluence
 - Integrates PlantUML, Mermaid, Enterprise Architect
 - No structural validation — purely a rendering/export pipeline
@@ -191,16 +217,17 @@ Skill locations: `~/.agents/skills/`, `~/.opencode/skills/`, `~/.config/opencode
 
 **Section data model** (sections 1, 5, 8, 9):
 
-| Section | Typical structured data | Key relationships |
-|---------|------------------------|-------------------|
-| 1 Quality Goals | Quality tree, scenarios, acceptance criteria | Drives sections 8, 9, 10 |
-| 5 Building Blocks | Component hierarchy, interfaces, tech stack | Referenced by sections 6 (runtime), 7 (deployment) |
-| 8 Cross-cutting Concepts | Technology choices, patterns, processes | Supports section 5; constrained by section 9 |
-| 9 Architecture Decisions | ADR-style: context, decision, consequences | Links to section 1 (goals), referenced by all technical sections |
+| Section                  | Typical structured data                      | Key relationships                                                |
+| ------------------------ | -------------------------------------------- | ---------------------------------------------------------------- |
+| 1 Quality Goals          | Quality tree, scenarios, acceptance criteria | Drives sections 8, 9, 10                                         |
+| 5 Building Blocks        | Component hierarchy, interfaces, tech stack  | Referenced by sections 6 (runtime), 7 (deployment)               |
+| 8 Cross-cutting Concepts | Technology choices, patterns, processes      | Supports section 5; constrained by section 9                     |
+| 9 Architecture Decisions | ADR-style: context, decision, consequences   | Links to section 1 (goals), referenced by all technical sections |
 
 **Finding**: Existing arc42 tooling is documentation generation only. No tool currently validates structural consistency or cross-section references. This is the gap our language fills.
 
 ### Completed
+
 - [x] Surveyed existing architecture DSLs (Structurizr, ArchUnit, PlantUML, C4)
 - [x] Researched Markdown extension formats (MyST, MDX, GFM, AsciiDoc, YAML frontmatter)
 - [x] Researched LSP implementation options (TypeScript, Rust, Python, Go)
@@ -211,11 +238,13 @@ Skill locations: `~/.agents/skills/`, `~/.opencode/skills/`, `~/.config/opencode
 ## Design
 
 ### Tasks
-*All resolved*
+
+_All resolved_
 
 ### Document Structure
 
 **File discovery: workspace-scoped, no manifest**
+
 - CLI and LSP scan for `*.arc42.md` files in the project directory
 - `--dir` flag for monorepo/multi-project repos to limit scope
 - No root document, no include directives, no manifest file
@@ -223,6 +252,7 @@ Skill locations: `~/.agents/skills/`, `~/.opencode/skills/`, `~/.config/opencode
 - Ordering for rendering is a separate concern, not part of v1
 
 **Host format: Markdown first, parser-abstracted**
+
 - v1 targets Markdown (`.arc42.md`); AsciiDoc (`.arc42.adoc`) can be added later
 - Parser is behind an interface — all layers above (meta-model, validation, queries) are format-agnostic
 - `.arc42.md` double extension: recognized as Markdown by default renderers; recognized as arc42 by tooling
@@ -270,6 +300,7 @@ implements: concept/logging, concept/auth
 ### Meta-model (v1 block types)
 
 **`:::quality-goal`** (arc42 section 1)
+
 ```
 id:       required, unique identifier (e.g. qg-performance)
 title:    required, human-readable name
@@ -278,6 +309,7 @@ scenario: optional, measurable acceptance criterion (short text)
 ```
 
 **`:::building-block`** (arc42 section 5)
+
 ```
 id:           required, unique identifier (e.g. bb-api-gateway)
 title:        required, human-readable name
@@ -287,6 +319,7 @@ implements:   optional, comma-separated list of concept ids
 ```
 
 **`:::interface`** (arc42 section 5, connection between building blocks)
+
 ```
 id:       required, unique identifier
 title:    required, name
@@ -295,6 +328,7 @@ protocol: optional, free text
 ```
 
 **`:::concept`** (arc42 section 8 — cross-cutting concept)
+
 ```
 id:       required, unique identifier (e.g. concept/logging)
 title:    required, name
@@ -302,6 +336,7 @@ category: optional, security | persistence | ui | error-handling | observability
 ```
 
 **`:::decision`** (arc42 section 9 — architecture decision record)
+
 ```
 id:        required, unique identifier (e.g. dd-001)
 title:     required, short decision statement
@@ -322,6 +357,7 @@ Building block hierarchy is **flat with `parent:` reference** — no nested bloc
 ### Validation Rules (v1)
 
 **Errors** (broken structure):
+
 - Duplicate `id` within workspace
 - Reference to undefined id (`parent:`, `implements:`, `between:`, `addresses:`)
 - Circular `parent:` reference in building blocks
@@ -329,11 +365,13 @@ Building block hierarchy is **flat with `parent:` reference** — no nested bloc
 - Required attribute missing
 
 **Warnings** (inconsistency):
+
 - Cross-cutting concept with no building block implementing it
 - Building block with no interface (isolated component)
 - Decision with `status: proposed` older than 90 days (if `date:` present)
 
 **Hints** (best practice):
+
 - Decision with no `addresses:` reference to a quality goal
 - Quality goal with no decision addressing it
 - Building block with no `technology:` attribute
@@ -351,6 +389,7 @@ arc42 query "<natural language or structured query>"  # future
 Default output format: `json` (agent-primary); `--format text` for human-readable output.
 
 ### Completed
+
 - [x] Decided file discovery: workspace-scoped, no manifest, `--dir` for monorepos
 - [x] Decided host format: Markdown first, parser behind interface for future AsciiDoc support
 - [x] Defined parser abstraction layer and component pipeline
@@ -363,7 +402,8 @@ Default output format: `json` (agent-primary); `--format text` for human-readabl
 ## Structure
 
 ### Tasks
-*All resolved*
+
+_All resolved_
 
 ### Vertical Slices
 
@@ -373,6 +413,7 @@ End-user can write `.arc42.md` files with any of the 5 block types, run `arc42 v
 This is the core value proposition. Proves the parser, meta-model, reference resolver, and validator all work together.
 
 Components touched:
+
 - File discovery (glob `*.arc42.md` in workspace, `--dir` flag)
 - `MarkdownParser` implementing the `Parser` interface (line-oriented, `:::type` fences)
 - Common Document AST (headings, prose nodes, structured block nodes with attributes)
@@ -394,6 +435,7 @@ Before proceeding to Slice 2, an agent (or CI job) generates a complete realisti
 User (or agent) can enumerate elements and inspect individual elements with their full reference context.
 
 Components touched:
+
 - Bidirectional reference index (already built by resolver in Slice 1)
 - CLI `list <block-type>` command
 - CLI `show <id>` command (element attributes + all inbound/outbound references)
@@ -406,6 +448,7 @@ End-to-end test: same fixture workspace from Slice 1 → assert `list` returns c
 Agent can work with arc42 files natively in opencode via a skill. Human editors get inline diagnostics in VS Code via LSP.
 
 Components touched:
+
 - `SKILL.md` documenting block syntax, CLI commands, and authoring examples
 - LSP server entry point (document open/change/save → run validator → emit `Diagnostic` objects with range)
 - VS Code extension manifest (`language-configuration.json`, file association for `*.arc42.md`)
@@ -419,12 +462,14 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 **Language**: TypeScript 5.x
 **Package manager**: pnpm
 **Unified toolchain**: Vite+ (`vp` CLI) — bundles Vitest, tsdown/Rolldown, Oxlint, Oxfmt, tsgo under one tool
+
 - `vp pack` — builds CLI binary (with shebang) + library output via tsdown/Rolldown
 - `vp test` — runs Vitest (fast, ESM-native, Jest-compatible API)
 - `vp check` — format (Oxfmt) + lint (Oxlint) + type-check (tsgo) in one pass
-**LSP library**: `vscode-languageserver-node` — dual-use (LSP server entry point + CLI binary, same core library)
+  **LSP library**: `vscode-languageserver-node` — dual-use (LSP server entry point + CLI binary, same core library)
 
 ### Completed
+
 - [x] Defined 3 vertical slices with clear component boundaries and test strategies
 - [x] Scoped MVP to Slice 1 (parse + validate) — sufficient for end-user validation of the concept
 - [x] Added agent-generated end-to-end gate between Slice 1 and Slice 2
@@ -436,25 +481,46 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 ### Tasks
 
 #### P0 — Repo scaffold
-- [ ] **P0.1 Init monorepo** — Create `pnpm-workspace.yaml` listing `packages/*`. Create root `package.json` with `"private": true`, `"engines": {"node": ">=20"}`, and workspace-level scripts: `"build": "vp pack -r"`, `"test": "vp test -r"`, `"check": "vp check -r"`. Add `.gitignore` (node_modules, dist, *.tsbuildinfo). No dependencies at root.
+
+- [ ] **P0.1 Init monorepo** — Create `pnpm-workspace.yaml` listing `packages/*`. Create root `package.json` with `"private": true`, `"engines": {"node": ">=20"}`, and workspace-level scripts: `"build": "vp pack -r"`, `"test": "vp test -r"`, `"check": "vp check -r"`. Add `.gitignore` (node_modules, dist, \*.tsbuildinfo). No dependencies at root.
 - [ ] **P0.2 Create `packages/core`** — `package.json`: `name: @arc42/core`, `version: 0.1.0`, `private: true`, `main: dist/index.js`, `types: dist/index.d.ts`. Dev deps: `typescript`, `viteplus`, `vitest`. Peer deps: none. Create `src/index.ts` (barrel export). Create `tsconfig.json`: `module: NodeNext`, `moduleResolution: NodeNext`, `target: ES2022`, `strict: true`, `outDir: dist`, `declaration: true`.
 - [ ] **P0.3 Create `packages/cli`** — `package.json`: `name: @arc42/cli`, `version: 0.1.0`, `bin: {"arc42": "dist/cli.js"}`. Dep: `@arc42/core: "workspace:*"`. Dev deps: same as core. Create `src/cli.ts` with shebang (`#!/usr/bin/env node`). `tsconfig.json`: same settings as core.
 - [ ] **P0.4 Verify toolchain** — Run `pnpm install` from root. Run `vp check` (should pass on empty stubs). Run `vp test` (zero tests → passes). Confirm `vp pack` produces `dist/` in both packages.
 
 #### P1 — Core: AST types
+
 - [ ] **P1.1 Define AST node types** — Create `packages/core/src/ast.ts`. Define types:
   ```ts
-  type NodeKind = 'heading' | 'prose' | 'block'
-  interface HeadingNode { kind: 'heading'; level: number; text: string; line: number }
-  interface ProseNode  { kind: 'prose'; text: string; line: number }
-  interface BlockNode  { kind: 'block'; blockType: BlockType; attributes: Record<string,string>; startLine: number; endLine: number }
-  type AstNode = HeadingNode | ProseNode | BlockNode
-  interface DocumentAst { filePath: string; nodes: AstNode[] }
-  type BlockType = 'quality-goal' | 'building-block' | 'interface' | 'concept' | 'decision'
+  type NodeKind = "heading" | "prose" | "block";
+  interface HeadingNode {
+    kind: "heading";
+    level: number;
+    text: string;
+    line: number;
+  }
+  interface ProseNode {
+    kind: "prose";
+    text: string;
+    line: number;
+  }
+  interface BlockNode {
+    kind: "block";
+    blockType: BlockType;
+    attributes: Record<string, string>;
+    startLine: number;
+    endLine: number;
+  }
+  type AstNode = HeadingNode | ProseNode | BlockNode;
+  interface DocumentAst {
+    filePath: string;
+    nodes: AstNode[];
+  }
+  type BlockType = "quality-goal" | "building-block" | "interface" | "concept" | "decision";
   ```
   Export all from `src/index.ts`. No deps.
 
 #### P2 — Core: MarkdownParser
+
 - [ ] **P2.1 Implement line-oriented parser** — Create `packages/core/src/parser/markdown-parser.ts`. Algorithm:
   1. Split file content into lines (preserve line numbers, 1-indexed).
   2. Scan lines sequentially. When a line matches `/^:::([a-z-]+)\s*$/`, open a block of that type, record `startLine`.
@@ -478,20 +544,69 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
   - Block with unrecognized type → still emitted as `BlockNode` (validator catches unknown block types, parser stays dumb).
 
 #### P3 — Core: Meta-model builder
+
 - [ ] **P3.1 Define meta-model element types** — Create `packages/core/src/model/types.ts`:
+
   ```ts
-  interface SourceLocation { file: string; line: number }
+  interface SourceLocation {
+    file: string;
+    line: number;
+  }
 
-  interface QualityGoal  { kind: 'quality-goal';   id: string; title: string; priority: 'high'|'medium'|'low'; scenario?: string; loc: SourceLocation }
-  interface BuildingBlock{ kind: 'building-block'; id: string; title: string; technology?: string; parent?: string; implements: string[]; loc: SourceLocation }
-  interface Interface    { kind: 'interface';      id: string; title: string; between: [string,string]; protocol?: string; loc: SourceLocation }
-  interface Concept      { kind: 'concept';        id: string; title: string; category?: string; loc: SourceLocation }
-  interface Decision     { kind: 'decision';       id: string; title: string; status: 'proposed'|'accepted'|'deprecated'|'superseded'; date?: string; addresses: string[]; loc: SourceLocation }
+  interface QualityGoal {
+    kind: "quality-goal";
+    id: string;
+    title: string;
+    priority: "high" | "medium" | "low";
+    scenario?: string;
+    loc: SourceLocation;
+  }
+  interface BuildingBlock {
+    kind: "building-block";
+    id: string;
+    title: string;
+    technology?: string;
+    parent?: string;
+    implements: string[];
+    loc: SourceLocation;
+  }
+  interface Interface {
+    kind: "interface";
+    id: string;
+    title: string;
+    between: [string, string];
+    protocol?: string;
+    loc: SourceLocation;
+  }
+  interface Concept {
+    kind: "concept";
+    id: string;
+    title: string;
+    category?: string;
+    loc: SourceLocation;
+  }
+  interface Decision {
+    kind: "decision";
+    id: string;
+    title: string;
+    status: "proposed" | "accepted" | "deprecated" | "superseded";
+    date?: string;
+    addresses: string[];
+    loc: SourceLocation;
+  }
 
-  type Element = QualityGoal | BuildingBlock | Interface | Concept | Decision
-  interface Workspace { elements: Element[]; parseErrors: ParseError[] }
-  interface ParseError { message: string; file: string; line: number }
+  type Element = QualityGoal | BuildingBlock | Interface | Concept | Decision;
+  interface Workspace {
+    elements: Element[];
+    parseErrors: ParseError[];
+  }
+  interface ParseError {
+    message: string;
+    file: string;
+    line: number;
+  }
   ```
+
 - [ ] **P3.2 Implement meta-model builder** — Create `packages/core/src/model/builder.ts`. Takes `DocumentAst[]` → `Workspace`. For each `BlockNode`:
   - Extract `id`, `title` (required fields). If missing, emit `ParseError`, skip element.
   - Parse type-specific fields (e.g. `implements` split on `,` and trim; `between` split on `,` expect exactly 2 items; `addresses` split on `,`).
@@ -501,23 +616,31 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - [ ] **P3.3 Unit tests for builder** — Test: valid block → correct element. Missing `id` → ParseError. Unknown block type → ParseError. `between` with 3 items → ParseError. Invalid `priority` value → ParseError.
 
 #### P4 — Core: Reference resolver + index
+
 - [ ] **P4.1 Build reference index** — Create `packages/core/src/resolver/index.ts`. Takes `Workspace`. Returns:
   ```ts
   interface ReferenceIndex {
-    byId: Map<string, Element>                    // id → element
-    refsFrom: Map<string, string[]>               // id → list of ids this element references
-    refsTo: Map<string, string[]>                 // id → list of ids that reference this element
+    byId: Map<string, Element>; // id → element
+    refsFrom: Map<string, string[]>; // id → list of ids this element references
+    refsTo: Map<string, string[]>; // id → list of ids that reference this element
   }
-  function buildIndex(workspace: Workspace): ReferenceIndex
+  function buildIndex(workspace: Workspace): ReferenceIndex;
   ```
   Population logic: for each element, collect all outbound reference fields (`parent`, `implements[]`, `between[]`, `addresses[]`) and populate both maps bidirectionally.
 - [ ] **P4.2 Unit tests for resolver** — Test: two elements, one references the other → both maps populated. Element with no references → appears in `byId` but not in `refsFrom`. Duplicate IDs → `byId` stores last; validator (not resolver) reports the error.
 
 #### P5 — Core: Validator
+
 - [ ] **P5.1 Define diagnostic types** — Create `packages/core/src/validator/types.ts`:
   ```ts
-  type Severity = 'error' | 'warning' | 'hint'
-  interface Diagnostic { code: string; severity: Severity; message: string; file: string; line: number }
+  type Severity = "error" | "warning" | "hint";
+  interface Diagnostic {
+    code: string;
+    severity: Severity;
+    message: string;
+    file: string;
+    line: number;
+  }
   ```
   Diagnostic codes:
   | Code | Severity | Rule |
@@ -548,24 +671,32 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - [ ] **P5.3 Unit tests for validator** — One test per rule. Use minimal `Workspace` + `ReferenceIndex` fixtures constructed inline (no file I/O). Assert correct code, severity, file, line.
 
 #### P6 — Core: File discovery
+
 - [ ] **P6.1 Implement file discovery** — Create `packages/core/src/discovery.ts`:
   ```ts
-  async function discoverFiles(dir: string): Promise<string[]>
+  async function discoverFiles(dir: string): Promise<string[]>;
   ```
   Uses Node.js `fs` + `path` to recursively walk `dir`, returning all files matching `*.arc42.md`. No third-party glob library — recursive `fs.readdir` with `{ withFileTypes: true }` is sufficient and has no deps.
 - [ ] **P6.2 Unit tests for discovery** — Create a temp directory fixture in `packages/core/src/__fixtures__/`. Assert that only `.arc42.md` files are returned, nested dirs are included, non-matching files are excluded.
 
 #### P7 — Core: Top-level API
+
 - [ ] **P7.1 Assemble pipeline** — Create `packages/core/src/arc42.ts`:
   ```ts
-  interface ValidateOptions { dir: string }
-  interface ValidateResult { valid: boolean; diagnostics: Diagnostic[] }
-  async function validateWorkspace(opts: ValidateOptions): Promise<ValidateResult>
+  interface ValidateOptions {
+    dir: string;
+  }
+  interface ValidateResult {
+    valid: boolean;
+    diagnostics: Diagnostic[];
+  }
+  async function validateWorkspace(opts: ValidateOptions): Promise<ValidateResult>;
   ```
   Pipeline: `discoverFiles` → read each file → `MarkdownParser.parse` → `buildWorkspace` → `buildIndex` → `validate` → return result.
 - [ ] **P7.2 Export from barrel** — `packages/core/src/index.ts` exports: `validateWorkspace`, `ValidateOptions`, `ValidateResult`, `Diagnostic`, `Severity`, all element types, `ReferenceIndex`.
 
 #### P8 — CLI: validate command (Slice 1 done)
+
 - [ ] **P8.1 Wire CLI entry point** — `packages/cli/src/cli.ts` (with `#!/usr/bin/env node` shebang). Use Node.js built-in `parseArgs` (`util.parseArgs`) — no third-party arg parser. Parse: `arc42 validate [--dir <path>] [--format json|text]`. Default `--dir`: `process.cwd()`. Default `--format`: `json`.
 - [ ] **P8.2 JSON output** — When `--format json`, `JSON.stringify(result, null, 2)` to stdout. Exit code 0 if `result.valid`, 1 otherwise.
 - [ ] **P8.3 Text output** — When `--format text`, format each diagnostic as: `<severity> <code>  <file>:<line>  <message>`. Print summary line: `N errors, M warnings, K hints`. Exit code same as JSON mode.
@@ -573,14 +704,18 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
   - `quality-goals.arc42.md` — 2 quality goals, one with priority, one missing priority (→ E005)
   - `building-blocks.arc42.md` — 3 building blocks; one references undefined parent (→ E002); one has no interface (→ W002); one has no technology (→ H003)
   - `decisions.arc42.md` — 2 decisions; one without `addresses` (→ H001); one proposed with a date 100 days ago (→ W003)
-  Also add one concept with no implementing building-block (→ W001).
-  Test: run `validateWorkspace({ dir: fixturePath })`, assert exact set of diagnostic codes.
+    Also add one concept with no implementing building-block (→ W001).
+    Test: run `validateWorkspace({ dir: fixturePath })`, assert exact set of diagnostic codes.
 
 #### P9 — CLI: list / show / check commands (Slice 2)
+
 - [ ] **P9.1 Extend core API** — Add to `packages/core/src/arc42.ts`:
   ```ts
-  async function listElements(opts: { dir: string; type: BlockType }): Promise<Element[]>
-  async function showElement(opts: { dir: string; id: string }): Promise<{ element: Element; refsFrom: Element[]; refsTo: Element[] } | null>
+  async function listElements(opts: { dir: string; type: BlockType }): Promise<Element[]>;
+  async function showElement(opts: {
+    dir: string;
+    id: string;
+  }): Promise<{ element: Element; refsFrom: Element[]; refsTo: Element[] } | null>;
   ```
   These reuse the same pipeline (discover → parse → build → index). No new parsing logic.
 - [ ] **P9.2 Wire `list` command** — `arc42 list <type> [--format json|text]`. JSON: array of elements. Text: one line per element `<id>  <title>  (<file>:<line>)`. Exit 1 if unknown type.
@@ -589,6 +724,7 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - [ ] **P9.5 End-to-end tests for query** — Using the same `mini-arch` fixture: assert `listElements({ type: 'decision' })` returns 2 elements; assert `showElement({ id: 'qg-perf' })` returns element + populated refsTo from decisions.
 
 #### P10 — Slice 3 (post-MVP, high-level only)
+
 - [ ] **P10.1 SKILL.md** — Write `packages/skill/SKILL.md` with YAML frontmatter (`name`, `description`, `allowed-tools: Bash(arc42:*)`). Body: block type reference, CLI command reference with examples, common agent workflows.
 - [ ] **P10.2 LSP server entry point** — `packages/lsp/src/server.ts`. Use `vscode-languageserver/node`. On `textDocument/didOpen` and `textDocument/didChange`, run `validateWorkspace` against the file's directory, convert `Diagnostic[]` to LSP `Diagnostic` objects (map `line` to `Range`), publish via `connection.sendDiagnostics`.
 - [ ] **P10.3 VS Code extension manifest** — `packages/lsp/package.json` with `"contributes"` section: language id `arc42`, file pattern `**/*.arc42.md`, file icon. Language configuration JSON for `:::` fence toggling.
@@ -605,16 +741,20 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - **Monorepo with pnpm workspaces** — `packages/core` (pure lib), `packages/cli` (binary), `packages/lsp` (server, Slice 3), `packages/skill` (SKILL.md only, Slice 3). Clean separation allows consuming `core` without bundling CLI deps.
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ## Implement
+
 ### Tasks
+
 - [ ] P11 — Renderer registry: `WorkspaceRenderer` + `ElementRenderers` in `packages/core/src/renderer/`; implement `TextRenderer` (chapter-grouped, compact) and `JsonRenderer` (flat array + edges); export `builtinRenderers` + `rendererById`
 - [ ] P12 — Rewrite CLI to final surface: `arc42 [--dir] validate|get|rules`; wire renderer registry; implement `get` (workspace + single-element), global `--dir` flag + `ARC42_DIR` env var, exit code table
 - [ ] P13 — Tests for `get` command: workspace view (ordering, edges), single-element view (1-hop bidirectional), `--type` filter, not-found exit 1
 - [ ] P10 — Slice 3: SKILL.md + LSP server (post-MVP)
 
 ### Key Decisions (Implement phase)
+
 - **Rule registry pattern (ESLint-inspired)** — Each rule is a self-describing `Rule` object with `meta: { code, severity, type, docs: { description, arc42Chapter, recommended } }` and a `check()` function. The `validate()` function is now just `builtinRules.flatMap(r => r.check(ws, idx))`. Rules live in `packages/core/src/validator/rules/` one file per rule, named `e001-duplicate-id.ts` etc. Enables `arc42 rules` CLI command and chapter-grouped output. Decided against taking `@eslint/core` as a dependency — it exports only types and its `RuleDefinition` is coupled to AST visitor/traversal model which doesn't fit our graph-based validation.
 - **`dts: true` not `dts: { tsgo: true }`** — `tsgo` requires `@typescript/native-preview` which is not installed; plain `dts: true` uses the standard tsc-based path and works fine.
 - **Test imports use `../src/` (not `../../src/`)** — Tests live in `packages/core/tests/`; source is `packages/core/src/`. One level up is enough.
@@ -641,6 +781,7 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - **`examples/bookstore-backend/`** — Clean, valid 4-file example workspace (quality-goals, building-blocks, concepts, decisions). All elements valid. Each block is embedded in a prose chapter (validates W004/W005 pattern). Ships as the reference template for human authors and agents.
 
 ### Completed
+
 - [x] P0 — Monorepo scaffold
 - [x] P1 — AST types
 - [x] P2 — MarkdownParser + unit tests
@@ -663,11 +804,15 @@ Note: Slice 3 does not change the parser, meta-model, or validator. It is purely
 - [ ] P10 — Slice 3: SKILL.md + LSP server (post-MVP)
 
 ## Commit
+
 ### Tasks
-- [ ] *To be added when this phase becomes active*
+
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._

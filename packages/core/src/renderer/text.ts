@@ -13,6 +13,7 @@ import type {
   Risk,
   GlossaryTerm,
   RuntimeScenario,
+  DeploymentNode,
 } from "../model/types.ts";
 
 export class TextGetRenderer implements GetRenderer {
@@ -87,6 +88,8 @@ export class TextGetRenderer implements GetRenderer {
         return this.renderInterface(el);
       case "runtime-scenario":
         return this.renderRuntimeScenario(el);
+      case "deployment-node":
+        return this.renderDeploymentNode(el);
       case "concept":
         return this.renderConcept(el);
       case "decision":
@@ -166,6 +169,13 @@ export class TextGetRenderer implements GetRenderer {
     const lines = [`  ${el.id}  ${el.title}`];
     if (el.trigger) lines.push(`    trigger: ${el.trigger}`);
     if (el.involves.length > 0) lines.push(`    involves: ${el.involves.join(", ")}`);
+    return lines.join("\n");
+  }
+
+  private renderDeploymentNode(el: DeploymentNode): string {
+    const lines = [`  ${el.id}  ${el.title}${el.type ? `  [${el.type}]` : ""}`];
+    if (el.parent) lines.push(`    parent: ${el.parent}`);
+    if (el.hosts.length > 0) lines.push(`    hosts: ${el.hosts.join(", ")}`);
     return lines.join("\n");
   }
 
@@ -252,6 +262,11 @@ export class TextGetRenderer implements GetRenderer {
       case "runtime-scenario":
         if (el.trigger) lines.push(`  trigger: ${el.trigger}`);
         if (el.involves.length > 0) lines.push(`  involves: ${el.involves.join(", ")}`);
+        break;
+      case "deployment-node":
+        if (el.type) lines.push(`  type: ${el.type}`);
+        if (el.parent) lines.push(`  parent: ${el.parent}`);
+        if (el.hosts.length > 0) lines.push(`  hosts: ${el.hosts.join(", ")}`);
         break;
       case "concept":
         if (el.category) lines.push(`  category: ${el.category}`);

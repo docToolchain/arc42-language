@@ -16,8 +16,10 @@ export const w004BlockWithoutProse: Rule = {
     severity: "warning",
     type: "suggestion",
     docs: {
-      description: "Block has no prose introduction — every block should be preceded by narrative text within its section",
-      rationale: "The arc42 DSL is human-readable first. A block without prose is machine-readable only — it records structured metadata but shares no understanding of why the element exists, what it does, or what tradeoffs were made. The convention is: write the explanation first, then the block as its machine-readable summary. This keeps the document useful to human readers and reviewers, not just tooling.",
+      description:
+        "Block has no prose introduction — every block should be preceded by narrative text within its section",
+      rationale:
+        "The arc42 DSL is human-readable first. A block without prose is machine-readable only — it records structured metadata but shares no understanding of why the element exists, what it does, or what tradeoffs were made. The convention is: write the explanation first, then the block as its machine-readable summary. This keeps the document useful to human readers and reviewers, not just tooling.",
       arc42Chapter: 0,
       recommended: true,
     },

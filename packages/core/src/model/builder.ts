@@ -14,6 +14,8 @@ import type {
   Risk,
   GlossaryTerm,
   RuntimeScenario,
+  DeploymentNode,
+  DeploymentDiagram,
   DiagramArtifact,
 } from "./types.ts";
 
@@ -29,6 +31,7 @@ const KNOWN_BLOCK_TYPES = new Set([
   "risk",
   "glossary-term",
   "runtime-scenario",
+  "deployment-node",
 ]);
 
 function splitList(value: string | undefined): string[] {
@@ -47,6 +50,21 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
   for (const doc of documents) {
     for (const node of doc.nodes) {
       if (node.kind === "diagram") {
+        if (node.diagramType === "deployment") {
+          const deploymentDiagram: DeploymentDiagram = {
+            kind: "diagram",
+            diagramType: "deployment",
+            view: "deployment",
+            id: node.id,
+            notation: node.notation,
+            roots: node.roots,
+            aliases: node.aliases,
+            source: node.source,
+            loc: { file: doc.filePath, line: node.startLine },
+          };
+          diagrams.push(deploymentDiagram);
+          continue;
+        }
         if (!node.id || !node.notation || (node.diagramType === "sequence" && !node.scenario)) {
           parseErrors.push({
             message:
@@ -65,6 +83,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             id: node.id,
             scenario: node.scenario,
             notation: node.notation,
+            aliases: node.aliases,
             source: node.source,
             loc: { file: doc.filePath, line: node.startLine },
           });
@@ -74,6 +93,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             diagramType: "generic",
             id: node.id,
             notation: node.notation,
+            aliases: node.aliases,
             source: node.source,
             loc: { file: doc.filePath, line: node.startLine },
           });
@@ -210,6 +230,27 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(scenario);
+      } else if (blockType === "deployment-node") {
+        const typeRaw = attributes["type"];
+        const deploymentTypes = ["server", "container", "device", "cloud-region", "environment"];
+        if (typeRaw && !deploymentTypes.includes(typeRaw)) {
+          parseErrors.push({
+            message: `Invalid type '${typeRaw}' on deployment-node — must be server | container | device | cloud-region | environment`,
+            file,
+            line: startLine,
+          });
+          continue;
+        }
+        const node: DeploymentNode = {
+          kind: "deployment-node",
+          id,
+          title,
+          type: typeRaw as DeploymentNode["type"],
+          hosts: splitList(attributes["hosts"]),
+          parent: attributes["parent"] || undefined,
+          loc,
+        };
+        elements.push(node);
       } else if (blockType === "concept") {
         const concept: Concept = {
           kind: "concept",

@@ -142,7 +142,7 @@ and exit codes.
 id: if-core-cli
 title: Core → CLI
 between: bb-core, bb-cli
-protocol: TypeScript module import (pnpm workspace:*)
+protocol: TypeScript module import (pnpm workspace:\*)
 :::
 
 ## Parser → Builder Interface

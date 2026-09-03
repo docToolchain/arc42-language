@@ -9,7 +9,8 @@ export const e004InterfaceBetweenNonBlock: Rule = {
     type: "problem",
     docs: {
       description: "interface.between must reference building-blocks or actors",
-      rationale: "An interface models a communication channel. One end must always be a building-block. The other end may be a building-block (internal interface) or an actor (context-level interface, chapter 3). Referencing any other element type — quality-goal, concept, decision, etc. — is a category error. Actor-to-actor interfaces are also invalid: the system under description must participate in every interface.",
+      rationale:
+        "An interface models a communication channel. One end must always be a building-block. The other end may be a building-block (internal interface) or an actor (context-level interface, chapter 3). Referencing any other element type — quality-goal, concept, decision, etc. — is a category error. Actor-to-actor interfaces are also invalid: the system under description must participate in every interface.",
       arc42Chapter: 5,
       recommended: true,
     },

@@ -17,6 +17,7 @@ involves: bb-skill, bb-workspace, bb-cli, bb-core
 id: agent-architecture-evolution-sequence
 scenario: scenario-agent-architecture-evolution
 notation: mermaid-sequence
+aliases: bb_skill=bb-skill, bb_workspace=bb-workspace, bb_cli=bb-cli, bb_core=bb-core
 :::
 
 ```mermaid
@@ -47,11 +48,11 @@ sequenceDiagram
     actor_architect-->>actor_agent: Clarify or correct the documentation
 ```
 
-The participant identifiers are the building-block references from chapter 5; their aliases are
-presentation labels. The actors are external participants and are therefore not included in the
-scenario's `involves` list. The architect is the primary reader and editor of the workspace; the
-agent assists with the change, while the pre-commit hook or CI pipeline invokes validation
-implicitly.
+The participant identifiers use underscores because Mermaid does not allow hyphens in participant
+IDs. The `aliases` field maps each diagram identifier to its model ID. The actors are external
+participants and are therefore not included in the scenario's `involves` list. The architect is
+the primary reader and editor of the workspace; the agent assists with the change, while the
+pre-commit hook or CI pipeline invokes validation implicitly.
 
 ## Core model validation pipeline
 
@@ -70,6 +71,7 @@ involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer
 id: core-validation-pipeline-sequence
 scenario: scenario-core-validation-pipeline
 notation: mermaid-sequence
+aliases: bb_parser=bb-parser, bb_builder=bb-builder, bb_resolver=bb-resolver, bb_validator=bb-validator, bb_renderer=bb-renderer
 :::
 
 ```mermaid

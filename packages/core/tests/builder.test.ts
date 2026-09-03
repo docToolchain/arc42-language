@@ -67,6 +67,30 @@ describe("buildWorkspace", () => {
     expect(el.implements).toEqual(["c-a", "c-b"]);
   });
 
+  test("deployment-node parses optional type, hosts, and parent", () => {
+    const ws = buildWorkspace([
+      doc(
+        "deployment-node\nid: node-prod\ntitle: Production\ntype: environment\nhosts: bb-api, bb-db\nparent: node-region",
+      ),
+    ]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements[0]).toEqual({
+      kind: "deployment-node",
+      id: "node-prod",
+      title: "Production",
+      type: "environment",
+      hosts: ["bb-api", "bb-db"],
+      parent: "node-region",
+      loc: { file: "test.arc42.md", line: 1 },
+    });
+  });
+
+  test("deployment-node rejects an invalid type", () => {
+    const ws = buildWorkspace([doc("deployment-node\nid: node-1\ntitle: Node\ntype: workstation")]);
+    expect(ws.elements).toHaveLength(0);
+    expect(ws.parseErrors[0]!.message).toMatch(/deployment-node/);
+  });
+
   test("decision addresses parsed as array", () => {
     const ws = buildWorkspace([
       doc("decision\nid: d-1\ntitle: D\nstatus: accepted\naddresses: qg-1, qg-2"),

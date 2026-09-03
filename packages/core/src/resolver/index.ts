@@ -35,6 +35,9 @@ export function buildIndex(workspace: Workspace): ReferenceIndex {
       for (const ref of el.addresses) addRef(el.id, ref);
     } else if (el.kind === "runtime-scenario") {
       for (const ref of el.involves) addRef(el.id, ref);
+    } else if (el.kind === "deployment-node") {
+      if (el.parent) addRef(el.id, el.parent);
+      for (const ref of el.hosts) addRef(el.id, ref);
     }
   }
 

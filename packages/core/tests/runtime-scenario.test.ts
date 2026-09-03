@@ -27,6 +27,7 @@ describe("runtime scenarios", () => {
         "id: checkout-sequence",
         "scenario: scenario-checkout",
         "notation: mermaid-sequence",
+        "aliases: bb_api=bb-api",
         ":::",
         "```mermaid",
         "sequenceDiagram",
@@ -175,6 +176,7 @@ describe("runtime scenarios", () => {
         "id: api-sequence",
         "scenario: scenario-api",
         "notation: mermaid-sequence",
+        "aliases: bb_api=bb-api",
         ":::",
         "```mermaid",
         "sequenceDiagram",
@@ -227,6 +229,7 @@ describe("runtime scenarios", () => {
         "id: arrow-forms",
         "scenario: scenario-arrows",
         "notation: mermaid-sequence",
+        "aliases: bb_a=bb-a, bb_b=bb-b",
         ":::",
         "```mermaid",
         "sequenceDiagram",
@@ -240,5 +243,34 @@ describe("runtime scenarios", () => {
       ].join("\n"),
     );
     expect(validate(ws, buildIndex(ws)).some((d) => d.code === "E008")).toBe(false);
+  });
+
+  test("requires explicit alias when participant identifier is not a valid model ID", () => {
+    // bb_api (underscore) is not a model ID — without an alias it must produce E008
+    const ws = workspace(
+      [
+        ":::building-block",
+        "id: bb-api",
+        "title: API",
+        ":::",
+        ":::runtime-scenario",
+        "id: scenario-api",
+        "title: API request",
+        "involves: bb-api",
+        ":::",
+        ":::diagram",
+        "id: api-sequence",
+        "scenario: scenario-api",
+        "notation: mermaid-sequence",
+        ":::",
+        "```mermaid",
+        "sequenceDiagram",
+        "    participant bb_api as API",
+        "    bb_api->>bb_api: Handle request",
+        "```",
+      ].join("\n"),
+    );
+    const e008 = validate(ws, buildIndex(ws)).filter((d) => d.code === "E008");
+    expect(e008.some((d) => d.message.includes("unknown participant"))).toBe(true);
   });
 });

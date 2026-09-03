@@ -9,7 +9,8 @@ export const w008DecisionNoDate: Rule = {
     type: "problem",
     docs: {
       description: "Architecture decision has no date",
-      rationale: "A dated decision creates an auditable trail — readers can reconstruct the timeline of architectural choices and correlate them with project milestones. An undated decision cannot be placed in context and is harder to assess for staleness (see W003). Every decision should have a date in ISO 8601 format (YYYY-MM-DD).",
+      rationale:
+        "A dated decision creates an auditable trail — readers can reconstruct the timeline of architectural choices and correlate them with project milestones. An undated decision cannot be placed in context and is harder to assess for staleness (see W003). Every decision should have a date in ISO 8601 format (YYYY-MM-DD).",
       arc42Chapter: 9,
       recommended: true,
     },

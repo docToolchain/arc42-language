@@ -24,6 +24,7 @@ import type {
   Risk,
   GlossaryTerm,
   RuntimeScenario,
+  DeploymentNode,
 } from "../model/types.ts";
 import type { BlockType } from "../ast.ts";
 
@@ -61,7 +62,7 @@ export interface Edge {
   from: string;
   to: string;
   /** The semantic relationship type */
-  relation: "implements" | "parent" | "between" | "addresses" | "involves";
+  relation: "implements" | "parent" | "between" | "addresses" | "involves" | "hosts";
 }
 
 /** Result of a workspace-level get query */
@@ -143,4 +144,5 @@ export interface ElementRenderers {
     refsFrom: ResolvedRef[],
     refsTo: ResolvedRef[],
   ) => string;
+  "deployment-node": (el: DeploymentNode, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
 }

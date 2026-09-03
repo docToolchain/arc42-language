@@ -3,10 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateWorkspace } from "../src/arc42.ts";
 
-const fixtureDir = join(
-  fileURLToPath(import.meta.url),
-  "../../src/__fixtures__/mini-arch",
-);
+const fixtureDir = join(fileURLToPath(import.meta.url), "../../src/__fixtures__/mini-arch");
 
 describe("validateWorkspace — mini-arch fixture", () => {
   test("returns all expected diagnostic codes", async () => {

@@ -7,5 +7,5 @@ const jsonRenderer = new JsonGetRenderer();
 
 export const builtinGetRenderers: readonly GetRenderer[] = [textRenderer, jsonRenderer];
 export const rendererById: ReadonlyMap<string, GetRenderer> = new Map(
-  builtinGetRenderers.map((r) => [r.meta.id, r])
+  builtinGetRenderers.map((r) => [r.meta.id, r]),
 );

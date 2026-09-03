@@ -9,7 +9,8 @@ export const h004BuildingBlockUnreferencedByInterface: Rule = {
     type: "suggestion",
     docs: {
       description: "Building block is not referenced by any interface",
-      rationale: "A building block with no interface connecting it to the rest of the system is an island — it either has no collaborators or its collaborations are undocumented. arc42 chapter 5 expects interfaces to make collaboration explicit and verifiable. Leaf blocks (those with a parent) are excluded because they may deliberately have no direct interfaces at the root level.",
+      rationale:
+        "A building block with no interface connecting it to the rest of the system is an island — it either has no collaborators or its collaborations are undocumented. arc42 chapter 5 expects interfaces to make collaboration explicit and verifiable. Leaf blocks (those with a parent) are excluded because they may deliberately have no direct interfaces at the root level.",
       arc42Chapter: 5,
       recommended: true,
     },

@@ -8,8 +8,10 @@ export const e006SupersededDecisionNoSupersedes: Rule = {
     severity: "error",
     type: "problem",
     docs: {
-      description: "Decision carries 'supersedes' but the referenced decision does not have status 'superseded'",
-      rationale: "In standard ADR practice the *new* decision declares what it replaces via the 'supersedes' field, and the *old* decision's status is changed to 'superseded'. If a decision has 'supersedes' pointing to another decision but that other decision is not marked 'superseded', the replacement chain is incomplete and readers cannot trust the decision history.",
+      description:
+        "Decision carries 'supersedes' but the referenced decision does not have status 'superseded'",
+      rationale:
+        "In standard ADR practice the *new* decision declares what it replaces via the 'supersedes' field, and the *old* decision's status is changed to 'superseded'. If a decision has 'supersedes' pointing to another decision but that other decision is not marked 'superseded', the replacement chain is incomplete and readers cannot trust the decision history.",
       arc42Chapter: 9,
       recommended: true,
     },
@@ -18,9 +20,7 @@ export const e006SupersededDecisionNoSupersedes: Rule = {
     const diagnostics: Diagnostic[] = [];
     // Index decisions by id for fast lookup
     const decisionsById = new Map(
-      workspace.elements
-        .filter((el) => el.kind === "decision")
-        .map((el) => [el.id, el]),
+      workspace.elements.filter((el) => el.kind === "decision").map((el) => [el.id, el]),
     );
     for (const el of workspace.elements) {
       if (el.kind !== "decision" || !el.supersedes) continue;

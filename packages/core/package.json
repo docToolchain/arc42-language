@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "description": "Core validation engine for arc42 DSL files.",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
-  "files": ["dist"],
   "exports": {
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"

@@ -131,6 +131,25 @@ involves: bb-api
     }
   });
 
+  test("deployment node is ordered in chapter 7 and exposes parent/hosts edges", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "arc42-deployment-"));
+    try {
+      await writeFile(
+        join(dir, "deployment.arc42.md"),
+        `:::building-block\nid: bb-api\ntitle: API\n:::\n\n:::deployment-node\nid: node-prod\ntitle: Production\ntype: environment\nhosts: bb-api\n:::\n`,
+      );
+      const result = await getElements({ dir, query: { kind: "workspace" } });
+      const view = result as WorkspaceView;
+      expect(view.elements.find((el) => el.kind === "deployment-node")).toBeDefined();
+      expect(view.edges).toContainEqual({ from: "node-prod", to: "bb-api", relation: "hosts" });
+      const { TextGetRenderer } = await import("../src/renderer/text.ts");
+      expect(new TextGetRenderer().render(result)).toContain("=== Deployment View (1) ===");
+      expect(new TextGetRenderer().render(result)).toContain("hosts: bb-api");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   test("typeFilter narrows elements but edges still cover full workspace", async () => {
     const result = await getElements({
       dir: fixtureDir,

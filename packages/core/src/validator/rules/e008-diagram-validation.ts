@@ -1,5 +1,10 @@
 import type { Rule, Diagnostic } from "../types.ts";
-import type { DiagramArtifact, RuntimeScenario, Workspace } from "../../model/types.ts";
+import type {
+  DiagramArtifact,
+  RuntimeScenario,
+  SequenceDiagram,
+  Workspace,
+} from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
 
 const MAX_SOURCE_BYTES = 64 * 1024;
@@ -26,14 +31,52 @@ function diagnostic(
   };
 }
 
-function normalizeModelId(id: string): string {
-  return id.replaceAll("_", "-");
+/**
+ * Parse the `aliases` field shared by all diagram types.
+ * Format: comma-separated `safe-id=model-id` pairs.
+ * Returns a map from safe diagram identifier to model ID, and any parse diagnostics.
+ */
+function parseAliases(
+  diagram: DiagramArtifact,
+  raw: string,
+): { map: Map<string, string>; diagnostics: Diagnostic[] } {
+  const map = new Map<string, string>();
+  const diagnostics: Diagnostic[] = [];
+  if (!raw || raw.trim() === "") return { map, diagnostics };
+
+  for (const entry of raw
+    .split(",")
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0)) {
+    const eqIdx = entry.indexOf("=");
+    if (eqIdx <= 0 || eqIdx === entry.length - 1) {
+      diagnostics.push(
+        diagnostic(diagram, `malformed alias '${entry}' — expected safe-id=model-id`),
+      );
+      continue;
+    }
+    const safeId = entry.slice(0, eqIdx).trim();
+    const modelId = entry.slice(eqIdx + 1).trim();
+    if (!safeId || !modelId) {
+      diagnostics.push(
+        diagnostic(diagram, `malformed alias '${entry}' — expected safe-id=model-id`),
+      );
+      continue;
+    }
+    if (map.has(safeId)) {
+      diagnostics.push(diagnostic(diagram, `duplicate alias safe-id '${safeId}'`));
+      continue;
+    }
+    map.set(safeId, modelId);
+  }
+  return { map, diagnostics };
 }
 
 function parseMermaidSequence(
-  diagram: DiagramArtifact,
+  diagram: SequenceDiagram,
   index: ReferenceIndex,
   scenario: RuntimeScenario,
+  aliasMap: Map<string, string>,
 ): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const source = diagram.source;
@@ -77,8 +120,9 @@ function parseMermaidSequence(
         continue;
       }
 
-      const normalized = normalizeModelId(id);
-      const target = index.byId.get(id) ?? index.byId.get(normalized);
+      // Resolve via explicit alias map first, then try the ID directly as a model ID.
+      const modelId = aliasMap.get(id) ?? id;
+      const target = index.byId.get(modelId);
       const external = declaration[1] === "actor";
       if (target && target.kind !== "building-block" && target.kind !== "actor") {
         diagnostics.push(
@@ -153,6 +197,7 @@ export const e008DiagramValidation: Rule = {
     const seenIds = new Set<string>();
 
     for (const diagram of diagrams) {
+      if (diagram.diagramType === "deployment") continue;
       if (seenIds.has(diagram.id)) {
         diagnostics.push(diagnostic(diagram, "duplicate diagram id"));
         continue;
@@ -170,7 +215,14 @@ export const e008DiagramValidation: Rule = {
         continue;
       }
 
-      diagnostics.push(...parseMermaidSequence(diagram, index, scenario));
+      const { map: aliasMap, diagnostics: aliasDiagnostics } = parseAliases(
+        diagram,
+        diagram.aliases,
+      );
+      diagnostics.push(...aliasDiagnostics);
+      if (aliasDiagnostics.length > 0) continue;
+
+      diagnostics.push(...parseMermaidSequence(diagram, index, scenario, aliasMap));
     }
 
     return diagnostics;

@@ -1,6 +1,6 @@
 ---
 name: arc42-language
-description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, solution strategy, building block, actor, sequence diagram, concept, decision, ADR, constraint, risk, glossary.
+description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, solution strategy, building block, deployment node, actor, sequence diagram, concept, decision, ADR, constraint, risk, glossary.
 allowed-tools: Bash(arc42:*)
 ---
 
@@ -48,27 +48,29 @@ implements: concept-logging, concept-error-handling
 
 ## Block type reference
 
-| Block type          | Arc42 chapter | Required fields             | Optional fields                      |
-| ------------------- | ------------- | --------------------------- | ------------------------------------ |
-| `quality-goal`      | 1             | `id`, `title`, `priority`   | `scenario`                           |
-| `constraint`        | 2             | `id`, `title`, `category`   | `source`                             |
-| `actor`             | 3             | `id`, `title`, `type`       | `description`                        |
-| `solution-strategy` | 4             | `id`, `title`               | `addresses`                          |
-| `building-block`    | 5             | `id`, `title`               | `technology`, `parent`, `implements` |
-| `interface`         | 5             | `id`, `title`, `between`    | `protocol`                           |
-| `concept`           | 8             | `id`, `title`               | `category`                           |
-| `decision`          | 9             | `id`, `title`, `status`     | `date`, `addresses`, `supersedes`    |
-| `risk`              | 11            | `id`, `title`, `severity`   | `mitigation`                         |
-| `glossary-term`     | 12            | `id`, `title`, `definition` | —                                    |
+| Block type          | Required fields             | Optional fields                      |
+| ------------------- | --------------------------- | ------------------------------------ |
+| `quality-goal`      | `id`, `title`, `priority`   | `scenario`                           |
+| `constraint`        | `id`, `title`, `category`   | `source`                             |
+| `actor`             | `id`, `title`, `type`       | `description`                        |
+| `solution-strategy` | `id`, `title`               | `addresses`                          |
+| `building-block`    | `id`, `title`               | `technology`, `parent`, `implements` |
+| `interface`         | `id`, `title`, `between`    | `protocol`                           |
+| `deployment-node`   | `id`, `title`               | `type`, `hosts`, `parent`            |
+| `concept`           | `id`, `title`               | `category`                           |
+| `decision`          | `id`, `title`, `status`     | `date`, `addresses`, `supersedes`    |
+| `risk`              | `id`, `title`, `severity`   | `mitigation`                         |
+| `glossary-term`     | `id`, `title`, `definition` | —                                    |
 
 ### Field value constraints
 
 - `quality-goal.priority`: `high` | `medium` | `low`
 - `constraint.category`: `technical` | `organizational` | `convention`
-- `actor.type`: `person` | `system` — `person` for human roles (user, operator, team); `system` for external software systems or services. All actors are external by definition in chapter 3.
+- `actor.type`: `person` | `system` — `person` for human roles (user, operator, team); `system` for external software systems or services
 - `decision.status`: `proposed` | `accepted` | `deprecated` | `superseded`
-- `risk.severity`: `high` | `medium` | `low`
 - `decision.supersedes`: on the _new_ decision — points to the id of the decision it replaces
+- `risk.severity`: `high` | `medium` | `low`
+- `deployment-node.type`: `server` | `container` | `device` | `cloud-region` | `environment`
 
 ### Cross-reference fields
 
@@ -80,23 +82,33 @@ implements: concept-logging, concept-error-handling
 | `addresses`  | `decision`          | one or more `quality-goal`, `constraint`, or `risk` ids                                   |
 | `addresses`  | `solution-strategy` | one or more `quality-goal` ids                                                            |
 | `supersedes` | `decision`          | another `decision` id                                                                     |
+| `parent`     | `deployment-node`   | another `deployment-node` id                                                              |
+| `hosts`      | `deployment-node`   | one or more `building-block` ids (comma-separated)                                        |
 
 All referenced IDs must resolve to an existing element (rule E002). IDs are unique across the
 entire workspace (all `*.arc42.md` files in the directory).
 
 ## Validation rules
 
-Run `arc42 rules` to see the full list of rules with rationale, grouped by chapter.
-Filter by chapter with `--chapter <0|1|2|3|4|5|6|8|9|11|12>`. Use `--format json` for machine-readable output.
+Run `arc42 rules` to see the full list of rules with rationale. Use `--format json` for machine-readable output.
 
-### Diagram annotation convention
+### Diagram convention
 
-When a diagram is explicitly associated with a documented element, use a `:::diagram` metadata
-block with a stable diagram `id`, the owning element `scenario` id, and a `notation` value. In
-Mermaid sequence diagrams, use stable model IDs—or explicit safe aliases normalized to model IDs—
-for participant identifiers; human-readable `as` labels are presentation text, not references.
-Keep this association and identifier convention consistent across diagram notations. Notation
-specific authoring guidance belongs in the relevant starter template comments.
+Diagrams are explicitly associated with a structured element or section using a `:::diagram`
+metadata block. They provide a visual overview of the surrounding prose and blocks — they do not
+replace or contradict the structured model, and they do not create additional model elements.
+
+Place a diagram **immediately after the introductory prose of a section**, before the per-element
+blocks, so readers get the overview before the detail. A chapter-level overview diagram goes near
+the top of the chapter; a scoped diagram for one area goes in its own `##` section.
+
+When a diagram identifier cannot match a model ID directly — for example, Mermaid sequence
+diagrams forbid hyphens in participant names — declare an explicit alias in the `:::diagram`
+metadata block using `aliases: diagram-id=model-id` (comma-separated for multiple). There is no
+implicit normalization; undeclared identifiers that don't match a model ID produce E008.
+
+The starter templates contain worked examples and notation-specific guidance in their HTML
+comments. Follow the example in the relevant template when adding a diagram for the first time.
 
 Fix all errors before committing. Warnings should be resolved before merging. Hints are
 best-practice suggestions — address them when the context allows.

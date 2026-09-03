@@ -1,38 +1,50 @@
 # Development Plan: arc42-language (feat/demo-recording branch)
 
-*Generated on 2026-08-17 by Vibe Feature MCP*
-*Workflow: [minor](https://codemcp.github.io/workflows/workflows/minor)*
+_Generated on 2026-08-17 by Vibe Feature MCP_
+_Workflow: [minor](https://codemcp.github.io/workflows/workflows/minor)_
 
 ## Goal
-*Define what you're building or fixing - this will be updated as requirements are gathered*
+
+_Define what you're building or fixing - this will be updated as requirements are gathered_
+
 ## Key Decisions
-*Important decisions will be documented here as they are made*
+
+_Important decisions will be documented here as they are made_
 
 ## Notes
-*Additional context and observations*
+
+_Additional context and observations_
 
 ## Explore
+
 ### Tasks
-- [ ] *Tasks will be added as they are identified*
+
+- [ ] _Tasks will be added as they are identified_
 
 ### Completed
+
 - [x] Created development plan file
 
 ## Implement
+
 ### Tasks
-- [ ] *To be added when this phase becomes active*
+
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ## Finalize
+
 ### Tasks
-- [ ] *To be added when this phase becomes active*
+
+- [ ] _To be added when this phase becomes active_
 
 ### Completed
-*None yet*
 
-
+_None yet_
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._

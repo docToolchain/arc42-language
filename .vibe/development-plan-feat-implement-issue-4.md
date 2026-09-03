@@ -161,9 +161,9 @@ solution strategy and quality goals.
 5. **Authoring support**
    - Add a commented chapter-4 starter template with one block directly under the chapter heading,
      followed by several prose subsections and an example `addresses` list.
-    - Update the skill/reference documentation's block inventory, chapter mapping, singleton rule,
-      and traceability guidance. Make the existing project chapter-4 document a live DSL example with
-      one active strategy block linked to the quality goals.
+   - Update the skill/reference documentation's block inventory, chapter mapping, singleton rule,
+     and traceability guidance. Make the existing project chapter-4 document a live DSL example with
+     one active strategy block linked to the quality goals.
 6. **Verification and cleanup**
    - Add focused unit tests before or alongside implementation for builder parsing, invalid required
      fields, reference indexing/edges, H009/H010 semantics, ordering, text/JSON output, CLI metadata,
@@ -222,7 +222,7 @@ solution strategy and quality goals.
 | Resolver/API       | known address resolves both directions; unknown address yields E002; workspace address edge                                                           |
 | Rules              | H009 with/without address; H010 with strategy coverage, decision-only coverage, and no coverage; duplicate cardinality error without H009 duplication |
 | Ordering/rendering | chapter-4 title/order; text typed-field output without synthetic prose; JSON element serialization                                                    |
-| CLI/docs           | block/chapter metadata and help/filter acceptance; one block per chapter heading guidance                              |
+| CLI/docs           | block/chapter metadata and help/filter acceptance; one block per chapter heading guidance                                                             |
 | Regression         | existing core validator, renderer, parser, CLI, and workspace tests remain green                                                                      |
 
 ## Code
@@ -231,29 +231,29 @@ solution strategy and quality goals.
 
 - [x] Implement model, builder, resolver, validator, renderer, CLI, docs, and starter-template changes
 - [x] Add/update focused tests from the planned validation matrix, excluding starter-template
-  validation as requested; the template remains documentation-only
+      validation as requested; the template remains documentation-only
 - [x] Run targeted and full available validation; resolve feature-related failures
 
 ### Completed
 
 - [x] Incorporated the previous implementation plans' shared architectural and authoring decisions
-  into this feature's implementation record.
+      into this feature's implementation record.
 - [x] Implemented the initial singleton solution-strategy integration and registered E007/H009/H010.
 - [x] Removed the starter-template parser test; starter files are authoring guidance rather than
-  test fixtures.
+      test fixtures.
 - [x] Added focused tests for strategy parsing, required fields, references, unresolved addresses,
-  singleton/H009 behavior, H010 semantics, chapter ordering/address edges, and text rendering.
+      singleton/H009 behavior, H010 semantics, chapter ordering/address edges, and text rendering.
 - [x] Validation completed: `pnpm test` passes with 92 tests; `pnpm build` succeeds; changed-file
-  lint and formatting checks pass; `docs/arc42` and `examples/bookstore-backend` validate cleanly;
-  `arc42 rules --chapter 4 --format json` exposes E007 and H009.
+      lint and formatting checks pass; `docs/arc42` and `examples/bookstore-backend` validate cleanly;
+      `arc42 rules --chapter 4 --format json` exposes E007 and H009.
 - [x] Package builds for `@arc42/core` and `@arc42/cli` succeed.
 - [x] Package-wide `pnpm --filter @arc42/core run check` and the CLI equivalent still report
-  formatting failures in pre-existing untouched files (including package metadata and existing
-  parser/renderer/rule files). This is recorded as a repository baseline issue, not a
-  feature-related type, lint, test, or build failure; changed-file checks pass.
+      formatting failures in pre-existing untouched files (including package metadata and existing
+      parser/renderer/rule files). This is recorded as a repository baseline issue, not a
+      feature-related type, lint, test, or build failure; changed-file checks pass.
 - [x] Updated the project's own `docs/arc42/04-solution-strategy.arc42.md` with one live
-  architecture-level strategy block, links to all five existing quality goals, and prose that
-  explains the package boundaries, human-readable DSL, validation pipeline, and agent workflow.
+      architecture-level strategy block, links to all five existing quality goals, and prose that
+      explains the package boundaries, human-readable DSL, validation pipeline, and agent workflow.
 
 ## Commit
 
