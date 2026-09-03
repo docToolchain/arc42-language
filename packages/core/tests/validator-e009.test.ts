@@ -1,25 +1,18 @@
 import { expect, test, describe } from "vite-plus/test";
 import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
-import { parseMarkdown } from "../src/parser/markdown-parser.ts";
-import { buildWorkspace } from "../src/model/builder.ts";
 import type { Workspace, Element } from "../src/model/types.ts";
 
 function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
   return { elements, parseErrors, documents: [], diagrams: [] };
 }
 
-function workspaceFromContent(filePath: string, content: string): Workspace {
-  const doc = parseMarkdown(filePath, content);
-  return buildWorkspace([doc]);
-}
-
 function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("validator › E009", () => {
-  test("E009 — deployment parent cycles", () => {
+describe("E009 — deployment node cycle", () => {
+  test("emitted when two deployment nodes reference each other as parent", () => {
     const ws = makeWorkspace([
       {
         kind: "deployment-node",
@@ -43,7 +36,7 @@ describe("validator › E009", () => {
     ).toHaveLength(2);
   });
 
-  test("E009 — deployment self-cycle", () => {
+  test("emitted when a deployment node references itself as parent", () => {
     const ws = makeWorkspace([
       {
         kind: "deployment-node",

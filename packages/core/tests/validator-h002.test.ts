@@ -1,25 +1,18 @@
 import { expect, test, describe } from "vite-plus/test";
 import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
-import { parseMarkdown } from "../src/parser/markdown-parser.ts";
-import { buildWorkspace } from "../src/model/builder.ts";
 import type { Workspace, Element } from "../src/model/types.ts";
 
 function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
   return { elements, parseErrors, documents: [], diagrams: [] };
 }
 
-function workspaceFromContent(filePath: string, content: string): Workspace {
-  const doc = parseMarkdown(filePath, content);
-  return buildWorkspace([doc]);
-}
-
 function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("validator › H002", () => {
-  test("H002 — quality goal not addressed by any decision", () => {
+describe("H002 — quality goal not addressed by any decision", () => {
+  test("emitted when no decision addresses the quality goal", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
     ]);
@@ -28,7 +21,7 @@ describe("validator › H002", () => {
     expect(diags.some((d) => d.code === "H002")).toBe(true);
   });
 
-  test("H002 — NOT emitted when decision addresses the goal", () => {
+  test("NOT emitted when a decision addresses the goal", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
       {
