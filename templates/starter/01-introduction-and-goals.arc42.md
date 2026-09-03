@@ -38,12 +38,6 @@ keeping search fast and the checkout flow frictionless.
 
 ## 1.2 Quality Goals
 
-| Priority | Goal            | ID              | Scenario (short)                                     |
-|----------|-----------------|-----------------|------------------------------------------------------|
-| High     | Performance     | qg-performance  | p95 response time < 300ms under 500 concurrent users |
-| High     | Security        | qg-security     | All writes require authentication; data encrypted    |
-| Medium   | Maintainability | qg-maintain     | New endpoint added without touching > 2 components   |
-
 See 10-quality-requirements.arc42.md for the full catalog with measurable scenarios.
 
 ## 1.3 Stakeholders
