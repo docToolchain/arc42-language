@@ -18,7 +18,7 @@
     "directory": "packages/cli"
   },
   "bin": {
-    "arc42-cli": "./dist/cli.mjs"
+    "arc42": "./dist/cli.mjs"
   },
   "files": [
     "dist"
@@ -33,7 +33,8 @@
     "dev": "vp pack --watch",
     "test": "vp test",
     "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "prepublishOnly": "vp run build",
+    "release": "pnpm publish --access public"
   },
   "devDependencies": {
     "@arc42/core": "workspace:*",
