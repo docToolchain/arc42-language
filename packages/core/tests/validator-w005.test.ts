@@ -3,23 +3,14 @@ import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
 import { parseMarkdown } from "../src/parser/markdown-parser.ts";
 import { buildWorkspace } from "../src/model/builder.ts";
-import type { Workspace, Element } from "../src/model/types.ts";
 
-function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
-  return { elements, parseErrors, documents: [], diagrams: [] };
-}
-
-function workspaceFromContent(filePath: string, content: string): Workspace {
+function workspaceFromContent(filePath: string, content: string) {
   const doc = parseMarkdown(filePath, content);
   return buildWorkspace([doc]);
 }
 
-function loc(line = 1) {
-  return { file: "test.arc42.md", line };
-}
-
-describe("validator › W005", () => {
-  test("W005 — multiple blocks under one heading", () => {
+describe("W005 — multiple blocks under one heading", () => {
+  test("emitted when two blocks share the same heading section", () => {
     const content = `## Interfaces
 
 These two interfaces are in the same section.
@@ -41,7 +32,7 @@ between: bb-2, bb-3
     expect(diags.some((d) => d.code === "W005")).toBe(true);
   });
 
-  test("W005 — NOT emitted when each heading has one block", () => {
+  test("NOT emitted when each heading has one block", () => {
     const content = `## Interface A
 
 Connects bb-1 to bb-2.
@@ -66,8 +57,4 @@ between: bb-2, bb-3
     const diags = validate(ws, idx);
     expect(diags.some((d) => d.code === "W005")).toBe(false);
   });
-
-  // -------------------------------------------------------------------------
-  // W013 — quality-scenario no metric
-  // -------------------------------------------------------------------------
 });

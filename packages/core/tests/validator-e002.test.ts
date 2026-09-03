@@ -1,25 +1,18 @@
 import { expect, test, describe } from "vite-plus/test";
 import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
-import { parseMarkdown } from "../src/parser/markdown-parser.ts";
-import { buildWorkspace } from "../src/model/builder.ts";
 import type { Workspace, Element } from "../src/model/types.ts";
 
 function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
   return { elements, parseErrors, documents: [], diagrams: [] };
 }
 
-function workspaceFromContent(filePath: string, content: string): Workspace {
-  const doc = parseMarkdown(filePath, content);
-  return buildWorkspace([doc]);
-}
-
 function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("validator › E002", () => {
-  test("E002 — unresolved reference", () => {
+describe("E002 — unresolved reference", () => {
+  test("emitted for building-block with missing parent", () => {
     const ws = makeWorkspace([
       {
         kind: "building-block",
@@ -35,7 +28,7 @@ describe("validator › E002", () => {
     expect(diags.some((d) => d.code === "E002")).toBe(true);
   });
 
-  test("E002 — solution strategy unresolved address", () => {
+  test("emitted for solution strategy with unresolved address", () => {
     const ws = makeWorkspace([
       {
         kind: "solution-strategy",
@@ -49,7 +42,7 @@ describe("validator › E002", () => {
     expect(diags.some((d) => d.code === "E002")).toBe(true);
   });
 
-  test("E002 — deployment references require correct target kinds", () => {
+  test("deployment references require correct target kinds", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
       {

@@ -1,25 +1,18 @@
 import { expect, test, describe } from "vite-plus/test";
 import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
-import { parseMarkdown } from "../src/parser/markdown-parser.ts";
-import { buildWorkspace } from "../src/model/builder.ts";
 import type { Workspace, Element } from "../src/model/types.ts";
 
 function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
   return { elements, parseErrors, documents: [], diagrams: [] };
 }
 
-function workspaceFromContent(filePath: string, content: string): Workspace {
-  const doc = parseMarkdown(filePath, content);
-  return buildWorkspace([doc]);
-}
-
 function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("validator › W002", () => {
-  test("W002 — isolated leaf building-block (has parent, no interface)", () => {
+describe("W002 — isolated building-block", () => {
+  test("emitted for leaf building-block with no interface", () => {
     const ws = makeWorkspace([
       { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: loc(1) },
       {
@@ -36,7 +29,7 @@ describe("validator › W002", () => {
     expect(diags.some((d) => d.code === "W002")).toBe(true);
   });
 
-  test("W002 — NOT emitted for root building-block (no parent) — checked by H004 instead", () => {
+  test("NOT emitted for root building-block (no parent) — checked by H004 instead", () => {
     const ws = makeWorkspace([
       { kind: "building-block", id: "bb-root", title: "Root", implements: [], loc: loc(1) },
     ]);
@@ -45,7 +38,7 @@ describe("validator › W002", () => {
     expect(diags.some((d) => d.code === "W002")).toBe(false);
   });
 
-  test("W002 — NOT emitted when leaf building-block appears in an interface", () => {
+  test("NOT emitted when leaf building-block appears in an interface", () => {
     const ws = makeWorkspace([
       { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: loc(1) },
       {

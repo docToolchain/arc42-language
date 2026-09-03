@@ -3,23 +3,14 @@ import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
 import { parseMarkdown } from "../src/parser/markdown-parser.ts";
 import { buildWorkspace } from "../src/model/builder.ts";
-import type { Workspace, Element } from "../src/model/types.ts";
 
-function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
-  return { elements, parseErrors, documents: [], diagrams: [] };
-}
-
-function workspaceFromContent(filePath: string, content: string): Workspace {
+function workspaceFromContent(filePath: string, content: string) {
   const doc = parseMarkdown(filePath, content);
   return buildWorkspace([doc]);
 }
 
-function loc(line = 1) {
-  return { file: "test.arc42.md", line };
-}
-
-describe("validator › W004", () => {
-  test("W004 — block without preceding prose in section", () => {
+describe("W004 — block without preceding prose", () => {
+  test("emitted when a block has no preceding prose in its section", () => {
     const content = `## My Section
 :::building-block
 id: bb-naked
@@ -32,7 +23,7 @@ technology: Go
     expect(diags.some((d) => d.code === "W004")).toBe(true);
   });
 
-  test("W004 — NOT emitted when prose precedes the block", () => {
+  test("NOT emitted when prose precedes the block", () => {
     const content = `## My Section
 
 This block does something useful.
@@ -48,7 +39,7 @@ technology: Go
     expect(diags.some((d) => d.code === "W004")).toBe(false);
   });
 
-  test("W004 — emitted for second block if no prose between blocks", () => {
+  test("emitted for second block if no prose between blocks", () => {
     const content = `## Section
 
 Some intro prose.

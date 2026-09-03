@@ -3,37 +3,28 @@ import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
 import { parseMarkdown } from "../src/parser/markdown-parser.ts";
 import { buildWorkspace } from "../src/model/builder.ts";
-import type { Workspace, Element } from "../src/model/types.ts";
 
-function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
-  return { elements, parseErrors, documents: [], diagrams: [] };
-}
-
-function workspaceFromContent(filePath: string, content: string): Workspace {
+function workspaceFromContent(filePath: string, content: string) {
   const doc = parseMarkdown(filePath, content);
   return buildWorkspace([doc]);
 }
 
-function loc(line = 1) {
-  return { file: "test.arc42.md", line };
-}
-
-describe("validator › W015", () => {
-  test("W015 — NOT emitted for correct EN h1 on a numbered chapter file", () => {
+describe("W015 — missing or invalid arc42 chapter h1 heading", () => {
+  test("NOT emitted for correct EN h1 on a numbered chapter file", () => {
     const content = `# Runtime View\n\nSome content.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(false);
   });
 
-  test("W015 — NOT emitted for correct DE h1 on a numbered chapter file", () => {
+  test("NOT emitted for correct DE h1 on a numbered chapter file", () => {
     const content = `# Laufzeitsicht\n\nEtwas Inhalt.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(false);
   });
 
-  test("W015 — emitted when chapter file starts with h2 instead of h1", () => {
+  test("emitted when chapter file starts with h2 instead of h1", () => {
     const content = `## Runtime View\n\nSome content.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
@@ -41,14 +32,14 @@ describe("validator › W015", () => {
     expect(diags.find((d) => d.code === "W015")!.severity).toBe("warning");
   });
 
-  test("W015 — emitted when h1 text is not a recognized arc42 chapter title", () => {
+  test("emitted when h1 text is not a recognized arc42 chapter title", () => {
     const content = `# My Custom Title\n\nSome content.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(true);
   });
 
-  test("W015 — emitted when h1 matches the wrong chapter number", () => {
+  test("emitted when h1 matches the wrong chapter number", () => {
     // File is chapter 06 but heading says chapter 01's title
     const content = `# Introduction and Goals\n\nSome content.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
@@ -56,35 +47,35 @@ describe("validator › W015", () => {
     expect(diags.some((d) => d.code === "W015")).toBe(true);
   });
 
-  test("W015 — emitted when chapter file has no headings at all", () => {
+  test("emitted when chapter file has no headings at all", () => {
     const content = `Just some prose with no heading.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(true);
   });
 
-  test("W015 — NOT emitted for files without a numeric chapter prefix", () => {
+  test("NOT emitted for files without a numeric chapter prefix", () => {
     const content = `## Some Section\n\nContent without an h1.`;
     const ws = workspaceFromContent("building-blocks.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(false);
   });
 
-  test("W015 — NOT emitted for files not ending in .arc42.md", () => {
+  test("NOT emitted for files not ending in .arc42.md", () => {
     const content = `## Some Section\n\nContent.`;
     const ws = workspaceFromContent("06-runtime-view.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(false);
   });
 
-  test("W015 — title matching is case-insensitive", () => {
+  test("title matching is case-insensitive", () => {
     const content = `# runtime view\n\nSome content.`;
     const ws = workspaceFromContent("06-runtime-view.arc42.md", content);
     const diags = validate(ws, buildIndex(ws));
     expect(diags.some((d) => d.code === "W015")).toBe(false);
   });
 
-  test("W015 — all 12 EN chapter titles are accepted", () => {
+  test("all 12 EN chapter titles are accepted", () => {
     const chapters: [string, string][] = [
       ["01-introduction-and-goals.arc42.md", "# Introduction and Goals"],
       ["02-architecture-constraints.arc42.md", "# Architecture Constraints"],
@@ -106,7 +97,7 @@ describe("validator › W015", () => {
     }
   });
 
-  test("W015 — all 12 DE chapter titles are accepted", () => {
+  test("all 12 DE chapter titles are accepted", () => {
     const chapters: [string, string][] = [
       ["01-einfuehrung.arc42.md", "# Einführung und Ziele"],
       ["02-randbedingungen.arc42.md", "# Randbedingungen"],

@@ -1,25 +1,18 @@
 import { expect, test, describe } from "vite-plus/test";
 import { validate } from "../src/validator/index.ts";
 import { buildIndex } from "../src/resolver/index.ts";
-import { parseMarkdown } from "../src/parser/markdown-parser.ts";
-import { buildWorkspace } from "../src/model/builder.ts";
 import type { Workspace, Element } from "../src/model/types.ts";
 
 function makeWorkspace(elements: Element[], parseErrors: Workspace["parseErrors"] = []): Workspace {
   return { elements, parseErrors, documents: [], diagrams: [] };
 }
 
-function workspaceFromContent(filePath: string, content: string): Workspace {
-  const doc = parseMarkdown(filePath, content);
-  return buildWorkspace([doc]);
-}
-
 function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("validator › W007", () => {
-  test("W007 — fires when 6 high-priority goals exist", () => {
+describe("W007 — too many quality goals", () => {
+  test("fires when 6 high-priority goals exist", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q1", priority: "high", loc: loc(1) },
       { kind: "quality-goal", id: "qg-2", title: "Q2", priority: "high", loc: loc(5) },
@@ -33,7 +26,7 @@ describe("validator › W007", () => {
     expect(diags.some((d) => d.code === "W007")).toBe(true);
   });
 
-  test("W007 — NOT fired when 6 low-priority goals exist (only high counted)", () => {
+  test("NOT fired when 6 low-priority goals exist (only high counted)", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q1", priority: "low", loc: loc(1) },
       { kind: "quality-goal", id: "qg-2", title: "Q2", priority: "low", loc: loc(5) },
@@ -46,8 +39,4 @@ describe("validator › W007", () => {
     const diags = validate(ws, idx);
     expect(diags.some((d) => d.code === "W007")).toBe(false);
   });
-
-  // -------------------------------------------------------------------------
-  // H010 — now scoped to priority:high goals only
-  // -------------------------------------------------------------------------
 });
