@@ -80,7 +80,7 @@ async function main() {
   });
 
   if (globalValues["version"]) {
-    console.log("arc42 v0.0.1");
+    console.log("arc42 v0.0.2");
     process.exit(0);
   }
 
