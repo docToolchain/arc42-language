@@ -1,10 +1,24 @@
 {
-  "name": "@arc42/cli",
-  "version": "0.1.0",
+  "name": "@doc-tc/arc42-cli",
+  "version": "0.0.1",
   "description": "CLI for validating and querying arc42 DSL files.",
   "license": "MIT",
+  "keywords": [
+    "arc42",
+    "architecture",
+    "documentation",
+    "cli",
+    "dsl",
+    "validation"
+  ],
+  "homepage": "https://github.com/oliverjaegle/arc42-language",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oliverjaegle/arc42-language.git",
+    "directory": "packages/cli"
+  },
   "bin": {
-    "cli": "./dist/cli.mjs"
+    "arc42-cli": "./dist/cli.mjs"
   },
   "files": [
     "dist"
@@ -21,10 +35,8 @@
     "check": "vp check",
     "prepublishOnly": "vp run build"
   },
-  "dependencies": {
-    "@arc42/core": "workspace:*"
-  },
   "devDependencies": {
+    "@arc42/core": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"

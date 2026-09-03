@@ -23,6 +23,18 @@ arc42 rules             # understand what the validator enforces and why
 
 `--dir <path>` scopes to a specific workspace. Defaults to `$ARC42_DIR` or cwd.
 
+### Scaffold a new workspace
+
+If the project has no arc42 files yet, copy the starter templates into the workspace directory:
+
+```bash
+arc42 init template              # copies all 12 chapter templates into cwd
+arc42 init template --dir <path> # copies into a specific directory
+```
+
+Each template file is a blank chapter with HTML comments explaining what to write and showing
+a DSL block example. Remove the comment block once you no longer need the guidance.
+
 ## Authoring convention
 
 Each element lives in its own `##` section: one heading → one prose paragraph explaining purpose

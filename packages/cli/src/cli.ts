@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
+import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { join, dirname, basename } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   validateWorkspace,
   getElements,
@@ -8,6 +11,9 @@ import {
   rendererById,
 } from "@arc42/core";
 import type { BlockType } from "@arc42/core";
+
+// Directory of the running CLI file — used to locate bundled assets
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const BLOCK_TYPES: BlockType[] = [
   "quality-goal",
@@ -74,7 +80,7 @@ async function main() {
   });
 
   if (globalValues["version"]) {
-    console.log("arc42 v0.1.0");
+    console.log("arc42 v0.0.1");
     process.exit(0);
   }
 
@@ -93,6 +99,8 @@ async function main() {
     await runGet(dir, commandArgs);
   } else if (command === "rules") {
     runRules(commandArgs);
+  } else if (command === "init") {
+    runInit(commandArgs);
   } else {
     console.error(`Unknown command: ${command}`);
     printHelp();
@@ -107,6 +115,8 @@ Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
   arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
+  arc42 init skill [--path <dest>]
+  arc42 init template [--dir <path>]
 
 Global options:
   --dir <path>   Workspace root (default: $ARC42_DIR or cwd)
@@ -266,6 +276,96 @@ function runRules(args: string[]) {
       console.log(`         ${docs.rationale}`);
     }
   }
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
+// init
+// ---------------------------------------------------------------------------
+
+function runInit(args: string[]) {
+  const subcommand = args[0];
+
+  if (subcommand === "skill") {
+    runInitSkill(args.slice(1));
+  } else if (subcommand === "template") {
+    runInitTemplate(args.slice(1));
+  } else {
+    console.error(
+      `Usage:\n  arc42 init skill [--path <dest>]\n  arc42 init template [--dir <path>]`,
+    );
+    process.exit(2);
+  }
+}
+
+function runInitSkill(args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      path: { type: "string" },
+    },
+  });
+
+  const dest = (values["path"] as string | undefined) ?? join(process.cwd(), ".agents/skills/arc42/SKILL.md");
+  const src = join(__dirname, "skill/SKILL.md");
+
+  if (!existsSync(src)) {
+    console.error(`Bundled skill file not found at ${src}`);
+    process.exit(1);
+  }
+
+  if (existsSync(dest)) {
+    console.error(`File already exists: ${dest}\nUse --path to specify a different destination.`);
+    process.exit(1);
+  }
+
+  mkdirSync(dirname(dest), { recursive: true });
+  copyFileSync(src, dest);
+  console.log(`Skill installed: ${dest}`);
+  process.exit(0);
+}
+
+function runInitTemplate(args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      dir: { type: "string" },
+    },
+  });
+
+  const destDir = (values["dir"] as string | undefined) ?? process.cwd();
+  const srcDir = join(__dirname, "templates");
+
+  if (!existsSync(srcDir)) {
+    console.error(`Bundled templates not found at ${srcDir}`);
+    process.exit(1);
+  }
+
+  const files = readdirSync(srcDir).filter((f) => f.endsWith(".arc42.md"));
+
+  if (files.length === 0) {
+    console.error(`No template files found in ${srcDir}`);
+    process.exit(1);
+  }
+
+  mkdirSync(destDir, { recursive: true });
+
+  let copied = 0;
+  let skipped = 0;
+
+  for (const file of files) {
+    const src = join(srcDir, file);
+    const dest = join(destDir, basename(file));
+    if (existsSync(dest)) {
+      console.warn(`Skipping (already exists): ${dest}`);
+      skipped++;
+    } else {
+      copyFileSync(src, dest);
+      copied++;
+    }
+  }
+
+  console.log(`Templates copied: ${copied} file(s) to ${destDir}${skipped > 0 ? ` (${skipped} skipped)` : ""}`);
   process.exit(0);
 }
 

@@ -47,11 +47,24 @@ implements: concept-logging, concept-error-handling
 ```
 ```
 
-The block types cover the main arc42 sections. See `templates/starter/` for ready-to-use files — each template has an HTML comment explaining the arc42 intent for that section and showing a worked example. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.
+The block types cover the main arc42 sections. See the starter templates for ready-to-use files — scaffold them with `arc42 init template`. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.
 
 ### The CLI
 
 ```bash
+# Install globally
+npm install -g @doc-tc/arc42-cli
+
+# Or run without installing
+npx @doc-tc/arc42-cli init template --dir ./docs
+npx @doc-tc/arc42-cli validate --dir ./docs
+
+# Scaffold starter templates into your workspace
+arc42 init template --dir ./docs
+
+# Install the arc42 agent skill (for opencode and compatible agents)
+arc42 init skill
+
 # Validate the workspace — fix all errors before committing
 arc42 --dir ./docs validate
 
@@ -75,6 +88,10 @@ arc42 --dir ./docs get --format json
 `--dir` defaults to `$ARC42_DIR` or the current directory.
 Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` = usage error.
 
+`arc42 init skill` writes the agent skill to `.agents/skills/arc42/SKILL.md` by default.
+Use `--path <dest>` to override the destination.
+`arc42 init template` copies all 12 chapter templates; existing files are skipped.
+
 ### Validation rules
 
 The validator enforces built-in rules across four categories. Run `arc42 rules` to see each rule with its rationale. The short summary:
@@ -85,7 +102,7 @@ The validator enforces built-in rules across four categories. Run `arc42 rules` 
 
 ### AI agent use
 
-Copy `packages/skill/SKILL.md` to your opencode skills directory (e.g. `~/.opencode/skills/arc42-language/SKILL.md`). The skill orients the agent to the format and instructs it to keep the arc42 files in sync with every architectural change.
+Run `arc42 init skill` in the project root. The skill is written to `.agents/skills/arc42/SKILL.md` by default (use `--path` to override). It orients the agent to the format and instructs it to keep the arc42 files in sync with every architectural change.
 
 ---
 
