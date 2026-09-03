@@ -204,4 +204,31 @@ describe("buildIndex", () => {
     expect(idx.refsFrom.get("node-child")).toEqual(["node-root", "bb-api", "bb-db"]);
     expect(idx.refsTo.get("bb-api")).toEqual(["node-child"]);
   });
+
+  test("quality-scenario.quality populates both refsFrom and refsTo", () => {
+    const ws: Workspace = {
+      elements: [
+        {
+          kind: "quality-goal",
+          id: "qg-perf",
+          title: "Performance",
+          priority: "high",
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "quality-scenario",
+          id: "qs-perf-1",
+          title: "Perf under load",
+          quality: "qg-perf",
+          loc: { file: "f", line: 5 },
+        },
+      ],
+      parseErrors: [],
+      documents: [],
+      diagrams: [],
+    };
+    const idx = buildIndex(ws);
+    expect(idx.refsFrom.get("qs-perf-1")).toContain("qg-perf");
+    expect(idx.refsTo.get("qg-perf")).toContain("qs-perf-1");
+  });
 });

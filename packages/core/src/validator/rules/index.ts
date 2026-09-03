@@ -27,6 +27,8 @@ import { w008DecisionNoDate } from "./w008-decision-no-date.ts";
 import { w009RiskNoMitigation } from "./w009-risk-no-mitigation.ts";
 import { w011RuntimeScenarioNoInvolves } from "./w011-runtime-scenario-no-involves.ts";
 import { w012BuildingBlockUnmapped } from "./w012-building-block-unmapped.ts";
+import { w013QualityScenarioNoMetric } from "./w013-quality-scenario-no-metric.ts";
+import { w014QualityGoalsNotDescendingPriority } from "./w014-quality-goals-not-descending-priority.ts";
 import { h001DecisionNoAddresses } from "./h001-decision-no-addresses.ts";
 import { h002QualityGoalUnaddressed } from "./h002-quality-goal-unaddressed.ts";
 import { h003BuildingBlockNoTechnology } from "./h003-building-block-no-technology.ts";
@@ -39,6 +41,7 @@ import { h009SolutionStrategyNoAddresses } from "./h009-solution-strategy-no-add
 import { h010QualityGoalUnaddressedBySolutionStrategy } from "./h010-quality-goal-unaddressed-by-solution-strategy.ts";
 import { h011InterfaceNotCoveredByRuntimeScenario } from "./h011-interface-not-covered-by-runtime-scenario.ts";
 import { h012EmptyDeploymentNode } from "./h012-empty-deployment-node.ts";
+import { h013QualityGoalNoScenario } from "./h013-quality-goal-no-scenario.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -59,16 +62,18 @@ export const builtinRules: readonly Rule[] = [
   w003StaleProposedDecision, // Chapter 9
   w004BlockWithoutProse, // All chapters
   w005MultipleBlocksUnderHeading, // All chapters
-  w006TooFewQualityGoals, // Chapter 1
-  w007TooManyQualityGoals, // Chapter 1
+  w006TooFewQualityGoals, // Chapter 10
+  w007TooManyQualityGoals, // Chapter 10
   w008DecisionNoDate, // Chapter 9
   w009RiskNoMitigation, // Chapter 11
   w011RuntimeScenarioNoInvolves, // Chapter 6
   w012BuildingBlockUnmapped, // Chapter 7
+  w013QualityScenarioNoMetric, // Chapter 10
+  w014QualityGoalsNotDescendingPriority, // Chapter 10
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9
-  h002QualityGoalUnaddressed, // Chapter 1
+  h002QualityGoalUnaddressed, // Chapter 10
   h003BuildingBlockNoTechnology, // Chapter 5
   h004BuildingBlockUnreferencedByInterface, // Chapter 5
   h005ConceptsNeverImplemented, // Chapter 8
@@ -76,9 +81,10 @@ export const builtinRules: readonly Rule[] = [
   h007RiskUnaddressed, // Chapter 11
   h008ActorNoInterface, // Chapter 3
   h009SolutionStrategyNoAddresses, // Chapter 4
-  h010QualityGoalUnaddressedBySolutionStrategy, // Chapter 1
+  h010QualityGoalUnaddressedBySolutionStrategy, // Chapter 10
   h011InterfaceNotCoveredByRuntimeScenario, // Chapter 6
   h012EmptyDeploymentNode, // Chapter 7
+  h013QualityGoalNoScenario, // Chapter 10
 ];
 
 /** All rules indexed by code for O(1) lookup */

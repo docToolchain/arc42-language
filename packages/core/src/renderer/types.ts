@@ -14,6 +14,7 @@
 import type {
   Element,
   QualityGoal,
+  QualityScenario,
   Actor,
   SolutionStrategy,
   Constraint,
@@ -62,7 +63,7 @@ export interface Edge {
   from: string;
   to: string;
   /** The semantic relationship type */
-  relation: "implements" | "parent" | "between" | "addresses" | "involves" | "hosts";
+  relation: "implements" | "parent" | "between" | "addresses" | "involves" | "hosts" | "elaborates";
 }
 
 /** Result of a workspace-level get query */
@@ -126,6 +127,11 @@ export interface GetRenderer {
  */
 export interface ElementRenderers {
   "quality-goal": (el: QualityGoal, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
+  "quality-scenario": (
+    el: QualityScenario,
+    refsFrom: ResolvedRef[],
+    refsTo: ResolvedRef[],
+  ) => string;
   actor: (el: Actor, refsFrom: ResolvedRef[], refsTo: ResolvedRef[]) => string;
   "solution-strategy": (
     el: SolutionStrategy,

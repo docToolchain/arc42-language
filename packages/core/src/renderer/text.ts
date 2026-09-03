@@ -3,6 +3,7 @@ import { ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
 import type {
   Element,
   QualityGoal,
+  QualityScenario,
   Actor,
   SolutionStrategy,
   BuildingBlock,
@@ -76,6 +77,8 @@ export class TextGetRenderer implements GetRenderer {
     switch (el.kind) {
       case "quality-goal":
         return this.renderQualityGoal(el);
+      case "quality-scenario":
+        return this.renderQualityScenarioLine(el);
       case "constraint":
         return this.renderConstraint(el);
       case "actor":
@@ -113,6 +116,12 @@ export class TextGetRenderer implements GetRenderer {
     // We need to find edges where the quality goal is the target
     // This is handled at workspace level with edges array
 
+    return lines.join("\n");
+  }
+
+  private renderQualityScenarioLine(el: QualityScenario): string {
+    const lines = [`  ${el.id}  ${el.title}  → ${el.quality}`];
+    if (el.metric) lines.push(`    metric: ${el.metric}`);
     return lines.join("\n");
   }
 
@@ -242,6 +251,12 @@ export class TextGetRenderer implements GetRenderer {
       case "quality-goal":
         if (el.priority) lines.push(`  priority: ${el.priority}`);
         if (el.scenario) lines.push(`  scenario: ${el.scenario}`);
+        break;
+      case "quality-scenario":
+        lines.push(`  quality: ${el.quality}`);
+        if (el.stimulus) lines.push(`  stimulus: ${el.stimulus}`);
+        if (el.response) lines.push(`  response: ${el.response}`);
+        if (el.metric) lines.push(`  metric: ${el.metric}`);
         break;
       case "actor":
         lines.push(`  type: ${el.type}`);

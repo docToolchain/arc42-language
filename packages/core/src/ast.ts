@@ -2,6 +2,7 @@
 
 export type BlockType =
   | "quality-goal"
+  | "quality-scenario"
   | "constraint"
   | "actor"
   | "solution-strategy"

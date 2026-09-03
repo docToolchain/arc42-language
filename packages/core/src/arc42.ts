@@ -84,17 +84,25 @@ function buildEdges(workspace: { elements: Element[] }, _index: ReferenceIndex):
       for (const ref of el.hosts) {
         edges.push({ from: el.id, to: ref, relation: "hosts" });
       }
+    } else if (el.kind === "quality-scenario") {
+      edges.push({ from: el.id, to: el.quality, relation: "elaborates" });
     }
   }
   return edges;
 }
 
-/** Sort elements: canonical kind order, then alphabetical by id within kind */
+/** Sort elements: canonical kind order, then priority descending for quality-goal, then alphabetical by id */
 function sortElements(elements: Element[]): Element[] {
   const kindRank = new Map(ELEMENT_KIND_ORDER.map((k, i) => [k, i]));
+  const priorityRank: Record<string, number> = { high: 2, medium: 1, low: 0 };
   return [...elements].sort((a, b) => {
     const kindDiff = (kindRank.get(a.kind) ?? 99) - (kindRank.get(b.kind) ?? 99);
     if (kindDiff !== 0) return kindDiff;
+    // Secondary sort for quality-goal: descending priority (high first)
+    if (a.kind === "quality-goal" && b.kind === "quality-goal") {
+      const priorityDiff = (priorityRank[b.priority] ?? 0) - (priorityRank[a.priority] ?? 0);
+      if (priorityDiff !== 0) return priorityDiff;
+    }
     return a.id.localeCompare(b.id);
   });
 }
@@ -144,6 +152,7 @@ export type { Diagnostic, Severity } from "./validator/types.ts";
 export type {
   Element,
   QualityGoal,
+  QualityScenario,
   Actor,
   SolutionStrategy,
   Constraint,

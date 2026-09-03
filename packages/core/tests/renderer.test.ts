@@ -84,7 +84,8 @@ describe("getElements API - workspace view", () => {
       const goal = view.elements.find((el) => el.kind === "quality-goal");
       expect(strategy).toBeDefined();
       expect(goal).toBeDefined();
-      expect(view.elements.indexOf(goal!)).toBeLessThan(view.elements.indexOf(strategy!));
+      // quality-goal is now in ch.10 (after ch.4 solution-strategy)
+      expect(view.elements.indexOf(strategy!)).toBeLessThan(view.elements.indexOf(goal!));
       expect(view.edges).toContainEqual({
         from: "strategy-architecture",
         to: "qg-performance",
@@ -264,7 +265,7 @@ describe("TextGetRenderer", () => {
     });
 
     const output = renderer.render(result);
-    expect(output).toContain("Quality Goals");
+    expect(output).toContain("Quality Requirements");
     expect(output).toContain("Building Blocks");
     expect(output).toContain("Cross-cutting Concepts");
     expect(output).toContain("Architecture Decisions");
@@ -280,14 +281,15 @@ describe("TextGetRenderer", () => {
     });
 
     const output = renderer.render(result);
-    const qgIndex = output.indexOf("Quality Goals");
+    const qgIndex = output.indexOf("Quality Requirements");
     const bbIndex = output.indexOf("Building Blocks");
     const conceptIndex = output.indexOf("Cross-cutting Concepts");
     const decIndex = output.indexOf("Architecture Decisions");
 
-    expect(qgIndex).toBeLessThan(bbIndex);
+    // quality-goal is now in ch.10, so it comes after building blocks, concepts, decisions
     expect(bbIndex).toBeLessThan(conceptIndex);
     expect(conceptIndex).toBeLessThan(decIndex);
+    expect(decIndex).toBeLessThan(qgIndex);
   });
 
   test("workspace view: omits fields with no value", async () => {
@@ -456,5 +458,55 @@ describe("builtinGetRenderers registry", () => {
     const jsonRenderer = rendererById.get("json");
     expect(jsonRenderer).toBeDefined();
     expect(jsonRenderer!.meta.id).toBe("json");
+  });
+
+  test("quality-goals are sorted high → medium → low in workspace view", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "arc42-qg-sort-"));
+    try {
+      await writeFile(
+        join(dir, "qg.arc42.md"),
+        `# Quality Requirements
+
+## Low Goal
+
+Low priority goal.
+
+:::quality-goal
+id: qg-low
+title: Low Goal
+priority: low
+:::
+
+## Medium Goal
+
+Medium priority goal.
+
+:::quality-goal
+id: qg-med
+title: Medium Goal
+priority: medium
+:::
+
+## High Goal
+
+High priority goal.
+
+:::quality-goal
+id: qg-high
+title: High Goal
+priority: high
+:::
+`,
+      );
+      const result = await getElements({ dir, query: { kind: "workspace" } });
+      const view = result as WorkspaceView;
+      const goals = view.elements.filter((el) => el.kind === "quality-goal");
+      expect(goals).toHaveLength(3);
+      expect(goals[0]!.id).toBe("qg-high");
+      expect(goals[1]!.id).toBe("qg-med");
+      expect(goals[2]!.id).toBe("qg-low");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -38,6 +38,8 @@ export function buildIndex(workspace: Workspace): ReferenceIndex {
     } else if (el.kind === "deployment-node") {
       if (el.parent) addRef(el.id, el.parent);
       for (const ref of el.hosts) addRef(el.id, ref);
+    } else if (el.kind === "quality-scenario") {
+      addRef(el.id, el.quality);
     }
   }
 

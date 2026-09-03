@@ -51,6 +51,7 @@ implements: concept-logging, concept-error-handling
 | Block type          | Required fields             | Optional fields                      |
 | ------------------- | --------------------------- | ------------------------------------ |
 | `quality-goal`      | `id`, `title`, `priority`   | `scenario`                           |
+| `quality-scenario`  | `id`, `title`, `quality`    | `stimulus`, `response`, `metric`     |
 | `constraint`        | `id`, `title`, `category`   | `source`                             |
 | `actor`             | `id`, `title`, `type`       | `description`                        |
 | `solution-strategy` | `id`, `title`               | `addresses`                          |
@@ -64,7 +65,7 @@ implements: concept-logging, concept-error-handling
 
 ### Field value constraints
 
-- `quality-goal.priority`: `high` | `medium` | `low`
+- `quality-goal.priority`: `high` | `medium` | `low` — goals in ch.10; `priority: high` goals are architecture-driving; list goals in descending order within the file (high → medium → low), enforced by W014
 - `constraint.category`: `technical` | `organizational` | `convention`
 - `actor.type`: `person` | `system` — `person` for human roles (user, operator, team); `system` for external software systems or services
 - `decision.status`: `proposed` | `accepted` | `deprecated` | `superseded`
@@ -81,6 +82,7 @@ implements: concept-logging, concept-error-handling
 | `between`    | `interface`         | one `building-block` id and one `actor` id, or two `building-block` ids (comma-separated) |
 | `addresses`  | `decision`          | one or more `quality-goal`, `constraint`, or `risk` ids                                   |
 | `addresses`  | `solution-strategy` | one or more `quality-goal` ids                                                            |
+| `quality`    | `quality-scenario`  | a `quality-goal` id (required — the goal this scenario elaborates)                        |
 | `supersedes` | `decision`          | another `decision` id                                                                     |
 | `parent`     | `deployment-node`   | another `deployment-node` id                                                              |
 | `hosts`      | `deployment-node`   | one or more `building-block` ids (comma-separated)                                        |

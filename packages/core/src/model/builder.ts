@@ -4,6 +4,7 @@ import type {
   Element,
   ParseError,
   QualityGoal,
+  QualityScenario,
   Actor,
   SolutionStrategy,
   BuildingBlock,
@@ -21,6 +22,7 @@ import type {
 
 const KNOWN_BLOCK_TYPES = new Set([
   "quality-goal",
+  "quality-scenario",
   "constraint",
   "actor",
   "solution-strategy",
@@ -154,6 +156,27 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
           loc,
         };
         elements.push(qg);
+      } else if (blockType === "quality-scenario") {
+        const quality = attributes["quality"];
+        if (!quality) {
+          parseErrors.push({
+            message: "Missing required attribute 'quality' on quality-scenario",
+            file,
+            line: startLine,
+          });
+          continue;
+        }
+        const qs: QualityScenario = {
+          kind: "quality-scenario",
+          id,
+          title,
+          quality,
+          stimulus: attributes["stimulus"] || undefined,
+          response: attributes["response"] || undefined,
+          metric: attributes["metric"] || undefined,
+          loc,
+        };
+        elements.push(qs);
       } else if (blockType === "actor") {
         const typeRaw = attributes["type"];
         if (!typeRaw) {

@@ -177,4 +177,43 @@ describe("buildWorkspace", () => {
     expect(ws.elements).toHaveLength(0);
     expect(ws.parseErrors[0]!.message).toMatch(/type.*actor.*person.*system/i);
   });
+
+  test("valid quality-scenario → correct element shape", () => {
+    const ws = buildWorkspace([
+      doc(
+        "quality-scenario\nid: qs-1\ntitle: Perf under load\nquality: qg-perf\nstimulus: 1000 concurrent users\nresponse: system handles all requests\nmetric: p95 < 500ms",
+      ),
+    ]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements).toHaveLength(1);
+    const el = ws.elements[0]!;
+    expect(el.kind).toBe("quality-scenario");
+    if (el.kind !== "quality-scenario") throw new Error();
+    expect(el.id).toBe("qs-1");
+    expect(el.title).toBe("Perf under load");
+    expect(el.quality).toBe("qg-perf");
+    expect(el.stimulus).toBe("1000 concurrent users");
+    expect(el.response).toBe("system handles all requests");
+    expect(el.metric).toBe("p95 < 500ms");
+  });
+
+  test("quality-scenario without quality → ParseError", () => {
+    const ws = buildWorkspace([doc("quality-scenario\nid: qs-1\ntitle: Perf scenario")]);
+    expect(ws.elements).toHaveLength(0);
+    expect(ws.parseErrors).toHaveLength(1);
+    expect(ws.parseErrors[0]!.message).toMatch(/quality/);
+  });
+
+  test("quality-scenario optional fields absent → no error", () => {
+    const ws = buildWorkspace([
+      doc("quality-scenario\nid: qs-min\ntitle: Minimal\nquality: qg-perf"),
+    ]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements).toHaveLength(1);
+    const el = ws.elements[0]!;
+    if (el.kind !== "quality-scenario") throw new Error();
+    expect(el.stimulus).toBeUndefined();
+    expect(el.response).toBeUndefined();
+    expect(el.metric).toBeUndefined();
+  });
 });

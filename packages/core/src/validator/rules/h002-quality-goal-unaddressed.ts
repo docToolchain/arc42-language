@@ -11,7 +11,7 @@ export const h002QualityGoalUnaddressed: Rule = {
       description: "Quality goal is not addressed by any architecture decision",
       rationale:
         "A quality goal with no decision addressing it is aspirational but unactionable — the team has stated what they want but not decided how to achieve it. This is a planning gap, not necessarily an error, but it should be resolved: either add the missing decision or remove the goal if it is no longer a priority.",
-      arc42Chapter: 1,
+      arc42Chapter: 10,
       recommended: true,
     },
   },

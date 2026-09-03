@@ -612,4 +612,262 @@ between: bb-2, bb-3
     const diags = validate(ws, idx);
     expect(diags.some((d) => d.code === "W005")).toBe(false);
   });
+
+  // -------------------------------------------------------------------------
+  // W013 — quality-scenario no metric
+  // -------------------------------------------------------------------------
+
+  test("W013 — emitted when quality-scenario has no metric", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
+      { kind: "quality-scenario", id: "qs-1", title: "Scenario", quality: "qg-1", loc: loc(5) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W013")).toBe(true);
+  });
+
+  test("W013 — NOT emitted when quality-scenario has a metric", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
+      {
+        kind: "quality-scenario",
+        id: "qs-1",
+        title: "Scenario",
+        quality: "qg-1",
+        metric: "p95 < 500ms",
+        loc: loc(5),
+      },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W013")).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // H013 — quality-goal has no elaborating quality-scenario
+  // -------------------------------------------------------------------------
+
+  test("H013 — emitted when quality-goal has no quality-scenario", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "H013")).toBe(true);
+  });
+
+  test("H013 — NOT emitted when quality-goal has at least one quality-scenario", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
+      {
+        kind: "quality-scenario",
+        id: "qs-1",
+        title: "Scenario",
+        quality: "qg-1",
+        metric: "p95 < 500ms",
+        loc: loc(5),
+      },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "H013")).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // W006 / W007 — now count only priority:high goals
+  // -------------------------------------------------------------------------
+
+  test("W006 — fires when only 1 high-priority goal exists (low-priority not counted)", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-h", title: "High", priority: "high", loc: loc(1) },
+      { kind: "quality-goal", id: "qg-l1", title: "Low1", priority: "low", loc: loc(5) },
+      { kind: "quality-goal", id: "qg-l2", title: "Low2", priority: "low", loc: loc(9) },
+      { kind: "quality-goal", id: "qg-l3", title: "Low3", priority: "low", loc: loc(13) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W006")).toBe(true);
+  });
+
+  test("W006 — NOT fired when 3 high-priority goals exist", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-h1", title: "High1", priority: "high", loc: loc(1) },
+      { kind: "quality-goal", id: "qg-h2", title: "High2", priority: "high", loc: loc(5) },
+      { kind: "quality-goal", id: "qg-h3", title: "High3", priority: "high", loc: loc(9) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W006")).toBe(false);
+  });
+
+  test("W007 — fires when 6 high-priority goals exist", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q1", priority: "high", loc: loc(1) },
+      { kind: "quality-goal", id: "qg-2", title: "Q2", priority: "high", loc: loc(5) },
+      { kind: "quality-goal", id: "qg-3", title: "Q3", priority: "high", loc: loc(9) },
+      { kind: "quality-goal", id: "qg-4", title: "Q4", priority: "high", loc: loc(13) },
+      { kind: "quality-goal", id: "qg-5", title: "Q5", priority: "high", loc: loc(17) },
+      { kind: "quality-goal", id: "qg-6", title: "Q6", priority: "high", loc: loc(21) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W007")).toBe(true);
+  });
+
+  test("W007 — NOT fired when 6 low-priority goals exist (only high counted)", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-1", title: "Q1", priority: "low", loc: loc(1) },
+      { kind: "quality-goal", id: "qg-2", title: "Q2", priority: "low", loc: loc(5) },
+      { kind: "quality-goal", id: "qg-3", title: "Q3", priority: "low", loc: loc(9) },
+      { kind: "quality-goal", id: "qg-4", title: "Q4", priority: "low", loc: loc(13) },
+      { kind: "quality-goal", id: "qg-5", title: "Q5", priority: "low", loc: loc(17) },
+      { kind: "quality-goal", id: "qg-6", title: "Q6", priority: "low", loc: loc(21) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W007")).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // H010 — now scoped to priority:high goals only
+  // -------------------------------------------------------------------------
+
+  test("H010 — NOT emitted for medium/low priority goals without strategy", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-med", title: "Medium", priority: "medium", loc: loc(1) },
+      { kind: "quality-goal", id: "qg-low", title: "Low", priority: "low", loc: loc(5) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "H010")).toBe(false);
+  });
+
+  test("H010 — emitted for high-priority goal without strategy", () => {
+    const ws = makeWorkspace([
+      { kind: "quality-goal", id: "qg-high", title: "High", priority: "high", loc: loc(1) },
+    ]);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "H010")).toBe(true);
+  });
+
+  // -------------------------------------------------------------------------
+  // W014 — quality goals not in descending priority order
+  // -------------------------------------------------------------------------
+
+  test("W014 — emitted when low-priority goal appears before high-priority", () => {
+    const content = `## Low Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-low
+title: Low Goal
+priority: low
+:::
+
+## High Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-high
+title: High Goal
+priority: high
+:::`;
+    const ws = workspaceFromContent("test.arc42.md", content);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W014")).toBe(true);
+    expect(diags.find((d) => d.code === "W014")!.message).toContain("qg-high");
+  });
+
+  test("W014 — emitted when medium-priority goal appears before high-priority", () => {
+    const content = `## Medium Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-med
+title: Medium Goal
+priority: medium
+:::
+
+## High Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-high
+title: High Goal
+priority: high
+:::`;
+    const ws = workspaceFromContent("test.arc42.md", content);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W014")).toBe(true);
+  });
+
+  test("W014 — NOT emitted when goals are in correct order: high → medium → low", () => {
+    const content = `## High Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-high
+title: High Goal
+priority: high
+:::
+
+## Medium Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-med
+title: Medium Goal
+priority: medium
+:::
+
+## Low Goal
+
+Some prose.
+
+:::quality-goal
+id: qg-low
+title: Low Goal
+priority: low
+:::`;
+    const ws = workspaceFromContent("test.arc42.md", content);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W014")).toBe(false);
+  });
+
+  test("W014 — NOT emitted when goals all have same priority", () => {
+    const content = `## High Goal A
+
+Some prose.
+
+:::quality-goal
+id: qg-h1
+title: High A
+priority: high
+:::
+
+## High Goal B
+
+Some prose.
+
+:::quality-goal
+id: qg-h2
+title: High B
+priority: high
+:::`;
+    const ws = workspaceFromContent("test.arc42.md", content);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.some((d) => d.code === "W014")).toBe(false);
+  });
 });

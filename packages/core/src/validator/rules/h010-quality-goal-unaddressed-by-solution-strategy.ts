@@ -8,16 +8,16 @@ export const h010QualityGoalUnaddressedBySolutionStrategy: Rule = {
     severity: "hint",
     type: "suggestion",
     docs: {
-      description: "Quality goal is not addressed by the solution strategy",
+      description: "High-priority quality goal is not addressed by the solution strategy",
       rationale:
-        "Every important quality goal should be reflected in the architecture-wide solution strategy. A decision link alone is not enough: decisions record individual choices, while chapter 4 explains the overarching approach.",
-      arc42Chapter: 1,
+        "Every high-priority quality goal should be reflected in the architecture-wide solution strategy. A decision link alone is not enough: decisions record individual choices, while chapter 4 explains the overarching approach. Lower-priority goals are excluded because they may be addressed through local design choices rather than the global strategy.",
+      arc42Chapter: 10,
       recommended: true,
     },
   },
   check(workspace: Workspace, index: ReferenceIndex): Diagnostic[] {
     return workspace.elements
-      .filter((el) => el.kind === "quality-goal")
+      .filter((el) => el.kind === "quality-goal" && el.priority === "high")
       .filter(
         (el) =>
           !(index.refsTo.get(el.id) ?? []).some((id) => {
@@ -27,7 +27,7 @@ export const h010QualityGoalUnaddressedBySolutionStrategy: Rule = {
       .map((el) => ({
         code: "H010",
         severity: "hint" as const,
-        message: `Quality goal '${el.id}' is not addressed by the solution strategy`,
+        message: `High-priority quality goal '${el.id}' is not addressed by the solution strategy`,
         file: el.loc.file,
         line: el.loc.line,
       }));
