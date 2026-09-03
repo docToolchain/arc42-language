@@ -38,9 +38,17 @@ describe("getElements API - workspace view", () => {
       expect(prevRank).toBeLessThanOrEqual(currRank);
     }
 
-    // Check alphabetical within each kind
+    // Check alphabetical within each kind (quality-goal uses priority-then-alpha, checked separately)
+    const priorityRank: Record<string, number> = { high: 2, medium: 1, low: 0 };
     for (let i = 1; i < elements.length; i++) {
-      if (elements[i]!.kind === elements[i - 1]!.kind) {
+      if (elements[i]!.kind !== elements[i - 1]!.kind) continue;
+      if (elements[i]!.kind === "quality-goal") {
+        const prev = elements[i - 1] as { priority?: string };
+        const curr = elements[i] as { priority?: string };
+        const prevP = priorityRank[prev.priority ?? "low"] ?? 0;
+        const currP = priorityRank[curr.priority ?? "low"] ?? 0;
+        expect(prevP).toBeGreaterThanOrEqual(currP);
+      } else {
         expect(elements[i - 1]!.id.localeCompare(elements[i]!.id)).toBeLessThanOrEqual(0);
       }
     }
