@@ -1,6 +1,6 @@
 {
   "name": "@doc-tc/arc42-cli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI for validating and querying arc42 DSL files.",
   "license": "MIT",
   "keywords": [
@@ -18,7 +18,7 @@
     "directory": "packages/cli"
   },
   "bin": {
-    "arc42-cli": "./dist/cli.mjs"
+    "arc42": "./dist/cli.mjs"
   },
   "files": [
     "dist"
