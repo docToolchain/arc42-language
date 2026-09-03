@@ -1,6 +1,6 @@
 {
-  "name": "@doc-tc/arc42-cli",
-  "version": "0.0.4",
+  "name": "@doc-tc/arc42",
+  "version": "0.0.5",
   "description": "CLI for validating and querying arc42 DSL files.",
   "license": "MIT",
   "keywords": [
@@ -16,9 +16,6 @@
     "type": "git",
     "url": "https://github.com/oliverjaegle/arc42-language.git",
     "directory": "packages/cli"
-  },
-  "bin": {
-    "arc42": "./dist/cli.mjs"
   },
   "files": [
     "dist"
@@ -44,5 +41,8 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"
+  },
+  "bin": {
+    "arc42": "./dist/cli.mjs"
   }
 }

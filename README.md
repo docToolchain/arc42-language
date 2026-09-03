@@ -53,11 +53,11 @@ The block types cover the main arc42 sections. See the starter templates for rea
 
 ```bash
 # Install globally
-npm install -g @doc-tc/arc42-cli
+npm install -g @doc-tc/arc42
 
 # Or run without installing
-npx @doc-tc/arc42-cli init template --dir ./docs
-npx @doc-tc/arc42-cli validate --dir ./docs
+npx @doc-tc/arc42 init template --dir ./docs
+npx @doc-tc/arc42 validate --dir ./docs
 
 # Scaffold starter templates into your workspace
 arc42 init template --dir ./docs

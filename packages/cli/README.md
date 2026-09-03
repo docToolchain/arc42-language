@@ -1,17 +1,17 @@
-# @doc-tc/arc42-cli
+# @doc-tc/arc42
 
 A CLI for validating and querying arc42 software architecture documentation written in the arc42 DSL — Markdown prose with typed `:::block` fences for structured metadata.
 
 ## Install
 
 ```bash
-npm install -g @doc-tc/arc42-cli
+npm install -g @doc-tc/arc42
 ```
 
 Or run without installing:
 
 ```bash
-npx @doc-tc/arc42-cli <command>
+npx @doc-tc/arc42 <command>
 ```
 
 ## Getting started
