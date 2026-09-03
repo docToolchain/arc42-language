@@ -30,6 +30,7 @@ import { w012BuildingBlockUnmapped } from "./w012-building-block-unmapped.ts";
 import { w013QualityScenarioNoMetric } from "./w013-quality-scenario-no-metric.ts";
 import { w014QualityGoalsNotDescendingPriority } from "./w014-quality-goals-not-descending-priority.ts";
 import { w015MissingChapterHeading } from "./w015-missing-chapter-heading.ts";
+import { w016BlockNotInArc42Fence } from "./w016-block-not-in-arc42-fence.ts";
 import { h001DecisionNoAddresses } from "./h001-decision-no-addresses.ts";
 import { h002QualityGoalUnaddressed } from "./h002-quality-goal-unaddressed.ts";
 import { h003BuildingBlockNoTechnology } from "./h003-building-block-no-technology.ts";
@@ -72,6 +73,7 @@ export const builtinRules: readonly Rule[] = [
   w013QualityScenarioNoMetric, // Chapter 10
   w014QualityGoalsNotDescendingPriority, // Chapter 10
   w015MissingChapterHeading, // All chapters
+  w016BlockNotInArc42Fence, // All chapters
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9

@@ -26,10 +26,12 @@ All personally identifiable information must be stored and processed within the 
 This limits which cloud regions, caching layers, and third-party SaaS tools are usable.
 Origin: GDPR Art. 44, confirmed by legal review 2025-03-01.
 
+```arc42
 :::constraint
 id: con-data-residency
 title: Personal Data Must Remain in the EU
 category: organizational
 source: GDPR Art. 44 / Legal review 2025-03-01
 :::
+```
 -->

@@ -51,22 +51,26 @@ architecture-beta
 The production environment runs in the primary cloud region. The API and database are co-located
 in the same region for low-latency access.
 
+```arc42
 :::deployment-node
 id: env-production
 title: Production
 type: environment
 hosts: bb-api, bb-database
 :::
+```
 
 ## Staging
 
 Mirrors the production topology for pre-release validation. Uses smaller instance sizes.
 
+```arc42
 :::deployment-node
 id: env-staging
 title: Staging
 type: environment
 hosts: bb-api, bb-database
 :::
+```
 -->
 ```

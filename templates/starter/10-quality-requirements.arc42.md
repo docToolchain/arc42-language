@@ -36,17 +36,20 @@ The system must handle peak load without degrading the user experience.
 Response time directly affects user retention and is a contractual obligation
 with our enterprise customers.
 
+```arc42
 :::quality-goal
 id: qg-performance
 title: Performance
 priority: high
 :::
+```
 
 ## Performance — Peak Load Scenario
 
 Under peak load the system must respond within the agreed p95 threshold.
 This scenario is the primary test case for the performance quality goal.
 
+```arc42
 :::quality-scenario
 id: qs-perf-peak
 title: Peak Load Response Time
@@ -55,6 +58,7 @@ stimulus: 1000 concurrent users submit requests simultaneously
 response: All requests are handled without error
 metric: p95 response time stays below 500ms
 :::
+```
 -->
 
 ## 10.1 Quality Goals

@@ -37,12 +37,14 @@ Each element lives in its own section: heading, prose explaining purpose and rat
 Owns all product data. The only service that writes to the catalog database.
 Search results are cached in Redis to meet the p95 latency target.
 
+```arc42
 :::building-block
 id: bb-catalog-service
 title: Catalog Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling
 :::
+```
 ```
 
 The block types cover the main arc42 sections. See `templates/starter/` for ready-to-use files — each template has an HTML comment explaining the arc42 intent for that section and showing a worked example. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.

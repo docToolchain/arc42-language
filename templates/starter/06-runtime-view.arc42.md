@@ -16,12 +16,14 @@ Example:
 The customer submits an order. The API validates it, the order service creates the order, and the
 payment service authorizes payment before the customer receives confirmation.
 
+```arc42
 :::runtime-scenario
 id: scenario-checkout
 title: Customer checkout
 trigger: Customer submits an order
 involves: bb-api, bb-order-service, bb-payment-service
 :::
+```
 
 Mermaid sequence diagrams may be attached using the project's explicit diagram association syntax.
 Use model IDs (or explicit safe aliases) for participants and labels only for display:

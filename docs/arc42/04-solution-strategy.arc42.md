@@ -6,11 +6,13 @@ verification, and a shared core turns those facts into diagnostics and queries. 
 deliberately small and composable so the same model serves authors, agents, CI, and future editor
 integrations.
 
+```arc42
 :::solution-strategy
 id: strategy-arc42-language
 title: Human-readable, verifiable architecture documentation
 addresses: qg-readability, qg-agent-writability, qg-verifiability, qg-extensibility, qg-cli-usability
 :::
+```
 
 ## Focused Package Boundaries
 

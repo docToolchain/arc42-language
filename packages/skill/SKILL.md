@@ -30,6 +30,11 @@ and rationale → one `:::block` as the machine-readable summary at the end of t
 **Never put two blocks under the same `##` heading.** Prose without a block is valid (for
 sections that do not need a machine-readable record).
 
+Every `:::block` must be wrapped in a ` ```arc42 ` / ` ``` ` fence so that standard Markdown
+renderers (GitHub, VS Code, editors) display it as a styled code block rather than raw text.
+This is enforced by W016. `:::diagram` blocks are exempt — they already have a ` ```mermaid `
+fence as their visual pair.
+
 Example:
 
 ```markdown
@@ -38,12 +43,14 @@ Example:
 Owns all product data. The only service that writes to the catalog database.
 Search results are cached to meet the p95 latency target.
 
+```arc42
 :::building-block
 id: bb-catalog-service
 title: Catalog Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling
 :::
+```
 ```
 
 ## Block type reference

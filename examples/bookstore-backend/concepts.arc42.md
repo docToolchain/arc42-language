@@ -11,11 +11,13 @@ The `traceId` is propagated via the `X-Trace-Id` HTTP header — services copy i
 requests and attach it to all outbound calls and log entries. Log shipping to the aggregator
 is handled by a sidecar; no service makes direct network calls for logging.
 
+```arc42
 :::concept
 id: concept-logging
 title: Structured Logging
 category: observability
 :::
+```
 
 ## Authentication and Authorization
 
@@ -27,11 +29,13 @@ and avoids a single point of failure on the hot path.
 Token expiry is set to 15 minutes with a refresh token flow to mitigate the inability to
 revoke tokens before expiry.
 
+```arc42
 :::concept
 id: concept-auth
 title: Authentication and Authorization
 category: security
 :::
+```
 
 ## Error Handling
 
@@ -41,8 +45,10 @@ including the `traceId`, and returned as HTTP 500 with a correlation id in the r
 Business errors (validation failures, not found, conflicts) are 4xx responses with a
 machine-readable `type` URI field so clients can handle them programmatically.
 
+```arc42
 :::concept
 id: concept-error-handling
 title: Error Handling
 category: error-handling
 :::
+```

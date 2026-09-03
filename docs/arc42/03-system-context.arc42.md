@@ -10,12 +10,14 @@ The human who designs and maintains the architecture. Uses the CLI directly from
 terminal or IDE to validate workspaces and query elements. Also the primary author of
 `.arc42.md` files — writes prose and DSL blocks by hand or reviews agent-authored content.
 
+```arc42
 :::actor
 id: actor-architect
 title: Architect
 type: person
 description: Human architect who authors and validates arc42 documentation
 :::
+```
 
 ## AI Agent
 
@@ -25,12 +27,14 @@ SKILL.md, it uses the CLI to validate its output and discover existing elements 
 making changes. The agent is a first-class author — the DSL is deliberately simple enough
 that agents can produce valid files without handholding.
 
+```arc42
 :::actor
 id: actor-agent
 title: AI Agent
 type: system
 description: LLM-based coding assistant operating via the arc42-language skill
 :::
+```
 
 ## CI Pipeline
 
@@ -38,24 +42,28 @@ An automated pipeline (e.g. GitHub Actions) that runs `arc42 validate` as a qual
 on every pull request. Consumes the JSON output and exits non-zero when errors are
 present. Has no knowledge of the DSL — it only invokes the CLI and checks the exit code.
 
+```arc42
 :::actor
 id: actor-ci
 title: CI Pipeline
 type: system
 description: Automated pipeline enforcing architecture consistency on every PR
 :::
+```
 
 ## Architect → CLI Interface
 
 The architect invokes `arc42 validate`, `arc42 get`, and `arc42 rules` directly from
 the terminal. The CLI reads `.arc42.md` files from the current directory (or `--dir`).
 
+```arc42
 :::interface
 id: if-architect-cli
 title: Architect → CLI
 between: actor-architect, bb-cli
 protocol: Terminal (stdin/stdout)
 :::
+```
 
 ## AI Agent → CLI Interface
 
@@ -63,12 +71,14 @@ The agent invokes the CLI via Bash tool calls as instructed by the SKILL.md. It 
 `arc42 validate` to confirm its edits are clean and `arc42 get` to discover existing
 elements before adding new ones.
 
+```arc42
 :::interface
 id: if-agent-cli
 title: AI Agent → CLI (via Bash tool)
 between: actor-agent, bb-cli
 protocol: Bash tool call (arc42 commands)
 :::
+```
 
 ## AI Agent → Skill Interface
 
@@ -77,24 +87,28 @@ It is loaded by the agent before it begins working and provides the authoring co
 block type reference, and validation workflow. There is no code-level dependency — the
 skill is a Markdown file installed by file copy.
 
+```arc42
 :::interface
 id: if-agent-skill
 title: AI Agent → Skill
 between: actor-agent, bb-skill
 protocol: SKILL.md loaded at agent startup
 :::
+```
 
 ## CI Pipeline → CLI Interface
 
 The CI pipeline invokes `arc42 validate --format json` as a build step. Exit code 1
 triggers a pipeline failure. The JSON output may be parsed for reporting.
 
+```arc42
 :::interface
 id: if-ci-cli
 title: CI Pipeline → CLI
 between: actor-ci, bb-cli
 protocol: Shell command / exit code
 :::
+```
 
 ## Architect → Documentation Workspace
 
@@ -102,12 +116,14 @@ The architect reads and writes `.arc42.md` files directly in their editor, via g
 or during code review — independent of the CLI. The documentation workspace is the
 primary human-readable artifact of the toolchain.
 
+```arc42
 :::interface
 id: if-architect-workspace
 title: Architect → Documentation Workspace
 between: actor-architect, bb-workspace
 protocol: Plain text / Markdown editor
 :::
+```
 
 ## AI Agent → Documentation Workspace
 
@@ -115,9 +131,11 @@ The AI agent reads and writes `.arc42.md` files using file Read/Write tools. Thi
 the primary way the agent authors and updates architecture documentation — the CLI is
 used afterwards to validate the result.
 
+```arc42
 :::interface
 id: if-agent-workspace
 title: AI Agent → Documentation Workspace
 between: actor-agent, bb-workspace
 protocol: File Read/Write tools
 :::
+```

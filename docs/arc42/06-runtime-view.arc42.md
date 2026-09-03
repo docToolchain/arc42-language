@@ -6,12 +6,14 @@ This representative Runtime View scenario describes how an architect reads and e
 architecture workspace with agent assistance. Validation is intentionally shown as an implicit
 quality gate at commit or merge time, rather than as a manual step in the architect's workflow.
 
+```arc42 
 :::runtime-scenario
 id: scenario-agent-architecture-evolution
 title: Agent-driven architecture evolution
 trigger: An architect asks an agent for an improvement
 involves: bb-skill, bb-workspace, bb-cli, bb-core
 :::
+```
 
 :::diagram
 id: agent-architecture-evolution-sequence
@@ -60,12 +62,14 @@ The validation quality gate delegates to the core pipeline. This schematic scena
 internal hand-offs explicit: parsing produces the document AST, the builder creates the model, the
 resolver indexes references, the validator runs rules, and the renderer prepares output.
 
+```arc42
 :::runtime-scenario
 id: scenario-core-validation-pipeline
 title: Core model validation pipeline
 trigger: Pre-commit hook or CI invokes architecture validation
 involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer
 :::
+```
 
 :::diagram
 id: core-validation-pipeline-sequence

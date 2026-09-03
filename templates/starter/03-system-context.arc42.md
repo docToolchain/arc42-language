@@ -28,39 +28,47 @@ The primary human user of the system. Interacts via the web UI to browse, search
 purchase products. Authentication is handled by the system itself — no external identity
 provider in scope for v1.
 
+```arc42
 :::actor
 id: actor-end-user
 title: End User
 type: person
 description: Authenticated customer browsing and purchasing via the web UI
 :::
+```
 
 ## Payment Provider
 
 An external payment processing service (e.g. Stripe). The system calls its REST API
 to authorise charges and process refunds. No payment data is stored in the system itself.
 
+```arc42
 :::actor
 id: actor-payment-provider
 title: Payment Provider
 type: system
 :::
+```
 
 ## End User → Checkout Service
 
+```arc42
 :::interface
 id: if-user-checkout
 title: End User → Checkout
 between: actor-end-user, bb-checkout-service
 protocol: HTTPS / REST
 :::
+```
 
 ## Checkout → Payment Provider
 
+```arc42
 :::interface
 id: if-checkout-payment
 title: Checkout → Payment Provider
 between: bb-checkout-service, actor-payment-provider
 protocol: HTTPS / REST (Stripe API)
 :::
+```
 -->

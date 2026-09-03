@@ -10,11 +10,13 @@ Start with a short overview before the block. Link the strategy to the quality g
 addresses; use comma-separated quality-goal ids. The referenced goals are defined in
 01-quality-goals.arc42.md.
 
+```arc42
 :::solution-strategy
 id: strategy-architecture
 title: Architecture-wide solution strategy
 addresses: qg-performance, qg-security
 :::
+```
 
 ## System decomposition
 

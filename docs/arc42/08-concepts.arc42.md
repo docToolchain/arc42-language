@@ -13,21 +13,25 @@ the workspace. The cost is minor latency on large workspaces, which is acceptabl
 The pipeline is the primary integration contract between all core building blocks. No block
 skips a stage or takes a shortcut.
 
+```arc42
 :::concept
 id: concept-pipeline
 title: Single-pass Pipeline
 category: architecture
 :::
+```
 
 ## Prose-first Documentation
 
 Every machine-readable element is introduced by prose in its own `##` section. This keeps the architecture useful in a Markdown viewer while allowing the parser and validator to index typed elements, references, and diagnostics.
 
+```arc42
 :::concept
 id: concept-prose-first
 title: Prose-first Documentation
 category: authoring
 :::
+```
 
 ## Rule Registry Pattern
 
@@ -40,8 +44,10 @@ This pattern is deliberately ESLint-inspired. It makes the rule set extensible (
 register it), documentable (`arc42 rules --format json`), and independently testable (each
 rule is a pure function with no shared state).
 
+```arc42
 :::concept
 id: concept-rule-registry
 title: Rule Registry Pattern
 category: architecture
 :::
+```

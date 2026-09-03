@@ -12,6 +12,7 @@ team has strong REST experience, and our current query patterns are simple enoug
 GraphQL's flexibility would not pay for its complexity. gRPC would require protobuf
 tooling across all clients. REST was the pragmatic choice.
 
+```arc42
 :::decision
 id: dec-rest-api
 title: Use REST over HTTP/JSON for all external-facing APIs
@@ -19,6 +20,7 @@ status: accepted
 date: 2026-01-10
 addresses: qg-maintainability, qg-observability
 :::
+```
 
 ## Stateless JWT authentication
 
@@ -29,6 +31,7 @@ cannot be revoked before expiry — mitigated by a short 15-minute expiry and a 
 token flow. If immediate revocation becomes a hard requirement (e.g. for compliance),
 we will add a token blocklist backed by Redis.
 
+```arc42
 :::decision
 id: dec-jwt-auth
 title: Use stateless JWT tokens for authentication
@@ -36,6 +39,7 @@ status: accepted
 date: 2026-01-15
 addresses: qg-security, qg-performance
 :::
+```
 
 ## PostgreSQL for all persistent storage
 
@@ -46,6 +50,7 @@ PostgreSQL's JSONB support covers the flexible metadata use cases that initially
 MongoDB attractive. DynamoDB was rejected due to the operational overhead of managing
 capacity and the vendor lock-in risk.
 
+```arc42
 :::decision
 id: dec-postgres
 title: Use PostgreSQL for all persistent storage
@@ -53,6 +58,7 @@ status: accepted
 date: 2026-01-15
 addresses: qg-maintainability
 :::
+```
 
 ## Redis cache for catalog search results
 
@@ -64,6 +70,7 @@ publish an invalidation message that the Catalog Service consumes to evict stale
 Write-through caching was considered but rejected — the added write latency is not
 acceptable for the order flow.
 
+```arc42
 :::decision
 id: dec-redis-cache
 title: Cache catalog search results in Redis
@@ -71,6 +78,7 @@ status: accepted
 date: 2026-02-01
 addresses: qg-performance
 :::
+```
 
 ## Structured JSON logging with trace ids
 
@@ -81,6 +89,7 @@ tracing without a full distributed tracing infrastructure (Jaeger, Zipkin). Open
 was evaluated but deferred — it can be added later as a structured-log exporter without
 changing the logging contract established here.
 
+```arc42
 :::decision
 id: dec-structured-logging
 title: Adopt structured JSON logging with trace ids across all services
@@ -88,3 +97,4 @@ status: accepted
 date: 2026-02-10
 addresses: qg-observability
 :::
+```

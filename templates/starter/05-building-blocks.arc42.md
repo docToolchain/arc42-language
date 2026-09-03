@@ -28,33 +28,39 @@ Example:
 The single entry point for all external traffic. Authenticates requests, applies rate limits,
 and routes calls to downstream services. External clients never contact services directly.
 
+```arc42
 :::building-block
 id: bb-api-gateway
 title: API Gateway
 technology: nginx / Kong
 implements: concept-auth, concept-logging
 :::
+```
 
 ## User Service
 
 Owns user identity and authentication. Issues tokens on successful login.
 
+```arc42
 :::building-block
 id: bb-user-service
 title: User Service
 technology: Java / Spring Boot
 implements: concept-auth, concept-logging
 :::
+```
 
 ## API Gateway → User Service
 
 The API Gateway forwards authentication requests to the User Service.
 This is the only path through which external login requests reach the User Service.
 
+```arc42
 :::interface
 id: if-gateway-user
 title: API Gateway → User Service
 between: bb-api-gateway, bb-user-service
 protocol: HTTP/REST
 :::
+```
 -->

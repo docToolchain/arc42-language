@@ -34,6 +34,8 @@ export interface BlockNode {
   attributes: Record<string, string>;
   startLine: number;
   endLine: number;
+  /** True when the block was parsed inside a ```arc42 ... ``` wrapper fence. */
+  inArc42Fence: boolean;
 }
 
 /** Common parser representation for any diagram artifact. */

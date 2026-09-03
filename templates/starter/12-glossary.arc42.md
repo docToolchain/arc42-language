@@ -25,9 +25,11 @@ A bounded context is a logical boundary within which a domain model is consisten
 unambiguous. Inside a bounded context, terms have precise, agreed meanings. The same word
 may mean something different in another bounded context.
 
+```arc42
 :::glossary-term
 id: term-bounded-context
 title: Bounded Context
 definition: A logical boundary within which a domain model, its language, and its rules are internally consistent. Defined in Domain-Driven Design (Evans, 2003).
 :::
+```
 -->

@@ -34,6 +34,7 @@ The team evaluated session-based (server-side store) and token-based (stateless)
 Stateless tokens were chosen to avoid a shared session store that would introduce a single point
 of failure and complicate horizontal scaling.
 
+```arc42
 :::decision
 id: dec-auth-stateless
 title: Stateless Token Authentication
@@ -41,16 +42,20 @@ status: accepted
 date: 2025-07-01
 addresses: qg-security, qg-performance
 :::
+```
 
 To supersede a decision, mark the old one and point to it from the new one:
 
+```arc42
 :::decision
 id: dec-auth-old
 title: Session-based Authentication
 status: superseded
 date: 2024-01-15
 :::
+```
 
+```arc42
 :::decision
 id: dec-auth-new
 title: OAuth2 Token Authentication
@@ -58,4 +63,5 @@ status: accepted
 date: 2025-09-01
 supersedes: dec-auth-old
 :::
+```
 -->

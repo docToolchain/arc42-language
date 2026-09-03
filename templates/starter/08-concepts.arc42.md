@@ -30,9 +30,11 @@ Every service emits structured JSON log entries including traceId, service, dura
 outcome, and timestamp. The traceId is propagated via the X-Trace-Id HTTP header
 and copied to all outbound calls and log entries.
 
+```arc42
 :::concept
 id: concept-logging
 title: Structured Logging
 category: observability
 :::
+```
 -->

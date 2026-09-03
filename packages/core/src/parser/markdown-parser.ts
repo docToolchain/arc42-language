@@ -86,6 +86,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
   } | null = null;
 
   let inHtmlComment = false;
+  let inArc42Fence = false;
 
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1; // 1-indexed
@@ -134,6 +135,19 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       pendingDiagram = null;
     }
 
+    // arc42 fence: ```arc42 ... ``` wraps :::blocks for Markdown renderer compatibility.
+    // Only recognised outside diagram states to avoid conflicting with the diagram source fence.
+    if (!openDiagram && !pendingDiagram) {
+      if (/^```arc42\s*$/.test(line)) {
+        inArc42Fence = true;
+        continue;
+      }
+      if (inArc42Fence && /^```\s*$/.test(line)) {
+        inArc42Fence = false;
+        continue;
+      }
+    }
+
     if (openBlock !== null) {
       // Closing fence: ::: optionally followed only by whitespace
       if (/^:::\s*$/.test(line)) {
@@ -154,6 +168,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
             attributes: openBlock.attributes,
             startLine: openBlock.startLine,
             endLine: lineNo,
+            inArc42Fence,
           });
         }
         openBlock = null;

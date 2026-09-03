@@ -25,6 +25,7 @@ Example:
 The performance quality goal has no automated gate in CI. Performance regressions can be
 introduced without detection until a production incident occurs.
 
+```arc42
 :::risk
 id: risk-no-perf-tests
 title: No Automated Performance Regression Tests
@@ -32,4 +33,5 @@ probability: medium
 impact: high
 mitigation: Add k6 load test suite as a nightly CI job with a p95 threshold gate.
 :::
+```
 -->
