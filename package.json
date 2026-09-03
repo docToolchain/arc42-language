@@ -12,7 +12,11 @@
     "validate:examples": "node packages/cli/dist/cli.mjs --dir examples/bookstore-backend validate",
     "validate:all": "pnpm run validate:docs && pnpm run validate:examples",
     "validate:source": "node --experimental-strip-types --no-warnings scripts/validate-source.ts",
-    "hooks:install": "cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit && echo 'pre-commit hook installed'"
+    "hooks:install": "cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit && echo 'pre-commit hook installed'",
+    "version:patch": "pnpm -r --filter '!arc42-language' exec npm version patch --no-git-tag-version",
+    "version:minor": "pnpm -r --filter '!arc42-language' exec npm version minor --no-git-tag-version",
+    "version:major": "pnpm -r --filter '!arc42-language' exec npm version major --no-git-tag-version",
+    "release": "pnpm publish -r --access public"
   },
   "devDependencies": {
     "vite-plus": "catalog:"
