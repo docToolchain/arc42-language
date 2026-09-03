@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
-import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -14,6 +14,11 @@ import type { BlockType } from "@arc42/core";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Read version from the bundled package.json
+const { version: VERSION } = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf8"),
+) as { version: string };
 
 const BLOCK_TYPES: BlockType[] = [
   "quality-goal",
@@ -80,7 +85,7 @@ async function main() {
   });
 
   if (globalValues["version"]) {
-    console.log("arc42 v0.0.2");
+    console.log(`arc42 v${VERSION}`);
     process.exit(0);
   }
 
