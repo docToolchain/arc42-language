@@ -27,7 +27,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @doctc/arc42 run build
+        run: pnpm run build
 
       - name: Publish to npm
         run: pnpm --filter @doctc/arc42 publish --access public --no-git-checks
