@@ -5,6 +5,10 @@ import type { BlockType, DocumentAst } from "../ast.ts";
 export interface SourceLocation {
   file: string;
   line: number;
+  /** The text of the nearest heading that precedes this element in its source file, if any. */
+  heading?: string;
+  /** Prose lines between the nearest preceding heading and this element's block, if any. */
+  prose?: string;
 }
 
 /**

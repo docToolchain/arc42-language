@@ -454,6 +454,12 @@ describe("builtinGetRenderers registry", () => {
     expect(ids).toContain("json");
   });
 
+  test("registry contains markdown renderer", async () => {
+    const { builtinGetRenderers } = await import("../src/renderer/index.ts");
+    const ids = builtinGetRenderers.map((r) => r.meta.id);
+    expect(ids).toContain("markdown");
+  });
+
   test("rendererById.get returns text renderer", async () => {
     const { rendererById } = await import("../src/renderer/index.ts");
     const textRenderer = rendererById.get("text");
@@ -516,5 +522,362 @@ priority: high
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("MarkdownGetRenderer", () => {
+  test("imports from ../src/renderer/markdown.ts", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    expect(MarkdownGetRenderer).toBeDefined();
+  });
+
+  test("meta.id equals markdown", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    expect(renderer.meta.id).toBe("markdown");
+  });
+
+  test("meta.mimeType equals text/markdown", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    expect(renderer.meta.mimeType).toBe("text/markdown");
+  });
+
+  test("workspace view: output starts with H1 arc42 Architecture header", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({ dir: fixtureDir, query: { kind: "workspace" } });
+    const output = renderer.render(result);
+    expect(output).toMatch(/^# arc42 Architecture/);
+  });
+
+  test("workspace view: chapter headers use ## Chapter N — Title (count)", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({ dir: fixtureDir, query: { kind: "workspace" } });
+    const output = renderer.render(result);
+    expect(output).toMatch(/^## Chapter \d+ — .+ \(\d+\)/m);
+  });
+
+  test("workspace view: element entries use ### id — title", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({ dir: fixtureDir, query: { kind: "workspace" } });
+    const output = renderer.render(result);
+    // e.g. ### qg-perf — Performance
+    expect(output).toMatch(/^### \S+ — .+/m);
+  });
+
+  test("workspace view: element location is a markdown link", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({ dir: fixtureDir, query: { kind: "workspace" } });
+    const output = renderer.render(result);
+    // e.g. - location: [file.arc42.md:12](file.arc42.md) or [file.arc42.md:12](file.arc42.md#heading)
+    expect(output).toMatch(/- location: \[.+:\d+\]\(.+\)/);
+  });
+
+  test("workspace view: omits fields with no value", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({ dir: fixtureDir, query: { kind: "workspace" } });
+    const output = renderer.render(result);
+    expect(output).not.toMatch(/\(none\)/i);
+    expect(output).not.toMatch(/undefined/);
+  });
+
+  test("single element view: H1 contains kind and id", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({
+      dir: fixtureDir,
+      query: { kind: "element", id: "qg-perf" },
+    });
+    const output = renderer.render(result);
+    expect(output).toMatch(/^# \[quality-goal\] qg-perf/m);
+  });
+
+  test("single element view: title is rendered bold", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({
+      dir: fixtureDir,
+      query: { kind: "element", id: "qg-perf" },
+    });
+    const output = renderer.render(result);
+    // Title should appear as **title text**
+    expect(output).toMatch(/\*\*.+\*\*/);
+  });
+
+  test("single element view: has ## References section", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({
+      dir: fixtureDir,
+      query: { kind: "element", id: "dec-rest" },
+    });
+    const output = renderer.render(result);
+    expect(output).toContain("## References");
+  });
+
+  test("single element view: outgoing refs are markdown links with kind label", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({
+      dir: fixtureDir,
+      query: { kind: "element", id: "dec-rest" },
+    });
+    const output = renderer.render(result);
+    // dec-rest addresses qg-perf → should render as [qg-perf](...) — quality-goal
+    expect(output).toMatch(/\[qg-perf\]\(.+\) — quality-goal/);
+  });
+
+  test("single element view: incoming refs are markdown links with kind label", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({
+      dir: fixtureDir,
+      query: { kind: "element", id: "qg-perf" },
+    });
+    const output = renderer.render(result);
+    // qg-perf is addressed by dec-rest → should render as [dec-rest](...) — decision
+    expect(output).toMatch(/\[dec-rest\]\(.+\) — decision/);
+  });
+
+  test("single element view: location is an italic markdown link", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const renderer = new MarkdownGetRenderer();
+    const result = await getElements({
+      dir: fixtureDir,
+      query: { kind: "element", id: "qg-perf" },
+    });
+    const output = renderer.render(result);
+    expect(output).toMatch(/\*location: \[.+:\d+\]\(.+\)\*/);
+  });
+
+  test("single element view: renders decision fields correctly", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "decision",
+        id: "dec-rest",
+        title: "Use REST",
+        status: "accepted",
+        date: "2026-01-10",
+        addresses: ["qg-perf"],
+        loc: { file: "decisions.arc42.md", line: 16, heading: "REST over HTTP" },
+      },
+      refsFrom: [
+        {
+          id: "qg-perf",
+          element: {
+            kind: "quality-goal",
+            id: "qg-perf",
+            title: "Performance",
+            priority: "high",
+            loc: { file: "quality-goals.arc42.md", line: 4, heading: "Performance" },
+          },
+        },
+      ],
+      refsTo: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    expect(output).toContain("# [decision] dec-rest");
+    expect(output).toContain("**Use REST**");
+    expect(output).toContain("- status: accepted");
+    expect(output).toContain("- date: 2026-01-10");
+    // location link with heading anchor
+    expect(output).toMatch(/\[decisions\.arc42\.md:16\]\(decisions\.arc42\.md#rest-over-http\)/);
+  });
+
+  test("workspace view: prose is rendered below element H3 header when present", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: WorkspaceView = {
+      kind: "workspace",
+      elements: [
+        {
+          kind: "building-block",
+          id: "bb-api",
+          title: "API Gateway",
+          technology: "REST",
+          implements: [],
+          loc: {
+            file: "blocks.arc42.md",
+            line: 8,
+            heading: "API Gateway",
+            prose: "Handles all external traffic.\nRoutes to downstream services.",
+          },
+        },
+      ],
+      edges: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    expect(output).toContain("Handles all external traffic.");
+    expect(output).toContain("Routes to downstream services.");
+    // prose appears between the H3 and the field bullets
+    const h3Idx = output.indexOf("### bb-api");
+    const proseIdx = output.indexOf("Handles all external traffic.");
+    const fieldIdx = output.indexOf("- technology:");
+    expect(h3Idx).toBeLessThan(proseIdx);
+    expect(proseIdx).toBeLessThan(fieldIdx);
+  });
+
+  test("single element view: prose is rendered after bold title when present", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "building-block",
+        id: "bb-api",
+        title: "API Gateway",
+        technology: "REST",
+        implements: [],
+        loc: {
+          file: "blocks.arc42.md",
+          line: 8,
+          heading: "API Gateway",
+          prose: "Routes all requests to downstream services.",
+        },
+      },
+      refsFrom: [],
+      refsTo: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    expect(output).toContain("Routes all requests to downstream services.");
+    const titleIdx = output.indexOf("**API Gateway**");
+    const proseIdx = output.indexOf("Routes all requests");
+    const fieldIdx = output.indexOf("- technology:");
+    expect(titleIdx).toBeLessThan(proseIdx);
+    expect(proseIdx).toBeLessThan(fieldIdx);
+  });
+
+  test("single element view: actor description omitted when loc.prose present", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "actor",
+        id: "actor-user",
+        title: "End User",
+        type: "person",
+        description: "Primary human user of the system",
+        loc: {
+          file: "context.arc42.md",
+          line: 5,
+          heading: "End User",
+          prose: "Primary human user of the system",
+        },
+      },
+      refsFrom: [],
+      refsTo: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    // prose is rendered
+    expect(output).toContain("Primary human user of the system");
+    // description field bullet is NOT rendered (redundant with prose)
+    expect(output).not.toMatch(/- description:/);
+  });
+
+  test("single element view: actor description shown when no loc.prose", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "actor",
+        id: "actor-user",
+        title: "End User",
+        type: "person",
+        description: "Primary human user of the system",
+        loc: { file: "context.arc42.md", line: 5 },
+      },
+      refsFrom: [],
+      refsTo: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    expect(output).toMatch(/- description: Primary human user/);
+  });
+
+  test("toSlug: normal heading produces expected slug", async () => {
+    const { toSlug } = await import("../src/renderer/markdown.ts");
+    expect(toSlug("REST over HTTP")).toBe("rest-over-http");
+    expect(toSlug("API Gateway (v2)")).toBe("api-gateway-v2");
+    expect(toSlug("123 Numbers")).toBe("123-numbers");
+  });
+
+  test("toSlug: special-chars-only heading returns empty string", async () => {
+    const { toSlug } = await import("../src/renderer/markdown.ts");
+    expect(toSlug("!!!")).toBe("");
+    expect(toSlug("---")).toBe("");
+    expect(toSlug("")).toBe("");
+  });
+
+  test("locLink: empty slug falls back to file-only href", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "quality-goal",
+        id: "qg-1",
+        title: "Perf",
+        priority: "high",
+        loc: { file: "goals.arc42.md", line: 5, heading: "!!!" },
+      },
+      refsFrom: [],
+      refsTo: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    // slug of "!!!" is empty, so href should be file only (no #)
+    expect(output).toMatch(/\[goals\.arc42\.md:5\]\(goals\.arc42\.md\)/);
+    expect(output).not.toContain("goals.arc42.md#");
+  });
+
+  test("workspace view: quality-scenario shows only quality and metric (compact)", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: WorkspaceView = {
+      kind: "workspace",
+      elements: [
+        {
+          kind: "quality-scenario",
+          id: "qs-1",
+          title: "Perf under load",
+          quality: "qg-perf",
+          stimulus: "1000 users",
+          response: "system handles all",
+          metric: "p95 < 500ms",
+          loc: { file: "qg.arc42.md", line: 10 },
+        },
+      ],
+      edges: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    expect(output).toContain("- quality: qg-perf");
+    expect(output).toContain("- metric: p95 < 500ms");
+    // stimulus and response are compact-suppressed in workspace view
+    expect(output).not.toContain("- stimulus:");
+    expect(output).not.toContain("- response:");
+  });
+
+  test("element view: quality-scenario shows all fields including stimulus and response", async () => {
+    const { MarkdownGetRenderer } = await import("../src/renderer/markdown.ts");
+    const result: ElementView = {
+      kind: "element",
+      element: {
+        kind: "quality-scenario",
+        id: "qs-1",
+        title: "Perf under load",
+        quality: "qg-perf",
+        stimulus: "1000 users",
+        response: "system handles all",
+        metric: "p95 < 500ms",
+        loc: { file: "qg.arc42.md", line: 10 },
+      },
+      refsFrom: [],
+      refsTo: [],
+    };
+    const output = new MarkdownGetRenderer().render(result);
+    expect(output).toContain("- stimulus: 1000 users");
+    expect(output).toContain("- response: system handles all");
+    expect(output).toContain("- metric: p95 < 500ms");
   });
 });
