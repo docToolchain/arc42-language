@@ -2,6 +2,7 @@
 import { parseArgs } from "node:util";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { join, dirname, basename } from "node:path";
+import { discoverArc42Dir } from "./discover.ts";
 import { fileURLToPath } from "node:url";
 import {
   validateWorkspace,
@@ -60,12 +61,14 @@ const CHAPTER_NAMES: Record<number, string> = {
 
 // ---------------------------------------------------------------------------
 // Global flag parsing
-// Resolution order: --dir flag > ARC42_DIR env > cwd
+// Resolution order: --dir flag > ARC42_DIR env > auto-discover (walk up + scan subdirs) > cwd
 // ---------------------------------------------------------------------------
 
 function resolveDir(flagDir: string | undefined): string {
   if (flagDir) return flagDir;
   if (process.env["ARC42_DIR"]) return process.env["ARC42_DIR"];
+  const discovered = discoverArc42Dir(process.cwd());
+  if (discovered) return discovered;
   return process.cwd();
 }
 
