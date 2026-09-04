@@ -19,8 +19,10 @@ import type {
   DeploymentDiagram,
   DiagramArtifact,
 } from "./types.ts";
+import { ELEMENT_SCHEMAS } from "./schemas.ts";
+import type { BlockType } from "../ast.ts";
 
-const KNOWN_BLOCK_TYPES = new Set([
+const KNOWN_BLOCK_TYPES = new Set<string>([
   "quality-goal",
   "quality-scenario",
   "constraint",
@@ -36,12 +38,81 @@ const KNOWN_BLOCK_TYPES = new Set([
   "deployment-node",
 ]);
 
-function splitList(value: string | undefined): string[] {
-  if (!value || value.trim() === "") return [];
-  return value
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+/**
+ * Map a Zod parse failure into a human-friendly ParseError message that
+ * matches the regex expectations in existing tests.
+ *
+ * The builder owns the error message format; Zod's raw messages are never
+ * forwarded to callers.
+ *
+ * We distinguish "missing" from "invalid enum" by checking the raw input:
+ * if the attribute value is undefined/empty it's missing; otherwise it's an
+ * invalid enum value.
+ */
+function zodErrorToMessage(
+  blockType: string,
+  // z.ZodError.issues in v4 is typed as $ZodIssue[] which is not directly
+  // compatible with a structural type — cast through unknown at the call site.
+  issues: { path: (string | number)[]; message: string }[],
+  attributes: Record<string, string>,
+): string {
+  // Use the first issue only — one error per block is the existing contract.
+  const issue = issues[0];
+  if (!issue) return `Invalid ${blockType}`;
+
+  const field = issue.path[0];
+
+  // Special-case: between cardinality.
+  // Whether the issue is missing, empty, or wrong count, always emit the
+  // canonical cardinality message so callers get consistent, friendly output.
+  if (field === "between") {
+    const raw = attributes["between"];
+    const betweenList =
+      raw && raw.trim() !== ""
+        ? raw
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+        : [];
+    return `interface.between must have exactly 2 ids (got ${betweenList.length})`;
+  }
+
+  if (typeof field === "string") {
+    const rawValue = attributes[field];
+    const isMissing = rawValue === undefined || rawValue.trim() === "";
+
+    if (isMissing) {
+      // Some fields need the block type in the "missing" message for test compat
+      if (field === "type" && blockType === "actor") {
+        return `Missing required attribute 'type' on actor — must be person | system`;
+      }
+      return `Missing required attribute '${field}'`;
+    }
+
+    // Value is present but invalid — emit enum-aware messages
+    if (field === "priority") {
+      return `Invalid priority — must be high | medium | low`;
+    }
+    if (field === "severity") {
+      return `Invalid severity — must be high | medium | low`;
+    }
+    if (field === "status") {
+      return `Invalid status — must be proposed | accepted | deprecated | superseded`;
+    }
+    if (field === "category" && blockType === "constraint") {
+      return `Invalid category — must be technical | organizational | convention`;
+    }
+    if (field === "type" && blockType === "actor") {
+      return `Invalid type on actor — must be person | system`;
+    }
+    if (field === "type" && blockType === "deployment-node") {
+      return `Invalid type on deployment-node — must be server | container | device | cloud-region | environment`;
+    }
+
+    return `Invalid value for '${field}' on ${blockType}`;
+  }
+
+  return `Invalid ${blockType}: ${issue.message}`;
 }
 
 export function buildWorkspace(documents: DocumentAst[]): Workspace {
@@ -117,273 +188,193 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
         continue;
       }
 
-      const id = attributes["id"];
-      const title = attributes["title"];
+      const schema = ELEMENT_SCHEMAS[blockType as BlockType];
 
-      if (!id) {
-        parseErrors.push({ message: "Missing required attribute 'id'", file, line: startLine });
-        continue;
-      }
-      if (!title) {
-        parseErrors.push({ message: "Missing required attribute 'title'", file, line: startLine });
-        continue;
+      // Normalise empty strings to undefined so Zod's optional() treats them
+      // as absent (the DSL parser emits "" for `key:` with no value).
+      const normalisedAttrs: Record<string, string | undefined> = {};
+      for (const [k, v] of Object.entries(attributes)) {
+        normalisedAttrs[k] = v === "" || v.trim() === "" ? undefined : v;
       }
 
-      if (blockType === "quality-goal") {
-        const priorityRaw = attributes["priority"];
-        if (!priorityRaw) {
-          parseErrors.push({
-            message: "Missing required attribute 'priority' on quality-goal",
-            file,
-            line: startLine,
-          });
-          continue;
+      const result = schema.safeParse(normalisedAttrs);
+
+      if (!result.success) {
+        parseErrors.push({
+          message: zodErrorToMessage(
+            blockType,
+            result.error.issues as { path: (string | number)[]; message: string }[],
+            attributes,
+          ),
+          file,
+          line: startLine,
+        });
+        continue;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = result.data as any;
+
+      switch (blockType as BlockType) {
+        case "quality-goal": {
+          const el: QualityGoal = {
+            kind: "quality-goal",
+            id: data.id,
+            title: data.title,
+            priority: data.priority,
+            scenario: data.scenario,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        if (!["high", "medium", "low"].includes(priorityRaw)) {
-          parseErrors.push({
-            message: `Invalid priority '${priorityRaw}' — must be high | medium | low`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "quality-scenario": {
+          const el: QualityScenario = {
+            kind: "quality-scenario",
+            id: data.id,
+            title: data.title,
+            quality: data.quality,
+            stimulus: data.stimulus || undefined,
+            response: data.response || undefined,
+            metric: data.metric || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const qg: QualityGoal = {
-          kind: "quality-goal",
-          id,
-          title,
-          priority: priorityRaw as QualityGoal["priority"],
-          scenario: attributes["scenario"],
-          loc,
-        };
-        elements.push(qg);
-      } else if (blockType === "quality-scenario") {
-        const quality = attributes["quality"];
-        if (!quality) {
-          parseErrors.push({
-            message: "Missing required attribute 'quality' on quality-scenario",
-            file,
-            line: startLine,
-          });
-          continue;
+        case "actor": {
+          const el: Actor = {
+            kind: "actor",
+            id: data.id,
+            title: data.title,
+            type: data.type,
+            description: data.description || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const qs: QualityScenario = {
-          kind: "quality-scenario",
-          id,
-          title,
-          quality,
-          stimulus: attributes["stimulus"] || undefined,
-          response: attributes["response"] || undefined,
-          metric: attributes["metric"] || undefined,
-          loc,
-        };
-        elements.push(qs);
-      } else if (blockType === "actor") {
-        const typeRaw = attributes["type"];
-        if (!typeRaw) {
-          parseErrors.push({
-            message: "Missing required attribute 'type' on actor — must be person | system",
-            file,
-            line: startLine,
-          });
-          continue;
+        case "solution-strategy": {
+          const el: SolutionStrategy = {
+            kind: "solution-strategy",
+            id: data.id,
+            title: data.title,
+            addresses: data.addresses,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        if (!["person", "system"].includes(typeRaw)) {
-          parseErrors.push({
-            message: `Invalid type '${typeRaw}' on actor — must be person | system`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "building-block": {
+          const el: BuildingBlock = {
+            kind: "building-block",
+            id: data.id,
+            title: data.title,
+            technology: data.technology,
+            parent: data.parent,
+            implements: data.implements,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const actor: Actor = {
-          kind: "actor",
-          id,
-          title,
-          type: typeRaw as Actor["type"],
-          description: attributes["description"] || undefined,
-          loc,
-        };
-        elements.push(actor);
-      } else if (blockType === "solution-strategy") {
-        const strategy: SolutionStrategy = {
-          kind: "solution-strategy",
-          id,
-          title,
-          addresses: splitList(attributes["addresses"]),
-          loc,
-        };
-        elements.push(strategy);
-      } else if (blockType === "building-block") {
-        const bb: BuildingBlock = {
-          kind: "building-block",
-          id,
-          title,
-          technology: attributes["technology"],
-          parent: attributes["parent"],
-          implements: splitList(attributes["implements"]),
-          loc,
-        };
-        elements.push(bb);
-      } else if (blockType === "interface") {
-        const betweenList = splitList(attributes["between"]);
-        if (betweenList.length !== 2) {
-          parseErrors.push({
-            message: `interface.between must have exactly 2 ids (got ${betweenList.length})`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "interface": {
+          const el: Interface = {
+            kind: "interface",
+            id: data.id,
+            title: data.title,
+            between: [data.between[0], data.between[1]],
+            protocol: data.protocol,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const iface: Interface = {
-          kind: "interface",
-          id,
-          title,
-          between: [betweenList[0]!, betweenList[1]!],
-          protocol: attributes["protocol"],
-          loc,
-        };
-        elements.push(iface);
-      } else if (blockType === "runtime-scenario") {
-        const scenario: RuntimeScenario = {
-          kind: "runtime-scenario",
-          id,
-          title,
-          involves: splitList(attributes["involves"]),
-          trigger: attributes["trigger"] || undefined,
-          loc,
-        };
-        elements.push(scenario);
-      } else if (blockType === "deployment-node") {
-        const typeRaw = attributes["type"];
-        const deploymentTypes = ["server", "container", "device", "cloud-region", "environment"];
-        if (typeRaw && !deploymentTypes.includes(typeRaw)) {
-          parseErrors.push({
-            message: `Invalid type '${typeRaw}' on deployment-node — must be server | container | device | cloud-region | environment`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "runtime-scenario": {
+          const el: RuntimeScenario = {
+            kind: "runtime-scenario",
+            id: data.id,
+            title: data.title,
+            involves: data.involves,
+            trigger: data.trigger || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const node: DeploymentNode = {
-          kind: "deployment-node",
-          id,
-          title,
-          type: typeRaw as DeploymentNode["type"],
-          hosts: splitList(attributes["hosts"]),
-          parent: attributes["parent"] || undefined,
-          loc,
-        };
-        elements.push(node);
-      } else if (blockType === "concept") {
-        const concept: Concept = {
-          kind: "concept",
-          id,
-          title,
-          category: attributes["category"],
-          loc,
-        };
-        elements.push(concept);
-      } else if (blockType === "decision") {
-        const statusRaw = attributes["status"];
-        if (!statusRaw) {
-          parseErrors.push({
-            message: "Missing required attribute 'status' on decision",
-            file,
-            line: startLine,
-          });
-          continue;
+        case "deployment-node": {
+          const el: DeploymentNode = {
+            kind: "deployment-node",
+            id: data.id,
+            title: data.title,
+            type: data.type,
+            hosts: data.hosts,
+            parent: data.parent || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        if (!["proposed", "accepted", "deprecated", "superseded"].includes(statusRaw)) {
-          parseErrors.push({
-            message: `Invalid status '${statusRaw}' — must be proposed | accepted | deprecated | superseded`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "concept": {
+          const el: Concept = {
+            kind: "concept",
+            id: data.id,
+            title: data.title,
+            category: data.category,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const decision: Decision = {
-          kind: "decision",
-          id,
-          title,
-          status: statusRaw as Decision["status"],
-          date: attributes["date"],
-          addresses: splitList(attributes["addresses"]),
-          supersedes: attributes["supersedes"] || undefined,
-          loc,
-        };
-        elements.push(decision);
-      } else if (blockType === "constraint") {
-        const categoryRaw = attributes["category"];
-        if (!categoryRaw) {
-          parseErrors.push({
-            message: "Missing required attribute 'category' on constraint",
-            file,
-            line: startLine,
-          });
-          continue;
+        case "decision": {
+          const el: Decision = {
+            kind: "decision",
+            id: data.id,
+            title: data.title,
+            status: data.status,
+            date: data.date,
+            addresses: data.addresses,
+            supersedes: data.supersedes || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        if (!["technical", "organizational", "convention"].includes(categoryRaw)) {
-          parseErrors.push({
-            message: `Invalid category '${categoryRaw}' — must be technical | organizational | convention`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "constraint": {
+          const el: Constraint = {
+            kind: "constraint",
+            id: data.id,
+            title: data.title,
+            category: data.category,
+            source: data.source || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const constraint: Constraint = {
-          kind: "constraint",
-          id,
-          title,
-          category: categoryRaw as Constraint["category"],
-          source: attributes["source"] || undefined,
-          loc,
-        };
-        elements.push(constraint);
-      } else if (blockType === "risk") {
-        const severityRaw = attributes["severity"];
-        if (!severityRaw) {
-          parseErrors.push({
-            message: "Missing required attribute 'severity' on risk",
-            file,
-            line: startLine,
-          });
-          continue;
+        case "risk": {
+          const el: Risk = {
+            kind: "risk",
+            id: data.id,
+            title: data.title,
+            severity: data.severity,
+            mitigation: data.mitigation || undefined,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        if (!["high", "medium", "low"].includes(severityRaw)) {
-          parseErrors.push({
-            message: `Invalid severity '${severityRaw}' — must be high | medium | low`,
-            file,
-            line: startLine,
-          });
-          continue;
+        case "glossary-term": {
+          const el: GlossaryTerm = {
+            kind: "glossary-term",
+            id: data.id,
+            title: data.title,
+            definition: data.definition,
+            loc,
+          };
+          elements.push(el);
+          break;
         }
-        const risk: Risk = {
-          kind: "risk",
-          id,
-          title,
-          severity: severityRaw as Risk["severity"],
-          mitigation: attributes["mitigation"] || undefined,
-          loc,
-        };
-        elements.push(risk);
-      } else if (blockType === "glossary-term") {
-        const definition = attributes["definition"];
-        if (!definition) {
-          parseErrors.push({
-            message: "Missing required attribute 'definition' on glossary-term",
-            file,
-            line: startLine,
-          });
-          continue;
-        }
-        const term: GlossaryTerm = {
-          kind: "glossary-term",
-          id,
-          title,
-          definition,
-          loc,
-        };
-        elements.push(term);
       }
     }
   }

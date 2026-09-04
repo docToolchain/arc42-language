@@ -62,3 +62,12 @@ export type {
   RendererMeta,
   ElementRenderers,
 } from "./renderer/types.ts";
+
+// explain command API
+export { explainElement, formatExplainText, formatExplainListText } from "./explain.ts";
+export type {
+  ExplainResult,
+  ExplainSummary,
+  ExplainFieldResult,
+  ExplainCrossRefResult,
+} from "./explain.ts";

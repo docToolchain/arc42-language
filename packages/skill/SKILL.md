@@ -19,6 +19,8 @@ Before making architectural changes, familiarise yourself with the current state
 arc42 validate          # check consistency — fix all errors before proceeding
 arc42 get               # browse all elements
 arc42 rules             # understand what the validator enforces and why
+arc42 explain           # list all block types with one-line descriptions
+arc42 explain <type>    # full guidance for a block type: fields, enums, cross-refs, tips
 ```
 
 _Important: If `arc42` cli command is not available, use the npm package via npx: `npx @doctc/arc42 ...`_
