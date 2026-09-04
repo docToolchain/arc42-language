@@ -121,7 +121,21 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
   const diagrams: DiagramArtifact[] = [];
 
   for (const doc of documents) {
+    let currentHeading: string | undefined = undefined;
+    let pendingProse: string[] = [];
+
     for (const node of doc.nodes) {
+      if (node.kind === "heading") {
+        currentHeading = node.text;
+        pendingProse = [];
+        continue;
+      }
+
+      if (node.kind === "prose") {
+        pendingProse.push(node.text);
+        continue;
+      }
+
       if (node.kind === "diagram") {
         if (node.diagramType === "deployment") {
           const deploymentDiagram: DeploymentDiagram = {
@@ -177,7 +191,10 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
 
       const { blockType, attributes, startLine } = node;
       const file = doc.filePath;
-      const loc = { file, line: startLine };
+      const proseText = pendingProse.length > 0 ? pendingProse.join("\n") : undefined;
+      const loc = { file, line: startLine, heading: currentHeading, prose: proseText };
+      // Prose consumed by this block — reset for next block in same section
+      pendingProse = [];
 
       if (!KNOWN_BLOCK_TYPES.has(blockType)) {
         parseErrors.push({

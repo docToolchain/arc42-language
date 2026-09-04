@@ -127,7 +127,7 @@ function printHelp() {
 
 Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
-  arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
+  arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text|markdown]
   arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
   arc42 explain [<blocktype>] [--format json|text]
   arc42 init skill [--path <dest>]
@@ -142,6 +142,8 @@ Block types: ${BLOCK_TYPES.join(", ")}
 
 Environment:
   ARC42_DIR      Default workspace directory
+
+Tip: arc42 get --format markdown | glow -
 `);
 }
 

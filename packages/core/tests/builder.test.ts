@@ -1,6 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import { buildWorkspace } from "../src/model/builder.ts";
 import type { DocumentAst } from "../src/ast.ts";
+import type { AstNode } from "../src/ast.ts";
 
 function doc(content: string): DocumentAst {
   // minimal helper — inline a single block
@@ -23,6 +24,28 @@ function doc(content: string): DocumentAst {
       },
     ],
   };
+}
+
+function docWithHeading(headingText: string, content: string): DocumentAst {
+  // helper — heading node followed by a block node
+  const [blockType, ...attrLines] = content.split("\n").filter((l) => l.trim());
+  const attributes: Record<string, string> = {};
+  for (const line of attrLines ?? []) {
+    const m = /^([a-z][a-z0-9-]*):\s*(.*)$/.exec(line);
+    if (m) attributes[m[1]!] = m[2]!;
+  }
+  const nodes: AstNode[] = [
+    { kind: "heading", level: 2, text: headingText, line: 1 },
+    {
+      kind: "block",
+      blockType: blockType ?? "",
+      attributes,
+      startLine: 3,
+      endLine: 3 + (attrLines?.length ?? 0),
+      inArc42Fence: false,
+    },
+  ];
+  return { filePath: "test.arc42.md", nodes };
 }
 
 describe("buildWorkspace", () => {
@@ -216,5 +239,112 @@ describe("buildWorkspace", () => {
     expect(el.stimulus).toBeUndefined();
     expect(el.response).toBeUndefined();
     expect(el.metric).toBeUndefined();
+  });
+
+  test("loc.heading is set from nearest preceding heading", () => {
+    const ws = buildWorkspace([
+      docWithHeading("REST API", "quality-goal\nid: qg-1\ntitle: Perf\npriority: high"),
+    ]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements[0]!.loc.heading).toBe("REST API");
+  });
+
+  test("loc.heading is undefined when no heading precedes the block", () => {
+    const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high")]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements[0]!.loc.heading).toBeUndefined();
+  });
+
+  test("loc.heading resets to new heading for subsequent blocks", () => {
+    const docAst: DocumentAst = {
+      filePath: "test.arc42.md",
+      nodes: [
+        { kind: "heading", level: 2, text: "First Section", line: 1 },
+        {
+          kind: "block",
+          blockType: "quality-goal",
+          attributes: { id: "qg-1", title: "Perf", priority: "high" },
+          startLine: 3,
+          endLine: 6,
+          inArc42Fence: false,
+        },
+        { kind: "heading", level: 2, text: "Second Section", line: 8 },
+        {
+          kind: "block",
+          blockType: "quality-goal",
+          attributes: { id: "qg-2", title: "Security", priority: "medium" },
+          startLine: 10,
+          endLine: 13,
+          inArc42Fence: false,
+        },
+      ],
+    };
+    const ws = buildWorkspace([docAst]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements[0]!.loc.heading).toBe("First Section");
+    expect(ws.elements[1]!.loc.heading).toBe("Second Section");
+  });
+
+  test("loc.prose contains prose lines between heading and block", () => {
+    const docAst: DocumentAst = {
+      filePath: "test.arc42.md",
+      nodes: [
+        { kind: "heading", level: 2, text: "REST API", line: 1 },
+        { kind: "prose", text: "The REST API is the main entry point.", line: 3 },
+        { kind: "prose", text: "It handles authentication and routing.", line: 4 },
+        {
+          kind: "block",
+          blockType: "building-block",
+          attributes: { id: "bb-api", title: "API" },
+          startLine: 6,
+          endLine: 9,
+          inArc42Fence: false,
+        },
+      ],
+    };
+    const ws = buildWorkspace([docAst]);
+    expect(ws.parseErrors).toHaveLength(0);
+    const el = ws.elements[0]!;
+    expect(el.loc.prose).toBe(
+      "The REST API is the main entry point.\nIt handles authentication and routing.",
+    );
+  });
+
+  test("loc.prose is undefined when no prose precedes the block", () => {
+    const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high")]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements[0]!.loc.prose).toBeUndefined();
+  });
+
+  test("loc.prose resets to new heading for subsequent blocks", () => {
+    const docAst: DocumentAst = {
+      filePath: "test.arc42.md",
+      nodes: [
+        { kind: "heading", level: 2, text: "Section A", line: 1 },
+        { kind: "prose", text: "Prose for A.", line: 3 },
+        {
+          kind: "block",
+          blockType: "quality-goal",
+          attributes: { id: "qg-1", title: "Perf", priority: "high" },
+          startLine: 5,
+          endLine: 8,
+          inArc42Fence: false,
+        },
+        { kind: "heading", level: 2, text: "Section B", line: 10 },
+        { kind: "prose", text: "Prose for B.", line: 12 },
+        {
+          kind: "block",
+          blockType: "quality-goal",
+          attributes: { id: "qg-2", title: "Security", priority: "medium" },
+          startLine: 14,
+          endLine: 17,
+          inArc42Fence: false,
+        },
+      ],
+    };
+    const ws = buildWorkspace([docAst]);
+    expect(ws.parseErrors).toHaveLength(0);
+    expect(ws.elements[0]!.loc.prose).toBe("Prose for A.");
+    expect(ws.elements[1]!.loc.prose).toBe("Prose for B.");
   });
 });
