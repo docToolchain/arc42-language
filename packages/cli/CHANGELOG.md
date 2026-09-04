@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/docToolchain/arc42-language/compare/v0.0.7...v0.0.8) (2026-09-04)
+
+
+### Features
+
+* add `arc42 explain` command and Zod-schema-driven validation ([abd6141](https://github.com/docToolchain/arc42-language/commit/abd6141f8e0069c765be715ebd55bc06677b24b5))
+
 ## [0.0.7](https://github.com/docToolchain/arc42-language/compare/v0.0.6...v0.0.7) (2026-09-04)
 
 
