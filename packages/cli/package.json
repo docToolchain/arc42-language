@@ -10,11 +10,11 @@
     "dsl",
     "validation"
   ],
-  "homepage": "https://github.com/doctoolchain/arc42-language",
+  "homepage": "https://github.com/docToolchain/arc42-language",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/doctoolchain/arc42-language.git",
+    "url": "https://github.com/docToolchain/arc42-language.git",
     "directory": "packages/cli"
   },
   "bin": {
