@@ -10,7 +10,7 @@ import {
   builtinGetRenderers,
   rendererById,
 } from "@arc42/core";
-import type { BlockType } from "@arc42/core";
+import type { BlockType, Diagnostic } from "@arc42/core";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -164,9 +164,11 @@ async function runValidate(dir: string, args: string[]) {
         }
       }
       if (!quiet) {
-        const errors = result.diagnostics.filter((d) => d.severity === "error").length;
-        const warnings = result.diagnostics.filter((d) => d.severity === "warning").length;
-        const hints = result.diagnostics.filter((d) => d.severity === "hint").length;
+        const errors = result.diagnostics.filter((d: Diagnostic) => d.severity === "error").length;
+        const warnings = result.diagnostics.filter(
+          (d: Diagnostic) => d.severity === "warning",
+        ).length;
+        const hints = result.diagnostics.filter((d: Diagnostic) => d.severity === "hint").length;
         console.log(`\n${errors} errors, ${warnings} warnings, ${hints} hints`);
       }
     }

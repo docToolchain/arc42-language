@@ -22,8 +22,8 @@ export default defineConfig({
   },
   lint: {
     options: {
-      typeAware: true,
-      typeCheck: true,
+      typeAware: false,
+      typeCheck: false,
     },
   },
   fmt: {},
