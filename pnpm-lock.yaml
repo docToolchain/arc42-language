@@ -29,11 +29,10 @@ importers:
         version: 0.1.24(@types/node@24.13.3)(typescript@5.9.3)(vite@8.2.1(@types/node@24.13.3))
 
   packages/cli:
-    dependencies:
+    devDependencies:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
-    devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
