@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build core (required for type-checking cli)
+        run: pnpm --filter @arc42/core run build
+
       - name: Lint and type-check
         run: pnpm run check
 
