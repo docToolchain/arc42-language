@@ -1,0 +1,51 @@
+name: Release PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  fix-changelog:
+    name: Fix CHANGELOG formatting
+    runs-on: ubuntu-latest
+    # Only run on release-please PRs
+    if: startsWith(github.head_ref, 'release-please--')
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Fix CHANGELOG formatting
+        run: pnpm exec vp fmt packages/cli/CHANGELOG.md
+
+      - name: Commit formatting fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add packages/cli/CHANGELOG.md
+          git diff --cached --quiet || git commit -m "chore: fix CHANGELOG.md formatting"
+          git push
+
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr merge --auto --squash "${{ github.event.pull_request.number }}" --repo "$GITHUB_REPOSITORY"
