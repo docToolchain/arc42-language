@@ -1,6 +1,6 @@
 {
   "name": "@doc-tc/arc42",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "CLI for validating and querying arc42 DSL files.",
   "license": "MIT",
   "keywords": [
