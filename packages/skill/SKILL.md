@@ -21,7 +21,7 @@ arc42 get               # browse all elements
 arc42 rules             # understand what the validator enforces and why
 ```
 
-_Important: If `arc42` cli command is not available, use the npm package via npx: `npx @doc-tc/arc42 ...`_ 
+_Important: If `arc42` cli command is not available, use the npm package via npx: `npx @doctc/arc42 ...`_ 
 
 `--dir <path>` scopes to a specific workspace. Defaults to `$ARC42_DIR` or cwd.
 

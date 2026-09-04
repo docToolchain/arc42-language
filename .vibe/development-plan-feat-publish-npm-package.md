@@ -5,14 +5,14 @@
 
 ## Goal
 
-Publish the `@doc-tc/arc42-cli` package to npmjs for the first time at version 0.1.0.
+Publish the `@doctc/arc42-cli` package to npmjs for the first time at version 0.1.0.
 The CLI is the only public entrypoint. The skill (`packages/skill/SKILL.md`) and starter
 templates (`templates/starter/*.arc42.md`) must be bundled into the package and accessible
 via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 
 ## Key Decisions
 
-- **Namespace**: `@doc-tc` (owned by the user). CLI package name: `@doc-tc/arc42-cli`.
+- **Namespace**: `@doctc` (owned by the user). CLI package name: `@doctc/arc42-cli`.
 - **Core is internal**: `@arc42/core` will NOT be published. The CLI build must bundle core
   so there are no runtime npm dependencies.
 - **Single published package**: only `packages/cli` goes to npm. `packages/core` stays private.
@@ -43,7 +43,7 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 
 ## Notes
 
-- Both `@arc42/cli` and `@doc-tc/arc42-cli` return 404 on npm — clean slate, first publish.
+- Both `@arc42/cli` and `@doctc/arc42-cli` return 404 on npm — clean slate, first publish.
 - Current CLI dist is only 222 lines because core is an external ESM import. After bundling
   it will be a single larger self-contained file — no runtime dependencies needed.
 - The `files` array in `packages/cli/package.json` currently only includes `dist/`. Skill
@@ -93,7 +93,7 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 ### Tasks
 - [x] `packages/core/package.json`: add `"private": true`
 - [x] `packages/cli/package.json`:
-    - rename `name` → `@doc-tc/arc42-cli`
+    - rename `name` → `@doctc/arc42-cli`
     - rename bin key `cli` → `arc42`
     - add `repository`, `keywords`, `homepage` fields
     - remove `@arc42/core` from `dependencies` (moved to `devDependencies` — bundled at build time)
@@ -109,7 +109,7 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 - [x] `packages/skill/SKILL.md`:
     - added "Scaffold a new workspace" subsection documenting `arc42 init template` and
       `arc42 init skill` so agents know how to scaffold new workspaces
-- [x] Build and verify: `pnpm --filter @doc-tc/arc42-cli build`
+- [x] Build and verify: `pnpm --filter @doctc/arc42-cli build`
     - confirmed `dist/cli.mjs` has no `import ... from "@arc42/core"` line (97 kB self-contained)
     - confirmed `dist/skill/SKILL.md` and all 12 `dist/templates/*.arc42.md` exist
 - [x] Smoke test the commands locally
@@ -117,7 +117,7 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
     - `init template` re-run: skips all 12 with warning, exits 0
     - `init skill --path <dest>`: copies SKILL.md, exits 0
     - `init skill` re-run on same dest: errors with clear message, exits 1
-- [x] Dry-run publish: `pnpm --filter @doc-tc/arc42-cli publish --dry-run --no-git-checks`
+- [x] Dry-run publish: `pnpm --filter @doctc/arc42-cli publish --dry-run --no-git-checks`
     - confirmed tarball includes: `dist/cli.mjs` (97 kB), `dist/skill/SKILL.md`, all 12 templates,
       `package.json`, `LICENSE` — 16 files, 36.7 kB gzipped
 

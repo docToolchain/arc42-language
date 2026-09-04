@@ -13,9 +13,9 @@
     "validate:all": "pnpm run validate:docs && pnpm run validate:examples",
     "validate:source": "node --experimental-strip-types --no-warnings scripts/validate-source.ts",
     "hooks:install": "cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit && echo 'pre-commit hook installed'",
-    "version:patch": "pnpm --filter @doc-tc/arc42 exec npm version patch --no-git-tag-version",
-    "version:minor": "pnpm --filter @doc-tc/arc42 exec npm version minor --no-git-tag-version",
-    "version:major": "pnpm --filter @doc-tc/arc42 exec npm version major --no-git-tag-version",
+    "version:patch": "pnpm --filter @doctc/arc42 exec npm version patch --no-git-tag-version",
+    "version:minor": "pnpm --filter @doctc/arc42 exec npm version minor --no-git-tag-version",
+    "version:major": "pnpm --filter @doctc/arc42 exec npm version major --no-git-tag-version",
     "release": "pnpm publish -r --access public"
   },
   "devDependencies": {
