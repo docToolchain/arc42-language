@@ -9,6 +9,9 @@ import {
   builtinRules,
   builtinGetRenderers,
   rendererById,
+  explainElement,
+  formatExplainText,
+  formatExplainListText,
 } from "@arc42/core";
 import type { BlockType, Diagnostic } from "@arc42/core";
 
@@ -22,6 +25,7 @@ const { version: VERSION } = JSON.parse(
 
 const BLOCK_TYPES: BlockType[] = [
   "quality-goal",
+  "quality-scenario",
   "constraint",
   "actor",
   "solution-strategy",
@@ -104,6 +108,8 @@ async function main() {
     await runGet(dir, commandArgs);
   } else if (command === "rules") {
     runRules(commandArgs);
+  } else if (command === "explain") {
+    runExplain(commandArgs);
   } else if (command === "init") {
     runInit(commandArgs);
   } else {
@@ -120,6 +126,7 @@ Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text]
   arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
+  arc42 explain [<blocktype>] [--format json|text]
   arc42 init skill [--path <dest>]
   arc42 init template [--dir <path>]
 
@@ -281,6 +288,47 @@ function runRules(args: string[]) {
       const { code, severity, type, docs } = rule.meta;
       console.log(`  ${code}  [${severity}/${type}]  ${docs.description}`);
       console.log(`         ${docs.rationale}`);
+    }
+  }
+  process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
+// explain
+// ---------------------------------------------------------------------------
+
+function runExplain(args: string[]) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      format: { type: "string", default: "text" },
+    },
+    allowPositionals: true,
+  });
+
+  const blockTypeArg = positionals[0];
+  const format = values["format"] as string;
+
+  if (blockTypeArg !== undefined && !isBlockType(blockTypeArg)) {
+    console.error(
+      `Unknown block type '${blockTypeArg}'. Must be one of: ${BLOCK_TYPES.join(", ")}`,
+    );
+    process.exit(2);
+  }
+
+  if (blockTypeArg) {
+    const result = explainElement(blockTypeArg as BlockType);
+    if (format === "json") {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(formatExplainText(result));
+    }
+  } else {
+    const summaries = explainElement();
+    if (format === "json") {
+      console.log(JSON.stringify(summaries, null, 2));
+    } else {
+      console.log(formatExplainListText(summaries));
     }
   }
   process.exit(0);

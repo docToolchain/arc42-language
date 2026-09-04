@@ -19,6 +19,9 @@
     "check": "vp check",
     "prepublishOnly": "vp run build"
   },
+  "dependencies": {
+    "zod": "4.5.4"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
