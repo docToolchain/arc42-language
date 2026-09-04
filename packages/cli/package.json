@@ -1,6 +1,6 @@
 {
   "name": "@doctc/arc42",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "CLI for validating and querying arc42 DSL files.",
   "keywords": [
     "arc42",

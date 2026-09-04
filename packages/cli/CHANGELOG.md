@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.10](https://github.com/docToolchain/arc42-language/compare/v0.0.9...v0.0.10) (2026-09-04)
+
+
+### Features
+
+* add --format markdown to arc42 get with prose and linked refs ([431b68c](https://github.com/docToolchain/arc42-language/commit/431b68c27774604c1a2ff2f95e9196690253215e))
+
 ## [0.0.9](https://github.com/docToolchain/arc42-language/compare/v0.0.8...v0.0.9) (2026-09-04)
 
 
