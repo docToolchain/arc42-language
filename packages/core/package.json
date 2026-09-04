@@ -1,7 +1,7 @@
 {
   "name": "@arc42/core",
-  "private": true,
   "version": "0.1.1",
+  "private": true,
   "description": "Core validation engine for arc42 DSL files.",
   "license": "MIT",
   "files": [

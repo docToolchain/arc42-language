@@ -311,7 +311,8 @@ function runInitSkill(args: string[]) {
     },
   });
 
-  const dest = (values["path"] as string | undefined) ?? join(process.cwd(), ".agents/skills/arc42/SKILL.md");
+  const dest =
+    (values["path"] as string | undefined) ?? join(process.cwd(), ".agents/skills/arc42/SKILL.md");
   const src = join(__dirname, "skill/SKILL.md");
 
   if (!existsSync(src)) {
@@ -370,7 +371,9 @@ function runInitTemplate(args: string[]) {
     }
   }
 
-  console.log(`Templates copied: ${copied} file(s) to ${destDir}${skipped > 0 ? ` (${skipped} skipped)` : ""}`);
+  console.log(
+    `Templates copied: ${copied} file(s) to ${destDir}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
+  );
   process.exit(0);
 }
 

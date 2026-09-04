@@ -73,7 +73,7 @@ Run `arc42 rules` to see each rule with its rationale. The short summary:
 
 Each element lives in its own `##` section: heading, prose explaining purpose and rationale, then a typed block as the machine-readable summary.
 
-```markdown
+````markdown
 ## Catalog Service
 
 Owns all product data. The only service that writes to the catalog database.
@@ -87,6 +87,8 @@ technology: Node.js / Express
 implements: concept-logging, concept-error-handling
 :::
 ```
+````
+
 ```
 
 See the [bookstore example](https://github.com/oliverjaegle/arc42-language/tree/main/examples/bookstore-backend) for a complete, valid workspace with realistic prose.
@@ -94,3 +96,4 @@ See the [bookstore example](https://github.com/oliverjaegle/arc42-language/tree/
 ## License
 
 MIT
+```

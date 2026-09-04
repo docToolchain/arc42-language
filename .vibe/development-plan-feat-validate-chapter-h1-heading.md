@@ -1,7 +1,7 @@
 # Development Plan: arc42-language (feat/validate-chapter-h1-heading branch)
 
-*Generated on 2026-09-03 by Vibe Feature MCP*
-*Workflow: [tdd](https://codemcp.github.io/workflows/workflows/tdd)*
+_Generated on 2026-09-03 by Vibe Feature MCP_
+_Workflow: [tdd](https://codemcp.github.io/workflows/workflows/tdd)_
 
 ## Goal
 
@@ -18,20 +18,20 @@ wrong level, or contains an unrecognized title.
    accepted. Files without a numeric prefix are skipped (no diagnostic).
 4. **Chapter title mapping** (from official arc42 template EN + DE sources):
 
-   | # | EN title(s) | DE title(s) |
-   |---|-------------|-------------|
-   | 1 | Introduction and Goals | Einführung und Ziele |
-   | 2 | Architecture Constraints | Randbedingungen |
-   | 3 | System Scope and Context | Systemabgrenzung und Kontext |
-   | 4 | Solution Strategy | Lösungsstrategie |
-   | 5 | Building Block View, Building Blocks | Bausteinsicht |
-   | 6 | Runtime View | Laufzeitsicht |
-   | 7 | Deployment View | Verteilungssicht |
-   | 8 | Cross-cutting Concepts, Crosscutting Concepts | Querschnittliche Konzepte |
-   | 9 | Architecture Decisions | Architekturentscheidungen |
-   | 10 | Quality Requirements | Qualitätsanforderungen |
-   | 11 | Risks and Technical Debt | Risiken und technische Schulden |
-   | 12 | Glossary | Glossar |
+   | #   | EN title(s)                                   | DE title(s)                     |
+   | --- | --------------------------------------------- | ------------------------------- |
+   | 1   | Introduction and Goals                        | Einführung und Ziele            |
+   | 2   | Architecture Constraints                      | Randbedingungen                 |
+   | 3   | System Scope and Context                      | Systemabgrenzung und Kontext    |
+   | 4   | Solution Strategy                             | Lösungsstrategie                |
+   | 5   | Building Block View, Building Blocks          | Bausteinsicht                   |
+   | 6   | Runtime View                                  | Laufzeitsicht                   |
+   | 7   | Deployment View                               | Verteilungssicht                |
+   | 8   | Cross-cutting Concepts, Crosscutting Concepts | Querschnittliche Konzepte       |
+   | 9   | Architecture Decisions                        | Architekturentscheidungen       |
+   | 10  | Quality Requirements                          | Qualitätsanforderungen          |
+   | 11  | Risks and Technical Debt                      | Risiken und technische Schulden |
+   | 12  | Glossary                                      | Glossar                         |
 
    The project's own docs use slightly different phrasing ("Building Blocks", "Architecture
    Constraints", "System Scope and Context", "Cross-cutting Concepts") so those variants are
@@ -40,11 +40,11 @@ wrong level, or contains an unrecognized title.
 5. **Bilingual acceptance** — EN and DE titles are equally valid. The project is English but arc42
    users may write in German. Both languages are accepted without penalty.
 6. **No diagnostic for files without a numeric prefix** — these are treated as non-chapter files.
-6. **Multiple h1 headings** — warn on the second and subsequent h1 headings (W015 with a
+7. **Multiple h1 headings** — warn on the second and subsequent h1 headings (W015 with a
    "multiple h1" message).
-7. **Content before first heading** — not reported by W015 (W004 already covers blocks without
+8. **Content before first heading** — not reported by W015 (W004 already covers blocks without
    prose; general prose-before-heading is a separate concern not in scope).
-8. **Rule operates on `workspace.documents` (AST level)** — same as W004/W005, not on elements.
+9. **Rule operates on `workspace.documents` (AST level)** — same as W004/W005, not on elements.
    The chapter number is extracted from `doc.filePath` using a regex on the filename.
 
 ## Notes
@@ -59,7 +59,9 @@ wrong level, or contains an unrecognized title.
   (`building-blocks.arc42.md` etc.) — these will be silently skipped by W015.
 
 ## Explore
+
 ### Tasks
+
 - [x] Read issue #8 requirements
 - [x] Read existing W004/W005 rules to understand AST-level rule structure
 - [x] Examine `HeadingNode` type (has `level` and `text` fields)
@@ -68,10 +70,13 @@ wrong level, or contains an unrecognized title.
 - [x] Decide on rule code, severity, and matching strategy
 
 ### Completed
+
 - [x] Created development plan file
 
 ## Red
+
 ### Tasks
+
 - [ ] Write failing tests for W015:
   - Missing h1 (starts with ##) → diagnostic
   - Correct h1 + h2 → no diagnostic
@@ -81,17 +86,21 @@ wrong level, or contains an unrecognized title.
   - German h1 title → no diagnostic
 
 ### Completed
+
 - [x] Wrote 11 W015 tests in `packages/core/tests/validator.test.ts`
 - [x] Confirmed 4 tests fail for the right reason (rule not yet registered)
 - [x] Confirmed "NOT emitted" and "all titles" tests pass trivially (no rule = no diagnostics)
 - [x] Pre-existing `renderer.test.ts` failure is unrelated to W015
 
 ## Green
+
 ### Tasks
+
 - [x] Implement `w015-missing-chapter-heading.ts`
 - [x] Register in `rules/index.ts`
 
 ### Completed
+
 - [x] Created `packages/core/src/validator/rules/w015-missing-chapter-heading.ts`
   - Chapter number extracted from filename via `/^(\d{2})-/` regex + `.arc42.md` suffix check
   - Per-chapter allow-list of accepted EN+DE titles (case-insensitive `toLowerCase` comparison)
@@ -101,26 +110,32 @@ wrong level, or contains an unrecognized title.
 - [x] All 11 W015 tests pass; pre-existing `renderer.test.ts` failure is unrelated
 
 ## Refactor
+
 ### Tasks
+
 - [x] Extract chapter title map into a shared constant if reusable
 - [x] Ensure rule description and rationale are complete for `arc42 rules` output
 
 ### Completed
+
 - [x] `CHAPTER_TITLES` is module-local; no other rule needs it — no shared extraction needed
 - [x] Extracted `formatAccepted()` helper to eliminate the repeated `.map().join()` inline expression across three diagnostic messages
 - [x] Removed redundant `|| firstHeading.kind !== "heading"` guard — `Array.find` already narrows to a heading node
 - [x] `description` and `rationale` in `meta.docs` are complete and consistent with other rules' style
 
 ## Done
+
 ### Tasks
+
 - [x] All acceptance criteria from issue #8 pass
 - [x] No regressions in existing tests
 
 ### Completed
+
 - [x] Committed all changes (commit `8365031`)
 - [x] Pushed branch `feat/validate-chapter-h1-heading`
 - [x] PR created: https://github.com/mrsimpson/arc42-language/pull/12
 
-
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._

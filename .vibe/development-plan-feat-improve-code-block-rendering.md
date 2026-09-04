@@ -1,7 +1,7 @@
 # Development Plan: arc42-language (feat/improve-code-block-rendering branch)
 
-*Generated on 2026-09-03 by Vibe Feature MCP*
-*Workflow: [minor](https://codemcp.github.io/workflows/workflows/minor)*
+_Generated on 2026-09-03 by Vibe Feature MCP_
+_Workflow: [minor](https://codemcp.github.io/workflows/workflows/minor)_
 
 ## Goal
 
@@ -112,7 +112,6 @@ to skip the backtick wrapper lines transparently.
 
 - [x] All verification complete
 
-
-
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._

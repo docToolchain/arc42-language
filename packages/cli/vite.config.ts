@@ -4,8 +4,6 @@ export default defineConfig({
   pack: {
     entry: "src/cli.ts",
     dts: false,
-    exports: true,
-    bin: { arc42: "./src/cli.ts" },
     deps: {
       alwaysBundle: ["@arc42/core"],
     },

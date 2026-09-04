@@ -6,7 +6,7 @@ This representative Runtime View scenario describes how an architect reads and e
 architecture workspace with agent assistance. Validation is intentionally shown as an implicit
 quality gate at commit or merge time, rather than as a manual step in the architect's workflow.
 
-```arc42 
+```arc42
 :::runtime-scenario
 id: scenario-agent-architecture-evolution
 title: Agent-driven architecture evolution

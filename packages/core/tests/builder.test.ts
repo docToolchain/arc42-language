@@ -19,6 +19,7 @@ function doc(content: string): DocumentAst {
         attributes,
         startLine: 1,
         endLine: attrLines!.length + 1,
+        inArc42Fence: false,
       },
     ],
   };

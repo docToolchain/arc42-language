@@ -1,11 +1,12 @@
 # Development Plan: arc42-language (feat/github-actions-ci-cd branch)
 
-*Generated on 2026-09-04 by Vibe Feature MCP*
-*Workflow: [epcc](https://codemcp.github.io/workflows/workflows/epcc)*
+_Generated on 2026-09-04 by Vibe Feature MCP_
+_Workflow: [epcc](https://codemcp.github.io/workflows/workflows/epcc)_
 
 ## Goal
 
 Set up GitHub Actions for CI (all branches) and CD (main branch only):
+
 - **CI**: lint + type-check, test, build on every push and PR
 - **CD**: on push to main, create a GitHub release, generate a changelog, and publish `@doctc/arc42` to npmjs
 
@@ -17,6 +18,7 @@ Set up GitHub Actions for CI (all branches) and CD (main branch only):
 4. No git tags, no GitHub release, no CHANGELOG
 
 **Problems with current approach:**
+
 - No git tags — no traceability between npm versions and commits
 - No CHANGELOG — users/agents have no way to know what changed
 - No CI — typos, broken types, or failing tests can be committed and shipped
@@ -42,6 +44,7 @@ Set up GitHub Actions for CI (all branches) and CD (main branch only):
 
 Configure the trust relationship on npmjs.com before the first automated publish:
 doctcdoctc
+
 1. Go to https://www.npmjs.com/package/@doc-tc/arc42 → Settings → Trusted publishing
 2. Click "Add trusted publisher" → select **GitHub Actions**
 3. Fill in:
@@ -56,31 +59,38 @@ That's it — no token to store in GitHub. The publish job uses `id-token: write
 ## Files created / modified
 
 ### `.github/workflows/ci.yml`
+
 - Trigger: `push` and `pull_request` on all branches
 - Job `ci`: checkout → setup pnpm 10.32.1 → setup node 22 with pnpm cache → `pnpm install --frozen-lockfile` → `pnpm run check` → `pnpm run test` → `pnpm run build`
 
 ### `.github/workflows/release.yml`
+
 - Trigger: `push` on `main` only
 - Job 1 `release-please`: runs `googleapis/release-please-action@v4`, outputs `releases_created`
 - Job 2 `publish` (runs only if `releases_created == 'true'`):
-doctcdoctc  - permissions: `id-token: write`, `contents: read`
+  doctcdoctc - permissions: `id-token: write`, `contents: read`
   - checkout → pnpm 10.32.1 → node 22 (no `registry-url`) → install → build → `pnpm --filter @doc-tc/arc42 publish --access public --no-git-checks`
   - No `NODE_AUTH_TOKEN` — Trusted Publishing handles auth via OIDC
 
 ### `release-please-config.json` (repo root)
+
 Manifest mode, `packages/cli` only, `include-component-in-tag: false`, `bump-patch-for-minor-pre-major: true`, `bootstrap-sha: 0b77ecd`
 
 ### `.release-please-manifest.json` (repo root)
+
 Seeds `packages/cli` at version `0.0.6`
 
 ### `packages/cli/package.json` changes
+
 - Name: `@doctc/arc42` → `@doc-tc/arc42`
 - `homepage`: `oliverjaegle` → `doctoolchain`
 - `repository.url`: `oliverjaegle` → `doctoolchain`
 - Added `publishConfig.provenance: true` and `publishConfig.access: "public"`
 
 ## Explore
+
 ### Completed
+
 - [x] Review current manual release scripts (`package.json`, `packages/cli/package.json`)
 - [x] Check existing git history and tag strategy (no tags currently, Conventional Commits used)
 - [x] Check published npm versions (`0.0.5`, `0.0.6` on npm as `@doc-tc/arc42`)
@@ -93,7 +103,9 @@ Seeds `packages/cli` at version `0.0.6`
 - [x] Research npm Trusted Publishing (OIDC) — confirmed viable, no token needed, provenance automatic
 
 ## Plan
+
 ### Completed
+
 - [x] Confirm `bootstrap-sha` value (HEAD of branch: `0b77ecd`)
 - [x] Decide on publish auth approach → npm Trusted Publishing (OIDC), no NPM_TOKEN
 - [x] Identify repo URL and package name fixes needed in `packages/cli/package.json`
@@ -101,10 +113,13 @@ Seeds `packages/cli` at version `0.0.6`
 - [x] Document Trusted Publishing setup instructions (one-time manual step on npmjs.com)
 
 ## Code
+
 ### Tasks
-*None remaining*
+
+_None remaining_
 
 ### Completed
+
 - [x] Fix `packages/cli/package.json`: correct package name (`@doctc` → `@doc-tc`), repo URLs (`oliverjaegle` → `doctoolchain`), add `publishConfig.provenance: true`
 - [x] Create `release-please-config.json` at repo root
 - [x] Create `.release-please-manifest.json` at repo root
@@ -114,14 +129,18 @@ Seeds `packages/cli` at version `0.0.6`
 - [x] Run `pnpm run test && pnpm run build` — 176 tests pass, build clean
 
 ## Commit
+
 ### Tasks
+
 - [ ] Stage all changed files: `packages/cli/package.json`, `release-please-config.json`, `.release-please-manifest.json`, `.github/workflows/ci.yml`, `.github/workflows/release.yml`
 - [ ] Commit with conventional message
 - [ ] Push branch `feat/github-actions-ci-cd`
 - [ ] Remind user to configure Trusted Publisher on npmjs.com before first automated publish
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._

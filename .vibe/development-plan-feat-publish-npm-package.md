@@ -1,7 +1,7 @@
 # Development Plan: arc42-language (feat/publish-npm-package branch)
 
-*Generated on 2026-09-03 by Vibe Feature MCP*
-*Workflow: [epcc](https://codemcp.github.io/workflows/workflows/epcc)*
+_Generated on 2026-09-03 by Vibe Feature MCP_
+_Workflow: [epcc](https://codemcp.github.io/workflows/workflows/epcc)_
 
 ## Goal
 
@@ -64,6 +64,7 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 ## Explore
 
 ### Tasks
+
 - [x] Understand monorepo structure
 - [x] Check current package names and versions
 - [x] Verify what is/isn't bundled in CLI dist
@@ -73,15 +74,18 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 - [x] Confirm vite-plus bundling API (`noExternal`, `copy`)
 
 ### Completed
+
 - [x] Created development plan file
 - [x] Full exploration complete
 
 ## Plan
 
 ### Tasks
+
 - [x] Define exact file changes needed (which files, what changes)
 
 ### Completed
+
 - [x] Confirmed `noExternal` is the correct vite-plus/tsdown API for inlining `@arc42/core`
 - [x] Confirmed `copy` CopyEntry API for shipping skill and templates into dist
 - [x] Designed `init skill` and `init template` command behaviour (defaults, flags, error handling)
@@ -91,37 +95,39 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
 ## Code
 
 ### Tasks
+
 - [x] `packages/core/package.json`: add `"private": true`
 - [x] `packages/cli/package.json`:
-    - rename `name` → `@doctc/arc42-cli`
-    - rename bin key `cli` → `arc42`
-    - add `repository`, `keywords`, `homepage` fields
-    - remove `@arc42/core` from `dependencies` (moved to `devDependencies` — bundled at build time)
+  - rename `name` → `@doctc/arc42-cli`
+  - rename bin key `cli` → `arc42`
+  - add `repository`, `keywords`, `homepage` fields
+  - remove `@arc42/core` from `dependencies` (moved to `devDependencies` — bundled at build time)
 - [x] `packages/cli/vite.config.ts`:
-    - add `deps.alwaysBundle: ["@arc42/core"]` to inline core (replaced deprecated `noExternal`)
-    - add `copy` entries to ship `packages/skill/SKILL.md` → `dist/skill/` and
-      `templates/starter/*.arc42.md` → `dist/templates/`
+  - add `deps.alwaysBundle: ["@arc42/core"]` to inline core (replaced deprecated `noExternal`)
+  - add `copy` entries to ship `packages/skill/SKILL.md` → `dist/skill/` and
+    `templates/starter/*.arc42.md` → `dist/templates/`
 - [x] `packages/cli/src/cli.ts`:
-    - add `arc42 init skill [--path <dest>]` subcommand
-    - add `arc42 init template [--dir <path>]` subcommand
-    - update `printHelp()` to document both new commands
-    - add `import.meta.url`-based `__dirname` for bundled asset resolution
+  - add `arc42 init skill [--path <dest>]` subcommand
+  - add `arc42 init template [--dir <path>]` subcommand
+  - update `printHelp()` to document both new commands
+  - add `import.meta.url`-based `__dirname` for bundled asset resolution
 - [x] `packages/skill/SKILL.md`:
-    - added "Scaffold a new workspace" subsection documenting `arc42 init template` and
-      `arc42 init skill` so agents know how to scaffold new workspaces
+  - added "Scaffold a new workspace" subsection documenting `arc42 init template` and
+    `arc42 init skill` so agents know how to scaffold new workspaces
 - [x] Build and verify: `pnpm --filter @doctc/arc42-cli build`
-    - confirmed `dist/cli.mjs` has no `import ... from "@arc42/core"` line (97 kB self-contained)
-    - confirmed `dist/skill/SKILL.md` and all 12 `dist/templates/*.arc42.md` exist
+  - confirmed `dist/cli.mjs` has no `import ... from "@arc42/core"` line (97 kB self-contained)
+  - confirmed `dist/skill/SKILL.md` and all 12 `dist/templates/*.arc42.md` exist
 - [x] Smoke test the commands locally
-    - `init template --dir <path>`: copies 12 files, exits 0
-    - `init template` re-run: skips all 12 with warning, exits 0
-    - `init skill --path <dest>`: copies SKILL.md, exits 0
-    - `init skill` re-run on same dest: errors with clear message, exits 1
+  - `init template --dir <path>`: copies 12 files, exits 0
+  - `init template` re-run: skips all 12 with warning, exits 0
+  - `init skill --path <dest>`: copies SKILL.md, exits 0
+  - `init skill` re-run on same dest: errors with clear message, exits 1
 - [x] Dry-run publish: `pnpm --filter @doctc/arc42-cli publish --dry-run --no-git-checks`
-    - confirmed tarball includes: `dist/cli.mjs` (97 kB), `dist/skill/SKILL.md`, all 12 templates,
-      `package.json`, `LICENSE` — 16 files, 36.7 kB gzipped
+  - confirmed tarball includes: `dist/cli.mjs` (97 kB), `dist/skill/SKILL.md`, all 12 templates,
+    `package.json`, `LICENSE` — 16 files, 36.7 kB gzipped
 
 ### Key decisions during Code phase
+
 - `deps.alwaysBundle` used instead of deprecated `noExternal` (both work; no-warning form preferred)
 - `@arc42/core` moved from `dependencies` to `devDependencies` — it's bundled, not a runtime dep,
   so it must not appear as a runtime npm requirement in the published package.json
@@ -135,17 +141,21 @@ via two new CLI commands: `arc42 init skill` and `arc42 init template`.
   runs directly without `node` prefix; 34 test files / 176 tests all passing
 
 ### Completed
+
 All code tasks done. Build, smoke tests, and dry-run publish all pass.
 
 ## Commit
 
 ### Tasks
+
 - [ ] Stage and commit all changes
 - [ ] Tag `v0.1.0`
 - [ ] Push branch and open PR
 
 ### Completed
-*None yet*
+
+_None yet_
 
 ---
-*This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on.*
+
+_This plan is maintained by the LLM. Tool responses provide guidance on which section to focus on and what tasks to work on._

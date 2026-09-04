@@ -21,7 +21,7 @@ arc42 get               # browse all elements
 arc42 rules             # understand what the validator enforces and why
 ```
 
-_Important: If `arc42` cli command is not available, use the npm package via npx: `npx @doctc/arc42 ...`_ 
+_Important: If `arc42` cli command is not available, use the npm package via npx: `npx @doctc/arc42 ...`_
 
 `--dir <path>` scopes to a specific workspace. Defaults to `$ARC42_DIR` or cwd.
 
@@ -51,7 +51,7 @@ fence as their visual pair.
 
 Example:
 
-```markdown
+````markdown
 ## Catalog Service
 
 Owns all product data. The only service that writes to the catalog database.
@@ -65,6 +65,8 @@ technology: Node.js / Express
 implements: concept-logging, concept-error-handling
 :::
 ```
+````
+
 ```
 
 ## Block type reference
@@ -160,3 +162,4 @@ To use a template:
 After any change to the system — adding a component, making a technology decision,
 introducing a cross-cutting concern — update or add the relevant arc42 elements and
 run `arc42 validate` to confirm 0 errors.
+```

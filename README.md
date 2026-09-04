@@ -31,7 +31,7 @@ Machine-verifiable second — a CLI validates consistency and coherence across a
 
 Each element lives in its own section: heading, prose explaining purpose and rationale, then the block as the machine-readable summary.
 
-```markdown
+````markdown
 ## Catalog Service
 
 Owns all product data. The only service that writes to the catalog database.
@@ -45,7 +45,9 @@ technology: Node.js / Express
 implements: concept-logging, concept-error-handling
 :::
 ```
-```
+````
+
+````
 
 The block types cover the main arc42 sections. See the starter templates for ready-to-use files — scaffold them with `arc42 init template`. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.
 
@@ -83,7 +85,7 @@ arc42 rules
 # JSON output for scripting and agent use
 arc42 --dir ./docs validate --format json
 arc42 --dir ./docs get --format json
-```
+````
 
 `--dir` defaults to `$ARC42_DIR` or the current directory.
 Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` = usage error.

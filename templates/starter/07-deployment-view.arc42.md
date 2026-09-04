@@ -44,7 +44,7 @@ architecture-beta
     service bb-database(database)[Database] in env-prod
     bb-api:R --> L:bb-database
 
-```
+````
 
 ## Production
 
@@ -58,7 +58,7 @@ title: Production
 type: environment
 hosts: bb-api, bb-database
 :::
-```
+````
 
 ## Staging
 
@@ -72,5 +72,9 @@ type: environment
 hosts: bb-api, bb-database
 :::
 ```
+
 -->
+
+```
+
 ```
