@@ -301,6 +301,11 @@ pre {
   gap: 0;
 }
 
+/* When card is expanded: full-width, no outer wrapper stripe */
+.prose-run--card-expanded {
+  margin: 1em 0;
+}
+
 .prose-run__stripe {
   flex-shrink: 0;
   width: 4px;
@@ -319,10 +324,6 @@ pre {
 }
 .prose-run__stripe:hover {
   opacity: 0.85;
-  width: 6px;
-}
-.prose-run__stripe--active {
-  opacity: 1;
   width: 6px;
 }
 
@@ -411,19 +412,58 @@ pre {
 
 /* ─── Element cards ─────────────────────────────────────────────────────────── */
 .element-card {
+  display: flex;
+  align-items: stretch;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--c-ch0);
   border-radius: var(--radius);
-  padding: 1rem 1.25rem;
-  margin: 1em 0;
+  margin: 0;
   scroll-margin-top: 1rem;
+  overflow: hidden;
+  animation: slide-in 0.18s ease;
+}
+
+/* Clickable left stripe (dismiss back to prose) */
+.element-card__dismiss-stripe {
+  flex-shrink: 0;
+  width: 8px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.9;
+  transition:
+    opacity 0.15s,
+    width 0.15s;
+  background: var(--c-ch0);
+  align-self: stretch;
+}
+.element-card__dismiss-stripe:hover {
+  opacity: 1;
+  width: 12px;
+}
+
+/* Static left stripe (standalone card, not in prose-run) */
+.element-card__static-stripe {
+  flex-shrink: 0;
+  width: 4px;
+  background: var(--c-ch0);
+  align-self: stretch;
+}
+
+.element-card__body {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 1.25rem;
 }
 
 .element-card--missing {
-  border-left-color: var(--text-muted);
+  border-left: 4px solid var(--text-muted);
   color: var(--text-muted);
   font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .element-card__header {
@@ -497,6 +537,29 @@ pre {
   gap: 0.4rem;
   flex-wrap: wrap;
   font-size: 0.8rem;
+}
+
+.element-card__refs-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+}
+.element-card__refs-toggle:hover {
+  color: var(--text);
+}
+
+.element-card__refs-toggle-icon {
+  font-size: 0.65rem;
+  opacity: 0.7;
 }
 
 .element-card__refs-label {

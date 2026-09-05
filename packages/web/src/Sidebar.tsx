@@ -36,6 +36,7 @@ export function Sidebar({
       <div className="sidebar__header">
         <span className="sidebar__logo">arc42</span>
         <button
+          data-testid="view-toggle"
           className={`view-toggle ${viewMode === "agent" ? "view-toggle--agent" : ""}`}
           onClick={onToggleViewMode}
           title={viewMode === "human" ? "Switch to Agent view (raw DSL)" : "Switch to Human view"}
@@ -52,6 +53,7 @@ export function Sidebar({
           return (
             <li key={doc.filePath} className="sidebar__doc">
               <a
+                data-testid="sidebar-doc-link"
                 href={`#${filename(doc.filePath)}`}
                 className={`sidebar__doc-btn ${isActive ? "sidebar__doc-btn--active" : ""}`}
                 onClick={(e) => {
@@ -86,6 +88,7 @@ export function Sidebar({
                         style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
                       >
                         <a
+                          data-testid="sidebar-heading-link"
                           href={`#${filename(doc.filePath)}:${slug}`}
                           className="sidebar__heading-link"
                           onClick={(e) => {

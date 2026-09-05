@@ -53,6 +53,14 @@ export interface DeploymentDiagramNode extends DiagramNodeBase {
 
 export type DiagramNode = GenericDiagramNode | SequenceDiagramNode | DeploymentDiagramNode;
 
+/** Bare ```mermaid fenced block with no preceding :::diagram metadata block. */
+export interface BareMermaidNode {
+  kind: "bare-mermaid";
+  source: string;
+  startLine: number;
+  endLine: number;
+}
+
 /** Virtual node type created by DocumentView grouping — never from the server */
 export interface ProseRunNode {
   kind: "prose-run";
@@ -60,7 +68,13 @@ export interface ProseRunNode {
   block: BlockNode | null;
 }
 
-export type AstNode = HeadingNode | ProseNode | BlockNode | DiagramNode | ProseRunNode;
+export type AstNode =
+  | HeadingNode
+  | ProseNode
+  | BlockNode
+  | DiagramNode
+  | BareMermaidNode
+  | ProseRunNode;
 
 export interface DocumentAst {
   filePath: string;

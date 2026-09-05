@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { marked } from "marked";
 import type { AstNode, BlockNode, DiagramNode, ProseRunNode, Element, Edge } from "./types";
 import { ElementCard } from "./ElementCard";
@@ -10,10 +10,21 @@ interface AstNodeRendererProps {
   node: AstNode;
   viewMode: "human" | "agent";
   elementsMap: Map<string, Element>;
+  elementDocMap: Map<string, string>;
   edges: Edge[];
+  autoExpandElementId?: string | null;
+  onAutoExpanded?: () => void;
 }
 
-export function AstNodeRenderer({ node, viewMode, elementsMap, edges }: AstNodeRendererProps) {
+export function AstNodeRenderer({
+  node,
+  viewMode,
+  elementsMap,
+  elementDocMap,
+  edges,
+  autoExpandElementId,
+  onAutoExpanded,
+}: AstNodeRendererProps) {
   switch (node.kind) {
     case "heading": {
       const Tag = `h${Math.min(node.level, 6)}` as keyof React.JSX.IntrinsicElements;
@@ -41,7 +52,10 @@ export function AstNodeRenderer({ node, viewMode, elementsMap, edges }: AstNodeR
           block={runNode.block}
           viewMode={viewMode}
           elementsMap={elementsMap}
+          elementDocMap={elementDocMap}
           edges={edges}
+          autoExpand={!!autoExpandElementId}
+          onAutoExpanded={onAutoExpanded}
         />
       );
     }
@@ -61,6 +75,7 @@ export function AstNodeRenderer({ node, viewMode, elementsMap, edges }: AstNodeR
           <ElementCard
             elementId={blockNode.attributes["id"] ?? ""}
             elementsMap={elementsMap}
+            elementDocMap={elementDocMap}
             edges={edges}
           />
         );
@@ -76,6 +91,15 @@ export function AstNodeRenderer({ node, viewMode, elementsMap, edges }: AstNodeR
       return <AgentBlock source={diagramNode.source} lang="mermaid" />;
     }
 
+    case "bare-mermaid": {
+      // Bare mermaid block — no :::diagram metadata. Render anyway; validator warns.
+      const source = (node as { kind: "bare-mermaid"; source: string }).source;
+      if (viewMode === "human") {
+        return <MermaidDiagram source={source} id={`bare-${node.startLine}`} />;
+      }
+      return <AgentBlock source={source} lang="mermaid" />;
+    }
+
     default:
       return null;
   }
@@ -88,11 +112,42 @@ interface ProseRunProps {
   block: BlockNode | null;
   viewMode: "human" | "agent";
   elementsMap: Map<string, Element>;
+  elementDocMap: Map<string, string>;
   edges: Edge[];
+  autoExpand?: boolean;
+  onAutoExpanded?: () => void;
 }
 
-function ProseRun({ text, block, viewMode, elementsMap, edges }: ProseRunProps) {
+function ProseRun({
+  text,
+  block,
+  viewMode,
+  elementsMap,
+  elementDocMap,
+  edges,
+  autoExpand,
+  onAutoExpanded,
+}: ProseRunProps) {
   const [showCard, setShowCard] = useState(false);
+
+  // Auto-expand when targetElementId matches this block — e.g. when navigating
+  // via a cross-document ref chip link (#doc:el-some-id).
+  useEffect(() => {
+    if (autoExpand && block !== null) {
+      setShowCard(true);
+      onAutoExpanded?.();
+      // Scroll to the card after React renders it
+      const elementId = block.attributes["id"] ?? "";
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.getElementById(`el-${elementId}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        });
+      });
+    }
+  }, [autoExpand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Determine the stripe colour from the attached block's element kind
   const stripeColor = useMemo(() => {
@@ -118,27 +173,38 @@ function ProseRun({ text, block, viewMode, elementsMap, edges }: ProseRunProps) 
 
   // Human view: stripe toggles between prose and element card
   const color = stripeColor ?? "var(--c-ch0)";
+
+  if (showCard) {
+    // Card mode: full-width, no outer stripe — the card's left border IS the stripe.
+    // Clicking anywhere on the card's left border (the button overlay) dismisses back to prose.
+    return (
+      <div className="prose-run prose-run--card-expanded">
+        <div className="prose-run__card-view">
+          <ElementCard
+            elementId={block.attributes["id"] ?? ""}
+            elementsMap={elementsMap}
+            elementDocMap={elementDocMap}
+            edges={edges}
+            accentColor={color}
+            onDismiss={() => setShowCard(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="prose-run prose-run--has-block">
       <button
-        className={`prose-run__stripe${showCard ? " prose-run__stripe--active" : ""}`}
+        data-testid="prose-stripe"
+        className="prose-run__stripe"
         style={{ backgroundColor: color }}
-        onClick={() => setShowCard((v) => !v)}
-        title={showCard ? "Show prose" : "Show element details"}
-        aria-expanded={showCard}
+        onClick={() => setShowCard(true)}
+        title="Show element details"
+        aria-expanded={false}
       />
       <div className="prose-run__content">
-        {showCard ? (
-          <div className="prose-run__card-view">
-            <ElementCard
-              elementId={block.attributes["id"] ?? ""}
-              elementsMap={elementsMap}
-              edges={edges}
-            />
-          </div>
-        ) : (
-          <div className="prose-run__prose-view">{text && <ProseBlock text={text} />}</div>
-        )}
+        <div className="prose-run__prose-view">{text && <ProseBlock text={text} />}</div>
       </div>
     </div>
   );

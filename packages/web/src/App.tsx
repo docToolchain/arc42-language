@@ -44,6 +44,12 @@ function useHashRouter(documents: WorkspacePayload["documents"]) {
   const [activeDocIndex, setActiveDocIndex] = useState(() =>
     docIndexFromHash(documents, window.location.hash),
   );
+  // When the hash contains an element anchor (el-{id}), store the target id
+  // so ProseRun components can auto-expand and scroll to the matching card.
+  const [targetElementId, setTargetElementId] = useState<string | null>(() => {
+    const { headingSlug } = parseHash(window.location.hash);
+    return headingSlug?.startsWith("el-") ? headingSlug.slice(3) : null;
+  });
 
   useEffect(() => {
     function onHashChange() {
@@ -53,14 +59,20 @@ function useHashRouter(documents: WorkspacePayload["documents"]) {
       const newIdx = docFile ? documents.findIndex((d) => filename(d.filePath) === docFile) : 0;
       setActiveDocIndex(newIdx >= 0 ? newIdx : 0);
 
-      // If there's a heading slug, scroll to it after React renders
-      if (headingSlug) {
-        requestAnimationFrame(() => {
-          document.getElementById(headingSlug)?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
+      if (headingSlug?.startsWith("el-")) {
+        // Element anchor — signal ProseRun to auto-expand
+        setTargetElementId(headingSlug.slice(3));
+      } else {
+        setTargetElementId(null);
+        // Heading slug: scroll after React renders
+        if (headingSlug) {
+          requestAnimationFrame(() => {
+            document.getElementById(headingSlug)?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
           });
-        });
+        }
       }
     }
 
@@ -86,19 +98,41 @@ function useHashRouter(documents: WorkspacePayload["documents"]) {
     // hashchange will handle scroll
   }
 
-  return { activeDocIndex, navigateToDoc, navigateToHeading };
+  return {
+    activeDocIndex,
+    targetElementId,
+    clearTargetElementId: () => setTargetElementId(null),
+    navigateToDoc,
+    navigateToHeading,
+  };
 }
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export function App({ payload }: AppProps) {
-  const { activeDocIndex, navigateToDoc, navigateToHeading } = useHashRouter(payload.documents);
+  const {
+    activeDocIndex,
+    targetElementId,
+    clearTargetElementId,
+    navigateToDoc,
+    navigateToHeading,
+  } = useHashRouter(payload.documents);
   const [viewMode, setViewMode] = useState<"human" | "agent">("human");
 
   const elementsMap = useMemo(() => {
     const map = new Map<string, Element>();
     for (const el of payload.elements) {
       map.set(el.id, el);
+    }
+    return map;
+  }, [payload.elements]);
+
+  // Maps elementId → the filename of the doc it lives in (e.g. "05-building-blocks.arc42.md").
+  // Used by ElementCard to build cross-document ref chip links.
+  const elementDocMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const el of payload.elements) {
+      map.set(el.id, filename(el.loc.file));
     }
     return map;
   }, [payload.elements]);
@@ -118,8 +152,11 @@ export function App({ payload }: AppProps) {
           documents={payload.documents}
           viewMode={viewMode}
           elementsMap={elementsMap}
+          elementDocMap={elementDocMap}
           edges={payload.edges}
           activeDocIndex={activeDocIndex}
+          targetElementId={targetElementId}
+          onTargetConsumed={clearTargetElementId}
         />
       </main>
     </div>

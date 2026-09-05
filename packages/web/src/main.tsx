@@ -2,7 +2,6 @@ import React, { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import type { WorkspacePayload } from "./types";
-// @ts-expect-error — CSS import; no type declaration needed at runtime
 import "./styles.css";
 
 function Root() {
@@ -10,6 +9,14 @@ function Root() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Mode 1 (arc42 export): workspace injected inline by CLI as window.__WORKSPACE__
+    // Mode 2 (arc42 serve): fetch from HTTP API
+    const injected = (window as unknown as { __WORKSPACE__?: WorkspacePayload }).__WORKSPACE__;
+    if (injected) {
+      setPayload(injected);
+      return;
+    }
+
     fetch("/api/workspace")
       .then((r) => {
         if (!r.ok) throw new Error(`Server returned ${r.status}`);
