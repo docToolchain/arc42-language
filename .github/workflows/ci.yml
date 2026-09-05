@@ -43,7 +43,7 @@ jobs:
           path: |
             packages/cli/dist
             packages/core/dist
-          key: build-${{ github.sha }}
+          key: build-${{ hashFiles('packages/*/src/**', 'packages/*/package.json', 'pnpm-lock.yaml') }}
 
   release:
     name: Release
@@ -80,7 +80,7 @@ jobs:
           path: |
             packages/cli/dist
             packages/core/dist
-          key: build-${{ github.sha }}
+          key: build-${{ hashFiles('packages/*/src/**', 'packages/*/package.json', 'pnpm-lock.yaml') }}
 
       - name: Build (cache miss fallback)
         if: steps.cache-restore.outputs.cache-hit != 'true'
