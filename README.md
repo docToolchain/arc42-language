@@ -1,5 +1,8 @@
 # arc42-language
 
+[![npm version](https://img.shields.io/npm/v/@doctc/arc42)](https://www.npmjs.com/package/@doctc/arc42)
+[![CI](https://github.com/docToolchain/arc42-language/actions/workflows/ci.yml/badge.svg)](https://github.com/docToolchain/arc42-language/actions/workflows/ci.yml)
+
 Architecture was something only architects cared about.
 Developers read the docs. Hopefully. Once. At the start.
 Then reality kicked in — and the docs stayed behind.
