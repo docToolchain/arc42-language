@@ -1,0 +1,46 @@
+name: Version Sync
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  sync-version:
+    name: Sync version to main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ vars.VERSION_BUMPER_APPID }}
+          private_key: ${{ secrets.VERSION_BUMPER_SECRET }}
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync version from release tag
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          pnpm --filter @doctc/arc42 exec npm version "$VERSION" --no-git-tag-version
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add packages/cli/package.json
+          git diff --staged --quiet || git commit -m "chore: sync version to $VERSION [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}

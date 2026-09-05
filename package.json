@@ -19,6 +19,11 @@
     "release": "pnpm publish -r --access public"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "catalog:",
+    "@semantic-release/exec": "catalog:",
+    "@semantic-release/github": "catalog:",
+    "@semantic-release/npm": "catalog:",
+    "semantic-release": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {
