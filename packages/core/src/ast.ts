@@ -69,9 +69,21 @@ export interface DeploymentDiagramNode extends DiagramNodeBase {
   roots: string[];
 }
 
+/** Bare mermaid fenced block with no preceding :::diagram metadata block.
+ * The parser emits this when it encounters ```mermaid without a :::diagram owner.
+ * Validator rule W017 warns about these — authors should add a :::diagram block.
+ * The web renderer renders the source as-is since the Mermaid is still valid.
+ */
+export interface BareMermaidNode {
+  kind: "bare-mermaid";
+  source: string;
+  startLine: number;
+  endLine: number;
+}
+
 export type DiagramNode = GenericDiagramNode | SequenceDiagramNode | DeploymentDiagramNode;
 
-export type AstNode = HeadingNode | ProseNode | BlockNode | DiagramNode;
+export type AstNode = HeadingNode | ProseNode | BlockNode | DiagramNode | BareMermaidNode;
 
 export interface DocumentAst {
   filePath: string;

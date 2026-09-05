@@ -1,4 +1,4 @@
-import type { DocumentAst, AstNode, DiagramNode } from "../ast.ts";
+import type { DocumentAst, AstNode, DiagramNode, BareMermaidNode } from "../ast.ts";
 
 interface DiagramMetadata {
   id: string;
@@ -84,6 +84,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     metadata: DiagramMetadata;
     source: string[];
   } | null = null;
+  let openBareMermaid: { source: string[]; startLine: number } | null = null;
 
   let inHtmlComment = false;
   let inArc42Fence = false;
@@ -113,6 +114,22 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       continue;
     }
 
+    if (openBareMermaid) {
+      if (/^```\s*$/.test(line)) {
+        const node: BareMermaidNode = {
+          kind: "bare-mermaid",
+          source: openBareMermaid.source.join("\n"),
+          startLine: openBareMermaid.startLine,
+          endLine: lineNo,
+        };
+        nodes.push(node);
+        openBareMermaid = null;
+      } else {
+        openBareMermaid.source.push(line);
+      }
+      continue;
+    }
+
     if (openDiagram) {
       if (/^```\s*$/.test(line)) {
         nodes.push(createDiagramNode(openDiagram.metadata, openDiagram.source.join("\n"), lineNo));
@@ -127,6 +144,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       if (line.trim() === "") continue;
       const fenceMatch = /^```([a-zA-Z0-9_-]+)?\s*$/.exec(line);
       if (fenceMatch) {
+        // Opening fence of the diagram source — do NOT include it in source.
         openDiagram = { metadata: pendingDiagram, source: [] };
         pendingDiagram = null;
         continue;
@@ -137,13 +155,22 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
 
     // arc42 fence: ```arc42 ... ``` wraps :::blocks for Markdown renderer compatibility.
     // Only recognised outside diagram states to avoid conflicting with the diagram source fence.
-    if (!openDiagram && !pendingDiagram) {
+    if (!openDiagram && !pendingDiagram && !openBareMermaid) {
       if (/^```arc42\s*$/.test(line)) {
         inArc42Fence = true;
         continue;
       }
       if (inArc42Fence && /^```\s*$/.test(line)) {
         inArc42Fence = false;
+        continue;
+      }
+
+      // Bare Mermaid fenced block (no preceding :::diagram block).
+      // Emit as BareMermaidNode so the renderer can still display it,
+      // and the validator (W017) can warn about the missing :::diagram block.
+      const bareMermaidMatch = /^```(mermaid[a-zA-Z0-9_-]*)\s*$/.exec(line);
+      if (bareMermaidMatch && !inArc42Fence) {
+        openBareMermaid = { source: [], startLine: lineNo };
         continue;
       }
     }
