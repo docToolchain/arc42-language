@@ -159,7 +159,9 @@ function validateMermaidArchitecture(
     return;
   }
 
-  const firstMeaningful = lines.find((line) => line.trim() !== "")?.trim();
+  const firstMeaningful = lines
+    .find((line) => line.trim() !== "" && !line.trim().startsWith("```"))
+    ?.trim();
   if (firstMeaningful !== "architecture-beta") {
     diagnostics.push(diagnostic(diagram, "expected Mermaid architecture-beta declaration"));
     return;

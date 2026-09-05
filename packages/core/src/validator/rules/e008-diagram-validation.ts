@@ -91,7 +91,9 @@ function parseMermaidSequence(
     return diagnostics;
   }
 
-  const firstMeaningful = lines.find((line) => line.trim() !== "")?.trim();
+  const firstMeaningful = lines
+    .find((line) => line.trim() !== "" && !line.trim().startsWith("```"))
+    ?.trim();
   if (firstMeaningful !== "sequenceDiagram") {
     diagnostics.push(diagnostic(diagram, "expected Mermaid sequenceDiagram declaration"));
     return diagnostics;
