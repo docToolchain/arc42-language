@@ -12,6 +12,7 @@
     [
       "@semantic-release/exec",
       {
+        "prepareCmd": "pnpm --filter @doctc/arc42 exec npm version ${nextRelease.version} --no-git-tag-version",
         "publishCmd": "pnpm --filter @doctc/arc42 publish --access public --no-git-checks --provenance"
       }
     ],
