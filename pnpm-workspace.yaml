@@ -1,7 +1,6 @@
 packages:
   - apps/*
   - packages/*
-  - packages/cli/src/web
   - tools/*
 
 catalog:
@@ -9,7 +8,7 @@ catalog:
   "@semantic-release/exec": 7.1.0
   "@semantic-release/github": 12.0.9
   "@semantic-release/npm": 13.1.5
-  "@types/node": ^24
+  "@types/node": ^24.13.3
   semantic-release: 25.0.9
   typescript: ^5
   vite: npm:@voidzero-dev/vite-plus-core@latest

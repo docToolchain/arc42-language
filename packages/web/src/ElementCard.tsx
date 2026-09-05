@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type { Element, Edge } from "./types";
 
 // Chapter colour palette — maps BlockType to a CSS custom property
@@ -21,10 +21,30 @@ export const KIND_COLOR: Record<string, string> = {
 interface ElementCardProps {
   elementId: string;
   elementsMap: Map<string, Element>;
+  elementDocMap: Map<string, string>;
   edges: Edge[];
+  accentColor?: string;
+  onDismiss?: () => void;
 }
 
-export function ElementCard({ elementId, elementsMap, edges }: ElementCardProps) {
+/** Build a hash link that navigates to the correct document and scrolls to the element anchor. */
+function refHref(targetId: string, elementDocMap: Map<string, string>): string {
+  const docFile = elementDocMap.get(targetId);
+  if (docFile) {
+    return `#${docFile}:el-${targetId}`;
+  }
+  // Fallback: same-page anchor (element is in the currently visible doc)
+  return `#el-${targetId}`;
+}
+
+export function ElementCard({
+  elementId,
+  elementsMap,
+  elementDocMap,
+  edges,
+  accentColor,
+  onDismiss,
+}: ElementCardProps) {
   const el = elementsMap.get(elementId);
   if (!el) {
     return (
@@ -38,52 +58,82 @@ export function ElementCard({ elementId, elementsMap, edges }: ElementCardProps)
 
   const outgoing = edges.filter((e) => e.from === el.id);
   const incoming = edges.filter((e) => e.to === el.id);
-  const color = KIND_COLOR[el.kind] ?? "var(--c-ch0)";
+  const color = accentColor ?? KIND_COLOR[el.kind] ?? "var(--c-ch0)";
+  const [showIncoming, setShowIncoming] = useState(false);
 
   return (
-    <div className="element-card" style={{ borderLeftColor: color }} id={`el-${el.id}`}>
-      <div className="element-card__header">
-        <span className="element-card__badge" style={{ backgroundColor: color }}>
-          {el.kind}
-        </span>
-        <code className="element-card__id">{el.id}</code>
-        <span className="element-card__title">{el.title}</span>
-      </div>
-      <dl className="element-card__fields">{renderFields(el)}</dl>
-      {(outgoing.length > 0 || incoming.length > 0) && (
-        <div className="element-card__refs">
-          {outgoing.length > 0 && (
-            <div className="element-card__refs-group">
-              <span className="element-card__refs-label">references</span>
-              {outgoing.map((e) => (
-                <a
-                  key={`${e.to}-${e.relation}`}
-                  href={`#el-${e.to}`}
-                  className="element-card__ref-chip"
-                >
-                  <span className="element-card__ref-rel">{e.relation}</span>
-                  {e.to}
-                </a>
-              ))}
-            </div>
-          )}
-          {incoming.length > 0 && (
-            <div className="element-card__refs-group">
-              <span className="element-card__refs-label">referenced by</span>
-              {incoming.map((e) => (
-                <a
-                  key={`${e.from}-${e.relation}`}
-                  href={`#el-${e.from}`}
-                  className="element-card__ref-chip element-card__ref-chip--incoming"
-                >
-                  <span className="element-card__ref-rel">{e.relation}</span>
-                  {e.from}
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
+    <div
+      className={`element-card${onDismiss ? " element-card--dismissible" : ""}`}
+      id={`el-${el.id}`}
+    >
+      {onDismiss ? (
+        <button
+          data-testid="card-dismiss-stripe"
+          className="element-card__dismiss-stripe"
+          style={{ backgroundColor: color }}
+          onClick={onDismiss}
+          title="Show prose"
+          aria-label="Collapse element card"
+        />
+      ) : (
+        <div className="element-card__static-stripe" style={{ backgroundColor: color }} />
       )}
+      <div className="element-card__body">
+        <div className="element-card__header">
+          <span className="element-card__badge" style={{ backgroundColor: color }}>
+            {el.kind}
+          </span>
+          <code className="element-card__id">{el.id}</code>
+          <span className="element-card__title">{el.title}</span>
+        </div>
+        <dl className="element-card__fields">{renderFields(el)}</dl>
+        {(outgoing.length > 0 || incoming.length > 0) && (
+          <div className="element-card__refs">
+            {outgoing.length > 0 && (
+              <div className="element-card__refs-group">
+                <span className="element-card__refs-label">references</span>
+                {outgoing.map((e) => (
+                  <a
+                    data-testid="element-ref-chip"
+                    key={`${e.to}-${e.relation}`}
+                    href={refHref(e.to, elementDocMap)}
+                    className="element-card__ref-chip"
+                  >
+                    <span className="element-card__ref-rel">{e.relation}</span>
+                    {e.to}
+                  </a>
+                ))}
+              </div>
+            )}
+            {incoming.length > 0 && (
+              <div className="element-card__refs-group">
+                <button
+                  className="element-card__refs-toggle"
+                  onClick={() => setShowIncoming((v) => !v)}
+                  aria-expanded={showIncoming}
+                >
+                  <span className="element-card__refs-label">
+                    referenced by ({incoming.length})
+                  </span>
+                  <span className="element-card__refs-toggle-icon">{showIncoming ? "▾" : "▸"}</span>
+                </button>
+                {showIncoming &&
+                  incoming.map((e) => (
+                    <a
+                      data-testid="element-ref-chip"
+                      key={`${e.from}-${e.relation}`}
+                      href={refHref(e.from, elementDocMap)}
+                      className="element-card__ref-chip element-card__ref-chip--incoming"
+                    >
+                      <span className="element-card__ref-rel">{e.relation}</span>
+                      {e.from}
+                    </a>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

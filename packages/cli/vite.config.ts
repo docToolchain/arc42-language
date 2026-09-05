@@ -21,16 +21,16 @@ export default defineConfig({
         to: "dist/templates",
         flatten: true,
       },
-      // Copy SPA assets from src/web/dist/ into dist/web/.
+      // Copy SPA assets from packages/web/dist/ into dist/web/.
       // The glob matches individual files; flatten: false preserves the
       // assets/ subdirectory alongside index.html.
       {
-        from: "src/web/dist/index.html",
+        from: "../../packages/web/dist/index.html",
         to: "dist/web",
         flatten: true,
       },
       {
-        from: "src/web/dist/assets/*",
+        from: "../../packages/web/dist/assets/*",
         to: "dist/web/assets",
         flatten: true,
       },

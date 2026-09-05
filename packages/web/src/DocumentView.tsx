@@ -6,8 +6,11 @@ interface DocumentViewProps {
   documents: DocumentAst[];
   viewMode: "human" | "agent";
   elementsMap: Map<string, Element>;
+  elementDocMap: Map<string, string>;
   edges: Edge[];
   activeDocIndex: number;
+  targetElementId: string | null;
+  onTargetConsumed: () => void;
 }
 
 /**
@@ -87,8 +90,11 @@ export function DocumentView({
   documents,
   viewMode,
   elementsMap,
+  elementDocMap,
   edges,
   activeDocIndex,
+  targetElementId,
+  onTargetConsumed,
 }: DocumentViewProps) {
   const doc = documents[activeDocIndex];
   if (!doc) return <div className="doc-empty">No document selected.</div>;
@@ -105,18 +111,23 @@ export function DocumentView({
               node={group.node}
               viewMode={viewMode}
               elementsMap={elementsMap}
+              elementDocMap={elementDocMap}
               edges={edges}
             />
           );
         }
         // prose-run (with optional attached arc42 block)
+        const blockId = group.block?.attributes["id"] ?? null;
         return (
           <AstNodeRenderer
             key={i}
             node={{ kind: "prose-run", text: group.text, block: group.block } as AstNode}
             viewMode={viewMode}
             elementsMap={elementsMap}
+            elementDocMap={elementDocMap}
             edges={edges}
+            autoExpandElementId={blockId === targetElementId ? targetElementId : null}
+            onAutoExpanded={blockId === targetElementId ? onTargetConsumed : undefined}
           />
         );
       })}

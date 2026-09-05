@@ -4,11 +4,11 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
-  root: resolve(__dirname),
+  root: resolve(import.meta.dirname),
   build: {
-    // Output to src/web/dist/ — vite build runs before vp pack, and vp pack's
-    // copy rule copies src/web/dist/** into cli/dist/web/.
-    outDir: resolve(__dirname, "dist"),
+    // Output to packages/web/dist/ — vite build runs before vp pack, and vp pack's
+    // copy rule copies packages/web/dist/** into cli/dist/web/.
+    outDir: resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
   },
   server: {

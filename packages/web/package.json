@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
+    "dev": "vp dev",
+    "build": "tsc --noEmit && vp build",
+    "preview": "vp preview",
     "test:e2e": "playwright test",
-    "test:e2e:debug": "playwright test --debug=cli"
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug=cli",
+    "demo": "playwright test --project=demo"
   },
   "dependencies": {
     "marked": "^14.0.0",
@@ -18,10 +20,12 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "@types/node": "catalog:",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vite-plus": "catalog:"
   }
 }
