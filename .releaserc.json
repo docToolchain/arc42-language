@@ -10,18 +10,17 @@
       }
     ],
     [
-      "@semantic-release/npm",
-      {
-        "pkgRoot": "packages/cli",
-        "npmPublish": false
-      }
-    ],
-    [
       "@semantic-release/exec",
       {
         "publishCmd": "pnpm --filter @doctc/arc42 publish --access public --no-git-checks --provenance"
       }
     ],
-    "@semantic-release/github"
+    [
+      "@semantic-release/github",
+      {
+        "failComment": false,
+        "failTitle": false
+      }
+    ]
   ]
 }
