@@ -2,71 +2,65 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   ci:
-    name: Lint, Test, Build
+    name: CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.32.1
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build core (required for type-checking cli)
-        run: pnpm --filter @arc42/core run build
-
-      - name: Lint and type-check
+      - name: Check
         run: pnpm run check
-
-      - name: Test
-        run: pnpm run test
 
       - name: Build
         run: pnpm run build
 
-  release-please:
-    name: Release Please
-    runs-on: ubuntu-latest
+      - name: Test
+        run: pnpm test
+
+      - name: Cache build artifacts
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            packages/cli/dist
+            packages/core/dist
+          key: build-${{ github.sha }}
+
+  release:
+    name: Release
     needs: ci
-    # Only run on push to main, not on pull_request
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
+      issues: write
       pull-requests: write
-    outputs:
-      releases_created: ${{ steps.release.outputs.releases_created }}
-    steps:
-      - uses: googleapis/release-please-action@v5
-        id: release
-        with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-
-  publish:
-    name: Publish to npm
-    runs-on: ubuntu-latest
-    needs: release-please
-    if: needs.release-please.outputs.releases_created == 'true'
-    permissions:
       id-token: write
-      contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.32.1
 
@@ -79,8 +73,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm --filter @doctc/arc42 run build
+      - name: Restore build artifacts
+        id: cache-restore
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            packages/cli/dist
+            packages/core/dist
+          key: build-${{ github.sha }}
 
-      - name: Publish to npm
-        run: pnpm --filter @doctc/arc42 publish --access public --no-git-checks
+      - name: Build (cache miss fallback)
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: pnpm run build
+
+      - name: Check (cache miss fallback)
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: pnpm run check
+
+      - name: Test (cache miss fallback)
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: pnpm test
+
+      - name: Release
+        run: pnpm exec semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
