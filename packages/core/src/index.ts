@@ -1,5 +1,5 @@
 // Core barrel export
-export { validateWorkspace, getElements } from "./arc42.ts";
+export { validateWorkspace, getElements, loadWorkspace } from "./arc42.ts";
 
 export type { ValidateOptions, ValidateResult, GetOptions } from "./arc42.ts";
 
@@ -8,6 +8,7 @@ export type { Diagnostic, Severity } from "./validator/types.ts";
 export type {
   Element,
   QualityGoal,
+  QualityScenario,
   Actor,
   SolutionStrategy,
   Constraint,
@@ -61,6 +62,7 @@ export type {
   GetRenderer,
   RendererMeta,
   ElementRenderers,
+  WorkspacePayload,
 } from "./renderer/types.ts";
 
 // explain command API

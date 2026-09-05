@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - packages/cli/src/web
   - tools/*
 
 catalog:
