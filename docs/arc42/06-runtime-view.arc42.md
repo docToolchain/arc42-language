@@ -110,3 +110,49 @@ every validation invocation.
 8. The agent reads the validation message and returns to the user for clarification or correction.
 9. The user responds.
 10. The agent updates the architecture consistently with the code and the clarified change.
+
+## Architect browses workspace via arc42 serve
+
+This scenario describes the flow when an architect or reader opens `arc42 serve` to browse a
+workspace in the browser. The CLI starts a local HTTP server, the web renderer loads the workspace
+payload, and the reader navigates documentation. The `if-reader-web`, `if-cli-web`, and
+`if-web-core` interfaces are all exercised in this scenario.
+
+```arc42
+:::runtime-scenario
+id: scenario-serve-browser
+title: Architect browses workspace via arc42 serve
+trigger: Architect runs arc42 serve from the terminal
+involves: bb-cli, bb-core, bb-web-renderer
+:::
+```
+
+:::diagram
+id: serve-browser-sequence
+scenario: scenario-serve-browser
+notation: mermaid-sequence
+aliases: bb_cli=bb-cli, bb_core=bb-core, bb_web=bb-web-renderer
+:::
+
+```mermaid
+sequenceDiagram
+    actor actor_architect as Architect
+    participant bb_cli as CLI
+    participant bb_core as Core Library
+    participant bb_web as Web Renderer
+
+    actor_architect->>bb_cli: arc42 serve (terminal)
+    bb_cli->>bb_core: loadWorkspace(dir)
+    bb_core-->>bb_cli: WorkspacePayload
+    bb_cli->>bb_cli: Start HTTP server on localhost
+    bb_cli-->>actor_architect: Listening on http://localhost:3142
+    actor_architect->>bb_web: Open browser
+    bb_web->>bb_cli: GET /api/workspace
+    bb_cli-->>bb_web: WorkspacePayload (JSON)
+    bb_web-->>actor_architect: Render documentation
+    actor_architect->>bb_web: Navigate documents and element cards
+```
+
+The web renderer is a static SPA served from the CLI's distribution directory. The CLI does not
+re-parse on every browser request — the workspace payload is loaded once at server startup and
+cached in memory for the lifetime of the process.

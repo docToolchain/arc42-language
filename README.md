@@ -15,6 +15,14 @@ readable by humans, checkable by machines, visible to agents.**
 
 ![arc42-language demo](demo/demo.gif)
 
+or see a live demo of a sample architecture of a bookstore by running
+
+```bash
+git clone https://github.com/docToolchain/arc42-language.git
+cd arc42-language
+npx @doctc/arc42 --dir examples/bookstore-backend serve
+```
+
 ---
 
 A structured language for arc42 software architecture documentation.
@@ -33,6 +41,8 @@ Machine-verifiable second — a CLI validates consistency and coherence across a
 ### The format
 
 Each element lives in its own section: heading, prose explaining purpose and rationale, then the block as the machine-readable summary.
+
+_Example:_
 
 ````markdown
 ## Catalog Service

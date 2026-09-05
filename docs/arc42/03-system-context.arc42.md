@@ -139,3 +139,52 @@ between: actor-agent, bb-workspace
 protocol: File Read/Write tools
 :::
 ```
+
+## Reader
+
+A human who browses the rendered architecture documentation without authoring intent.
+Could be a stakeholder reviewing the current design, a new team member orienting
+themselves, or the architect doing a read-only pass. Interacts exclusively with the
+web UI — has no direct access to the CLI or the raw `.arc42.md` files.
+
+```arc42
+:::actor
+id: actor-reader
+title: Reader
+type: person
+description: Human stakeholder or team member browsing rendered arc42 documentation via the web UI
+:::
+```
+
+## Reader → Web UI Interface
+
+The reader opens the web UI in a browser. The UI is served by `arc42 serve` from a
+local HTTP server, or published as a static site (e.g. GitHub Pages). The reader
+navigates documents, browses element cards, and follows cross-references — all without
+touching the CLI or the source files.
+
+```arc42
+:::interface
+id: if-reader-web
+title: Reader → Web UI
+between: actor-reader, bb-web-renderer
+protocol: HTTP / browser
+:::
+```
+
+## Architect → serve Interface
+
+The architect runs `arc42 serve` to start a local HTTP server and browse the workspace
+documentation in a browser. This is a read-oriented view of the same workspace the
+architect authors via the editor. The `serve` command is a CLI entry point, but the
+interaction model differs from `validate` and `get` — it starts a long-running process
+and opens a browser rather than printing to stdout.
+
+```arc42
+:::interface
+id: if-architect-serve
+title: Architect → serve
+between: actor-architect, bb-cli
+protocol: Terminal (arc42 serve) → HTTP browser session
+:::
+```
