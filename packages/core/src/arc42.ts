@@ -15,6 +15,7 @@ import type {
   ElementView,
   Edge,
   ResolvedRef,
+  WorkspacePayload,
 } from "./renderer/types.ts";
 
 export interface ValidateOptions {
@@ -107,6 +108,18 @@ function sortElements(elements: Element[]): Element[] {
   });
 }
 
+export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
+  const { workspace, index } = await runPipeline(dir);
+  const elements = sortElements(workspace.elements);
+  const edges = buildEdges(workspace, index);
+  return {
+    elements,
+    edges,
+    diagrams: workspace.diagrams,
+    documents: workspace.documents,
+  };
+}
+
 export async function getElements(opts: GetOptions): Promise<GetResult> {
   const { workspace, index } = await runPipeline(opts.dir);
   const query = opts.query;
@@ -186,4 +199,5 @@ export type {
   GetRenderer,
   RendererMeta,
   ElementRenderers,
+  WorkspacePayload,
 } from "./renderer/types.ts";

@@ -33,9 +33,11 @@
     "provenance": true
   },
   "scripts": {
-    "build": "vp pack",
+    "build:web": "pnpm --filter @arc42/web build",
+    "build": "pnpm build:web && vp pack",
     "dev": "vp pack --watch",
     "test": "vp test",
+    "test:e2e": "pnpm --filter @arc42/web test:e2e",
     "check": "vp check",
     "version:patch": "npm version patch --no-git-tag-version",
     "version:minor": "npm version minor --no-git-tag-version",

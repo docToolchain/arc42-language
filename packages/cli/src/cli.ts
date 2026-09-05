@@ -1,12 +1,22 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
-import { join, dirname, basename } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  createReadStream,
+} from "node:fs";
+import { join, dirname, basename, extname } from "node:path";
+import { createServer } from "node:http";
+import { spawn } from "node:child_process";
 import { discoverArc42Dir } from "./discover.ts";
 import { fileURLToPath } from "node:url";
 import {
   validateWorkspace,
   getElements,
+  loadWorkspace,
   builtinRules,
   builtinGetRenderers,
   rendererById,
@@ -115,6 +125,8 @@ async function main() {
     runExplain(commandArgs);
   } else if (command === "init") {
     runInit(commandArgs);
+  } else if (command === "serve") {
+    await runServe(dir, commandArgs);
   } else {
     console.error(`Unknown command: ${command}`);
     printHelp();
@@ -128,6 +140,7 @@ function printHelp() {
 Usage:
   arc42 [--dir <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text|markdown]
+  arc42 [--dir <path>] serve [--port <n>] [--open]
   arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
   arc42 explain [<blocktype>] [--format json|text]
   arc42 init skill [--path <dest>]
@@ -430,6 +443,117 @@ function runInitTemplate(args: string[]) {
     `Templates copied: ${copied} file(s) to ${destDir}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
   );
   process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
+// serve
+// ---------------------------------------------------------------------------
+
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".json": "application/json; charset=utf-8",
+  ".woff2": "font/woff2",
+  ".woff": "font/woff",
+  ".png": "image/png",
+};
+
+async function runServe(dir: string, args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      port: { type: "string", default: "3142" },
+      open: { type: "boolean", default: false },
+    },
+    strict: false,
+  });
+
+  const port = parseInt(values["port"] as string, 10);
+  const openBrowser = values["open"] as boolean;
+  const webDir = join(__dirname, "web");
+
+  if (!existsSync(webDir)) {
+    console.error(`Web assets not found at ${webDir}. Run 'pnpm build:web' first.`);
+    process.exit(1);
+  }
+
+  // Load workspace once at startup
+  let workspaceJson: string;
+  try {
+    const payload = await loadWorkspace(dir);
+    workspaceJson = JSON.stringify(payload);
+  } catch (err) {
+    console.error(`Failed to load workspace from ${dir}: ${String(err)}`);
+    process.exit(1);
+  }
+
+  const server = createServer((req, res) => {
+    const url = req.url ?? "/";
+
+    // API endpoint
+    if (url === "/api/workspace" || url === "/api/workspace/") {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(workspaceJson);
+      return;
+    }
+
+    // Static SPA assets
+    // Resolve path: "/" → "index.html", otherwise strip leading "/"
+    let filePath = url === "/" ? join(webDir, "index.html") : join(webDir, url.split("?")[0]);
+
+    // Prevent path traversal
+    if (!filePath.startsWith(webDir)) {
+      res.writeHead(403);
+      res.end("Forbidden");
+      return;
+    }
+
+    if (!existsSync(filePath)) {
+      // SPA fallback: serve index.html for any unknown path (client-side routing)
+      filePath = join(webDir, "index.html");
+    }
+
+    const ext = extname(filePath);
+    const contentType = MIME_TYPES[ext] ?? "application/octet-stream";
+
+    res.writeHead(200, { "Content-Type": contentType });
+    const stream = createReadStream(filePath);
+    stream.on("error", () => {
+      res.writeHead(500);
+      res.end("Internal Server Error");
+    });
+    stream.pipe(res);
+  });
+
+  server.listen(port, "127.0.0.1", () => {
+    const url = `http://localhost:${port}`;
+    console.log(`arc42 serve  →  ${url}`);
+    console.log(`  workspace: ${dir}`);
+    console.log(`  Press Ctrl+C to stop.`);
+
+    if (openBrowser) {
+      const cmd =
+        process.platform === "darwin"
+          ? "open"
+          : process.platform === "win32"
+            ? "start"
+            : "xdg-open";
+      spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref();
+    }
+  });
+
+  // Keep process alive
+  await new Promise<void>((_, reject) => {
+    server.on("error", reject);
+    process.on("SIGINT", () => {
+      server.close();
+      process.exit(0);
+    });
+  });
 }
 
 main().catch((err) => {
