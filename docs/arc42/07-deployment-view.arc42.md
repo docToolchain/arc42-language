@@ -2,10 +2,10 @@
 
 ## Deployment overview
 
-The arc42-language toolchain ships as three independent deployment units: the npm package (CLI and
-core library bundled together), the opencode skill, and the author's own arc42 documentation
-workspace. There is no server, cloud infrastructure, or network dependency beyond npm for
-installation.
+The arc42-language toolchain ships as three independent deployment units: the npm package (CLI,
+core library, and web renderer bundled together), the opencode skill, and the author's own arc42
+documentation workspace. There is no server, cloud infrastructure, or network dependency beyond
+npm for installation.
 
 :::diagram
 id: arc42-language-deployment
@@ -18,6 +18,7 @@ architecture-beta
     group node-npm-package(cloud)[npm Package]
     service bb-cli(server)[CLI] in node-npm-package
     service bb-core(server)[Core Library] in node-npm-package
+    service bb-web-renderer(internet)[Web Renderer] in node-npm-package
 
     group node-skill(disk)[Agent Skill Directory]
     service bb-skill(disk)[Opencode Skill] in node-skill
@@ -29,19 +30,19 @@ architecture-beta
     bb-skill:B --> T:bb-cli
 ```
 
-## npm Package (CLI + Core)
+## npm Package (CLI + Core + Web Renderer)
 
-The CLI and core library are bundled into a single npm package (`@arc42/cli`). The package is
-installed via npm or npx into the user's local Node.js environment. The CLI is the only binary
-entry point; the core library is an internal module with no separate distribution. There is no
-separate deploy step — the package is consumed directly from the npm registry.
+The CLI, core library, and web renderer are bundled into a single npm package (`@arc42/cli`). The
+web renderer's compiled static assets live in `dist/web/` inside the package and are served
+directly by the `arc42 serve` command. There is no separate deploy step — the package is consumed
+directly from the npm registry.
 
 ```arc42
 :::deployment-node
 id: node-npm-package
-title: npm Package (CLI + Core)
+title: npm Package (CLI + Core + Web Renderer)
 type: server
-hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer
+hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-web-renderer
 :::
 ```
 
@@ -57,7 +58,9 @@ architecture-beta
     group node-npm-package(cloud)[npm Package]
     service bb-cli(server)[CLI] in node-npm-package
     service bb-core(server)[Core Library] in node-npm-package
+    service bb-web-renderer(internet)[Web Renderer] in node-npm-package
     bb-cli:R --> L:bb-core
+    bb-cli:B --> T:bb-web-renderer
 ```
 
 ## Agent Skill

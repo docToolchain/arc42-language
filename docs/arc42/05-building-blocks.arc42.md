@@ -106,8 +106,9 @@ implements: concept-rule-registry
 
 A thin entry point over the core library. Parses arguments with Node.js `util.parseArgs`
 (no third-party parser), resolves the workspace directory (`--dir` flag → `$ARC42_DIR` → cwd),
-and delegates to `validateWorkspace` or `getElements` from core. Implements three commands:
-`validate`, `get`, `rules`.
+and delegates to `validateWorkspace` or `getElements` from core. Implements four commands:
+`validate`, `get`, `rules`, `serve`. At build time, the CLI copies the compiled `@arc42/web`
+SPA assets into its own `dist/web/` directory so they can be served statically.
 
 ```arc42
 :::building-block
@@ -130,6 +131,25 @@ and points agents at the CLI to discover current state and rules. Installed by c
 id: bb-skill
 title: Opencode Skill
 technology: Markdown
+implements: concept-prose-first
+:::
+```
+
+## Web Renderer
+
+A browser-side single-page application that renders arc42 documentation as a navigable web UI.
+Reads workspace data from the core library via an HTTP API (when served by the CLI) or from a
+baked-in JSON file (when published as a static site). Presents prose and DSL blocks together:
+prose is shown as formatted text; arc42 element blocks are revealed by clicking a coloured
+stripe; Mermaid diagrams are rendered inline. An Agent view toggle shows raw DSL fences for
+tooling consumers. Designed to work equally as a `localhost` server and as a GitHub Pages
+static deployment.
+
+```arc42
+:::building-block
+id: bb-web-renderer
+title: Web Renderer
+technology: TypeScript / React / Vite
 implements: concept-prose-first
 :::
 ```
@@ -245,5 +265,38 @@ id: if-cli-workspace
 title: CLI → Documentation Workspace
 between: bb-cli, bb-workspace
 protocol: File system read (glob + parse)
+:::
+```
+
+## CLI → Web Renderer Interface
+
+The CLI hosts the web renderer as a local HTTP server. On `arc42 serve`, it builds
+the workspace payload via the core library, exposes it at `/api/workspace`, and serves
+the web renderer's static assets. The web renderer is a build-time dependency of the
+CLI — its compiled assets are bundled into the CLI distribution.
+
+```arc42
+:::interface
+id: if-cli-web
+title: CLI → Web Renderer
+between: bb-cli, bb-web-renderer
+protocol: HTTP (localhost) — static assets + JSON API
+:::
+```
+
+## Web Renderer → Core Interface
+
+The web renderer fetches the workspace payload from the core library via the CLI's HTTP
+API endpoint (`/api/workspace`). In the static export case the payload is a JSON file
+generated at build time by the core library. Either way the web renderer only consumes
+the serialised `WorkspacePayload` type — it has no direct dependency on the core library
+code itself.
+
+```arc42
+:::interface
+id: if-web-core
+title: Web Renderer → Core
+between: bb-web-renderer, bb-core
+protocol: HTTP JSON (serve) or static JSON file (export)
 :::
 ```
