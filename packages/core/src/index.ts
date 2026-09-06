@@ -34,6 +34,7 @@ export type {
   GlossaryTerm,
   Workspace,
   ParseError,
+  IgnoreDirective,
   SourceLocation,
 } from "./model/types.ts";
 
@@ -49,6 +50,11 @@ export type {
   GenericDiagramNode,
   SequenceDiagramNode,
   DeploymentDiagramNode,
+  IgnoreNode,
+  BareMermaidNode,
+  HeadingNode,
+  ProseNode,
+  BlockNode,
 } from "./ast.ts";
 
 // Rule registry

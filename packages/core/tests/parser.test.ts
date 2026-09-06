@@ -1,6 +1,6 @@
 import { expect, test, describe } from "vite-plus/test";
 import { parseMarkdown } from "../src/parser/markdown-parser.ts";
-import type { BlockNode, HeadingNode, ProseNode } from "../src/ast.ts";
+import type { BlockNode, HeadingNode, ProseNode, IgnoreNode } from "../src/ast.ts";
 
 // Helpers
 function blocks(md: string) {
@@ -13,6 +13,11 @@ function headings(md: string) {
 }
 function prose(md: string) {
   return parseMarkdown("test.arc42.md", md).nodes.filter((n): n is ProseNode => n.kind === "prose");
+}
+function ignores(md: string) {
+  return parseMarkdown("test.arc42.md", md).nodes.filter(
+    (n): n is IgnoreNode => n.kind === "ignore",
+  );
 }
 
 describe("parser — basic structure", () => {
@@ -183,5 +188,71 @@ describe("parser — arc42 fence handling", () => {
     const md = `:::diagram\nid: d-1\nscenario: s-1\nnotation: mermaid-sequence\n:::\n\`\`\`mermaid\nsequenceDiagram\n  A->>B: hi\n\`\`\``;
     const diagrams = parseMarkdown("test.arc42.md", md).nodes.filter((n) => n.kind === "diagram");
     expect(diagrams).toHaveLength(1);
+  });
+});
+
+describe("parser — ignore directive handling", () => {
+  test("valid inline ignore directive inside arc42 fence is parsed", () => {
+    const md = `\`\`\`arc42\n:::ignore E005 Missing priority\n:::\n\`\`\``;
+    const result = ignores(md);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.ruleCode).toBe("E005");
+    expect(result[0]!.reason).toBe("Missing priority");
+    expect(result[0]!.startLine).toBe(2);
+    expect(result[0]!.endLine).toBe(3);
+  });
+
+  test("trimmed reason is captured correctly", () => {
+    const md = `\`\`\`arc42\n:::ignore   E002   this is a reason   \n:::\n\`\`\``;
+    const result = ignores(md);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.ruleCode).toBe("E002");
+    expect(result[0]!.reason).toBe("this is a reason");
+  });
+
+  test("bare directive (no rule code) produces inert ignore node", () => {
+    const md = `\`\`\`arc42\n:::ignore\n:::\n\`\`\``;
+    const result = ignores(md);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.ruleCode).toBe("");
+    expect(result[0]!.reason).toBeUndefined();
+  });
+
+  test("multiple ignore directives are all parsed", () => {
+    const md = `\`\`\`arc42\n:::ignore E001 reason1\n:::\n:::ignore E002 reason2\n:::\n\`\`\``;
+    const result = ignores(md);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.ruleCode).toBe("E001");
+    expect(result[1]!.ruleCode).toBe("E002");
+  });
+
+  test("ignore directive outside arc42 fence is NOT parsed as ignore node", () => {
+    const md = `:::ignore E005 reason\n:::\n:::building-block\nid: bb-1\ntitle: X\n:::`;
+    const result = ignores(md);
+    expect(result).toHaveLength(0);
+    // The directive line should appear as prose instead
+    const proseNodes = prose(md);
+    expect(proseNodes.some((p) => p.text.includes(":::ignore"))).toBe(true);
+  });
+
+  test("line numbers are correct for ignore directive", () => {
+    const md = `line1\n\`\`\`arc42\n:::ignore E005 reason\n:::\n\`\`\``;
+    const result = ignores(md);
+    expect(result[0]!.startLine).toBe(3);
+    expect(result[0]!.endLine).toBe(4);
+  });
+
+  test("block inside arc42 fence has inArc42Fence=true", () => {
+    const md = `\`\`\`arc42\n:::building-block\nid: bb-1\ntitle: X\n:::\n\`\`\``;
+    const result = blocks(md);
+    expect(result[0]!.inArc42Fence).toBe(true);
+  });
+
+  test("unknown block type after ignore directive is still handled", () => {
+    const md = `\`\`\`arc42\n:::ignore E005 reason\n:::\n:::unknown-block\nid: x\n:::\n\`\`\``;
+    const blocksResult = blocks(md);
+    expect(blocksResult).toHaveLength(1);
+    expect(blocksResult[0]!.blockType).toBe("unknown-block");
+    expect(blocksResult[0]!.inArc42Fence).toBe(true);
   });
 });

@@ -155,6 +155,7 @@ async function runDiff(dir: string, args: string[]) {
     options: {
       staged: { type: "boolean" },
       cached: { type: "boolean" },
+      strict: { type: "boolean", default: false },
     },
   });
   if (positionals.length > 1) {
@@ -192,7 +193,9 @@ async function runDiff(dir: string, args: string[]) {
         `To accept these findings, set ARC42_CONSISTENT=${diff.base} and rerun the command.`,
       );
     }
-    process.exit(result.hasBlockingFindings && !accepted ? 1 : 0);
+    const hasStrictFindings =
+      Boolean(values.strict) && findings.some((finding) => finding.severity === "hint");
+    process.exit((result.hasBlockingFindings && !accepted) || hasStrictFindings ? 1 : 0);
   } catch (err) {
     console.error(`Error: ${String(err)}`);
     process.exit(1);
@@ -209,11 +212,13 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
     options: {
       format: { type: "string", default: "text" },
       quiet: { type: "boolean", default: false },
+      strict: { type: "boolean", default: false },
     },
   });
 
   const format = values["format"] as string;
   const quiet = values["quiet"] as boolean;
+  const strict = values["strict"] as boolean;
 
   try {
     const result = await validateWorkspace({ dir, root });
@@ -237,7 +242,8 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
       }
     }
 
-    process.exit(result.valid ? 0 : 1);
+    const hasHints = result.diagnostics.some((d) => d.severity === "hint");
+    process.exit(!result.valid || (strict && hasHints) ? 1 : 0);
   } catch (err) {
     console.error(`Error: ${String(err)}`);
     process.exit(1);

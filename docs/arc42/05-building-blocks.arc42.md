@@ -34,6 +34,7 @@ title: Markdown Parser
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+path: packages/core/src/parser
 :::
 ```
 

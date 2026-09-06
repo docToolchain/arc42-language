@@ -81,9 +81,26 @@ export interface BareMermaidNode {
   endLine: number;
 }
 
+/** Ignore directive: `:::ignore RULE [reason] :::` inside an ```arc42 fence.
+ * This is a parser-level node that is consumed by the builder and validator.
+ */
+export interface IgnoreNode {
+  kind: "ignore";
+  ruleCode: string;
+  reason?: string;
+  startLine: number;
+  endLine: number;
+}
+
 export type DiagramNode = GenericDiagramNode | SequenceDiagramNode | DeploymentDiagramNode;
 
-export type AstNode = HeadingNode | ProseNode | BlockNode | DiagramNode | BareMermaidNode;
+export type AstNode =
+  | HeadingNode
+  | ProseNode
+  | BlockNode
+  | DiagramNode
+  | BareMermaidNode
+  | IgnoreNode;
 
 export interface DocumentAst {
   filePath: string;

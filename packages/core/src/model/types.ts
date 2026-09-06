@@ -253,10 +253,21 @@ export interface ParseError {
   line: number;
 }
 
+export interface IgnoreDirective {
+  ruleCode: string;
+  reason?: string;
+  file: string;
+  line: number;
+  /** True if at least one diagnostic with matching code and file was suppressed */
+  used: boolean;
+}
+
 export interface Workspace {
   elements: Element[];
   parseErrors: ParseError[];
   /** Raw parsed documents — used by structure-aware validation rules (W004, W005) */
   documents: DocumentAst[];
   diagrams: DiagramArtifact[];
+  /** Document-scoped ignore directives extracted by the builder */
+  ignoreDirectives?: IgnoreDirective[];
 }
