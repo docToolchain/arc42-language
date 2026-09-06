@@ -212,12 +212,14 @@ export class MarkdownGetRenderer implements GetRenderer {
     if (el.technology) f.push(`technology: ${el.technology}`);
     if (el.parent) f.push(`parent: ${el.parent}`);
     if (el.implements.length > 0) f.push(`implements: ${el.implements.join(", ")}`);
+    if (el.path) f.push(`path: ${el.path}`);
     return f;
   }
 
   private interfaceFields(el: Interface): string[] {
     const f: string[] = [`between: ${el.between[0]} ↔ ${el.between[1]}`];
     if (el.protocol) f.push(`protocol: ${el.protocol}`);
+    if (el.path) f.push(`path: ${el.path}`);
     return f;
   }
 

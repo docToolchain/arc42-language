@@ -16,6 +16,7 @@ import { e007MultipleSolutionStrategies } from "./e007-multiple-solution-strateg
 import { e008DiagramValidation } from "./e008-diagram-validation.ts";
 import { e009DeploymentNodeCycle } from "./e009-deployment-node-cycle.ts";
 import { e010DeploymentDiagramValidation } from "./e010-deployment-diagram-validation.ts";
+import { e011UnresolvedImplementationPath } from "./e011-unresolved-implementation-path.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
@@ -45,6 +46,8 @@ import { h010QualityGoalUnaddressedBySolutionStrategy } from "./h010-quality-goa
 import { h011InterfaceNotCoveredByRuntimeScenario } from "./h011-interface-not-covered-by-runtime-scenario.ts";
 import { h012EmptyDeploymentNode } from "./h012-empty-deployment-node.ts";
 import { h013QualityGoalNoScenario } from "./h013-quality-goal-no-scenario.ts";
+import { h014MissingImplementationPath } from "./h014-missing-implementation-path.ts";
+import { w018ImplementationPathOverlap } from "./w018-implementation-path-overlap.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -58,6 +61,7 @@ export const builtinRules: readonly Rule[] = [
   e008DiagramValidation, // Chapter 6
   e009DeploymentNodeCycle, // Chapter 7
   e010DeploymentDiagramValidation, // Chapter 7
+  e011UnresolvedImplementationPath, // Chapter 5
 
   // Warnings — inconsistencies
   w001ConceptNotImplemented, // Chapter 8
@@ -76,6 +80,7 @@ export const builtinRules: readonly Rule[] = [
   w015MissingChapterHeading, // All chapters
   w016BlockNotInArc42Fence, // All chapters
   w017BareMermaidBlock, // All chapters (bare mermaid fences)
+  w018ImplementationPathOverlap, // Chapter 5
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9
@@ -91,6 +96,7 @@ export const builtinRules: readonly Rule[] = [
   h011InterfaceNotCoveredByRuntimeScenario, // Chapter 6
   h012EmptyDeploymentNode, // Chapter 7
   h013QualityGoalNoScenario, // Chapter 10
+  h014MissingImplementationPath, // Chapter 5
 ];
 
 /** All rules indexed by code for O(1) lookup */

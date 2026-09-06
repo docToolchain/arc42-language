@@ -56,6 +56,7 @@ id: bb-catalog-service
 title: Catalog Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling
+path: packages/catalog-service
 :::
 ```
 ````
@@ -98,9 +99,12 @@ arc42 rules
 # JSON output for scripting and agent use
 arc42 --dir ./docs validate --format json
 arc42 --dir ./docs get --format json
+# Validate implementation links against an explicit repository root
+arc42 --dir ./docs --root . validate
 ````
 
 `--dir` defaults to `$ARC42_DIR` or the current directory.
+`path` is optional on `building-block` and `interface` blocks and points to a file or directory relative to the repository root. Missing paths are hints; paths that do not resolve are errors. Use `--root` to override automatic repository-root detection (Git root, then `--dir`, then the current directory).
 Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` = usage error.
 
 `arc42 init skill` writes the agent skill to `.agents/skills/arc42/SKILL.md` by default.

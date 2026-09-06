@@ -5,7 +5,9 @@ export async function discoverFiles(dir: string): Promise<string[]> {
   const results: string[] = [];
 
   async function walk(current: string): Promise<void> {
-    const entries = await readdir(current, { withFileTypes: true });
+    const entries = (await readdir(current, { withFileTypes: true })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
     for (const entry of entries) {
       const full = join(current, entry.name);
       if (entry.isDirectory()) {

@@ -196,6 +196,10 @@ export const BuildingBlockSchema = z
       .string()
       .optional()
       .meta({ description: "ID of the parent building-block (for decomposition hierarchy)" }),
+    path: z
+      .string()
+      .optional()
+      .meta({ description: "Path to the implementation file or directory" }),
     implements: splitListSchema.meta({
       description: "Comma-separated concept IDs this block implements",
     }),
@@ -227,6 +231,10 @@ export const InterfaceSchema = z
       .string()
       .optional()
       .meta({ description: "Communication protocol (e.g. REST, gRPC, AMQP)" }),
+    path: z
+      .string()
+      .optional()
+      .meta({ description: "Path to the implementation file or directory" }),
   })
   .superRefine((data, ctx) => {
     if (data.between.length !== 2) {

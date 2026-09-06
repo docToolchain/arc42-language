@@ -14,6 +14,11 @@ export interface Diagnostic {
   line: number;
 }
 
+export interface ValidationOptions {
+  dir: string;
+  root?: string;
+}
+
 /** Which arc42 chapter this rule primarily relates to.
  * 0 = cross-cutting (applies to all chapters / document structure)
  */
@@ -59,5 +64,5 @@ export interface RuleMeta {
 export interface Rule {
   meta: RuleMeta;
   /** Run this rule against the fully-built workspace + index */
-  check(workspace: Workspace, index: ReferenceIndex): Diagnostic[];
+  check(workspace: Workspace, index: ReferenceIndex, options?: ValidationOptions): Diagnostic[];
 }

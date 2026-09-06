@@ -163,10 +163,12 @@ function renderFields(el: Element): React.ReactNode {
       if (el.technology) fields.push(["technology", el.technology]);
       if (el.parent) fields.push(["parent", el.parent]);
       if (el.implements.length) fields.push(["implements", el.implements.join(", ")]);
+      if (el.path) fields.push(["path", el.path]);
       break;
     case "interface":
       fields.push(["between", el.between.join(" ↔ ")]);
       if (el.protocol) fields.push(["protocol", el.protocol]);
+      if (el.path) fields.push(["path", el.path]);
       break;
     case "runtime-scenario":
       if (el.involves.length) fields.push(["involves", el.involves.join(", ")]);

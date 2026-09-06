@@ -122,6 +122,7 @@ export interface BuildingBlock {
   title: string;
   technology?: string;
   parent?: string;
+  path?: string;
   implements: string[];
   loc: SourceLocation;
 }
@@ -132,6 +133,7 @@ export interface Interface {
   title: string;
   between: [string, string];
   protocol?: string;
+  path?: string;
   loc: SourceLocation;
 }
 

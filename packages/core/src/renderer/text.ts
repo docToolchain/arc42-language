@@ -157,6 +157,7 @@ export class TextGetRenderer implements GetRenderer {
     if (el.parent) {
       lines.push(`    parent: ${el.parent}`);
     }
+    if (el.path) lines.push(`    path: ${el.path}`);
 
     return lines.join("\n");
   }
@@ -170,6 +171,7 @@ export class TextGetRenderer implements GetRenderer {
     }
     lines.push(line);
     lines.push(`    between: ${el.between[0]} ↔ ${el.between[1]}`);
+    if (el.path) lines.push(`    path: ${el.path}`);
 
     return lines.join("\n");
   }
@@ -269,10 +271,12 @@ export class TextGetRenderer implements GetRenderer {
         if (el.technology) lines.push(`  technology: ${el.technology}`);
         if (el.parent) lines.push(`  parent: ${el.parent}`);
         if (el.implements.length > 0) lines.push(`  implements: ${el.implements.join(", ")}`);
+        if (el.path) lines.push(`  path: ${el.path}`);
         break;
       case "interface":
         if (el.protocol) lines.push(`  protocol: ${el.protocol}`);
         lines.push(`  between: ${el.between[0]} ↔ ${el.between[1]}`);
+        if (el.path) lines.push(`  path: ${el.path}`);
         break;
       case "runtime-scenario":
         if (el.trigger) lines.push(`  trigger: ${el.trigger}`);

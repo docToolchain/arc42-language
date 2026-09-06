@@ -94,6 +94,7 @@ async function main() {
     args: argv,
     options: {
       dir: { type: "string" },
+      root: { type: "string" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "v" },
     },
@@ -109,6 +110,7 @@ async function main() {
   const command = positionals[0];
   const commandArgs = argv.slice(argv.indexOf(command ?? "") + (command ? 1 : 0));
   const dir = resolveDir(globalValues["dir"] as string | undefined);
+  const root = globalValues["root"] as string | undefined;
 
   if (!command || globalValues["help"]) {
     printHelp();
@@ -116,7 +118,7 @@ async function main() {
   }
 
   if (command === "validate") {
-    await runValidate(dir, commandArgs);
+    await runValidate(dir, root, commandArgs);
   } else if (command === "get") {
     await runGet(dir, commandArgs);
   } else if (command === "rules") {
@@ -138,7 +140,7 @@ function printHelp() {
   console.log(`arc42 — validate and query arc42 DSL files
 
 Usage:
-  arc42 [--dir <path>] validate [--format json|text] [--quiet]
+  arc42 [--dir <path>] [--root <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text|markdown]
   arc42 [--dir <path>] serve [--port <n>] [--open]
   arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
@@ -148,6 +150,7 @@ Usage:
 
 Global options:
   --dir <path>   Workspace root (default: $ARC42_DIR or cwd)
+  --root <path>  Repository root for implementation paths (default: auto-detected)
   -h, --help     Show this help
   -v, --version  Show version
 
@@ -164,7 +167,7 @@ Tip: arc42 get --format markdown | glow -
 // validate
 // ---------------------------------------------------------------------------
 
-async function runValidate(dir: string, args: string[]) {
+async function runValidate(dir: string, root: string | undefined, args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
@@ -177,7 +180,7 @@ async function runValidate(dir: string, args: string[]) {
   const quiet = values["quiet"] as boolean;
 
   try {
-    const result = await validateWorkspace({ dir });
+    const result = await validateWorkspace({ dir, root });
 
     if (format === "json") {
       console.log(JSON.stringify(result, null, 2));
