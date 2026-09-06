@@ -62,6 +62,7 @@ id: if-architect-cli
 title: Architect → CLI
 between: actor-architect, bb-cli
 protocol: Terminal (stdin/stdout)
+path: packages/cli/src/cli.ts
 :::
 ```
 
@@ -77,6 +78,7 @@ id: if-agent-cli
 title: AI Agent → CLI (via Bash tool)
 between: actor-agent, bb-cli
 protocol: Bash tool call (arc42 commands)
+path: packages/cli/src/cli.ts
 :::
 ```
 
@@ -93,6 +95,7 @@ id: if-agent-skill
 title: AI Agent → Skill
 between: actor-agent, bb-skill
 protocol: SKILL.md loaded at agent startup
+path: packages/skill/SKILL.md
 :::
 ```
 
@@ -107,6 +110,7 @@ id: if-ci-cli
 title: CI Pipeline → CLI
 between: actor-ci, bb-cli
 protocol: Shell command / exit code
+path: packages/cli/src/cli.ts
 :::
 ```
 
@@ -122,6 +126,7 @@ id: if-architect-workspace
 title: Architect → Documentation Workspace
 between: actor-architect, bb-workspace
 protocol: Plain text / Markdown editor
+path: docs/arc42
 :::
 ```
 
@@ -137,6 +142,7 @@ id: if-agent-workspace
 title: AI Agent → Documentation Workspace
 between: actor-agent, bb-workspace
 protocol: File Read/Write tools
+path: docs/arc42
 :::
 ```
 
@@ -169,6 +175,7 @@ id: if-reader-web
 title: Reader → Web UI
 between: actor-reader, bb-web-renderer
 protocol: HTTP / browser
+path: packages/web/src/App.tsx
 :::
 ```
 
@@ -186,5 +193,6 @@ id: if-architect-serve
 title: Architect → serve
 between: actor-architect, bb-cli
 protocol: Terminal (arc42 serve) → HTTP browser session
+path: packages/cli/src/cli.ts
 :::
 ```
