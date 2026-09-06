@@ -84,6 +84,28 @@ arc42 init skill
 # Validate the workspace — fix all errors before committing
 arc42 --dir ./docs validate
 
+# Review unstaged working-tree changes against the index
+arc42 diff
+
+# Review working-tree changes against a specific base commit
+arc42 diff origin/main
+
+# Explicitly review the index, equivalent to git diff --cached
+arc42 diff --staged
+
+# The --cached alias and reference form match Git as well
+arc42 diff --cached origin/main
+
+# Show all diff modes, options, and pre-commit guidance
+arc42 diff --help
+
+# The command reports findings with file and line references; use Git directly
+# when the surrounding diff is needed.
+
+# A failed consistency check prints the exact base SHA needed for acceptance.
+# For a pre-commit check, review the index with --staged:
+# ARC42_CONSISTENT=<base-sha> arc42 diff --staged
+
 # Browse all elements grouped by arc42 chapter
 arc42 --dir ./docs get
 

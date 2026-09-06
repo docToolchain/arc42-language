@@ -23,8 +23,11 @@ import {
   explainElement,
   formatExplainText,
   formatExplainListText,
+  analyzeArchitectureDiff,
+  parseArchitectureDocument,
 } from "@arc42/core";
 import type { BlockType, Diagnostic } from "@arc42/core";
+import { collectGitDiff } from "./git-diff.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -129,6 +132,8 @@ async function main() {
     runInit(commandArgs);
   } else if (command === "serve") {
     await runServe(dir, commandArgs);
+  } else if (command === "diff") {
+    await runDiff(dir, commandArgs);
   } else {
     console.error(`Unknown command: ${command}`);
     printHelp();
@@ -143,6 +148,7 @@ Usage:
   arc42 [--dir <path>] [--root <path>] validate [--format json|text] [--quiet]
   arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text|markdown]
   arc42 [--dir <path>] serve [--port <n>] [--open]
+  arc42 [--dir <path>] diff [--staged|--cached] [<reference>]
   arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
   arc42 explain [<blocktype>] [--format json|text]
   arc42 init skill [--path <dest>]
@@ -161,6 +167,95 @@ Environment:
 
 Tip: arc42 get --format markdown | glow -
 `);
+}
+
+function printDiffHelp() {
+  console.log(`arc42 diff — report architecture changes
+
+Usage:
+  arc42 [--dir <path>] diff [<reference>]
+  arc42 [--dir <path>] diff --staged [<reference>]
+  arc42 [--dir <path>] diff --cached [<reference>]
+
+Change sets (matching Git):
+  no flag              Working tree vs index (git diff)
+  <reference>          Working tree vs reference (git diff <reference>)
+  --staged, --cached   Index vs HEAD (git diff --cached)
+  --staged <reference> Index vs reference (git diff --cached <reference>)
+
+Options:
+  --staged, --cached   Compare staged/index contents instead of the working tree
+  <reference>          Git revision such as HEAD, main, or origin/main
+  -h, --help           Show this help
+
+The command reports consistency warnings and non-blocking implementation-path
+hints with file and line references. Consistency warnings fail by default.
+To accept a failed result after review, set ARC42_CONSISTENT to the displayed
+base commit SHA, for example:
+
+  ARC42_CONSISTENT=<base-sha> arc42 diff --staged
+
+For pre-commit checks, --staged/--cached is usually the appropriate mode.
+`);
+}
+
+// ---------------------------------------------------------------------------
+// validate
+// ---------------------------------------------------------------------------
+
+async function runDiff(dir: string, args: string[]) {
+  if (args.includes("--help") || args.includes("-h")) {
+    printDiffHelp();
+    process.exit(0);
+  }
+  const { positionals, values } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      staged: { type: "boolean" },
+      cached: { type: "boolean" },
+    },
+  });
+  if (positionals.length > 1) {
+    console.error("Usage: arc42 diff [<reference>]");
+    process.exit(2);
+  }
+
+  try {
+    const diff = collectGitDiff(dir, positionals[0], Boolean(values.staged || values.cached));
+    const current = [...diff.currentDocuments.entries()].map(([file, content]) =>
+      parseArchitectureDocument(file, content),
+    );
+    const base = [...diff.baseDocuments.entries()].map(([file, content]) =>
+      parseArchitectureDocument(file, content),
+    );
+    const result = analyzeArchitectureDiff({
+      changes: diff.changes,
+      current,
+      base,
+      knownPaths: diff.knownPaths,
+    });
+    const findings = [...result.consistencyFindings, ...result.pathFindings].sort(
+      (a, b) =>
+        Number(b.severity === "warning") - Number(a.severity === "warning") ||
+        a.file.localeCompare(b.file) ||
+        a.line - b.line ||
+        a.kind.localeCompare(b.kind),
+    );
+    for (const finding of findings) {
+      console.log(`${finding.severity} ${finding.file}:${finding.line}  ${finding.message}`);
+    }
+    const accepted = process.env["ARC42_CONSISTENT"] === diff.base;
+    if (result.hasBlockingFindings && !accepted) {
+      console.error(
+        `To accept these findings, set ARC42_CONSISTENT=${diff.base} and rerun the command.`,
+      );
+    }
+    process.exit(result.hasBlockingFindings && !accepted ? 1 : 0);
+  } catch (err) {
+    console.error(`Error: ${String(err)}`);
+    process.exit(1);
+  }
 }
 
 // ---------------------------------------------------------------------------

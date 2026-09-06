@@ -1,6 +1,7 @@
 # Solution Strategy
 
-The architecture is organized around one human-readable, agent-writable documentation pipeline:
+The architecture is organized around one human-readable, agent-writable documentation pipeline with
+change-aware review:
 Markdown prose carries the architectural narrative, typed blocks capture the facts that need
 verification, and a shared core turns those facts into diagnostics and queries. The strategy is
 deliberately small and composable so the same model serves authors, agents, CI, and future editor
@@ -9,7 +10,7 @@ integrations.
 ```arc42
 :::solution-strategy
 id: strategy-arc42-language
-title: Human-readable, verifiable architecture documentation
+title: Human-readable, verifiable, change-aware architecture documentation
 addresses: qg-readability, qg-agent-writability, qg-verifiability, qg-extensibility, qg-cli-usability
 :::
 ```
