@@ -48,6 +48,7 @@ core API suitable for future web visualization.
 - Implementation-path findings are advisory file-level hints: they list affected repository files but do not include their full code diff. Only consistency findings contribute filtered diff hunks to the output.
 - Consistency errors and implementation-path hints are both reported as concise findings; no Git patch hunks are printed by default.
 - The CLI does not print Git patch hunks by default; findings retain file and line references, and authors can use Git directly when surrounding context is needed.
+- Follow-up issue #44 keeps the root help focused on command purposes and moves command syntax, options, defaults, environment variables, and exit behavior into consistent subcommand help.
 
 ## Notes
 - Issue #36 is open and requests: use `git diff` to detect changes, analyze affected AST nodes, and check whether blocks and prose are both modified; web diff visualization is a follow-up concern.

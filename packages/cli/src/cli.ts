@@ -25,9 +25,11 @@ import {
   formatExplainListText,
   analyzeArchitectureDiff,
   parseArchitectureDocument,
+  ELEMENT_KIND_ORDER,
 } from "@arc42/core";
 import type { BlockType, Diagnostic } from "@arc42/core";
 import { collectGitDiff } from "./git-diff.ts";
+import { commandHelp, rootHelp } from "./help.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -37,24 +39,11 @@ const { version: VERSION } = JSON.parse(
   readFileSync(join(__dirname, "../package.json"), "utf8"),
 ) as { version: string };
 
-const BLOCK_TYPES: BlockType[] = [
-  "quality-goal",
-  "quality-scenario",
-  "constraint",
-  "actor",
-  "solution-strategy",
-  "building-block",
-  "interface",
-  "concept",
-  "decision",
-  "risk",
-  "glossary-term",
-  "runtime-scenario",
-  "deployment-node",
-];
+// Canonical block-type list derived from core — single source of truth
+const BLOCK_TYPES: readonly BlockType[] = ELEMENT_KIND_ORDER;
 
 function isBlockType(s: string): s is BlockType {
-  return (BLOCK_TYPES as string[]).includes(s);
+  return (BLOCK_TYPES as readonly string[]).includes(s);
 }
 
 const CHAPTER_NAMES: Record<number, string> = {
@@ -112,11 +101,17 @@ async function main() {
 
   const command = positionals[0];
   const commandArgs = argv.slice(argv.indexOf(command ?? "") + (command ? 1 : 0));
+
+  if (!command) {
+    console.log(rootHelp());
+    process.exit(0);
+  }
+
   const dir = resolveDir(globalValues["dir"] as string | undefined);
   const root = globalValues["root"] as string | undefined;
 
-  if (!command || globalValues["help"]) {
-    printHelp();
+  if (globalValues["help"] && commandHelp(command, commandArgs[0], BLOCK_TYPES)) {
+    console.log(commandHelp(command, commandArgs[0], BLOCK_TYPES));
     process.exit(0);
   }
 
@@ -136,67 +131,13 @@ async function main() {
     await runDiff(dir, commandArgs);
   } else {
     console.error(`Unknown command: ${command}`);
-    printHelp();
+    console.log(rootHelp());
     process.exit(2);
   }
 }
 
-function printHelp() {
-  console.log(`arc42 — validate and query arc42 DSL files
-
-Usage:
-  arc42 [--dir <path>] [--root <path>] validate [--format json|text] [--quiet]
-  arc42 [--dir <path>] get [<id>] [--type <type>] [--format json|text|markdown]
-  arc42 [--dir <path>] serve [--port <n>] [--open]
-  arc42 [--dir <path>] diff [--staged|--cached] [<reference>]
-  arc42 [--dir <path>] rules [--chapter <0|1|2|3|4|5|6|7|8|9|10|11|12>] [--format json|text]
-  arc42 explain [<blocktype>] [--format json|text]
-  arc42 init skill [--path <dest>]
-  arc42 init template [--dir <path>]
-
-Global options:
-  --dir <path>   Workspace root (default: $ARC42_DIR or cwd)
-  --root <path>  Repository root for implementation paths (default: auto-detected)
-  -h, --help     Show this help
-  -v, --version  Show version
-
-Block types: ${BLOCK_TYPES.join(", ")}
-
-Environment:
-  ARC42_DIR      Default workspace directory
-
-Tip: arc42 get --format markdown | glow -
-`);
-}
-
 function printDiffHelp() {
-  console.log(`arc42 diff — report architecture changes
-
-Usage:
-  arc42 [--dir <path>] diff [<reference>]
-  arc42 [--dir <path>] diff --staged [<reference>]
-  arc42 [--dir <path>] diff --cached [<reference>]
-
-Change sets (matching Git):
-  no flag              Working tree vs index (git diff)
-  <reference>          Working tree vs reference (git diff <reference>)
-  --staged, --cached   Index vs HEAD (git diff --cached)
-  --staged <reference> Index vs reference (git diff --cached <reference>)
-
-Options:
-  --staged, --cached   Compare staged/index contents instead of the working tree
-  <reference>          Git revision such as HEAD, main, or origin/main
-  -h, --help           Show this help
-
-The command reports consistency warnings and non-blocking implementation-path
-hints with file and line references. Consistency warnings fail by default.
-To accept a failed result after review, set ARC42_CONSISTENT to the displayed
-base commit SHA, for example:
-
-  ARC42_CONSISTENT=<base-sha> arc42 diff --staged
-
-For pre-commit checks, --staged/--cached is usually the appropriate mode.
-`);
+  console.log(commandHelp("diff", undefined, BLOCK_TYPES));
 }
 
 // ---------------------------------------------------------------------------
@@ -655,6 +596,7 @@ async function runServe(dir: string, args: string[]) {
 }
 
 main().catch((err) => {
-  console.error(err);
-  process.exit(1);
+  console.error(err instanceof Error ? err.message : String(err));
+  const code = (err as { code?: string } | null)?.code;
+  process.exit(code?.startsWith("ERR_PARSE_ARGS_") ? 2 : 1);
 });

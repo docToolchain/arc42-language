@@ -49,10 +49,22 @@ arc42 rules
 # JSON output for scripting and agent use
 arc42 --dir ./docs validate --format json
 arc42 --dir ./docs get --format json
+
+# Discover commands and their purpose
+arc42 --help
+
+# Read command-specific usage, options, defaults, and exit behavior
+arc42 validate --help
+arc42 --help diff
+
+# Review architecture changes
+arc42 diff --staged
 ```
 
 `--dir` defaults to `$ARC42_DIR` or the current directory.
 Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` = usage error.
+Use `arc42 --help` for the command-purpose overview. Help can also precede a command,
+such as `arc42 --help validate`.
 
 ## `arc42 init`
 

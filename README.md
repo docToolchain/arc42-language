@@ -81,6 +81,13 @@ arc42 init template --dir ./docs
 # Install the arc42 agent skill (for opencode and compatible agents)
 arc42 init skill
 
+# Discover commands and their purpose
+arc42 --help
+
+# Read usage, options, defaults, and exit behavior for one command
+arc42 validate --help
+arc42 --help diff
+
 # Validate the workspace — fix all errors before committing
 arc42 --dir ./docs validate
 
@@ -128,6 +135,9 @@ arc42 --dir ./docs --root . validate
 `--dir` defaults to `$ARC42_DIR` or the current directory.
 `path` is optional on `building-block` and `interface` blocks and points to a file or directory relative to the repository root. Missing paths are hints; paths that do not resolve are errors. Use `--root` to override automatic repository-root detection (Git root, then `--dir`, then the current directory).
 Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` = usage error.
+Run `arc42 --help` for a command-purpose overview and `arc42 <command> --help` for
+command-specific usage. Help is also accepted before the command, for example
+`arc42 --help validate`.
 
 `arc42 init skill` writes the agent skill to `.agents/skills/arc42/SKILL.md` by default.
 Use `--path <dest>` to override the destination.
