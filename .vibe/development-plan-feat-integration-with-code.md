@@ -122,10 +122,16 @@ Add implementation-artifact paths to interfaces and building-blocks, and validat
 
 ## Commit
 ### Tasks
-- [ ] *To be added when this phase becomes active*
+- [x] Review changed code for development-only debug output, TODO/FIXME markers, and commented-out debugging code.
+- [x] Review README and arc42 documentation against the implemented path and `--root` behavior.
+- [x] Run final validation after cleanup and record the delivery commit.
 
 ### Completed
-*None yet*
+- [x] Cleanup scan found no development-only debug output or TODO/FIXME markers in the changed implementation. CLI and validation-script console calls are intentional user-facing output.
+- [x] README documents optional implementation paths, repository-root resolution, `--root`, and diagnostic severity behavior. No separate requirements, architecture, or design memory document exists; no additional long-term document update was required.
+- [x] Existing `docs/arc42` content remains valid; the CLI reports expected H014 hints for elements that intentionally have no implementation path, with zero errors and warnings.
+- [x] Final `pnpm check`, `pnpm test`, and `pnpm build` verification passed.
+- [x] WIP implementation commit created as `f625c6c` (`feat: link architecture elements to implementation paths`).
 
 
 
