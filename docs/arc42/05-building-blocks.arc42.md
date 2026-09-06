@@ -5,7 +5,8 @@ the core library owns all logic; the CLI and skill are thin consumers of it.
 
 ## Core Library
 
-The heart of the system. Implements the full pipeline from file discovery to validation output.
+The heart of the system. Implements the full pipeline from file discovery to validation output and
+provides the pure, Git-independent architecture-diff analysis used by the CLI.
 Has no runtime dependencies beyond Node.js built-ins. All other packages import from here.
 The pipeline is: discover files → parse Markdown → build element model → index references → validate.
 
@@ -15,6 +16,7 @@ id: bb-core
 title: Core Library
 technology: TypeScript / Node.js
 implements: concept-pipeline, concept-rule-registry
+path: packages/core
 :::
 ```
 
@@ -106,16 +108,18 @@ implements: concept-rule-registry
 
 A thin entry point over the core library. Parses arguments with Node.js `util.parseArgs`
 (no third-party parser), resolves the workspace directory (`--dir` flag → `$ARC42_DIR` → cwd),
-and delegates to `validateWorkspace` or `getElements` from core. Implements four commands:
-`validate`, `get`, `rules`, `serve`. At build time, the CLI copies the compiled `@arc42/web`
+and delegates workspace operations to core. Implements five commands: `validate`, `get`, `rules`,
+`diff`, and `serve`; `diff` acquires staged Git changes and renders consistency findings and
+implementation-path review hints. At build time, the CLI copies the compiled `@arc42/web`
 SPA assets into its own `dist/web/` directory so they can be served statically.
 
 ```arc42
 :::building-block
 id: bb-cli
-title: CLI
+title: CLI with architecture diff
 technology: TypeScript / Node.js
 implements: concept-pipeline
+path: packages/cli
 :::
 ```
 

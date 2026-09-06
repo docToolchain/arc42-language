@@ -8,6 +8,7 @@ import { ELEMENT_KIND_ORDER } from "./model/types.ts";
 import type { Diagnostic } from "./validator/types.ts";
 import type { Element } from "./model/types.ts";
 import type { ReferenceIndex } from "./resolver/types.ts";
+import type { DocumentAst } from "./ast.ts";
 import type {
   GetQuery,
   GetResult,
@@ -32,6 +33,10 @@ export interface ValidateResult {
 export interface GetOptions {
   dir: string;
   query: GetQuery;
+}
+
+export function parseArchitectureDocument(filePath: string, content: string): DocumentAst {
+  return new MarkdownParser().parse(filePath, content);
 }
 
 async function runPipeline(dir: string) {

@@ -1,7 +1,14 @@
 // Core barrel export
-export { validateWorkspace, getElements, loadWorkspace } from "./arc42.ts";
+export {
+  validateWorkspace,
+  getElements,
+  loadWorkspace,
+  parseArchitectureDocument,
+} from "./arc42.ts";
+export { analyzeArchitectureDiff } from "./diff.ts";
 
 export type { ValidateOptions, ValidateResult, GetOptions } from "./arc42.ts";
+export type { AnalyzeDiffOptions, DiffFinding, DiffResult, FileChange, LineRange } from "./diff.ts";
 
 export type { Diagnostic, Severity } from "./validator/types.ts";
 
