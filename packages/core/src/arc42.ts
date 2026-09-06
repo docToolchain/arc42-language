@@ -20,6 +20,7 @@ import type {
 
 export interface ValidateOptions {
   dir: string;
+  root?: string;
 }
 
 export interface ValidateResult {
@@ -49,7 +50,7 @@ async function runPipeline(dir: string) {
 
 export async function validateWorkspace(opts: ValidateOptions): Promise<ValidateResult> {
   const { workspace, index } = await runPipeline(opts.dir);
-  const diagnostics = validate(workspace, index);
+  const diagnostics = validate(workspace, index, { dir: opts.dir, root: opts.root });
   const valid = !diagnostics.some((d) => d.severity === "error");
   return { version: 1, valid, diagnostics };
 }

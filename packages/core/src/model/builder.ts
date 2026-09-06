@@ -211,7 +211,9 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
       // as absent (the DSL parser emits "" for `key:` with no value).
       const normalisedAttrs: Record<string, string | undefined> = {};
       for (const [k, v] of Object.entries(attributes)) {
-        normalisedAttrs[k] = v === "" || v.trim() === "" ? undefined : v;
+        // Preserve an explicitly authored empty path so it is reported as an
+        // unresolved link, rather than being mistaken for an omitted field.
+        normalisedAttrs[k] = k === "path" ? v : v === "" || v.trim() === "" ? undefined : v;
       }
 
       const result = schema.safeParse(normalisedAttrs);
@@ -289,6 +291,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             title: data.title,
             technology: data.technology,
             parent: data.parent,
+            path: data.path,
             implements: data.implements,
             loc,
           };
@@ -302,6 +305,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             title: data.title,
             between: [data.between[0], data.between[1]],
             protocol: data.protocol,
+            path: data.path,
             loc,
           };
           elements.push(el);
