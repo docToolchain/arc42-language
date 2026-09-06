@@ -34,6 +34,9 @@ jobs:
       - name: Check
         run: pnpm run check
 
+      - name: Validate own arc42 docs
+        run: pnpm run validate:docs
+
       - name: Test
         run: pnpm test
 
