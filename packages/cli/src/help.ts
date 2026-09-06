@@ -45,6 +45,7 @@ Usage:
 Options:
   --format <text|json>  Output diagnostics as text or JSON (default: text)
   --quiet               Print only errors and omit the summary
+  --strict              Also exit 1 when hints are found
   -h, --help            Show this help
 
 The command reads *.arc42.md files from the workspace, validates the model, and exits 0
@@ -115,12 +116,13 @@ Arguments:
 
 Options:
   --staged, --cached    Compare the index with HEAD, or with <reference>
+  --strict              Also exit 1 when hint findings are found
   -h, --help            Show this help
 
 Without a flag, the command compares the working tree with the index. With <reference>,
 it compares the working tree with that revision. Consistency findings exit 1; set
-ARC42_CONSISTENT to the displayed base commit after reviewing them. Advisory path hints
-do not fail the command. Git, parsing, and other operational errors exit 1.
+ARC42_CONSISTENT to the displayed base commit after reviewing them. Advisory path hints do not
+fail the command unless --strict is supplied. Git, parsing, and other operational errors exit 1.
 
 Examples:
   arc42 diff                         # working tree versus index

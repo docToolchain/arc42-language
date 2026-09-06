@@ -57,7 +57,10 @@ function changed(ranges: LineRange[], start: number, end = start): boolean {
 function sections(document: DocumentAst): Section[] {
   const headings = document.nodes.filter((node): node is HeadingNode => node.kind === "heading");
   const startLine = (node: DocumentAst["nodes"][number]): number =>
-    node.kind === "block" || node.kind === "diagram" || node.kind === "bare-mermaid"
+    node.kind === "block" ||
+    node.kind === "diagram" ||
+    node.kind === "bare-mermaid" ||
+    node.kind === "ignore"
       ? node.startLine
       : node.line;
   return headings.map((heading, index) => {
@@ -67,6 +70,7 @@ function sections(document: DocumentAst): Section[] {
         node.kind !== "heading" &&
         node.kind !== "diagram" &&
         node.kind !== "bare-mermaid" &&
+        node.kind !== "ignore" &&
         startLine(node) >= heading.line &&
         (!nextHeading || startLine(node) < nextHeading.line),
     );

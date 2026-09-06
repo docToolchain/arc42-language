@@ -1,5 +1,11 @@
 import type { DocumentAst, AstNode, DiagramNode, BareMermaidNode } from "../ast.ts";
 
+interface IgnoreMetadata {
+  ruleCode: string;
+  reason?: string;
+  startLine: number;
+}
+
 interface DiagramMetadata {
   id: string;
   scenario?: string;
@@ -79,6 +85,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     startLine: number;
   } | null = null;
 
+  let pendingIgnore: IgnoreMetadata | null = null;
   let pendingDiagram: DiagramMetadata | null = null;
   let openDiagram: {
     metadata: DiagramMetadata;
@@ -153,6 +160,49 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       pendingDiagram = null;
     }
 
+    if (pendingIgnore) {
+      // Multi-line ignore directive: look for closing :::
+      if (/^:::\s*$/.test(line)) {
+        nodes.push({
+          kind: "ignore",
+          ruleCode: pendingIgnore.ruleCode,
+          reason: pendingIgnore.reason,
+          startLine: pendingIgnore.startLine,
+          endLine: lineNo,
+        });
+        pendingIgnore = null;
+        continue;
+      }
+      // Line contains rule code and/or reason - extract it
+      // The line should be: ruleCode [reason] (without the :::: prefix)
+      const contentMatch = /^([^:\s]+)(?:\s+(.*?))?\s*$/.exec(line);
+      if (contentMatch) {
+        // Verify it looks like a rule code (starts with letter/number, may contain dots)
+        if (/^[a-zA-Z0-9]+[a-zA-Z0-9-]*$/.test(contentMatch[1])) {
+          pendingIgnore.ruleCode = contentMatch[1]!;
+          pendingIgnore.reason = contentMatch[2] ? contentMatch[2].trim() : undefined;
+        } else {
+          // Not a valid rule code: retain an inert node rather than silently
+          // dropping the malformed source line.
+          nodes.push({
+            kind: "ignore",
+            ruleCode: "",
+            startLine: pendingIgnore.startLine,
+            endLine: pendingIgnore.startLine,
+          });
+          pendingIgnore = null;
+        }
+      } else {
+        nodes.push({
+          kind: "ignore",
+          ruleCode: "",
+          startLine: pendingIgnore.startLine,
+          endLine: pendingIgnore.startLine,
+        });
+        pendingIgnore = null;
+      }
+    }
+
     // arc42 fence: ```arc42 ... ``` wraps :::blocks for Markdown renderer compatibility.
     // Only recognised outside diagram states to avoid conflicting with the diagram source fence.
     if (!openDiagram && !pendingDiagram && !openBareMermaid) {
@@ -188,6 +238,16 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
             aliases: openBlock.attributes["aliases"] ?? "",
             startLine: openBlock.startLine,
           };
+        } else if (openBlock.blockType === "ignore") {
+          // Multi-line ignore directive (shouldn't happen with single-line syntax)
+          // Emit as ignore node with no content
+          nodes.push({
+            kind: "ignore",
+            ruleCode: "",
+            reason: undefined,
+            startLine: openBlock.startLine,
+            endLine: lineNo,
+          });
         } else {
           nodes.push({
             kind: "block",
@@ -209,6 +269,79 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       }
       // Other lines inside block are ignored (future prose extension)
       continue;
+    }
+
+    // Opening fence: :::type or single-line directive like :::ignore RULE [reason] :::
+    // Check for single-line ignore directive first (entire directive on one line)
+    // This matches the complete directive on one line.
+    const singleLineIgnore = inArc42Fence
+      ? /^:::ignore\s+([^:\s]+)(?:\s+(.*?))?\s*:::\s*$/.exec(line)
+      : null;
+    if (singleLineIgnore) {
+      nodes.push({
+        kind: "ignore",
+        ruleCode: singleLineIgnore[1]!,
+        reason: singleLineIgnore[2] ? singleLineIgnore[2].trim() : undefined,
+        startLine: lineNo,
+        endLine: lineNo,
+      });
+      continue;
+    }
+    // Check for bare/malformed ignore (opening but no rule code) with closing on same line
+    if (inArc42Fence && /^:::ignore\s*:::$/.test(line)) {
+      nodes.push({
+        kind: "ignore",
+        ruleCode: "",
+        reason: undefined,
+        startLine: lineNo,
+        endLine: lineNo,
+      });
+      continue;
+    }
+
+    // A bare ignore marker outside an arc42 fence is ordinary Markdown, not an
+    // unknown architecture block and therefore must not create a parse error.
+    if (!inArc42Fence && /^:::ignore\s*$/.test(line)) {
+      nodes.push({ kind: "prose", text: line, line: lineNo });
+      continue;
+    }
+
+    // Opening fence: :::type or single-line directive
+    // Check for ignore directive first (before general :::type pattern)
+    // Only recognize ignore directives inside arc42 fence
+    if (inArc42Fence && line.startsWith(":::ignore")) {
+      // Single-line directive: :::ignore RULE [reason] :::
+      const singleLineMatch = /^:::ignore\s+([^:\s]+)(?:\s+(.*?))?\s*:::/.exec(line);
+      if (singleLineMatch) {
+        nodes.push({
+          kind: "ignore",
+          ruleCode: singleLineMatch[1]!,
+          reason: singleLineMatch[2] ? singleLineMatch[2].trim() : undefined,
+          startLine: lineNo,
+          endLine: lineNo,
+        });
+        continue;
+      }
+      // Bare/malformed directive: :::ignore (no rule code, no closing)
+      const bareMatch = /^:::ignore\s*$/.exec(line);
+      if (bareMatch) {
+        pendingIgnore = {
+          ruleCode: "",
+          reason: undefined,
+          startLine: lineNo,
+        };
+        continue;
+      }
+      // Multi-line directive opening: :::ignore RULE [reason] (no closing :::)
+      const multiLineMatch = /^:::ignore\s+([^:\s]+)(?:\s+(.*?))?\s*$/.exec(line);
+      if (multiLineMatch) {
+        pendingIgnore = {
+          ruleCode: multiLineMatch[1]!,
+          reason: multiLineMatch[2] ? multiLineMatch[2].trim() : undefined,
+          startLine: lineNo,
+        };
+        continue;
+      }
     }
 
     // Opening fence: :::type

@@ -3,6 +3,7 @@ import type {
   Workspace,
   Element,
   ParseError,
+  IgnoreDirective,
   QualityGoal,
   QualityScenario,
   Actor,
@@ -119,12 +120,25 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
   const elements: Element[] = [];
   const parseErrors: ParseError[] = [];
   const diagrams: DiagramArtifact[] = [];
+  const ignoreDirectives: IgnoreDirective[] = [];
 
   for (const doc of documents) {
     let currentHeading: string | undefined = undefined;
     let pendingProse: string[] = [];
 
     for (const node of doc.nodes) {
+      if (node.kind === "ignore") {
+        if (node.ruleCode.trim() !== "") {
+          ignoreDirectives.push({
+            ruleCode: node.ruleCode,
+            reason: node.reason,
+            file: doc.filePath,
+            line: node.startLine,
+            used: false,
+          });
+        }
+        continue;
+      }
       if (node.kind === "heading") {
         currentHeading = node.text;
         pendingProse = [];
@@ -400,5 +414,5 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
     }
   }
 
-  return { elements, parseErrors, documents, diagrams };
+  return { elements, parseErrors, documents, diagrams, ignoreDirectives };
 }
