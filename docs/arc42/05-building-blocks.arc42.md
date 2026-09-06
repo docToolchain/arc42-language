@@ -52,6 +52,7 @@ title: Meta-model Builder
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+path: packages/core/src/model
 :::
 ```
 
@@ -68,6 +69,7 @@ title: Reference Resolver
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+path: packages/core/src/resolver
 :::
 ```
 
@@ -85,6 +87,7 @@ title: Validator
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline, concept-rule-registry
+path: packages/core/src/validator
 :::
 ```
 
@@ -102,6 +105,7 @@ title: Renderer Registry
 technology: TypeScript
 parent: bb-core
 implements: concept-rule-registry
+path: packages/core/src/renderer
 :::
 ```
 
@@ -137,6 +141,7 @@ id: bb-skill
 title: Opencode Skill
 technology: Markdown
 implements: concept-prose-first
+path: packages/skill
 :::
 ```
 
@@ -156,6 +161,7 @@ id: bb-web-renderer
 title: Web Renderer
 technology: TypeScript / React / Vite
 implements: concept-prose-first
+path: packages/web
 :::
 ```
 
@@ -172,6 +178,7 @@ id: if-skill-cli
 title: Skill → CLI (via agent)
 between: bb-skill, bb-cli
 protocol: Bash tool call (arc42 commands)
+path: packages/skill
 :::
 ```
 
@@ -187,6 +194,7 @@ id: if-core-cli
 title: Core → CLI
 between: bb-core, bb-cli
 protocol: TypeScript module import (pnpm workspace:\*)
+path: packages/cli
 :::
 ```
 
@@ -200,6 +208,7 @@ id: if-parser-builder
 title: Parser → Builder
 between: bb-parser, bb-builder
 protocol: In-process TypeScript function call
+path: packages/core/src/ast.ts
 :::
 ```
 
@@ -213,6 +222,7 @@ id: if-builder-resolver
 title: Builder → Resolver
 between: bb-builder, bb-resolver
 protocol: In-process TypeScript function call
+path: packages/core/src/model/types.ts
 :::
 ```
 
@@ -226,6 +236,7 @@ id: if-resolver-validator
 title: Resolver → Validator
 between: bb-resolver, bb-validator
 protocol: In-process TypeScript function call
+path: packages/core/src/resolver/types.ts
 :::
 ```
 
@@ -239,6 +250,7 @@ id: if-validator-renderer
 title: Validator → Renderer
 between: bb-validator, bb-renderer
 protocol: In-process TypeScript function call
+path: packages/core/src/validator/types.ts
 :::
 ```
 
@@ -255,6 +267,7 @@ id: bb-workspace
 title: arc42 Documentation Workspace
 technology: Markdown (.arc42.md files)
 implements: concept-prose-first, concept-pipeline
+path: docs/arc42
 :::
 ```
 
@@ -270,6 +283,7 @@ id: if-cli-workspace
 title: CLI → Documentation Workspace
 between: bb-cli, bb-workspace
 protocol: File system read (glob + parse)
+path: packages/cli/src/discover.ts
 :::
 ```
 
@@ -286,6 +300,7 @@ id: if-cli-web
 title: CLI → Web Renderer
 between: bb-cli, bb-web-renderer
 protocol: HTTP (localhost) — static assets + JSON API
+path: packages/cli/src/cli.ts
 :::
 ```
 
@@ -303,5 +318,6 @@ id: if-web-core
 title: Web Renderer → Core
 between: bb-web-renderer, bb-core
 protocol: HTTP JSON (serve) or static JSON file (export)
+path: packages/web/src/types.ts
 :::
 ```
