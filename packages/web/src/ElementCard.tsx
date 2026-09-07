@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import type { Element, Edge } from "./types";
+import type { Element, Edge, IgnoreNode } from "./types";
+
+const RULE_LABELS: Record<string, string> = {
+  W004: "Block has no prose",
+  H014: "Implementation artifacts should be linked",
+};
 
 // Chapter colour palette — maps BlockType to a CSS custom property
 export const KIND_COLOR: Record<string, string> = {
@@ -25,6 +30,7 @@ interface ElementCardProps {
   edges: Edge[];
   accentColor?: string;
   onDismiss?: () => void;
+  ignores?: IgnoreNode[];
 }
 
 /** Build a hash link that navigates to the correct document and scrolls to the element anchor. */
@@ -44,6 +50,7 @@ export function ElementCard({
   edges,
   accentColor,
   onDismiss,
+  ignores = [],
 }: ElementCardProps) {
   const el = elementsMap.get(elementId);
   if (!el) {
@@ -129,6 +136,20 @@ export function ElementCard({
                       {e.from}
                     </a>
                   ))}
+              </div>
+            )}
+            {ignores.length > 0 && (
+              <div className="element-card__ignores" aria-label="Suppressed validation rules">
+                {ignores.map((ignore) => (
+                  <div
+                    className="element-card__ignore"
+                    key={`${ignore.startLine}-${ignore.ruleCode}`}
+                  >
+                    <span aria-hidden="true">⚠</span>
+                    <code>ignores {ignore.ruleCode}</code>
+                    <span>{ignore.reason ?? RULE_LABELS[ignore.ruleCode] ?? ignore.ruleCode}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
