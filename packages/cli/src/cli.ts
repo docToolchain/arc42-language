@@ -7,6 +7,7 @@ import {
   readdirSync,
   readFileSync,
   createReadStream,
+  watch,
 } from "node:fs";
 import { join, dirname, basename, extname } from "node:path";
 import { createServer } from "node:http";
@@ -557,7 +558,8 @@ async function runServe(dir: string, args: string[]) {
     process.exit(1);
   }
 
-  // Load workspace once at startup
+  // Keep the payload in memory, but refresh it whenever a discovered document
+  // changes. The browser subscribes to /api/workspace/events below.
   let workspaceJson: string;
   try {
     const payload = await loadWorkspace(dir);
@@ -567,6 +569,37 @@ async function runServe(dir: string, args: string[]) {
     process.exit(1);
   }
 
+  const eventClients = new Set<import("node:http").ServerResponse>();
+  let reloadTimer: NodeJS.Timeout | undefined;
+  let watcher: import("node:fs").FSWatcher | undefined;
+
+  const reloadWorkspace = () => {
+    void loadWorkspace(dir)
+      .then((payload) => {
+        workspaceJson = JSON.stringify(payload);
+        for (const client of eventClients) client.write("event: workspace\ndata: changed\n\n");
+      })
+      .catch((err: unknown) => {
+        // Keep serving the last valid payload while the user is editing. A
+        // partially written document should not take down the dev server.
+        console.error(`Failed to reload workspace from ${dir}: ${String(err)}`);
+      });
+  };
+
+  try {
+    watcher = watch(dir, { recursive: true }, (_event, filename) => {
+      const changed = filename?.toString() ?? "";
+      if (changed && !changed.endsWith(".arc42.md")) return;
+      if (reloadTimer) clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(reloadWorkspace, 100);
+    });
+    watcher.on("error", (err) => {
+      console.error(`Failed to watch workspace ${dir}: ${String(err)}`);
+    });
+  } catch (err) {
+    console.error(`Failed to watch workspace ${dir}: ${String(err)}`);
+  }
+
   const server = createServer((req, res) => {
     const url = req.url ?? "/";
 
@@ -574,6 +607,18 @@ async function runServe(dir: string, args: string[]) {
     if (url === "/api/workspace" || url === "/api/workspace/") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(workspaceJson);
+      return;
+    }
+
+    if (url === "/api/workspace/events" || url === "/api/workspace/events/") {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+      res.write(": connected\n\n");
+      eventClients.add(res);
+      req.on("close", () => eventClients.delete(res));
       return;
     }
 
@@ -626,6 +671,9 @@ async function runServe(dir: string, args: string[]) {
   await new Promise<void>((_, reject) => {
     server.on("error", reject);
     process.on("SIGINT", () => {
+      if (reloadTimer) clearTimeout(reloadTimer);
+      watcher?.close();
+      for (const client of eventClients) client.end();
       server.close();
       process.exit(0);
     });

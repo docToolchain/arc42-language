@@ -17,13 +17,35 @@ function Root() {
       return;
     }
 
+    let events: EventSource | undefined;
+    let active = true;
     fetch("/api/workspace")
       .then((r) => {
         if (!r.ok) throw new Error(`Server returned ${r.status}`);
         return r.json() as Promise<WorkspacePayload>;
       })
-      .then(setPayload)
+      .then((nextPayload) => {
+        if (!active) return;
+        setPayload(nextPayload);
+        // `serve` watches the source directory and announces successful
+        // reloads over SSE. Exported workspaces do not have this endpoint.
+        events = new EventSource("/api/workspace/events");
+        events.addEventListener("workspace", () => {
+          void fetch("/api/workspace")
+            .then((r) => {
+              if (!r.ok) throw new Error(`Server returned ${r.status}`);
+              return r.json() as Promise<WorkspacePayload>;
+            })
+            .then(setPayload)
+            .catch((err: unknown) => setError(String(err)));
+        });
+      })
       .catch((err: unknown) => setError(String(err)));
+
+    return () => {
+      active = false;
+      events?.close();
+    };
   }, []);
 
   if (error) {
