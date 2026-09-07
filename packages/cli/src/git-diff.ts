@@ -7,6 +7,7 @@ import type { FileChange, LineRange } from "@arc42/core";
 export interface GitArchitectureDiff {
   root: string;
   base: string;
+  acceptanceBase?: string;
   changes: FileChange[];
   currentDocuments: Map<string, string>;
   baseDocuments: Map<string, string>;
@@ -86,6 +87,15 @@ function git(root: string, args: string[]): string {
   }
 }
 
+function indexMatchesHead(root: string): boolean {
+  try {
+    execFileSync("git", ["-C", root, "diff", "--cached", "--quiet"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function range(start: number, count: number): LineRange {
   return { start, end: count === 0 ? start - 1 : start + count - 1 };
 }
@@ -138,6 +148,7 @@ export function collectGitDiff(
     filePath === workspaceRelative ||
     filePath.startsWith(`${workspaceRelative}/`);
   const base = git(resolvedRoot, ["rev-parse", reference ?? "HEAD"]).trim();
+  const acceptanceBase = reference || staged || indexMatchesHead(resolvedRoot) ? base : undefined;
   const patchArgs = ["diff", ...(staged ? ["--cached"] : []), "--unified=0", "--no-renames"];
   if (reference) patchArgs.push(reference);
   patchArgs.push("--");
@@ -171,7 +182,16 @@ export function collectGitDiff(
     if (content !== undefined) baseDocuments.set(filePath, content);
   }
   const knownPaths = new Set([...stagedFiles(resolvedRoot), ...baseFiles(resolvedRoot, base)]);
-  return { root: resolvedRoot, base, changes, currentDocuments, baseDocuments, knownPaths, patch };
+  return {
+    root: resolvedRoot,
+    base,
+    acceptanceBase,
+    changes,
+    currentDocuments,
+    baseDocuments,
+    knownPaths,
+    patch,
+  };
 }
 
 export function changedHunkFiles(changes: FileChange[]): Set<string> {
