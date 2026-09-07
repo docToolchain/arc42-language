@@ -191,10 +191,14 @@ async function runDiff(dir: string, args: string[]) {
         a.line - b.line ||
         a.kind.localeCompare(b.kind),
     );
-    const accepted = process.env["ARC42_CONSISTENT"] === diff.acceptanceBase;
+    const accepted =
+      diff.acceptanceBase !== undefined && process.env["ARC42_CONSISTENT"] === diff.acceptanceBase;
     const remainingFindings = accepted ? [] : findings;
-    for (const finding of remainingFindings) {
+    for (const finding of findings) {
       console.log(`${finding.severity} ${finding.file}:${finding.line}  ${finding.message}`);
+    }
+    if (accepted) {
+      console.log(`info ARC42_CONSISTENT accepted for comparison base ${diff.acceptanceBase}`);
     }
     if (remainingFindings.length > 0) {
       console.error(

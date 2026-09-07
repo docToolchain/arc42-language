@@ -11,10 +11,13 @@ acceptance guidance required by the existing CLI help.
 - Preserve the intended meaning of `ARC42_CONSISTENT`: it is an explicit
   acceptance token tied to the selected comparison base, not a generic boolean
   bypass.
-- When the token matches, accepted findings are omitted from output and the
-  command exits successfully, including strict path-hint findings. A token
-  matching `HEAD` must not accept a default working-tree comparison when the
-  index is a different base.
+- When the token matches, findings remain visible as accepted warnings/hints,
+  an informational acceptance message is printed, and the command exits
+  successfully, including strict path-hint findings. A token matching `HEAD`
+  must not accept a default working-tree comparison when the index is a
+  different base.
+- Accepted findings remain visible as warnings/hints, and the CLI prints an
+  informational acceptance message while treating them as non-blocking.
 - Do not change help text or acceptance semantics during reproduction; first
   capture the observed failures in executable tests.
 
@@ -75,15 +78,14 @@ acceptance guidance required by the existing CLI help.
   `result.hasBlockingFindings && !accepted`, so hint-only diffs never print
   the guidance needed to discover the acceptance mechanism.
 - Required fix shape: determine whether the selected comparison has a valid
-  commit base, compute acceptance before rendering findings, suppress all
-  accepted findings (including hints), and apply strict failure only when
-  hints remain unaccepted. Emit the acceptance guidance whenever unaccepted
-  findings exist.
+  commit base, compute acceptance before determining status, keep accepted
+  findings visible, and apply strict failure only when hints remain
+  unaccepted. Emit the acceptance guidance whenever unaccepted findings exist.
 
 ### Key Decisions
 - `ARC42_CONSISTENT` accepts the complete diff result, not only consistency
-  findings. A matching token therefore suppresses consistency findings and
-  path hints and makes `--strict` exit 0.
+  findings. A matching token therefore keeps consistency findings and path
+  hints visible as accepted output while making `--strict` exit 0.
 - The default unstaged comparison is working tree versus index. A commit token
   must not accept it when the index differs from the token's commit; acceptance
   eligibility must account for that distinction rather than treating `HEAD`
@@ -98,7 +100,7 @@ acceptance guidance required by the existing CLI help.
 ## Fix
 ### Tasks
 - [x] Compute acceptance eligibility from the actual comparison mode/base.
-- [x] Suppress accepted findings and ensure accepted strict diffs exit 0.
+- [x] Keep accepted findings visible and ensure accepted strict diffs exit 0.
 - [x] Print acceptance guidance for every unaccepted finding category.
 - [x] Preserve the requested default failure behavior and existing operational
   error handling.
@@ -110,9 +112,12 @@ acceptance guidance required by the existing CLI help.
   token from accepting a working-tree diff whose actual base is a changed
   index.
 - `runDiff` now evaluates acceptance before rendering findings. A valid
-  matching token removes all findings, including path hints, and prevents
-  strict mode from failing. Any unaccepted finding prints the acceptance
-  guidance, while strict mode fails only when unaccepted hints remain.
+  matching token keeps all findings, including path hints, visible, prints an
+  informational acceptance message, and prevents strict mode from failing. Any
+  unaccepted finding prints the acceptance guidance, while strict mode fails
+  only when unaccepted hints remain.
+- Acceptance requires a defined comparison base, preventing an unset
+  `ARC42_CONSISTENT` variable from being treated as an acceptance token.
 - Blast-radius assessment: this is a minimal boundary fix. It leaves the core
   diff analyzer and operational error handling untouched and changes only
   acceptance identity, output suppression, and related exit status.
@@ -157,6 +162,9 @@ acceptance guidance required by the existing CLI help.
   and the full suite (283 tests passed).
 - The implementation is ready for production review. The unrelated existing
   change in `packages/core/src/ast.ts` remains untouched.
+- Follow-up refinement: accepted findings remain visible and are accompanied by
+  an `info ARC42_CONSISTENT accepted...` message, while their exit-status
+  effect remains suppressed.
 
 
 

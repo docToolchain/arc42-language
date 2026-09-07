@@ -91,7 +91,8 @@ describe("CLI architecture diff acceptance guidance", () => {
     const result = runDiff(root, ["--strict"], { ARC42_CONSISTENT: base });
 
     expect(result.status).toBe(0);
-    expect(result.stdout).not.toContain("hint ");
+    expect(result.stdout).toContain("hint ");
+    expect(result.stdout).toContain(`ARC42_CONSISTENT accepted for comparison base ${base}`);
   });
 });
 
