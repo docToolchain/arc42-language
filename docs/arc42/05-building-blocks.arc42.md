@@ -50,8 +50,6 @@ graph TD
 
 ---
 
-:::
-
 ## Core Library
 
 The heart of the system. Implements the full pipeline from file discovery to validation output and
