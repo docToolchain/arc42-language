@@ -7,6 +7,9 @@ import { discoverArc42Dir } from "../src/discover.ts";
 function makeTmpDir(name: string): string {
   const dir = join(tmpdir(), `arc42-discover-test-${name}-${Date.now()}`);
   mkdirSync(dir, { recursive: true });
+  // Place a .git marker so discoverArc42Dir stops here and never walks into
+  // other temp directories that might exist alongside this one.
+  writeFileSync(join(dir, ".git"), "");
   return dir;
 }
 
