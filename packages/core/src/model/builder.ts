@@ -17,10 +17,9 @@ import type {
   GlossaryTerm,
   RuntimeScenario,
   DeploymentNode,
-  DeploymentDiagram,
   DiagramArtifact,
 } from "./types.ts";
-import { ELEMENT_SCHEMAS } from "./schemas.ts";
+import { ELEMENT_SCHEMAS, DIAGRAM_SCHEMAS } from "./schemas.ts";
 import type { BlockType } from "../ast.ts";
 
 const KNOWN_BLOCK_TYPES = new Set<string>([
@@ -151,8 +150,41 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
       }
 
       if (node.kind === "diagram") {
+        // Build the raw attributes map for schema validation, normalising empty
+        // strings to undefined so Zod's optional() treats them as absent.
+        const diagramAttrs: Record<string, string | undefined> = {
+          id: node.id || undefined,
+          notation: node.notation || undefined,
+          aliases: node.aliases || undefined,
+        };
+        if (node.diagramType !== "sequence") {
+          // roots is present on deployment, building-block and context nodes
+          const roots = (node as { roots?: string[] }).roots ?? [];
+          diagramAttrs["roots"] = roots.length > 0 ? roots.join(", ") : undefined;
+        }
+        if (node.diagramType === "sequence") {
+          diagramAttrs["scenario"] = node.scenario || undefined;
+        }
+
+        const schema =
+          DIAGRAM_SCHEMAS[node.diagramType as keyof typeof DIAGRAM_SCHEMAS] ??
+          DIAGRAM_SCHEMAS["generic"];
+        const result = schema.safeParse(diagramAttrs);
+        if (!result.success) {
+          parseErrors.push({
+            message: zodErrorToMessage(
+              `${node.diagramType} diagram`,
+              result.error.issues as { path: (string | number)[]; message: string }[],
+              { id: node.id, notation: node.notation },
+            ),
+            file: doc.filePath,
+            line: node.startLine,
+          });
+          continue;
+        }
+
         if (node.diagramType === "deployment") {
-          const deploymentDiagram: DeploymentDiagram = {
+          diagrams.push({
             kind: "diagram",
             diagramType: "deployment",
             view: "deployment",
@@ -162,22 +194,32 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             aliases: node.aliases,
             source: node.source,
             loc: { file: doc.filePath, line: node.startLine },
-          };
-          diagrams.push(deploymentDiagram);
-          continue;
-        }
-        if (!node.id || !node.notation || (node.diagramType === "sequence" && !node.scenario)) {
-          parseErrors.push({
-            message:
-              node.diagramType === "sequence"
-                ? "Sequence diagram requires 'id', 'scenario', and 'notation'"
-                : "Diagram requires 'id' and 'notation'",
-            file: doc.filePath,
-            line: node.startLine,
           });
-          continue;
-        }
-        if (node.diagramType === "sequence") {
+        } else if (node.diagramType === "building-block") {
+          diagrams.push({
+            kind: "diagram",
+            diagramType: "building-block",
+            view: "building-block",
+            id: node.id,
+            notation: node.notation,
+            roots: node.roots,
+            aliases: node.aliases,
+            source: node.source,
+            loc: { file: doc.filePath, line: node.startLine },
+          });
+        } else if (node.diagramType === "context") {
+          diagrams.push({
+            kind: "diagram",
+            diagramType: "context",
+            view: "context",
+            id: node.id,
+            notation: node.notation,
+            roots: node.roots,
+            aliases: node.aliases,
+            source: node.source,
+            loc: { file: doc.filePath, line: node.startLine },
+          });
+        } else if (node.diagramType === "sequence") {
           diagrams.push({
             kind: "diagram",
             diagramType: "sequence",

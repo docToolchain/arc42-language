@@ -51,7 +51,24 @@ export interface DeploymentDiagramNode extends DiagramNodeBase {
   roots: string[];
 }
 
-export type DiagramNode = GenericDiagramNode | SequenceDiagramNode | DeploymentDiagramNode;
+export interface BuildingBlockDiagramNode extends DiagramNodeBase {
+  diagramType: "building-block";
+  view: "building-block";
+  roots: string[];
+}
+
+export interface ContextDiagramNode extends DiagramNodeBase {
+  diagramType: "context";
+  view: "context";
+  roots: string[];
+}
+
+export type DiagramNode =
+  | GenericDiagramNode
+  | SequenceDiagramNode
+  | DeploymentDiagramNode
+  | BuildingBlockDiagramNode
+  | ContextDiagramNode;
 
 /** Bare ```mermaid fenced block with no preceding :::diagram metadata block. */
 export interface BareMermaidNode {
@@ -277,7 +294,24 @@ export interface DeploymentDiagram extends Diagram {
   roots: string[];
 }
 
-export type DiagramArtifact = GenericDiagram | SequenceDiagram | DeploymentDiagram;
+export interface BuildingBlockDiagram extends Diagram {
+  diagramType: "building-block";
+  view: "building-block";
+  roots: string[];
+}
+
+export interface ContextDiagram extends Diagram {
+  diagramType: "context";
+  view: "context";
+  roots: string[];
+}
+
+export type DiagramArtifact =
+  | GenericDiagram
+  | SequenceDiagram
+  | DeploymentDiagram
+  | BuildingBlockDiagram
+  | ContextDiagram;
 
 // ─── Workspace payload ───────────────────────────────────────────────────────
 

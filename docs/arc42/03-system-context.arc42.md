@@ -4,6 +4,42 @@ The arc42-language toolchain sits at the boundary between human architects, AI a
 CI pipelines, and the files they all read and write. The system boundary is the CLI and
 the core library. Everything else is external.
 
+:::diagram
+id: diag-context
+view: context
+notation: mermaid
+:::
+
+```mermaid
+graph TD
+    actor-architect(["Architect"])
+    actor-agent["AI Agent"]
+    actor-ci["CI Pipeline"]
+    actor-reader(["Reader"])
+
+    subgraph system["System"]
+        bb-cli["CLI"]
+        bb-core["Core Library"]
+        bb-skill["Skill"]
+        bb-web-renderer["Web Renderer"]
+        bb-workspace["Documentation Workspace"]
+    end
+
+    actor-architect -->|"if-architect-cli"| bb-cli
+    actor-architect -->|"if-architect-workspace"| bb-workspace
+    actor-agent -->|"if-agent-cli"| bb-cli
+    actor-agent -->|"if-agent-workspace"| bb-workspace
+    actor-agent -->|"if-agent-skill"| bb-skill
+    actor-ci -->|"if-ci-cli"| bb-cli
+    actor-reader -->|"if-reader-web"| bb-web-renderer
+    bb-skill -->|"if-skill-cli"| bb-cli
+    bb-cli -->|"if-cli-web"| bb-web-renderer
+```
+
+---
+
+:::
+
 ## Architect
 
 The human who designs and maintains the architecture. Uses the CLI directly from a

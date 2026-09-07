@@ -29,6 +29,36 @@ function createDiagramNode(
   source: string,
   endLine: number,
 ): DiagramNode {
+  if (metadata.view === "building-block") {
+    return {
+      kind: "diagram",
+      diagramType: "building-block",
+      view: "building-block",
+      id: metadata.id,
+      notation: metadata.notation,
+      roots: metadata.roots,
+      aliases: metadata.aliases,
+      source,
+      startLine: metadata.startLine,
+      endLine,
+    };
+  }
+
+  if (metadata.view === "context") {
+    return {
+      kind: "diagram",
+      diagramType: "context",
+      view: "context",
+      id: metadata.id,
+      notation: metadata.notation,
+      roots: metadata.roots,
+      aliases: metadata.aliases,
+      source,
+      startLine: metadata.startLine,
+      endLine,
+    };
+  }
+
   if (metadata.view === "deployment") {
     return {
       kind: "diagram",
@@ -374,6 +404,11 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
   }
 
   // Unclosed block: silently ignored (validator will catch missing required attrs)
+
+  // Process any pending diagram at EOF (diagram block was closed but no fence followed)
+  if (pendingDiagram) {
+    nodes.push(createDiagramNode(pendingDiagram, "", pendingDiagram.startLine));
+  }
 
   return { filePath, nodes };
 }

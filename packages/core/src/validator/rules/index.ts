@@ -17,6 +17,9 @@ import { e008DiagramValidation } from "./e008-diagram-validation.ts";
 import { e009DeploymentNodeCycle } from "./e009-deployment-node-cycle.ts";
 import { e010DeploymentDiagramValidation } from "./e010-deployment-diagram-validation.ts";
 import { e011UnresolvedImplementationPath } from "./e011-unresolved-implementation-path.ts";
+import { e012SequenceDiagramValidation } from "./e012-sequence-diagram-validation.ts";
+import { e013BuildingBlockDiagramValidation } from "./e013-building-block-diagram-validation.ts";
+import { e014ContextDiagramValidation } from "./e014-context-diagram-validation.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
@@ -48,6 +51,18 @@ import { h012EmptyDeploymentNode } from "./h012-empty-deployment-node.ts";
 import { h013QualityGoalNoScenario } from "./h013-quality-goal-no-scenario.ts";
 import { h014MissingImplementationPath } from "./h014-missing-implementation-path.ts";
 import { w018ImplementationPathOverlap } from "./w018-implementation-path-overlap.ts";
+import { w019MissingBuildingBlockDiagram } from "./w019-missing-building-block-diagram.ts";
+import { w020MissingContextDiagram } from "./w020-missing-context-diagram.ts";
+import { w021ContextDiagramMissingSystemBoundary } from "./w021-context-diagram-missing-system-boundary.ts";
+import { w022BuildingBlockDiagramEdgeWithoutInterface } from "./w022-building-block-diagram-edge-without-interface.ts";
+import { w023ContextDiagramEdgeWithoutInterface } from "./w023-context-diagram-edge-without-interface.ts";
+import { w024BuildingBlockDiagramDuplicateEdge } from "./w024-building-block-diagram-duplicate-edge.ts";
+import { w025ContextDiagramDuplicateEdge } from "./w025-context-diagram-duplicate-edge.ts";
+import { h015BuildingBlockDiagramIncompleteHierarchy } from "./h015-building-block-diagram-incomplete-hierarchy.ts";
+import { h016BuildingBlockDiagramMissingInterfaces } from "./h016-building-block-diagram-missing-interfaces.ts";
+import { h017BuildingBlockDiagramMissingParent } from "./h017-building-block-diagram-missing-parent.ts";
+import { h018BuildingBlockDiagramMixedAbstractionLevels } from "./h018-building-block-diagram-mixed-abstraction-levels.ts";
+import { h019BuildingBlockDiagramParentNotSubgraph } from "./h019-building-block-diagram-parent-not-subgraph.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -58,10 +73,13 @@ export const builtinRules: readonly Rule[] = [
   e004InterfaceBetweenNonBlock, // Chapter 5
   e006SupersededDecisionNoSupersedes, // Chapter 9
   e007MultipleSolutionStrategies, // Chapter 4
-  e008DiagramValidation, // Chapter 6
+  e008DiagramValidation, // All chapters (duplicate ids, unsupported notation)
   e009DeploymentNodeCycle, // Chapter 7
   e010DeploymentDiagramValidation, // Chapter 7
   e011UnresolvedImplementationPath, // Chapter 5
+  e012SequenceDiagramValidation, // Chapter 6
+  e013BuildingBlockDiagramValidation, // Chapter 5
+  e014ContextDiagramValidation, // Chapter 3
 
   // Warnings — inconsistencies
   w001ConceptNotImplemented, // Chapter 8
@@ -81,6 +99,13 @@ export const builtinRules: readonly Rule[] = [
   w016BlockNotInArc42Fence, // All chapters
   w017BareMermaidBlock, // All chapters (bare mermaid fences)
   w018ImplementationPathOverlap, // Chapter 5
+  w019MissingBuildingBlockDiagram, // Chapter 5
+  w020MissingContextDiagram, // Chapter 3
+  w021ContextDiagramMissingSystemBoundary, // Chapter 3
+  w022BuildingBlockDiagramEdgeWithoutInterface, // Chapter 5
+  w023ContextDiagramEdgeWithoutInterface, // Chapter 3
+  w024BuildingBlockDiagramDuplicateEdge, // Chapter 5
+  w025ContextDiagramDuplicateEdge, // Chapter 3
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9
@@ -97,6 +122,11 @@ export const builtinRules: readonly Rule[] = [
   h012EmptyDeploymentNode, // Chapter 7
   h013QualityGoalNoScenario, // Chapter 10
   h014MissingImplementationPath, // Chapter 5
+  h015BuildingBlockDiagramIncompleteHierarchy, // Chapter 5
+  h016BuildingBlockDiagramMissingInterfaces, // Chapter 5
+  h017BuildingBlockDiagramMissingParent, // Chapter 5
+  h018BuildingBlockDiagramMixedAbstractionLevels, // Chapter 5
+  h019BuildingBlockDiagramParentNotSubgraph, // Chapter 5
 ];
 
 /** All rules indexed by code for O(1) lookup */

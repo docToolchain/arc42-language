@@ -12,6 +12,8 @@ architecturally significant.
 
 An interface connects exactly two building blocks and makes their collaboration explicit.
 Every significant communication path should have an interface.
+`between` is ordered: caller/consumer first, callee/provider second — and diagram edges
+must be drawn in that same direction.
 
 For each building block or interface, write a ## section with a prose paragraph explaining
 purpose, responsibility, and key constraints, followed by a DSL block.

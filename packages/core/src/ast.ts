@@ -69,6 +69,20 @@ export interface DeploymentDiagramNode extends DiagramNodeBase {
   roots: string[];
 }
 
+/** Building Block View diagram — source is author/agent-written Mermaid; validated by H015/H016 adapters. */
+export interface BuildingBlockDiagramNode extends DiagramNodeBase {
+  diagramType: "building-block";
+  view: "building-block";
+  roots: string[];
+}
+
+/** System Context diagram — source is author/agent-written Mermaid; validated for coverage by W020. */
+export interface ContextDiagramNode extends DiagramNodeBase {
+  diagramType: "context";
+  view: "context";
+  roots: string[];
+}
+
 /** Bare mermaid fenced block with no preceding :::diagram metadata block.
  * The parser emits this when it encounters ```mermaid without a :::diagram owner.
  * Validator rule W017 warns about these — authors should add a :::diagram block.
@@ -92,7 +106,12 @@ export interface IgnoreNode {
   endLine: number;
 }
 
-export type DiagramNode = GenericDiagramNode | SequenceDiagramNode | DeploymentDiagramNode;
+export type DiagramNode =
+  | GenericDiagramNode
+  | SequenceDiagramNode
+  | DeploymentDiagramNode
+  | BuildingBlockDiagramNode
+  | ContextDiagramNode;
 
 export type AstNode =
   | HeadingNode
