@@ -198,7 +198,7 @@ async function runDiff(dir: string, args: string[]) {
       console.log(`${finding.severity} ${finding.file}:${finding.line}  ${finding.message}`);
     }
     if (accepted) {
-      console.log(`info ARC42_CONSISTENT accepted for comparison base ${diff.acceptanceBase}`);
+      console.log("info These changes were accepted as intentional");
     }
     if (remainingFindings.length > 0) {
       console.error(

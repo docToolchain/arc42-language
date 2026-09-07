@@ -92,7 +92,7 @@ describe("CLI architecture diff acceptance guidance", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("hint ");
-    expect(result.stdout).toContain(`ARC42_CONSISTENT accepted for comparison base ${base}`);
+    expect(result.stdout).toContain("These changes were accepted as intentional");
   });
 });
 

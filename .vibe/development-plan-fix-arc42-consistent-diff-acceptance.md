@@ -12,12 +12,13 @@ acceptance guidance required by the existing CLI help.
   acceptance token tied to the selected comparison base, not a generic boolean
   bypass.
 - When the token matches, findings remain visible as accepted warnings/hints,
-  an informational acceptance message is printed, and the command exits
-  successfully, including strict path-hint findings. A token matching `HEAD`
+  the message `These changes were accepted as intentional` is printed, and the
+  command exits successfully, including strict path-hint findings. A token matching `HEAD`
   must not accept a default working-tree comparison when the index is a
   different base.
 - Accepted findings remain visible as warnings/hints, and the CLI prints an
-  informational acceptance message while treating them as non-blocking.
+  informational `These changes were accepted as intentional` message while
+  treating them as non-blocking.
 - Do not change help text or acceptance semantics during reproduction; first
   capture the observed failures in executable tests.
 
@@ -113,7 +114,8 @@ acceptance guidance required by the existing CLI help.
   index.
 - `runDiff` now evaluates acceptance before rendering findings. A valid
   matching token keeps all findings, including path hints, visible, prints an
-  informational acceptance message, and prevents strict mode from failing. Any
+  informational `These changes were accepted as intentional` message, and
+  prevents strict mode from failing. Any
   unaccepted finding prints the acceptance guidance, while strict mode fails
   only when unaccepted hints remain.
 - Acceptance requires a defined comparison base, preventing an unset
@@ -163,8 +165,8 @@ acceptance guidance required by the existing CLI help.
 - The implementation is ready for production review. The unrelated existing
   change in `packages/core/src/ast.ts` remains untouched.
 - Follow-up refinement: accepted findings remain visible and are accompanied by
-  an `info ARC42_CONSISTENT accepted...` message, while their exit-status
-  effect remains suppressed.
+  an `info These changes were accepted as intentional` message, while their
+  exit-status effect remains suppressed.
 
 
 
