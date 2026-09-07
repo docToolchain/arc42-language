@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 const PREFERRED_NAMES = new Set(["docs", "arc42"]);
@@ -23,6 +23,11 @@ function hasArc42Files(dir: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Returns true if `dir` is a Git repository root (contains a `.git` entry). */
+function isGitRoot(dir: string): boolean {
+  return existsSync(join(dir, ".git"));
 }
 
 /** Collect all subdirectories up to `maxDepth` levels deep that contain
@@ -68,7 +73,9 @@ function arc42SubDirs(dir: string, maxDepth = MAX_DEPTH): string[] {
  *     - Preferred names ("docs", "arc42") are visited first and recursed into.
  *     - If exactly one subdir matches, use it silently.
  *     - If multiple subdirs match, warn and use the first (preferred names win).
- *  3. Move to parent and repeat until the filesystem root.
+ *  3. Move to parent and repeat, stopping at the Git repository root.
+ *     Discovery never walks above a `.git` boundary so that temp directories
+ *     created by tests outside the project are never considered.
  *
  *  Returns the resolved directory path, or undefined if nothing is found. */
 export function discoverArc42Dir(
@@ -92,9 +99,14 @@ export function discoverArc42Dir(
       return matches[0];
     }
 
-    // 3. Move up
+    // 3. Stop at Git repository root — never walk above the project boundary.
+    //    This prevents discovery from scanning OS temp directories or other
+    //    unrelated directories that happen to contain *.arc42.* files.
+    if (isGitRoot(current)) return undefined;
+
+    // 4. Move up
     const parent = dirname(current);
-    if (parent === current) return undefined; // reached root
+    if (parent === current) return undefined; // reached filesystem root
     current = parent;
   }
 }
