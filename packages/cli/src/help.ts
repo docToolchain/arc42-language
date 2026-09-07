@@ -144,8 +144,9 @@ Options:
   --open                Open the browser after starting the server
   -h, --help            Show this help
 
-The server serves the loaded workspace until interrupted. It exits 1 when the workspace
-or web assets cannot be loaded. Use --dir or ARC42_DIR to select the workspace.
+The server watches the selected directory recursively and refreshes the browser when
+*.arc42.md files change. It exits 1 when the workspace or web assets cannot be loaded.
+Use --dir or ARC42_DIR to select the workspace.
 `;
   }
 
