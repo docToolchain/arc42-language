@@ -1,6 +1,6 @@
 ---
 name: arc42-language
-description: Use when working on this project's architecture — reading, writing, or validating *.arc42.md files. Trigger keywords: arc42, architecture, quality goal, solution strategy, building block, deployment node, actor, sequence diagram, concept, decision, ADR, constraint, risk, glossary.
+description: Use when working on this project's architecture — reading, writing, or validating .arc42.md files. _trigger keywords:_ arc42, architecture, quality goal, solution strategy, building block, deployment node, actor, sequence diagram, concept, decision, ADR, constraint, risk, glossary.
 allowed-tools: Bash(arc42:*)
 ---
 
