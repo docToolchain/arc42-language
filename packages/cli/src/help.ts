@@ -3,6 +3,7 @@ const COMMANDS = [
   ["get", "Browse or inspect elements from an architecture workspace."],
   ["rules", "List the validation rules and the rationale behind them."],
   ["explain", "Explain the syntax and purpose of arc42 block types."],
+  ["guide", "Guide a one-time migration from existing docs or source to typed arc42."],
   ["diff", "Report architecture-document changes that need review."],
   ["serve", "Serve the workspace in the browser for interactive exploration."],
   ["init", "Create starter architecture files or install the agent skill."],
@@ -188,6 +189,54 @@ Subcommands:
   template              Copy starter architecture templates
 
 Use arc42 init <subcommand> --help for options and defaults.
+`;
+  }
+
+  if (command === "guide") {
+    if (nestedCommand === "chapter") {
+      return `arc42 guide chapter — guide authoring for one arc42 chapter
+
+Usage:
+  arc42 guide chapter <1-12>
+
+The output includes the chapter focus, dependencies, evidence prompts, relevant explain commands,
+and the bundled starter template. It never creates or modifies files.
+`;
+    }
+    if (nestedCommand === "evidence") {
+      return `arc42 guide evidence — describe the migration evidence document
+
+Usage:
+  arc42 guide evidence
+
+The output defines the separate traceability document maintained by chapter subagents. It never
+creates or modifies files.
+`;
+    }
+    if (nestedCommand === "migration") {
+      return `arc42 guide migration — print the complete migration workflow
+
+Usage:
+  arc42 guide migration
+
+The workflow covers template initialization, evidence capture, dependency-aware delegation, human
+review, and final validation. It never creates or modifies files.
+`;
+    }
+    return `arc42 guide — instructions for a one-time evidence-based migration
+
+Usage:
+  arc42 guide [migration]
+  arc42 guide chapter <1-12>
+  arc42 guide evidence
+
+Subcommands:
+  migration             Print the complete coordinator workflow (default)
+  chapter <1-12>        Print one chapter brief and its starter template
+  evidence              Print the separate evidence-document format
+
+The guide is read-only. It requires human review for gaps, assumptions, contradictions, and final
+validation findings; it never automatically fixes architecture documents.
 `;
   }
 

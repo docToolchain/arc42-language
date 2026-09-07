@@ -11,7 +11,8 @@ extended explanation where useful, followed by a DSL block with a concise defini
 Keep the `definition` field to one or two sentences that unambiguously identify the concept.
 Extended explanation belongs in the prose above the block.
 
-The optional `abbreviation` field records the short form — e.g. JWT, SLA, DDD.
+If a short form is important, include it in the prose; the typed glossary block has no
+`abbreviation` field.
 
 Note synonyms the team has agreed NOT to use, and why, in the prose paragraph.
 
