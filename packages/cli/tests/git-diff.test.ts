@@ -1,8 +1,10 @@
-import { describe, expect, test } from "vite-plus/test";
+import { afterEach, describe, expect, test } from "vite-plus/test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { collectGitDiff, parseDiffPathHeader } from "../src/git-diff.ts";
+
+const createdDirs: string[] = [];
 
 function git(root: string, ...args: string[]): string {
   return execFileSync("git", ["-C", root, ...args], { encoding: "utf8" });
@@ -10,6 +12,7 @@ function git(root: string, ...args: string[]): string {
 
 function repository(): string {
   const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-git-diff-"));
+  createdDirs.push(root);
   git(root, "init", "-q");
   git(root, "config", "user.email", "test@example.com");
   git(root, "config", "user.name", "arc42 test");
@@ -18,6 +21,16 @@ function repository(): string {
   git(root, "commit", "-qm", "initial");
   return root;
 }
+
+afterEach(() => {
+  for (const dir of createdDirs.splice(0)) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // best-effort cleanup
+    }
+  }
+});
 
 describe("Git diff acquisition", () => {
   test("parses quoted Git paths", () => {
@@ -63,6 +76,7 @@ describe("Git diff acquisition", () => {
 
   test("rejects a directory that is not a Git repository", () => {
     const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-not-git-"));
+    createdDirs.push(root);
     expect(() => collectGitDiff(root)).toThrow(/Git command failed/);
   });
 });

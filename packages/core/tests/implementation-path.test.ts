@@ -1,10 +1,12 @@
-import { describe, expect, test } from "vite-plus/test";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, test } from "vite-plus/test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildWorkspace } from "../src/model/builder.ts";
 import { buildIndex } from "../src/resolver/index.ts";
 import { validate } from "../src/validator/index.ts";
 import type { DocumentAst } from "../src/ast.ts";
+
+const createdDirs: string[] = [];
 
 function document(attributes: Record<string, string>): DocumentAst {
   return {
@@ -27,9 +29,20 @@ function workspace(root: string, ...blocks: Record<string, string>[]) {
   return validate(built, buildIndex(built), { dir: root, root });
 }
 
+afterEach(() => {
+  for (const dir of createdDirs.splice(0)) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // best-effort cleanup
+    }
+  }
+});
+
 describe("implementation paths", () => {
   test("parses and validates an existing file path", () => {
     const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-path-"));
+    createdDirs.push(root);
     writeFileSync(join(root, "service.ts"), "export {};");
     const diagnostics = workspace(root, {
       id: "service",
@@ -42,6 +55,7 @@ describe("implementation paths", () => {
 
   test("reports missing and unresolved paths with distinct severities", () => {
     const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-path-"));
+    createdDirs.push(root);
     const diagnostics = workspace(
       root,
       { id: "missing", title: "Missing", implements: "" },
@@ -53,6 +67,7 @@ describe("implementation paths", () => {
 
   test("treats an explicitly empty path as unresolved", () => {
     const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-path-"));
+    createdDirs.push(root);
     const diagnostics = workspace(root, {
       id: "empty",
       title: "Empty",
@@ -65,6 +80,7 @@ describe("implementation paths", () => {
 
   test("warns on nested paths without a matching parent relationship", () => {
     const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-path-"));
+    createdDirs.push(root);
     mkdirSync(join(root, "src", "child"), { recursive: true });
     const diagnostics = workspace(
       root,
