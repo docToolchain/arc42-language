@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import mermaid from "mermaid";
 
 mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
@@ -8,6 +8,8 @@ let mermaidCounter = 0;
 interface MermaidDiagramProps {
   source: string;
   id?: string;
+  /** Map of Mermaid node identifier → hash URL to navigate to on click. */
+  clickableNodes?: Map<string, string>;
 }
 
 /**
@@ -26,12 +28,30 @@ function cleanSource(source: string): string {
     .trim();
 }
 
-export function MermaidDiagram({ source, id }: MermaidDiagramProps) {
+/**
+ * Append Mermaid `click` directives for each entry in clickableNodes.
+ * Must be called after cleanSource so there are no trailing fence markers.
+ */
+function applyClickDirectives(source: string, clickableNodes: Map<string, string>): string {
+  if (clickableNodes.size === 0) return source;
+  const lines: string[] = [];
+  for (const [nodeId, url] of clickableNodes) {
+    lines.push(`click ${nodeId} href "${url}" "_self"`);
+  }
+  return source + "\n" + lines.join("\n");
+}
+
+export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [rendered, setRendered] = useState(false);
   const diagramId = useRef(`mermaid-${id ?? ++mermaidCounter}`);
-  const cleanedSource = cleanSource(source);
+  const cleanedSource = useMemo(() => {
+    const clean = cleanSource(source);
+    return clickableNodes && clickableNodes.size > 0
+      ? applyClickDirectives(clean, clickableNodes)
+      : clean;
+  }, [source, clickableNodes]);
 
   useEffect(() => {
     if (!containerRef.current) return;

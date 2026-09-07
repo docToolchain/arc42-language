@@ -130,15 +130,41 @@ export function AstNodeRenderer({
       if (viewMode === "human") {
         switch (diagramNode.diagramType) {
           case "building-block":
-            return <BuildingBlockDiagramView node={diagramNode} interfaceMap={interfaceMap} />;
+            return (
+              <BuildingBlockDiagramView
+                node={diagramNode}
+                interfaceMap={interfaceMap}
+                elementsMap={elementsMap}
+                elementDocMap={elementDocMap}
+              />
+            );
           case "context":
-            return <ContextDiagramView node={diagramNode} interfaceMap={interfaceMap} />;
+            return (
+              <ContextDiagramView
+                node={diagramNode}
+                interfaceMap={interfaceMap}
+                elementsMap={elementsMap}
+                elementDocMap={elementDocMap}
+              />
+            );
           case "sequence":
             return <SequenceDiagramView node={diagramNode} />;
           case "deployment":
-            return <DeploymentDiagramView node={diagramNode} />;
+            return (
+              <DeploymentDiagramView
+                node={diagramNode}
+                elementsMap={elementsMap}
+                elementDocMap={elementDocMap}
+              />
+            );
           default:
-            return <GenericDiagramView node={diagramNode} />;
+            return (
+              <GenericDiagramView
+                node={diagramNode}
+                elementsMap={elementsMap}
+                elementDocMap={elementDocMap}
+              />
+            );
         }
       }
       return <AgentBlock source={diagramNode.source} lang="mermaid" />;

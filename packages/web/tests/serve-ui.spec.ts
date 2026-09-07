@@ -282,7 +282,71 @@ test.describe("Cross-document element card links", () => {
   });
 });
 
-// ─── API endpoint ─────────────────────────────────────────────────────────────
+// ─── Clickable diagram nodes ──────────────────────────────────────────────────
+
+test.describe("Clickable diagram nodes", () => {
+  test("building block diagram nodes that are known elements have click links in the SVG", async ({
+    page,
+  }) => {
+    await page.goto("/#05-building-blocks.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+
+    // Wait for at least one diagram to finish rendering
+    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
+
+    // Mermaid injects <a> tags around nodes with click href directives.
+    // bb-api-gateway is a known element in the building block diagram.
+    const nodeLinks = page.locator('.diagram-svg svg a[href*="el-bb-api-gateway"]');
+    await expect(nodeLinks.first()).toBeAttached({ timeout: 5000 });
+  });
+
+  test("clicking a building block diagram node navigates to the element's document section", async ({
+    page,
+  }) => {
+    await page.goto("/#05-building-blocks.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
+
+    // Click the SVG node link for bb-catalog-service
+    const nodeLink = page.locator('.diagram-svg svg a[href*="el-bb-catalog-service"]').first();
+    await expect(nodeLink).toBeAttached({ timeout: 5000 });
+    await nodeLink.click();
+
+    // Hash should now contain the element anchor
+    const hash = await getActiveHash(page);
+    expect(hash).toContain("el-bb-catalog-service");
+    // Still on the building-blocks document
+    expect(hash).toContain("05-building-blocks.arc42.md");
+  });
+
+  test("sequence diagram participant aliases with known elements have click links in the SVG", async ({
+    page,
+  }) => {
+    await page.goto("/#06-runtime-view.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
+
+    // The catalog search diagram has alias gw=bb-api-gateway.
+    // Mermaid injects an <a> with the hash URL for the element.
+    const nodeLinks = page.locator('.diagram-svg svg a[href*="el-bb-api-gateway"]');
+    await expect(nodeLinks.first()).toBeAttached({ timeout: 5000 });
+  });
+
+  test("clicking a sequence diagram participant navigates to the element", async ({ page }) => {
+    await page.goto("/#06-runtime-view.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
+
+    // Click the link for bb-catalog-service (alias: cat in catalog search diagram)
+    const nodeLink = page.locator('.diagram-svg svg a[href*="el-bb-catalog-service"]').first();
+    await expect(nodeLink).toBeAttached({ timeout: 5000 });
+    await nodeLink.click();
+
+    const hash = await getActiveHash(page);
+    expect(hash).toContain("el-bb-catalog-service");
+    expect(hash).toContain("05-building-blocks.arc42.md");
+  });
+});
 
 test.describe("API endpoint", () => {
   test("GET /api/workspace returns valid workspace JSON", async ({ request }) => {
