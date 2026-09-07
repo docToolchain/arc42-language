@@ -185,7 +185,7 @@ describe("runtime scenarios", () => {
         "```",
       ].join("\n"),
     );
-    expect(validate(valid, buildIndex(valid)).some((d) => d.code === "E008")).toBe(false);
+    expect(validate(valid, buildIndex(valid)).some((d) => d.code === "E012")).toBe(false);
 
     const state = workspace(
       [
@@ -242,11 +242,11 @@ describe("runtime scenarios", () => {
         "```",
       ].join("\n"),
     );
-    expect(validate(ws, buildIndex(ws)).some((d) => d.code === "E008")).toBe(false);
+    expect(validate(ws, buildIndex(ws)).some((d) => d.code === "E012")).toBe(false);
   });
 
   test("requires explicit alias when participant identifier is not a valid model ID", () => {
-    // bb_api (underscore) is not a model ID — without an alias it must produce E008
+    // bb_api (underscore) is not a model ID — without an alias it must produce E012
     const ws = workspace(
       [
         ":::building-block",
@@ -270,7 +270,7 @@ describe("runtime scenarios", () => {
         "```",
       ].join("\n"),
     );
-    const e008 = validate(ws, buildIndex(ws)).filter((d) => d.code === "E008");
+    const e008 = validate(ws, buildIndex(ws)).filter((d) => d.code === "E012");
     expect(e008.some((d) => d.message.includes("unknown participant"))).toBe(true);
   });
 });

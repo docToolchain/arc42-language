@@ -316,6 +316,9 @@ export const e010DeploymentDiagramValidation: Rule = {
     const diagnostics: Diagnostic[] = [];
     const seenIds = new Map<string, DiagramArtifact>();
 
+    // Duplicate-id detection across all diagrams that involve a deployment diagram.
+    // Cross-type collisions (deployment ↔ sequence, etc.) are also caught here.
+    // Note: collisions between two non-deployment diagrams are caught by E008.
     for (const diagram of diagrams) {
       const previous = seenIds.get(diagram.id);
       if (
@@ -329,12 +332,6 @@ export const e010DeploymentDiagramValidation: Rule = {
     }
 
     for (const diagram of deploymentDiagrams) {
-      if (!diagram.id) diagnostics.push(diagnostic(diagram, "missing required 'id' metadata"));
-      if (diagram.view !== "deployment")
-        diagnostics.push(diagnostic(diagram, "metadata 'view' must be 'deployment'"));
-      if (!diagram.notation)
-        diagnostics.push(diagnostic(diagram, "missing required 'notation' metadata"));
-
       const aliases = parseAliases(diagram, diagnostics);
       for (const modelId of aliases.modelIds) {
         if (!index.byId.has(modelId))

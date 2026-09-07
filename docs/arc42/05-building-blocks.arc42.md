@@ -3,6 +3,55 @@
 The arc42-language toolchain is a pnpm monorepo. Each package is a vertical slice of the system —
 the core library owns all logic; the CLI and skill are thin consumers of it.
 
+:::diagram
+id: diag-building-blocks
+view: building-block
+notation: mermaid
+:::
+
+```mermaid
+graph TD
+    bb-cli["CLI"]
+    bb-core["Core Library"]
+    bb-skill["Skill"]
+    bb-web-renderer["Web Renderer"]
+    bb-workspace["Documentation Workspace"]
+
+    bb-cli -->|"if-cli-core"| bb-core
+    bb-cli -->|"if-cli-workspace"| bb-workspace
+    bb-cli -->|"if-cli-web"| bb-web-renderer
+    bb-web-renderer -->|"if-web-core"| bb-core
+    bb-skill -->|"if-skill-cli"| bb-cli
+```
+
+The Core Library is decomposed into a four-stage pipeline. See the drill-down diagram below.
+
+:::diagram
+id: diag-core-internals
+view: building-block
+notation: mermaid
+:::
+
+```mermaid
+graph TD
+    subgraph bb-core["Core Library"]
+        bb-parser["Parser"]
+        bb-builder["Builder"]
+        bb-resolver["Resolver"]
+        bb-validator["Validator"]
+        bb-renderer["Renderer Registry"]
+    end
+
+    bb-parser -->|"if-parser-builder"| bb-builder
+    bb-builder -->|"if-builder-resolver"| bb-resolver
+    bb-resolver -->|"if-resolver-validator"| bb-validator
+    bb-validator -->|"if-validator-renderer"| bb-renderer
+```
+
+---
+
+:::
+
 ## Core Library
 
 The heart of the system. Implements the full pipeline from file discovery to validation output and
@@ -182,7 +231,7 @@ path: packages/skill
 :::
 ```
 
-## Core → CLI Interface
+## CLI → Core Interface
 
 The CLI imports the top-level API from the core library as a workspace dependency.
 All business logic lives in core; the CLI only handles argument parsing, output formatting,
@@ -190,9 +239,9 @@ and exit codes.
 
 ```arc42
 :::interface
-id: if-core-cli
-title: Core → CLI
-between: bb-core, bb-cli
+id: if-cli-core
+title: CLI → Core
+between: bb-cli, bb-core
 protocol: TypeScript module import (pnpm workspace:\*)
 path: packages/cli
 :::

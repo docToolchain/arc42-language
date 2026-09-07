@@ -295,7 +295,7 @@ roots: missing-root
     );
   });
 
-  test("keeps Runtime View diagnostics under E008", () => {
+  test("keeps Runtime View diagnostics under E012", () => {
     const ws = workspace(`:::runtime-scenario
 id: scenario-api
 title: API request
@@ -311,7 +311,7 @@ sequenceDiagram
 \`\`\``);
 
     const diagnostics = validate(ws, buildIndex(ws));
-    expect(diagnostics.some((diagnostic) => diagnostic.code === "E008")).toBe(true);
+    expect(diagnostics.some((diagnostic) => diagnostic.code === "E012")).toBe(true);
     expect(diagnostics.some((diagnostic) => diagnostic.code === "E010")).toBe(false);
   });
 });

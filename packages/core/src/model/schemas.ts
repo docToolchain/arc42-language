@@ -225,7 +225,7 @@ export const InterfaceSchema = z
     title: z.string().min(1).meta({ description: "Short name for the interface" }),
     between: splitListRequiredSchema.meta({
       description:
-        "Exactly two comma-separated IDs: one building-block and one actor, or two building-blocks",
+        "Exactly two comma-separated IDs: caller first, callee second (e.g. `bb-cli, bb-core` for a CLI→Core import). The order is significant — diagram edges must match this direction.",
     }),
     protocol: z
       .string()
@@ -439,6 +439,62 @@ export const ELEMENT_SCHEMAS: Record<BlockType, z.ZodType> = {
   risk: RiskSchema,
   "glossary-term": GlossaryTermSchema,
 };
+
+// ---------------------------------------------------------------------------
+// Diagram metadata schemas
+// ---------------------------------------------------------------------------
+
+/** Shared required fields for all :::diagram blocks. */
+const diagramBaseSchema = {
+  id: z.string().min(1).meta({ description: "Unique diagram identifier" }),
+  notation: z.string().optional().meta({
+    description: "Notation variant (e.g. mermaid, mermaid-sequence, mermaid-architecture)",
+  }),
+  aliases: z.string().optional().meta({ description: "Alias mappings (safe-id=model-id, ...)" }),
+};
+
+/** Shared roots field — optional comma-separated list of scoping ids. */
+const diagramRootsField = splitListSchema.meta({
+  description: "Optional comma-separated list of ids to scope the view",
+});
+
+export const DeploymentDiagramMetaSchema = z.object({
+  ...diagramBaseSchema,
+  notation: z.string().min(1).meta({ description: "Must be mermaid-architecture" }),
+  roots: diagramRootsField,
+});
+
+export const SequenceDiagramMetaSchema = z.object({
+  ...diagramBaseSchema,
+  notation: z.string().min(1).meta({ description: "Must be mermaid-sequence" }),
+  scenario: z
+    .string()
+    .min(1)
+    .meta({ description: "ID of the runtime-scenario this diagram belongs to" }),
+});
+
+export const BuildingBlockDiagramMetaSchema = z.object({
+  ...diagramBaseSchema,
+  roots: diagramRootsField,
+});
+
+export const ContextDiagramMetaSchema = z.object({
+  ...diagramBaseSchema,
+  roots: diagramRootsField,
+});
+
+export const GenericDiagramMetaSchema = z.object({
+  ...diagramBaseSchema,
+  notation: z.string().min(1).meta({ description: "Notation identifier for this diagram" }),
+});
+
+export const DIAGRAM_SCHEMAS = {
+  deployment: DeploymentDiagramMetaSchema,
+  sequence: SequenceDiagramMetaSchema,
+  "building-block": BuildingBlockDiagramMetaSchema,
+  context: ContextDiagramMetaSchema,
+  generic: GenericDiagramMetaSchema,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Schema introspection — derive FieldMeta[] from Zod shape + globalRegistry

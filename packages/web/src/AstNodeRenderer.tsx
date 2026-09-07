@@ -1,10 +1,23 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { marked } from "marked";
-import type { AstNode, BlockNode, DiagramNode, ProseRunNode, Element, Edge } from "./types";
+import type {
+  AstNode,
+  BlockNode,
+  DiagramNode,
+  Interface,
+  ProseRunNode,
+  Element,
+  Edge,
+} from "./types";
 import { ElementCard } from "./ElementCard";
-import { MermaidDiagram } from "./MermaidDiagram";
 import { AgentBlock } from "./AgentBlock";
 import { KIND_COLOR } from "./ElementCard";
+import { GenericDiagramView } from "./GenericDiagramView";
+import { SequenceDiagramView } from "./SequenceDiagramView";
+import { DeploymentDiagramView } from "./DeploymentDiagramView";
+import { BuildingBlockDiagramView } from "./BuildingBlockDiagramView";
+import { ContextDiagramView } from "./ContextDiagramView";
+import { MermaidDiagram } from "./MermaidDiagram";
 
 interface AstNodeRendererProps {
   node: AstNode;
@@ -16,6 +29,26 @@ interface AstNodeRendererProps {
   onAutoExpanded?: () => void;
 }
 
+/**
+ * Replace interface ids used as edge labels in Mermaid source with the interface protocol.
+ * Falls back to the interface title if no protocol is defined.
+ * If neither is useful, the label is left as-is.
+ *
+ * Input:  `actor-customer -->|"if-customer-gateway"| bb-api-gateway`
+ * Output: `actor-customer -->|"HTTPS / REST + JSON"| bb-api-gateway`
+ */
+export function resolveInterfaceLabels(
+  source: string,
+  interfaceMap: Map<string, Interface>,
+): string {
+  return source.replace(/\|"([^"]+)"\|/g, (_match, label: string) => {
+    const iface = interfaceMap.get(label.trim());
+    if (!iface) return `|"${label}"|`;
+    const text = iface.protocol ?? iface.title;
+    return `|"${text}"|`;
+  });
+}
+
 export function AstNodeRenderer({
   node,
   viewMode,
@@ -25,6 +58,15 @@ export function AstNodeRenderer({
   autoExpandElementId,
   onAutoExpanded,
 }: AstNodeRendererProps) {
+  // Build interface map for label resolution in diagram views
+  const interfaceMap = useMemo(() => {
+    const map = new Map<string, Interface>();
+    for (const el of elementsMap.values()) {
+      if (el.kind === "interface") map.set(el.id, el);
+    }
+    return map;
+  }, [elementsMap]);
+
   switch (node.kind) {
     case "heading": {
       const Tag = `h${Math.min(node.level, 6)}` as keyof React.JSX.IntrinsicElements;
@@ -80,13 +122,24 @@ export function AstNodeRenderer({
           />
         );
       }
-      return <AgentBlock source={reconstructArc42FenceSource(blockNode)} lang="arc42" />;
+      return <AgentBlock source={reconstructBlockSource(blockNode)} lang="arc42" />;
     }
 
     case "diagram": {
       const diagramNode = node as DiagramNode;
       if (viewMode === "human") {
-        return <MermaidDiagram source={diagramNode.source} id={diagramNode.id} />;
+        switch (diagramNode.diagramType) {
+          case "building-block":
+            return <BuildingBlockDiagramView node={diagramNode} interfaceMap={interfaceMap} />;
+          case "context":
+            return <ContextDiagramView node={diagramNode} interfaceMap={interfaceMap} />;
+          case "sequence":
+            return <SequenceDiagramView node={diagramNode} />;
+          case "deployment":
+            return <DeploymentDiagramView node={diagramNode} />;
+          default:
+            return <GenericDiagramView node={diagramNode} />;
+        }
       }
       return <AgentBlock source={diagramNode.source} lang="mermaid" />;
     }
@@ -165,7 +218,7 @@ function ProseRun({
       <div className="prose-run">
         {text && <ProseBlock text={text} />}
         {hasBlock && viewMode === "agent" && (
-          <AgentBlock source={reconstructArc42FenceSource(block!)} lang="arc42" />
+          <AgentBlock source={reconstructBlockSource(block!)} lang="arc42" />
         )}
       </div>
     );
@@ -230,15 +283,6 @@ function ProseBlock({ text }: ProseBlockProps) {
 // ─── Source reconstruction helpers ───────────────────────────────────────────
 
 function reconstructBlockSource(node: BlockNode): string {
-  const lines: string[] = [`:::${node.blockType}`];
-  for (const [key, val] of Object.entries(node.attributes)) {
-    lines.push(`${key}: ${val}`);
-  }
-  lines.push(":::");
-  return lines.join("\n");
-}
-
-function reconstructArc42FenceSource(node: BlockNode): string {
   const lines: string[] = [`:::${node.blockType}`];
   for (const [key, val] of Object.entries(node.attributes)) {
     lines.push(`${key}: ${val}`);

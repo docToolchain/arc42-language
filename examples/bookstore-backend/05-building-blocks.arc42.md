@@ -2,7 +2,36 @@
 
 The bookstore backend follows a service-oriented decomposition. Each service owns its data and exposes a well-defined HTTP/JSON interface. The API Gateway is the single entry point for all external clients — it routes requests to the appropriate service but does not contain business logic.
 
-## API Gateway
+:::diagram
+id: bb-view-all
+view: building-block
+notation: mermaid
+:::
+
+```mermaid
+graph TD
+    bb-api-gateway["API Gateway\n(nginx)"]
+    bb-catalog-service["Catalog Service\n(Node.js / Express)"]
+    bb-order-service["Order Service\n(Node.js / Express)"]
+    bb-auth-service["Auth Service\n(Node.js / Express)"]
+    bb-notification-service["Notification Service\n(Node.js / Express)"]
+    bb-message-queue["Message Queue\n(AWS SQS)"]
+    bb-catalog-db["Catalog Database\n(PostgreSQL 16)"]
+    bb-order-db["Order Database\n(PostgreSQL 16)"]
+    bb-auth-db["Auth Database\n(PostgreSQL 16)"]
+    bb-cache["Response Cache\n(Redis 7)"]
+
+    bb-api-gateway -->|"if-gateway-catalog"| bb-catalog-service
+    bb-api-gateway -->|"if-gateway-order"| bb-order-service
+    bb-api-gateway -->|"if-gateway-auth"| bb-auth-service
+    bb-catalog-service -->|"if-catalog-db"| bb-catalog-db
+    bb-catalog-service -->|"if-catalog-cache"| bb-cache
+    bb-order-service -->|"if-order-db"| bb-order-db
+    bb-order-service -->|"if-order-catalog"| bb-catalog-service
+    bb-order-service -->|"if-order-queue"| bb-message-queue
+    bb-auth-service -->|"if-auth-db"| bb-auth-db
+    bb-notification-service -->|"if-notify-queue"| bb-message-queue
+```
 
 The gateway is the single entry point for all external traffic. It terminates TLS, validates JWT tokens, enforces rate limits, and routes requests to the appropriate downstream service. No business logic lives here — the gateway is a pure infrastructure component. It rejects unauthenticated requests before they reach any business service (except for public endpoints like catalog search and login).
 

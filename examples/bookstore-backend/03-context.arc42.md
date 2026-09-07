@@ -2,7 +2,32 @@
 
 The Bookstore Backend sits at the center of a small ecosystem. External clients (web browsers and mobile apps) interact with it through a single API surface. The system integrates with three external services: a payment processor for charging customers, an email delivery service for transactional notifications, and an SMS gateway for order status updates.
 
-## Customer
+:::diagram
+id: ctx-view-all
+view: context
+notation: mermaid
+:::
+
+```mermaid
+graph TD
+    actor-customer(["Customer"])
+    actor-admin(["Store Administrator"])
+    actor-payment["Payment Processor"]
+    actor-email["Email Delivery Service"]
+    actor-sms["SMS Gateway"]
+
+    subgraph system["Bookstore Backend"]
+        bb-api-gateway["API Gateway"]
+        bb-order-service["Order Service"]
+        bb-notification-service["Notification Service"]
+    end
+
+    actor-customer -->|"if-customer-gateway"| bb-api-gateway
+    actor-admin -->|"if-admin-gateway"| bb-api-gateway
+    bb-order-service -->|"if-order-payment"| actor-payment
+    bb-notification-service -->|"if-notify-email"| actor-email
+    bb-notification-service -->|"if-notify-sms"| actor-sms
+```
 
 Customers browse the catalog, manage their shopping cart, place orders, and review their order history. They interact with the backend indirectly through a web single-page application or a native mobile app. Authentication happens via username/password login, which yields a JWT token for subsequent requests.
 

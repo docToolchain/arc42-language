@@ -9,12 +9,14 @@ function workspace(content: string) {
 }
 
 describe("deployment diagram review regressions", () => {
-  test("reports missing deployment diagram metadata as E010", () => {
+  test("reports missing deployment diagram metadata as E005 parse error", () => {
     const ws = workspace(":::diagram\nview: deployment\n:::\n\n```mermaid\narchitecture-beta\n```");
-    expect(ws.diagrams).toHaveLength(1);
-    expect(validate(ws, buildIndex(ws)).some((diagnostic) => diagnostic.code === "E010")).toBe(
+    // Missing 'id' is now caught by Zod schema validation at build time (parse error),
+    // not deferred to E010 at validation time.
+    expect(ws.parseErrors.some((e) => e.message.includes("Missing required attribute 'id'"))).toBe(
       true,
     );
+    expect(ws.diagrams).toHaveLength(0);
   });
 
   test("validates parent and host references independently when ids overlap", () => {
