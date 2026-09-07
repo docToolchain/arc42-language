@@ -107,13 +107,20 @@ async function main() {
     process.exit(0);
   }
 
+  // Show help early — before directory resolution — so that running
+  // `arc42 validate --help` from any directory doesn't trigger the
+  // "multiple directories found" discovery warning.
+  if (globalValues["help"] || commandArgs.includes("--help") || commandArgs.includes("-h")) {
+    const help = commandHelp(command, commandArgs[0], BLOCK_TYPES);
+    if (help) {
+      console.log(help);
+      process.exit(0);
+    }
+    // Unknown command — fall through to error handling below
+  }
+
   const dir = resolveDir(globalValues["dir"] as string | undefined);
   const root = globalValues["root"] as string | undefined;
-
-  if (globalValues["help"] && commandHelp(command, commandArgs[0], BLOCK_TYPES)) {
-    console.log(commandHelp(command, commandArgs[0], BLOCK_TYPES));
-    process.exit(0);
-  }
 
   if (command === "validate") {
     await runValidate(dir, root, commandArgs);
