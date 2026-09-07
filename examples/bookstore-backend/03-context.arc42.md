@@ -97,6 +97,8 @@ description: AWS SNS for transactional SMS delivery
 Customers interact with the backend exclusively through the API Gateway. All requests — catalog searches, cart operations, order placement — enter through this single endpoint.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-customer-gateway
 title: Customer → API Gateway
@@ -110,6 +112,8 @@ protocol: HTTPS / REST + JSON
 Administrators use the same API Gateway as customers but authenticate with elevated roles. Admin-specific endpoints for catalog management and order oversight are routed through the same entry point.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-admin-gateway
 title: Administrator → API Gateway
@@ -123,6 +127,8 @@ protocol: HTTPS / REST + JSON
 The Order Service calls Stripe during checkout to authorize payment. It also receives asynchronous webhook notifications from Stripe for payment lifecycle events (success, failure, refund).
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-order-payment
 title: Order Service → Payment Processor
@@ -136,6 +142,8 @@ protocol: HTTPS / REST (Stripe API v2)
 The Notification Service sends transactional emails through AWS SES. It formats messages from templates and hands them to the delivery service for dispatch.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-notify-email
 title: Notification Service → Email Delivery
@@ -149,6 +157,8 @@ protocol: HTTPS / AWS SES API
 The Notification Service sends SMS messages through AWS SNS for time-sensitive order events. Messages are short-form and do not require rich formatting.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-notify-sms
 title: Notification Service → SMS Gateway

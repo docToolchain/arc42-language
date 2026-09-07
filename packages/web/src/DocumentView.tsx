@@ -1,5 +1,13 @@
 import React, { useMemo } from "react";
-import type { AstNode, ProseNode, BlockNode, Element, Edge, DocumentAst } from "./types";
+import type {
+  AstNode,
+  ProseNode,
+  IgnoreNode,
+  BlockNode,
+  Element,
+  Edge,
+  DocumentAst,
+} from "./types";
 import { AstNodeRenderer } from "./AstNodeRenderer";
 
 interface DocumentViewProps {
@@ -28,22 +36,25 @@ interface DocumentViewProps {
  *      expands/collapses the element card below.
  */
 type RenderGroup =
-  | { kind: "prose-run"; text: string; block: BlockNode | null }
+  | { kind: "prose-run"; text: string; block: BlockNode | null; ignores: IgnoreNode[] }
   | { kind: "other"; node: AstNode };
 
-function groupNodes(nodes: AstNode[]): RenderGroup[] {
+export function groupNodes(nodes: AstNode[]): RenderGroup[] {
   const groups: RenderGroup[] = [];
   let proseLines: string[] = [];
+  let pendingIgnores: IgnoreNode[] = [];
   let i = 0;
 
-  function flushProse(attachedBlock: BlockNode | null) {
+  function flushProse(attachedBlock: BlockNode | null, ignores = pendingIgnores) {
     if (proseLines.length === 0 && !attachedBlock) return;
     groups.push({
       kind: "prose-run",
       text: proseLines.join("\n"),
       block: attachedBlock,
+      ignores,
     });
     proseLines = [];
+    if (attachedBlock) pendingIgnores = [];
   }
 
   while (i < nodes.length) {
@@ -53,10 +64,14 @@ function groupNodes(nodes: AstNode[]): RenderGroup[] {
       proseLines.push((node as ProseNode).text);
       i++;
 
-      // Peek ahead: if the next node is an arc42 BlockNode, attach it
+      // Ignore directives between prose and its block belong to that card.
+      while (nodes[i]?.kind === "ignore") {
+        pendingIgnores.push(nodes[i] as IgnoreNode);
+        i++;
+      }
       const next = nodes[i];
       if (next && next.kind === "block" && (next as BlockNode).inArc42Fence) {
-        flushProse(next as BlockNode);
+        flushProse(next as BlockNode, pendingIgnores);
         i++; // consume the block too
       }
       // Otherwise keep accumulating prose lines — they'll be flushed when
@@ -69,10 +84,26 @@ function groupNodes(nodes: AstNode[]): RenderGroup[] {
       flushProse(null);
     }
 
+    if (node.kind === "ignore") {
+      pendingIgnores.push(node as IgnoreNode);
+      i++;
+      continue;
+    }
+
     if (node.kind === "block" && (node as BlockNode).inArc42Fence) {
       // arc42 block with no preceding prose — emit as prose-run with empty text
-      groups.push({ kind: "prose-run", text: "", block: node as BlockNode });
+      groups.push({
+        kind: "prose-run",
+        text: "",
+        block: node as BlockNode,
+        ignores: pendingIgnores,
+      });
+      pendingIgnores = [];
     } else {
+      if (pendingIgnores.length > 0) {
+        for (const ignore of pendingIgnores) groups.push({ kind: "other", node: ignore });
+        pendingIgnores = [];
+      }
       groups.push({ kind: "other", node });
     }
     i++;
@@ -82,6 +113,10 @@ function groupNodes(nodes: AstNode[]): RenderGroup[] {
   if (proseLines.length > 0) {
     flushProse(null);
   }
+
+  // Orphaned directives are retained as standalone nodes for agent view. Human
+  // view deliberately does not render them outside an attached card.
+  for (const ignore of pendingIgnores) groups.push({ kind: "other", node: ignore });
 
   return groups;
 }
@@ -121,7 +156,14 @@ export function DocumentView({
         return (
           <AstNodeRenderer
             key={i}
-            node={{ kind: "prose-run", text: group.text, block: group.block } as AstNode}
+            node={
+              {
+                kind: "prose-run",
+                text: group.text,
+                block: group.block,
+                ignores: group.ignores,
+              } as AstNode
+            }
             viewMode={viewMode}
             elementsMap={elementsMap}
             elementDocMap={elementDocMap}

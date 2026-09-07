@@ -38,6 +38,8 @@ The gateway is the single entry point for all external traffic. It terminates TL
 The gateway propagates a trace identifier on every request. If the incoming request carries an `X-Trace-Id` header, the gateway preserves it; otherwise, it generates a new one. This trace id flows through all downstream calls and appears in every log entry.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-api-gateway
 title: API Gateway
@@ -53,6 +55,8 @@ The Catalog Service owns all product data: titles, authors, ISBNs, prices, cover
 Search and detail responses are served from Redis cache whenever possible. Cache misses fall through to PostgreSQL, and the result is written back to the cache. When an administrator updates catalog data, the service publishes a cache invalidation event so stale data is evicted within seconds. This caching strategy is critical for meeting the 200ms p95 search latency target.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-catalog-service
 title: Catalog Service
@@ -70,6 +74,8 @@ At checkout time, the Order Service snapshots the relevant product data from the
 The Order Service is the only component that communicates with the external payment processor. It handles the synchronous authorization call during checkout and processes asynchronous webhook callbacks for payment confirmation and failure.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-order-service
 title: Order Service
@@ -85,6 +91,8 @@ The Auth Service handles customer registration, credential verification, and JWT
 Token expiry is set to 15 minutes. A refresh token flow allows clients to obtain new access tokens without re-entering credentials. The Auth Service is the only component that accesses the user credential store.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-auth-service
 title: Auth Service
@@ -100,6 +108,8 @@ The Notification Service consumes order events from the message queue and delive
 The service operates entirely asynchronously. It does not participate in the checkout flow — it reacts to events after the fact. If delivery fails, messages are retried with exponential backoff. Persistent delivery failures are logged and surfaced through alerting.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-notification-service
 title: Notification Service
@@ -115,6 +125,8 @@ An SQS-based message queue that decouples the Order Service from the Notificatio
 The queue provides at-least-once delivery. The Notification Service handles duplicate events idempotently by tracking processed event identifiers. Dead-letter queue configuration captures events that fail repeatedly for manual investigation.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-message-queue
 title: Message Queue
@@ -130,6 +142,8 @@ A dedicated PostgreSQL database for the Catalog Service. It stores products, cat
 Full-text search is handled by PostgreSQL's built-in text search capabilities, augmented by GIN indices for fast lookup. This avoids the operational overhead of a separate search engine like Elasticsearch for the current catalog size (under 500,000 titles).
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-catalog-db
 title: Catalog Database
@@ -145,6 +159,8 @@ A dedicated PostgreSQL database for the Order Service. It stores orders, line it
 Order data includes payment processor reference identifiers but never stores card numbers or other sensitive payment instrument data — that lives exclusively at Stripe.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-order-db
 title: Order Database
@@ -158,6 +174,8 @@ implements: concept-logging
 A dedicated PostgreSQL database for the Auth Service. It stores user credentials (bcrypt-hashed passwords), roles, refresh token records, and account metadata. This is the most security-sensitive data store in the system; access is restricted to the Auth Service only.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-auth-db
 title: Auth Database
@@ -173,6 +191,8 @@ A Redis instance that fronts the Catalog Service for read-heavy endpoints: catal
 The cache is a performance optimization, not a data store. If Redis is unavailable, the Catalog Service falls back to serving directly from PostgreSQL. Response times will degrade but the system remains functional.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::building-block
 id: bb-cache
 title: Response Cache
@@ -190,6 +210,8 @@ implements: concept-logging, concept-cache-invalidation
 The primary read path for product data. The gateway forwards all `/catalog/**` requests to the Catalog Service after JWT validation. Public endpoints (search, browse, detail) do not require authentication; admin endpoints (create, update, delete) require an admin role.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-gateway-catalog
 title: Gateway → Catalog Service
@@ -203,6 +225,8 @@ protocol: HTTP/JSON
 The order management path. The gateway forwards all `/cart/**` and `/orders/**` requests to the Order Service. All endpoints require authentication — there are no anonymous order operations.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-gateway-order
 title: Gateway → Order Service
@@ -216,6 +240,8 @@ protocol: HTTP/JSON
 Used for login, registration, token refresh, and public key retrieval. Login and registration are unauthenticated; token refresh requires a valid refresh token. The gateway also calls the Auth Service's public key endpoint at startup to configure local JWT validation.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-gateway-auth
 title: Gateway → Auth Service
@@ -229,6 +255,8 @@ protocol: HTTP/JSON
 All catalog reads and writes go through this connection. The Catalog Service manages a connection pool; the database is not directly accessible from outside the service boundary.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-catalog-db
 title: Catalog Service → Catalog Database
@@ -242,6 +270,8 @@ protocol: PostgreSQL wire protocol (TLS)
 The Catalog Service checks Redis before querying the database for search and detail requests. Cache misses fall through to PostgreSQL and the result is written back. Catalog writes trigger invalidation of affected cache keys.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-catalog-cache
 title: Catalog Service → Response Cache
@@ -255,6 +285,8 @@ protocol: Redis protocol (RESP3)
 All order reads and writes go through this connection. The Order Service is the sole writer to the order schema. Connection pooling and query timeout management are handled by the service.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-order-db
 title: Order Service → Order Database
@@ -268,6 +300,8 @@ protocol: PostgreSQL wire protocol (TLS)
 During checkout, the Order Service calls the Catalog Service to fetch current product details and verify stock availability. This is a synchronous call on the checkout path — the fetched data is snapshotted into the order record.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-order-catalog
 title: Order Service → Catalog Service
@@ -281,6 +315,8 @@ protocol: HTTP/JSON (internal)
 The Order Service publishes domain events to the message queue after significant state transitions: order placed, order shipped, order cancelled. Events are published asynchronously after the database transaction commits.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-order-queue
 title: Order Service → Message Queue
@@ -294,6 +330,8 @@ protocol: AWS SQS API (HTTPS)
 All credential and token operations go through this connection. The Auth Service is the sole accessor of the auth database. Queries are parameterized to prevent injection; connection encryption is enforced.
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-auth-db
 title: Auth Service → Auth Database
@@ -307,6 +345,8 @@ protocol: PostgreSQL wire protocol (TLS)
 The Notification Service polls the message queue for order events. It processes each event by selecting the appropriate notification template, rendering the message, and dispatching it through the relevant channel (email or SMS).
 
 ```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
 :::interface
 id: if-notify-queue
 title: Notification Service → Message Queue

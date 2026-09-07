@@ -505,6 +505,25 @@ pre {
   font-size: 0.85rem;
 }
 
+.element-card__ignores {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.75rem 0;
+}
+
+.element-card__ignore {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  background: color-mix(in srgb, var(--c-warning, #d97706) 10%, transparent);
+  font-size: 0.85rem;
+}
+
+.element-card__ignore code {
+  font-weight: 700;
+}
+
 .element-card__field {
   display: contents;
 }

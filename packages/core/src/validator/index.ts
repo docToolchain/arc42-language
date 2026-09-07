@@ -8,20 +8,28 @@ const STALE_IGNORE_CODE = "W019";
 function applyIgnoreDirectives(workspace: Workspace, diagnostics: Diagnostic[]): Diagnostic[] {
   const directives = workspace.ignoreDirectives ?? [];
   for (const directive of directives) directive.used = false;
-  const kept: Diagnostic[] = [];
-  for (const diagnostic of diagnostics) {
-    let suppressed = false;
-    for (const directive of directives) {
-      if (
-        directive.file === diagnostic.file &&
-        directive.ruleCode.toUpperCase() === diagnostic.code.toUpperCase()
-      ) {
-        directive.used = true;
-        suppressed = true;
-      }
+  const suppressed = new Set<Diagnostic>();
+
+  // A directive belongs to the following source element and suppresses one
+  // matching finding there. Assigning in source order keeps a directive tied
+  // to the nearest subsequent finding, independent of rule execution order.
+  for (const directive of [...directives].sort((a, b) => a.line - b.line)) {
+    const diagnostic = diagnostics
+      .filter(
+        (candidate) =>
+          !suppressed.has(candidate) &&
+          candidate.file === directive.file &&
+          candidate.code.toUpperCase() === directive.ruleCode.toUpperCase() &&
+          candidate.line >= directive.line,
+      )
+      .sort((a, b) => a.line - b.line)[0];
+    if (diagnostic) {
+      directive.used = true;
+      suppressed.add(diagnostic);
     }
-    if (!suppressed) kept.push(diagnostic);
   }
+
+  const kept = diagnostics.filter((diagnostic) => !suppressed.has(diagnostic));
 
   const stale = directives
     .filter((directive) => !directive.used)

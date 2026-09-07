@@ -52,6 +52,31 @@ describe("ignore directives", () => {
     ).toBe(true);
   });
 
+  test("suppresses only one matching diagnostic per directive", () => {
+    const document = parseMarkdown(
+      "a.md",
+      `\`\`\`arc42
+:::quality-goal
+id: qg-1
+title: Quality 1
+:::
+:::quality-goal
+id: qg-2
+title: Quality 2
+:::
+\`\`\``,
+    );
+    document.nodes.unshift({
+      kind: "ignore",
+      ruleCode: "E005",
+      startLine: 1,
+      endLine: 1,
+    });
+
+    const result = diagnostics([document]);
+    expect(result.filter((diagnostic) => diagnostic.code === "E005")).toHaveLength(1);
+  });
+
   test("reports unused and self-targeting W019 directives", () => {
     const result = diagnostics([
       {

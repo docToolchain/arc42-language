@@ -3,6 +3,7 @@ import { marked } from "marked";
 import type {
   AstNode,
   BlockNode,
+  IgnoreNode,
   DiagramNode,
   Interface,
   ProseRunNode,
@@ -92,6 +93,7 @@ export function AstNodeRenderer({
         <ProseRun
           text={runNode.text}
           block={runNode.block}
+          ignores={runNode.ignores}
           viewMode={viewMode}
           elementsMap={elementsMap}
           elementDocMap={elementDocMap}
@@ -124,6 +126,11 @@ export function AstNodeRenderer({
       }
       return <AgentBlock source={reconstructBlockSource(blockNode)} lang="arc42" />;
     }
+
+    case "ignore":
+      return viewMode === "agent" ? (
+        <AgentBlock source={reconstructIgnoreSource(node)} lang="arc42" />
+      ) : null;
 
     case "diagram": {
       const diagramNode = node as DiagramNode;
@@ -189,6 +196,7 @@ export function AstNodeRenderer({
 interface ProseRunProps {
   text: string;
   block: BlockNode | null;
+  ignores: IgnoreNode[];
   viewMode: "human" | "agent";
   elementsMap: Map<string, Element>;
   elementDocMap: Map<string, string>;
@@ -200,6 +208,7 @@ interface ProseRunProps {
 function ProseRun({
   text,
   block,
+  ignores,
   viewMode,
   elementsMap,
   elementDocMap,
@@ -244,7 +253,12 @@ function ProseRun({
       <div className="prose-run">
         {text && <ProseBlock text={text} />}
         {hasBlock && viewMode === "agent" && (
-          <AgentBlock source={reconstructBlockSource(block!)} lang="arc42" />
+          <AgentBlock
+            source={[...ignores.map(reconstructIgnoreSource), reconstructBlockSource(block!)].join(
+              "\n",
+            )}
+            lang="arc42"
+          />
         )}
       </div>
     );
@@ -266,6 +280,7 @@ function ProseRun({
             edges={edges}
             accentColor={color}
             onDismiss={() => setShowCard(false)}
+            ignores={ignores}
           />
         </div>
       </div>
@@ -315,4 +330,9 @@ function reconstructBlockSource(node: BlockNode): string {
   }
   lines.push(":::");
   return lines.join("\n");
+}
+
+export function reconstructIgnoreSource(node: IgnoreNode): string {
+  const reason = node.reason ? ` ${node.reason}` : "";
+  return `:::ignore ${node.ruleCode}${reason} :::`;
 }

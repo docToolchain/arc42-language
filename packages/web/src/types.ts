@@ -16,6 +16,14 @@ export interface ProseNode {
   line: number;
 }
 
+export interface IgnoreNode {
+  kind: "ignore";
+  ruleCode: string;
+  reason?: string;
+  startLine: number;
+  endLine: number;
+}
+
 export interface BlockNode {
   kind: "block";
   blockType: string;
@@ -83,11 +91,13 @@ export interface ProseRunNode {
   kind: "prose-run";
   text: string;
   block: BlockNode | null;
+  ignores: IgnoreNode[];
 }
 
 export type AstNode =
   | HeadingNode
   | ProseNode
+  | IgnoreNode
   | BlockNode
   | DiagramNode
   | BareMermaidNode
