@@ -11,6 +11,11 @@ fences for structured elements. The format is human-readable first: prose explai
 block records the machine-readable summary. The CLI validates consistency and coherence across
 all elements.
 
+> **One-time migration:** To migrate an existing repository, run `arc42 guide migration` first and
+> follow its step-by-step coordinator workflow. It establishes dependency order, evidence tracking,
+> and human-review gates. Do not start writing chapters before reading it; request chapter-specific
+> instructions with `arc42 guide chapter <number>`. The guide is read-only and never auto-fixes content.
+
 ## Getting started
 
 Before making architectural changes, familiarise yourself with the current state:

@@ -4,7 +4,7 @@
 Arc42 chapter 11. Document known risks and areas of technical debt ordered by priority.
 Risk management is about making technical risks visible to the people who need to act on them.
 
-A risk is a known threat whose probability or impact has not yet been fully mitigated.
+A risk is a known threat whose severity has not yet been fully mitigated.
 Technical debt is a shortcut taken consciously or accidentally whose cost will have to be
 paid later. Both belong here.
 
@@ -29,8 +29,7 @@ introduced without detection until a production incident occurs.
 :::risk
 id: risk-no-perf-tests
 title: No Automated Performance Regression Tests
-probability: medium
-impact: high
+severity: high
 mitigation: Add k6 load test suite as a nightly CI job with a p95 threshold gate.
 :::
 ```

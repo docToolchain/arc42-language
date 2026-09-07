@@ -30,6 +30,7 @@ import {
 import type { BlockType, Diagnostic } from "@arc42/core";
 import { collectGitDiff } from "./git-diff.ts";
 import { commandHelp, rootHelp } from "./help.ts";
+import { CHAPTERS, guideText } from "./guide.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -46,20 +47,9 @@ function isBlockType(s: string): s is BlockType {
   return (BLOCK_TYPES as readonly string[]).includes(s);
 }
 
-const CHAPTER_NAMES: Record<number, string> = {
-  0: "Document Structure",
-  1: "Quality Goals",
-  2: "Constraints",
-  3: "System Scope and Context",
-  4: "Solution Strategy",
-  5: "Building Blocks",
-  6: "Runtime View",
-  7: "Deployment View",
-  8: "Cross-cutting Concepts",
-  9: "Architecture Decisions",
-  11: "Risks and Technical Debt",
-  12: "Glossary",
-};
+const CHAPTER_NAMES: Record<number, string> = Object.fromEntries(
+  CHAPTERS.map(({ number, title }) => [number, title]),
+);
 
 // ---------------------------------------------------------------------------
 // Global flag parsing
@@ -117,6 +107,11 @@ async function main() {
       process.exit(0);
     }
     // Unknown command — fall through to error handling below
+  }
+
+  // Guide output only uses bundled assets and must not trigger workspace discovery warnings.
+  if (command === "guide") {
+    runGuide(commandArgs);
   }
 
   const dir = resolveDir(globalValues["dir"] as string | undefined);
@@ -502,6 +497,28 @@ function runInitTemplate(args: string[]) {
     `Templates copied: ${copied} file(s) to ${destDir}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
   );
   process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
+// guide
+// ---------------------------------------------------------------------------
+
+function runGuide(args: string[]) {
+  const { positionals } = parseArgs({
+    args,
+    options: {},
+    allowPositionals: true,
+  });
+
+  const subcommand = positionals[0] ?? "migration";
+  const argument = positionals[1];
+  try {
+    console.log(guideText(subcommand, argument, __dirname));
+    process.exit(0);
+  } catch (err) {
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(2);
+  }
 }
 
 // ---------------------------------------------------------------------------
