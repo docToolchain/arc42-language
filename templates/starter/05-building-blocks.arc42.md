@@ -10,7 +10,7 @@ library, layer, or component. Start with the most important top-level blocks. Re
 blocks into sub-blocks (using the `parent` field) only when the internal structure is
 architecturally significant.
 
-An interface connects exactly two building blocks and makes their collaboration explicit.
+An interface is a provider-owned contract used by one or more actors or building blocks.
 Every significant communication path should have an interface.
 The `provider` field identifies the building block that provides the interface.
 Consumers declare which interfaces they require in their `requires` list.

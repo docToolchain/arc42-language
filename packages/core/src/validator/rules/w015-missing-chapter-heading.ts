@@ -1,7 +1,7 @@
 import type { Rule, Diagnostic } from "../types.ts";
 import type { Workspace } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
-import { basename } from "../../path-utils.ts";
+import { chapterNumberFromFile } from "../../path-utils.ts";
 
 /**
  * W015 — A numbered arc42 chapter document is missing a correct h1 heading.
@@ -30,16 +30,6 @@ const CHAPTER_TITLES: ReadonlyMap<number, readonly string[]> = new Map([
 /** Format an accepted-titles list for use in diagnostic messages. */
 function formatAccepted(titles: readonly string[]): string {
   return titles.map((t) => `"${t}"`).join(", ");
-}
-
-/** Extract the chapter number from a filename like "06-runtime-view.arc42.md". */
-function chapterNumberFromFile(filePath: string): number | null {
-  const base = basename(filePath);
-  if (!base.endsWith(".arc42.md")) return null;
-  const match = /^(\d{2})-/.exec(base);
-  if (!match) return null;
-  const n = parseInt(match[1]!, 10);
-  return CHAPTER_TITLES.has(n) ? n : null;
 }
 
 export const w015MissingChapterHeading: Rule = {
