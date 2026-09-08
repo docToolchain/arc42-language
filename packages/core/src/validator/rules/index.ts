@@ -58,6 +58,7 @@ import { w022BuildingBlockDiagramEdgeWithoutInterface } from "./w022-building-bl
 import { w023ContextDiagramEdgeWithoutInterface } from "./w023-context-diagram-edge-without-interface.ts";
 import { w024BuildingBlockDiagramDuplicateEdge } from "./w024-building-block-diagram-duplicate-edge.ts";
 import { w025ContextDiagramDuplicateEdge } from "./w025-context-diagram-duplicate-edge.ts";
+import { w026BuildingBlockParentSubchapter } from "./w026-building-block-parent-subchapter.ts";
 import { h015BuildingBlockDiagramIncompleteHierarchy } from "./h015-building-block-diagram-incomplete-hierarchy.ts";
 import { h016BuildingBlockDiagramMissingInterfaces } from "./h016-building-block-diagram-missing-interfaces.ts";
 import { h017BuildingBlockDiagramMissingParent } from "./h017-building-block-diagram-missing-parent.ts";
@@ -106,6 +107,7 @@ export const builtinRules: readonly Rule[] = [
   w023ContextDiagramEdgeWithoutInterface, // Chapter 3
   w024BuildingBlockDiagramDuplicateEdge, // Chapter 5
   w025ContextDiagramDuplicateEdge, // Chapter 3
+  w026BuildingBlockParentSubchapter, // Chapter 5
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9

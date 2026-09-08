@@ -126,7 +126,7 @@ every validation invocation.
 This scenario describes the flow when an architect or reader opens `arc42 serve` to browse a
 workspace in the browser. The CLI starts a local HTTP server, the web renderer loads the workspace
 payload, and the reader navigates documentation. The `if-reader-web`, `if-cli-web`, and
-`if-web-core` interfaces are all exercised in this scenario.
+`if-web-cli-api` interfaces are all exercised in this scenario.
 
 ```arc42
 :::runtime-scenario

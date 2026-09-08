@@ -124,6 +124,13 @@ entire workspace (all `*.arc42.md` files in the directory).
 
 Run `arc42 rules` to see the full list of rules with rationale. Use `--format json` for machine-readable output.
 
+Building blocks with a `parent` must be documented in Markdown under that parent: the parent must
+have its own building-block section, and each child heading must be exactly one level deeper and
+appear after the parent heading. A heading used as a parent drill-down section must itself contain
+the declared parent building block; ordinary chapter/group headings that do not claim a parent are
+allowed. W026 reports missing parent documentation, an orphan parent section, incorrect heading
+depth, or incorrect ordering.
+
 ### Diagram convention
 
 Diagrams are explicitly associated with a structured element or section using a `:::diagram`
