@@ -88,7 +88,7 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
 
   return (
     <figure className={`diagram-figure${rendered ? "" : " diagram-loading"}`}>
-      <div ref={containerRef} className="diagram-svg" />
+      <div data-testid="diagram" ref={containerRef} className="diagram-svg" />
       {!rendered && <div className="diagram-spinner" aria-label="Rendering diagram…" />}
     </figure>
   );

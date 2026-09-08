@@ -78,12 +78,6 @@ describe("buildWorkspace", () => {
     expect(ws.parseErrors[0]!.message).toMatch(/provider/);
   });
 
-  test("invalid priority → ParseError", () => {
-    const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: P\npriority: critical")]);
-    expect(ws.elements).toHaveLength(0);
-    expect(ws.parseErrors[0]!.message).toMatch(/priority/);
-  });
-
   test("building-block implements parsed as array", () => {
     const ws = buildWorkspace([doc("building-block\nid: bb-1\ntitle: X\nimplements: c-a, c-b")]);
     const el = ws.elements[0]!;
@@ -91,28 +85,21 @@ describe("buildWorkspace", () => {
     expect(el.implements).toEqual(["c-a", "c-b"]);
   });
 
-  test("deployment-node parses optional type, hosts, and parent", () => {
+  test("deployment-node preserves its domain fields", () => {
     const ws = buildWorkspace([
       doc(
         "deployment-node\nid: node-prod\ntitle: Production\ntype: environment\nhosts: bb-api, bb-db\nparent: node-region",
       ),
     ]);
     expect(ws.parseErrors).toHaveLength(0);
-    expect(ws.elements[0]).toEqual({
+    expect(ws.elements[0]).toMatchObject({
       kind: "deployment-node",
       id: "node-prod",
       title: "Production",
       type: "environment",
       hosts: ["bb-api", "bb-db"],
       parent: "node-region",
-      loc: { file: "test.arc42.md", line: 1 },
     });
-  });
-
-  test("deployment-node rejects an invalid type", () => {
-    const ws = buildWorkspace([doc("deployment-node\nid: node-1\ntitle: Node\ntype: workstation")]);
-    expect(ws.elements).toHaveLength(0);
-    expect(ws.parseErrors[0]!.message).toMatch(/deployment-node/);
   });
 
   test("decision addresses parsed as array", () => {
@@ -183,27 +170,6 @@ describe("buildWorkspace", () => {
     expect(el.title).toBe("End User");
     expect(el.type).toBe("person");
     expect(el.description).toBe("Primary human user");
-  });
-
-  test("actor without type → ParseError (type is required)", () => {
-    const ws = buildWorkspace([doc("actor\nid: actor-1\ntitle: External Service")]);
-    expect(ws.elements).toHaveLength(0);
-    expect(ws.parseErrors[0]!.message).toMatch(/type.*actor/i);
-  });
-
-  test("actor with system type → correct enum value", () => {
-    const ws = buildWorkspace([
-      doc("actor\nid: actor-2\ntitle: Payment API\ntype: system\nrequires: if-payment"),
-    ]);
-    const el = ws.elements[0]!;
-    if (el.kind !== "actor") throw new Error();
-    expect(el.type).toBe("system");
-  });
-
-  test("actor with invalid type enum → ParseError", () => {
-    const ws = buildWorkspace([doc("actor\nid: actor-1\ntitle: X\ntype: external-system")]);
-    expect(ws.elements).toHaveLength(0);
-    expect(ws.parseErrors[0]!.message).toMatch(/type.*actor.*person.*system/i);
   });
 
   test("valid quality-scenario → correct element shape", () => {

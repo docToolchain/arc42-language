@@ -9,7 +9,7 @@ interface AgentBlockProps {
 
 export function AgentBlock({ source, lang = "arc42" }: AgentBlockProps) {
   return (
-    <pre className="agent-block">
+    <pre data-testid="agent-block" className="agent-block">
       <code className={`language-${lang}`}>{source}</code>
     </pre>
   );

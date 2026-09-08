@@ -54,6 +54,7 @@ export function Sidebar({
             <li key={doc.filePath} className="sidebar__doc">
               <a
                 data-testid="sidebar-doc-link"
+                aria-current={isActive ? "page" : undefined}
                 href={`#${filename(doc.filePath)}`}
                 className={`sidebar__doc-btn ${isActive ? "sidebar__doc-btn--active" : ""}`}
                 onClick={(e) => {

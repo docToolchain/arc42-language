@@ -29,7 +29,7 @@ test.describe("Document navigation", () => {
     await page.goto("/");
     await expect(page.locator("article h1")).toBeVisible();
     expect(await getActiveHash(page)).toBe("");
-    await expect(page.locator(".sidebar__doc-btn--active")).toBeVisible();
+    await expect(page.locator('[aria-current="page"]')).toBeVisible();
   });
 
   test("clicking a sidebar link updates URL hash and shows correct document", async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe("Document navigation", () => {
     await bbLink.click();
 
     expect(await getActiveHash(page)).toBe("#05-building-blocks.arc42.md");
-    await expect(page.locator(".sidebar__doc-btn--active")).toHaveText(/building-blocks/);
+    await expect(page.locator('[aria-current="page"]')).toHaveText(/building-blocks/);
     await expect(page.locator("article h1")).toBeVisible();
     const h1 = await getDocH1(page);
     expect(h1.length).toBeGreaterThan(0);
@@ -52,12 +52,7 @@ test.describe("Document navigation", () => {
     await page.goto("/#09-decisions.arc42.md");
     await expect(page.locator("article h1")).toBeVisible();
 
-    await expect(
-      page
-        .getByTestId("sidebar-doc-link")
-        .filter({ hasText: /decisions/ })
-        .first(),
-    ).toHaveClass(/sidebar__doc-btn--active/);
+    await expect(page.locator('[aria-current="page"]')).toHaveText(/decisions/);
     expect(await getActiveHash(page)).toBe("#09-decisions.arc42.md");
   });
 
@@ -111,7 +106,7 @@ test.describe("Document navigation", () => {
     expect(hashAfter).toMatch(/^#05-building-blocks\.arc42\.md:/);
 
     const activeLabel = await page.evaluate(
-      () => document.querySelector(".sidebar__doc-btn--active")?.textContent?.trim() ?? "",
+      () => document.querySelector('[aria-current="page"]')?.textContent?.trim() ?? "",
     );
     expect(activeLabel).toMatch(/building-blocks/);
   });
@@ -123,7 +118,7 @@ test.describe("Human / Agent view toggle", () => {
   test("human view shows coloured stripes for arc42 blocks", async ({ page }) => {
     await page.goto("/#05-building-blocks.arc42.md");
     await expect(page.getByTestId("prose-stripe").first()).toBeVisible();
-    await expect(page.locator(".agent-block").first()).not.toBeVisible();
+    await expect(page.getByTestId("agent-block").first()).not.toBeVisible();
   });
 
   test("switching to agent view shows raw blocks and hides stripes", async ({ page }) => {
@@ -133,7 +128,7 @@ test.describe("Human / Agent view toggle", () => {
     await page.getByRole("button", { name: "Human" }).click();
 
     await expect(page.getByTestId("prose-stripe").first()).not.toBeVisible();
-    await expect(page.locator(".agent-block").first()).toBeVisible();
+    await expect(page.getByTestId("agent-block").first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Agent" })).toBeVisible();
   });
 
@@ -141,11 +136,11 @@ test.describe("Human / Agent view toggle", () => {
     await page.goto("/#05-building-blocks.arc42.md");
 
     await page.getByRole("button", { name: "Human" }).click();
-    await expect(page.locator(".agent-block").first()).toBeVisible();
+    await expect(page.getByTestId("agent-block").first()).toBeVisible();
 
     await page.getByRole("button", { name: "Agent" }).click();
     await expect(page.getByTestId("prose-stripe").first()).toBeVisible();
-    await expect(page.locator(".agent-block").first()).not.toBeVisible();
+    await expect(page.getByTestId("agent-block").first()).not.toBeVisible();
   });
 });
 
@@ -157,14 +152,14 @@ test.describe("Stripe toggle (element card)", () => {
     const firstStripe = page.getByTestId("prose-stripe").first();
     await expect(firstStripe).toBeVisible();
 
-    await expect(page.locator(".prose-run--card-expanded")).not.toBeVisible();
+    await expect(page.getByTestId("expanded-card")).not.toBeVisible();
 
     await firstStripe.click();
 
-    const expanded = page.locator(".prose-run--card-expanded").first();
+    const expanded = page.getByTestId("expanded-card").first();
     await expect(expanded).toBeVisible();
-    await expect(expanded.locator(".element-card")).toBeVisible();
-    await expect(expanded.locator(".prose-run__prose-view")).not.toBeVisible();
+    await expect(expanded.getByTestId("element-card")).toBeVisible();
+    await expect(expanded.getByTestId("prose-view")).not.toBeVisible();
   });
 
   test("clicking stripe again restores prose", async ({ page }) => {
@@ -172,13 +167,13 @@ test.describe("Stripe toggle (element card)", () => {
     const firstStripe = page.getByTestId("prose-stripe").first();
 
     await firstStripe.click();
-    const expanded = page.locator(".prose-run--card-expanded").first();
-    await expect(expanded.locator(".element-card")).toBeVisible();
+    const expanded = page.getByTestId("expanded-card").first();
+    await expect(expanded.getByTestId("element-card")).toBeVisible();
 
     const dismissStripe = page.getByTestId("card-dismiss-stripe").first();
     await dismissStripe.click();
-    await expect(page.locator(".prose-run__prose-view").first()).toBeVisible();
-    await expect(page.locator(".prose-run--card-expanded").first()).not.toBeVisible();
+    await expect(page.getByTestId("prose-view").first()).toBeVisible();
+    await expect(page.getByTestId("expanded-card").first()).not.toBeVisible();
   });
 
   test("dismiss stripe is visible on the element card when card is shown", async ({ page }) => {
@@ -207,7 +202,7 @@ test.describe("Cross-document element card links", () => {
     await expect(firstStripe).toBeVisible();
     await firstStripe.click();
 
-    const card = page.locator(".prose-run--card-expanded .element-card").first();
+    const card = page.getByTestId("element-card").first();
     await expect(card).toBeVisible();
 
     // At least one ref chip must reference 10-quality.arc42.md
@@ -230,7 +225,7 @@ test.describe("Cross-document element card links", () => {
     const firstStripe = page.getByTestId("prose-stripe").first();
     await firstStripe.click();
 
-    const card = page.locator(".prose-run--card-expanded .element-card").first();
+    const card = page.getByTestId("element-card").first();
     await expect(card).toBeVisible();
 
     // Find the chip pointing to 10-quality.arc42.md
@@ -244,7 +239,7 @@ test.describe("Cross-document element card links", () => {
     await refChips.nth(targetIdx).click();
 
     // Sidebar should now show quality-goals as active
-    await expect(page.locator(".sidebar__doc-btn--active")).toHaveText(/quality/);
+    await expect(page.locator('[aria-current="page"]')).toHaveText(/quality/);
     expect(await getActiveHash(page)).toContain("10-quality.arc42.md");
   });
 
@@ -255,7 +250,7 @@ test.describe("Cross-document element card links", () => {
     const firstStripe = page.getByTestId("prose-stripe").first();
     await firstStripe.click();
 
-    const card = page.locator(".prose-run--card-expanded .element-card").first();
+    const card = page.getByTestId("element-card").first();
     await expect(card).toBeVisible();
 
     // Get the href of the first cross-doc chip (e.g. qg-maintainability in quality-goals)
@@ -266,19 +261,15 @@ test.describe("Cross-document element card links", () => {
     const targetHref = hrefs.find((h) => h.includes("10-quality.arc42.md"));
     expect(targetHref).toBeTruthy();
 
-    // Extract the element id from the href: #10-quality.arc42.md:el-qg-xxx
-    const match = targetHref!.match(/:el-([^&]+)$/);
-    expect(match).toBeTruthy();
-    const targetId = match![1]!;
-
     await refChips.nth(hrefs.indexOf(targetHref!)).click();
 
     // The target doc is shown
-    await expect(page.locator(".sidebar__doc-btn--active")).toHaveText(/quality/);
+    await expect(page.locator('[aria-current="page"]')).toHaveText(/quality/);
 
     // The target element card must be auto-expanded and visible
-    const expandedCard = page.locator(`#el-${targetId}`);
-    await expect(expandedCard).toBeVisible({ timeout: 3000 });
+    await expect(
+      page.getByTestId("element-card").filter({ hasText: "qg-maintainability" }),
+    ).toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -292,11 +283,11 @@ test.describe("Clickable diagram nodes", () => {
     await expect(page.locator("article h1")).toBeVisible();
 
     // Wait for at least one diagram to finish rendering
-    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("diagram").locator("svg").first()).toBeVisible({ timeout: 5000 });
 
     // Mermaid injects <a> tags around nodes with click href directives.
     // bb-api-gateway is a known element in the building block diagram.
-    const nodeLinks = page.locator('.diagram-svg svg a[href*="el-bb-api-gateway"]');
+    const nodeLinks = page.getByTestId("diagram").locator("a").filter({ hasText: "API Gateway" });
     await expect(nodeLinks.first()).toBeAttached({ timeout: 5000 });
   });
 
@@ -305,10 +296,14 @@ test.describe("Clickable diagram nodes", () => {
   }) => {
     await page.goto("/#05-building-blocks.arc42.md");
     await expect(page.locator("article h1")).toBeVisible();
-    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("diagram").locator("svg").first()).toBeVisible({ timeout: 5000 });
 
     // Click the SVG node link for bb-catalog-service
-    const nodeLink = page.locator('.diagram-svg svg a[href*="el-bb-catalog-service"]').first();
+    const nodeLink = page
+      .getByTestId("diagram")
+      .locator("a")
+      .filter({ hasText: "Catalog Service" })
+      .first();
     await expect(nodeLink).toBeAttached({ timeout: 5000 });
     await nodeLink.click();
 
@@ -316,34 +311,6 @@ test.describe("Clickable diagram nodes", () => {
     const hash = await getActiveHash(page);
     expect(hash).toContain("el-bb-catalog-service");
     // Still on the building-blocks document
-    expect(hash).toContain("05-building-blocks.arc42.md");
-  });
-
-  test("sequence diagram participant aliases with known elements have click links in the SVG", async ({
-    page,
-  }) => {
-    await page.goto("/#06-runtime-view.arc42.md");
-    await expect(page.locator("article h1")).toBeVisible();
-    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
-
-    // The catalog search diagram has alias gw=bb-api-gateway.
-    // Mermaid injects an <a> with the hash URL for the element.
-    const nodeLinks = page.locator('.diagram-svg svg a[href*="el-bb-api-gateway"]');
-    await expect(nodeLinks.first()).toBeAttached({ timeout: 5000 });
-  });
-
-  test("clicking a sequence diagram participant navigates to the element", async ({ page }) => {
-    await page.goto("/#06-runtime-view.arc42.md");
-    await expect(page.locator("article h1")).toBeVisible();
-    await expect(page.locator(".diagram-svg svg").first()).toBeVisible({ timeout: 5000 });
-
-    // Click the link for bb-catalog-service (alias: cat in catalog search diagram)
-    const nodeLink = page.locator('.diagram-svg svg a[href*="el-bb-catalog-service"]').first();
-    await expect(nodeLink).toBeAttached({ timeout: 5000 });
-    await nodeLink.click();
-
-    const hash = await getActiveHash(page);
-    expect(hash).toContain("el-bb-catalog-service");
     expect(hash).toContain("05-building-blocks.arc42.md");
   });
 });

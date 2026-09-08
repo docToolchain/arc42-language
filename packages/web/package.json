@@ -7,7 +7,7 @@
     "dev": "vp dev",
     "build": "tsc --noEmit && vp build",
     "preview": "vp preview",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug=cli",
     "demo": "playwright test --project=demo"

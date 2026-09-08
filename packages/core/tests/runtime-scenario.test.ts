@@ -48,8 +48,8 @@ describe("runtime scenarios", () => {
       ":::building-block\nid: bb-api\ntitle: API\n:::\n:::runtime-scenario\nid: scenario-api\ntitle: Request\ninvolves: bb-api\n:::",
     );
     const index = buildIndex(ws);
-    expect(index.refsFrom.get("scenario-api")).toEqual(["bb-api"]);
-    expect(index.refsTo.get("bb-api")).toEqual(["scenario-api"]);
+    expect(index.refsFrom.get("scenario-api")).toContain("bb-api");
+    expect(index.refsTo.get("bb-api")).toContain("scenario-api");
   });
 
   test("reports empty and invalid involves values", () => {

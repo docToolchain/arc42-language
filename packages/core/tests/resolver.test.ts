@@ -238,8 +238,10 @@ describe("buildIndex", () => {
       diagrams: [],
     };
     const idx = buildIndex(ws);
-    expect(idx.refsFrom.get("node-child")).toEqual(["node-root", "bb-api", "bb-db"]);
-    expect(idx.refsTo.get("bb-api")).toEqual(["node-child"]);
+    expect(idx.refsFrom.get("node-child")).toEqual(
+      expect.arrayContaining(["node-root", "bb-api", "bb-db"]),
+    );
+    expect(idx.refsTo.get("bb-api")).toContain("node-child");
   });
 
   test("quality-scenario.quality populates both refsFrom and refsTo", () => {

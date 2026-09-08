@@ -70,6 +70,7 @@ export function ElementCard({
 
   return (
     <div
+      data-testid="element-card"
       className={`element-card${onDismiss ? " element-card--dismissible" : ""}`}
       id={`el-${el.id}`}
     >
