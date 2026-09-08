@@ -45,6 +45,7 @@ id: bb-api-gateway
 title: API Gateway
 technology: nginx
 implements: concept-logging, concept-auth, concept-error-handling
+requires: if-gateway-catalog, if-gateway-order, if-gateway-auth
 :::
 ```
 
@@ -62,6 +63,38 @@ id: bb-catalog-service
 title: Catalog Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling, concept-cache-invalidation, concept-data-ownership
+requires: if-catalog-db, if-catalog-cache
+:::
+```
+
+### Catalog Service HTTP API
+
+The gateway's catalog request contract and the internal catalog lookup contract are provided by
+the Catalog Service.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-gateway-catalog
+title: Catalog Service HTTP API
+provider: bb-catalog-service
+protocol: HTTP/JSON
+:::
+```
+
+### Catalog Lookup API
+
+The Order Service uses this contract during checkout to read current product details and stock.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-order-catalog
+title: Catalog Lookup API
+provider: bb-catalog-service
+protocol: HTTP/JSON (internal)
 :::
 ```
 
@@ -81,6 +114,22 @@ id: bb-order-service
 title: Order Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling, concept-auth, concept-data-ownership
+requires: if-order-db, if-order-catalog, if-order-queue
+:::
+```
+
+### Order Service HTTP API
+
+The gateway's order-management request contract is provided by the Order Service.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-gateway-order
+title: Order Service HTTP API
+provider: bb-order-service
+protocol: HTTP/JSON
 :::
 ```
 
@@ -98,6 +147,22 @@ id: bb-auth-service
 title: Auth Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling, concept-auth, concept-data-ownership
+requires: if-auth-db
+:::
+```
+
+### Auth Service HTTP API
+
+The gateway uses this contract for login, registration, token refresh, and public key retrieval.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-gateway-auth
+title: Auth Service HTTP API
+provider: bb-auth-service
+protocol: HTTP/JSON
 :::
 ```
 
@@ -115,6 +180,7 @@ id: bb-notification-service
 title: Notification Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling
+requires: if-notify-queue
 :::
 ```
 
@@ -135,6 +201,36 @@ implements: concept-logging
 :::
 ```
 
+### Order Events Contract
+
+The Order Service publishes domain events to the queue after significant state transitions.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-order-queue
+title: Order Events Contract
+provider: bb-message-queue
+protocol: AWS SQS API (HTTPS)
+:::
+```
+
+### Notification Events Contract
+
+The Notification Service consumes order events from the queue asynchronously.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-notify-queue
+title: Notification Events Contract
+provider: bb-message-queue
+protocol: AWS SQS API (HTTPS)
+:::
+```
+
 ## Catalog Database
 
 A dedicated PostgreSQL database for the Catalog Service. It stores products, categories, authors, inventory levels, and search indices. No other service reads from or writes to this database directly — all access goes through the Catalog Service API.
@@ -149,6 +245,21 @@ id: bb-catalog-db
 title: Catalog Database
 technology: PostgreSQL 16
 implements: concept-logging
+:::
+```
+
+### Catalog Database Connection
+
+All catalog reads and writes go through this provider-owned database connection.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-catalog-db
+title: Catalog Database Connection
+provider: bb-catalog-db
+protocol: PostgreSQL wire protocol (TLS)
 :::
 ```
 
@@ -169,6 +280,21 @@ implements: concept-logging
 :::
 ```
 
+### Order Database Connection
+
+All order reads and writes go through this provider-owned database connection.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-order-db
+title: Order Database Connection
+provider: bb-order-db
+protocol: PostgreSQL wire protocol (TLS)
+:::
+```
+
 ## Auth Database
 
 A dedicated PostgreSQL database for the Auth Service. It stores user credentials (bcrypt-hashed passwords), roles, refresh token records, and account metadata. This is the most security-sensitive data store in the system; access is restricted to the Auth Service only.
@@ -181,6 +307,21 @@ id: bb-auth-db
 title: Auth Database
 technology: PostgreSQL 16
 implements: concept-logging
+:::
+```
+
+### Auth Database Connection
+
+All credential and token operations go through this provider-owned database connection.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-auth-db
+title: Auth Database Connection
+provider: bb-auth-db
+protocol: PostgreSQL wire protocol (TLS)
 :::
 ```
 
@@ -201,156 +342,17 @@ implements: concept-logging, concept-cache-invalidation
 :::
 ```
 
----
+### Catalog Cache Contract
 
-## Interfaces
-
-### Gateway → Catalog Service
-
-The primary read path for product data. The gateway forwards all `/catalog/**` requests to the Catalog Service after JWT validation. Public endpoints (search, browse, detail) do not require authentication; admin endpoints (create, update, delete) require an admin role.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-gateway-catalog
-title: Gateway → Catalog Service
-between: bb-api-gateway, bb-catalog-service
-protocol: HTTP/JSON
-:::
-```
-
-### Gateway → Order Service
-
-The order management path. The gateway forwards all `/cart/**` and `/orders/**` requests to the Order Service. All endpoints require authentication — there are no anonymous order operations.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-gateway-order
-title: Gateway → Order Service
-between: bb-api-gateway, bb-order-service
-protocol: HTTP/JSON
-:::
-```
-
-### Gateway → Auth Service
-
-Used for login, registration, token refresh, and public key retrieval. Login and registration are unauthenticated; token refresh requires a valid refresh token. The gateway also calls the Auth Service's public key endpoint at startup to configure local JWT validation.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-gateway-auth
-title: Gateway → Auth Service
-between: bb-api-gateway, bb-auth-service
-protocol: HTTP/JSON
-:::
-```
-
-### Catalog Service → Catalog Database
-
-All catalog reads and writes go through this connection. The Catalog Service manages a connection pool; the database is not directly accessible from outside the service boundary.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-catalog-db
-title: Catalog Service → Catalog Database
-between: bb-catalog-service, bb-catalog-db
-protocol: PostgreSQL wire protocol (TLS)
-:::
-```
-
-### Catalog Service → Response Cache
-
-The Catalog Service checks Redis before querying the database for search and detail requests. Cache misses fall through to PostgreSQL and the result is written back. Catalog writes trigger invalidation of affected cache keys.
+The Catalog Service checks this provider before querying the catalog database.
 
 ```arc42
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
 
 :::interface
 id: if-catalog-cache
-title: Catalog Service → Response Cache
-between: bb-catalog-service, bb-cache
+title: Catalog Cache Contract
+provider: bb-cache
 protocol: Redis protocol (RESP3)
-:::
-```
-
-### Order Service → Order Database
-
-All order reads and writes go through this connection. The Order Service is the sole writer to the order schema. Connection pooling and query timeout management are handled by the service.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-order-db
-title: Order Service → Order Database
-between: bb-order-service, bb-order-db
-protocol: PostgreSQL wire protocol (TLS)
-:::
-```
-
-### Order Service → Catalog Service
-
-During checkout, the Order Service calls the Catalog Service to fetch current product details and verify stock availability. This is a synchronous call on the checkout path — the fetched data is snapshotted into the order record.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-order-catalog
-title: Order Service → Catalog Service
-between: bb-order-service, bb-catalog-service
-protocol: HTTP/JSON (internal)
-:::
-```
-
-### Order Service → Message Queue
-
-The Order Service publishes domain events to the message queue after significant state transitions: order placed, order shipped, order cancelled. Events are published asynchronously after the database transaction commits.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-order-queue
-title: Order Service → Message Queue
-between: bb-order-service, bb-message-queue
-protocol: AWS SQS API (HTTPS)
-:::
-```
-
-### Auth Service → Auth Database
-
-All credential and token operations go through this connection. The Auth Service is the sole accessor of the auth database. Queries are parameterized to prevent injection; connection encryption is enforced.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-auth-db
-title: Auth Service → Auth Database
-between: bb-auth-service, bb-auth-db
-protocol: PostgreSQL wire protocol (TLS)
-:::
-```
-
-### Notification Service → Message Queue
-
-The Notification Service polls the message queue for order events. It processes each event by selecting the appropriate notification template, rendering the message, and dispatching it through the relevant channel (email or SMS).
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-
-:::interface
-id: if-notify-queue
-title: Notification Service → Message Queue
-between: bb-notification-service, bb-message-queue
-protocol: AWS SQS API (HTTPS)
 :::
 ```

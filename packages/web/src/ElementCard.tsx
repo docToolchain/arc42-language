@@ -187,7 +187,7 @@ function renderFields(el: Element): React.ReactNode {
       if (el.path) fields.push(["path", el.path]);
       break;
     case "interface":
-      fields.push(["between", el.between.join(" ↔ ")]);
+      fields.push(["provider", el.provider]);
       if (el.protocol) fields.push(["protocol", el.protocol]);
       if (el.path) fields.push(["path", el.path]);
       break;

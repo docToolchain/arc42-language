@@ -16,6 +16,7 @@ const MINIMAL_BLOCKS = `:::building-block
 id: bb-api
 title: API
 technology: REST
+requires: if-api-db
 :::
 :::building-block
 id: bb-db
@@ -25,7 +26,7 @@ technology: PostgreSQL
 :::interface
 id: if-api-db
 title: API to DB
-between: bb-api, bb-db
+provider: bb-db
 protocol: SQL
 :::`;
 

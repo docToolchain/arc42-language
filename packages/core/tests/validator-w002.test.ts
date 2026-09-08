@@ -14,13 +14,21 @@ function loc(line = 1) {
 describe("W002 — isolated building-block", () => {
   test("emitted for leaf building-block with no interface", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-parent",
+        title: "Parent",
+        implements: [],
+        requires: [],
+        loc: loc(1),
+      },
       {
         kind: "building-block",
         id: "bb-1",
         title: "Lonely Child",
         parent: "bb-parent",
         implements: [],
+        requires: [],
         loc: loc(5),
       },
     ]);
@@ -31,7 +39,14 @@ describe("W002 — isolated building-block", () => {
 
   test("NOT emitted for root building-block (no parent) — checked by H004 instead", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-root", title: "Root", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-root",
+        title: "Root",
+        implements: [],
+        requires: [],
+        loc: loc(1),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -40,13 +55,21 @@ describe("W002 — isolated building-block", () => {
 
   test("NOT emitted when leaf building-block appears in an interface", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-parent", title: "Parent", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-parent",
+        title: "Parent",
+        implements: [],
+        requires: [],
+        loc: loc(1),
+      },
       {
         kind: "building-block",
         id: "bb-1",
         title: "A",
         parent: "bb-parent",
         implements: [],
+        requires: ["i-1"],
         loc: loc(5),
       },
       {
@@ -55,9 +78,10 @@ describe("W002 — isolated building-block", () => {
         title: "B",
         parent: "bb-parent",
         implements: [],
+        requires: [],
         loc: loc(9),
       },
-      { kind: "interface", id: "i-1", title: "I", between: ["bb-1", "bb-2"], loc: loc(13) },
+      { kind: "interface", id: "i-1", title: "I", provider: "bb-2", loc: loc(13) },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);

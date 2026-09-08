@@ -14,7 +14,7 @@ function loc(line = 1) {
 describe("H003 — building-block without technology", () => {
   test("emitted when building-block has no technology set", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-1", title: "X", implements: [], loc: loc(1) },
+      { kind: "building-block", id: "bb-1", title: "X", implements: [], requires: [], loc: loc(1) },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -29,6 +29,7 @@ describe("H003 — building-block without technology", () => {
         title: "X",
         technology: "Go",
         implements: [],
+        requires: [],
         loc: loc(1),
       },
     ]);

@@ -196,6 +196,7 @@ export class MarkdownGetRenderer implements GetRenderer {
 
   private actorFields(el: Actor): string[] {
     const f: string[] = [`type: ${el.type}`];
+    f.push(`requires: ${el.requires.join(", ")}`);
     // description is omitted when loc.prose is present — the prose already captures it
     if (el.description && !el.loc.prose) f.push(`description: ${el.description}`);
     return f;
@@ -212,12 +213,13 @@ export class MarkdownGetRenderer implements GetRenderer {
     if (el.technology) f.push(`technology: ${el.technology}`);
     if (el.parent) f.push(`parent: ${el.parent}`);
     if (el.implements.length > 0) f.push(`implements: ${el.implements.join(", ")}`);
+    if (el.requires.length > 0) f.push(`requires: ${el.requires.join(", ")}`);
     if (el.path) f.push(`path: ${el.path}`);
     return f;
   }
 
   private interfaceFields(el: Interface): string[] {
-    const f: string[] = [`between: ${el.between[0]} ↔ ${el.between[1]}`];
+    const f: string[] = [`provider: ${el.provider}`];
     if (el.protocol) f.push(`protocol: ${el.protocol}`);
     if (el.path) f.push(`path: ${el.path}`);
     return f;

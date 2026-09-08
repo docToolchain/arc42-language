@@ -11,10 +11,10 @@ function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("H008 — actor not connected to any interface", () => {
-  test("emitted when actor has no interface", () => {
+describe("H008 — actor without required interface", () => {
+  test("emitted when actor has no required interface", () => {
     const ws = makeWorkspace([
-      { kind: "actor", id: "actor-1", title: "User", type: "person", loc: loc(1) },
+      { kind: "actor", id: "actor-1", title: "User", type: "person", requires: [], loc: loc(1) },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
@@ -23,9 +23,16 @@ describe("H008 — actor not connected to any interface", () => {
 
   test("NOT emitted when actor is connected via interface", () => {
     const ws = makeWorkspace([
-      { kind: "actor", id: "actor-1", title: "User", type: "person", loc: loc(1) },
-      { kind: "building-block", id: "bb-1", title: "B", implements: [], loc: loc(5) },
-      { kind: "interface", id: "i-1", title: "I", between: ["actor-1", "bb-1"], loc: loc(9) },
+      {
+        kind: "actor",
+        id: "actor-1",
+        title: "User",
+        type: "person",
+        requires: ["i-1"],
+        loc: loc(1),
+      },
+      { kind: "building-block", id: "bb-1", title: "B", implements: [], requires: [], loc: loc(5) },
+      { kind: "interface", id: "i-1", title: "I", provider: "bb-1", loc: loc(9) },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);

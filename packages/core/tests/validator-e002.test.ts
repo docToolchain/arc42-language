@@ -20,6 +20,7 @@ describe("E002 — unresolved reference", () => {
         title: "X",
         parent: "bb-missing",
         implements: [],
+        requires: [],
         loc: loc(1),
       },
     ]);

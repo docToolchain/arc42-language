@@ -62,21 +62,6 @@ function zodErrorToMessage(
 
   const field = issue.path[0];
 
-  // Special-case: between cardinality.
-  // Whether the issue is missing, empty, or wrong count, always emit the
-  // canonical cardinality message so callers get consistent, friendly output.
-  if (field === "between") {
-    const raw = attributes["between"];
-    const betweenList =
-      raw && raw.trim() !== ""
-        ? raw
-            .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
-        : [];
-    return `interface.between must have exactly 2 ids (got ${betweenList.length})`;
-  }
-
   if (typeof field === "string") {
     const rawValue = attributes[field];
     const isMissing = rawValue === undefined || rawValue.trim() === "";
@@ -323,6 +308,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             id: data.id,
             title: data.title,
             type: data.type,
+            requires: data.requires,
             description: data.description || undefined,
             loc,
           };
@@ -349,6 +335,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             parent: data.parent,
             path: data.path,
             implements: data.implements,
+            requires: data.requires,
             loc,
           };
           elements.push(el);
@@ -359,7 +346,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
             kind: "interface",
             id: data.id,
             title: data.title,
-            between: [data.between[0], data.between[1]],
+            provider: data.provider,
             protocol: data.protocol,
             path: data.path,
             loc,

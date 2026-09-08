@@ -20,6 +20,7 @@ import { e011UnresolvedImplementationPath } from "./e011-unresolved-implementati
 import { e012SequenceDiagramValidation } from "./e012-sequence-diagram-validation.ts";
 import { e013BuildingBlockDiagramValidation } from "./e013-building-block-diagram-validation.ts";
 import { e014ContextDiagramValidation } from "./e014-context-diagram-validation.ts";
+import { e015SelfInterfaceRequirement } from "./e015-self-interface-requirement.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
@@ -59,6 +60,8 @@ import { w023ContextDiagramEdgeWithoutInterface } from "./w023-context-diagram-e
 import { w024BuildingBlockDiagramDuplicateEdge } from "./w024-building-block-diagram-duplicate-edge.ts";
 import { w025ContextDiagramDuplicateEdge } from "./w025-context-diagram-duplicate-edge.ts";
 import { w026BuildingBlockParentSubchapter } from "./w026-building-block-parent-subchapter.ts";
+import { w027InterfaceProviderSubchapter } from "./w027-interface-provider-subchapter.ts";
+import { w028ContextDiagramInternalBuildingBlock } from "./w028-context-diagram-internal-building-block.ts";
 import { h015BuildingBlockDiagramIncompleteHierarchy } from "./h015-building-block-diagram-incomplete-hierarchy.ts";
 import { h016BuildingBlockDiagramMissingInterfaces } from "./h016-building-block-diagram-missing-interfaces.ts";
 import { h017BuildingBlockDiagramMissingParent } from "./h017-building-block-diagram-missing-parent.ts";
@@ -81,6 +84,7 @@ export const builtinRules: readonly Rule[] = [
   e012SequenceDiagramValidation, // Chapter 6
   e013BuildingBlockDiagramValidation, // Chapter 5
   e014ContextDiagramValidation, // Chapter 3
+  e015SelfInterfaceRequirement, // Chapter 5
 
   // Warnings — inconsistencies
   w001ConceptNotImplemented, // Chapter 8
@@ -108,6 +112,8 @@ export const builtinRules: readonly Rule[] = [
   w024BuildingBlockDiagramDuplicateEdge, // Chapter 5
   w025ContextDiagramDuplicateEdge, // Chapter 3
   w026BuildingBlockParentSubchapter, // Chapter 5
+  w027InterfaceProviderSubchapter, // Chapter 5
+  w028ContextDiagramInternalBuildingBlock, // Chapter 3
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9

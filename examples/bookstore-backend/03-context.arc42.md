@@ -24,9 +24,9 @@ graph TD
 
     actor-customer -->|"if-customer-gateway"| bb-api-gateway
     actor-admin -->|"if-admin-gateway"| bb-api-gateway
-    bb-order-service -->|"if-order-payment"| actor-payment
-    bb-notification-service -->|"if-notify-email"| actor-email
-    bb-notification-service -->|"if-notify-sms"| actor-sms
+    actor-payment -->|"if-order-payment"| bb-order-service
+    actor-email -->|"if-notify-email"| bb-notification-service
+    actor-sms -->|"if-notify-sms"| bb-notification-service
 ```
 
 Customers browse the catalog, manage their shopping cart, place orders, and review their order history. They interact with the backend indirectly through a web single-page application or a native mobile app. Authentication happens via username/password login, which yields a JWT token for subsequent requests.
@@ -37,6 +37,7 @@ id: actor-customer
 title: Customer
 type: person
 description: End user who browses, searches, and purchases books via web or mobile clients
+requires: if-customer-gateway
 :::
 ```
 
@@ -50,6 +51,7 @@ id: actor-admin
 title: Store Administrator
 type: person
 description: Internal staff who manage the book catalog, inventory, and order fulfillment
+requires: if-admin-gateway
 :::
 ```
 
@@ -63,6 +65,7 @@ id: actor-payment
 title: Payment Processor
 type: system
 description: External payment service (Stripe) for authorization, capture, and refund operations
+requires: if-order-payment
 :::
 ```
 
@@ -76,6 +79,7 @@ id: actor-email
 title: Email Delivery Service
 type: system
 description: AWS SES for transactional email delivery
+requires: if-notify-email
 :::
 ```
 
@@ -89,6 +93,7 @@ id: actor-sms
 title: SMS Gateway
 type: system
 description: AWS SNS for transactional SMS delivery
+requires: if-notify-sms
 :::
 ```
 
@@ -102,7 +107,7 @@ Customers interact with the backend exclusively through the API Gateway. All req
 :::interface
 id: if-customer-gateway
 title: Customer → API Gateway
-between: actor-customer, bb-api-gateway
+provider: bb-api-gateway
 protocol: HTTPS / REST + JSON
 :::
 ```
@@ -117,7 +122,7 @@ Administrators use the same API Gateway as customers but authenticate with eleva
 :::interface
 id: if-admin-gateway
 title: Administrator → API Gateway
-between: actor-admin, bb-api-gateway
+provider: bb-api-gateway
 protocol: HTTPS / REST + JSON
 :::
 ```
@@ -132,7 +137,7 @@ The Order Service calls Stripe during checkout to authorize payment. It also rec
 :::interface
 id: if-order-payment
 title: Order Service → Payment Processor
-between: bb-order-service, actor-payment
+provider: bb-order-service
 protocol: HTTPS / REST (Stripe API v2)
 :::
 ```
@@ -147,7 +152,7 @@ The Notification Service sends transactional emails through AWS SES. It formats 
 :::interface
 id: if-notify-email
 title: Notification Service → Email Delivery
-between: bb-notification-service, actor-email
+provider: bb-notification-service
 protocol: HTTPS / AWS SES API
 :::
 ```
@@ -162,7 +167,7 @@ The Notification Service sends SMS messages through AWS SNS for time-sensitive o
 :::interface
 id: if-notify-sms
 title: Notification Service → SMS Gateway
-between: bb-notification-service, actor-sms
+provider: bb-notification-service
 protocol: HTTPS / AWS SNS API
 :::
 ```

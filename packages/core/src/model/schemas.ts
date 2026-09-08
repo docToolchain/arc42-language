@@ -148,17 +148,31 @@ export const ActorSchema = z
     type: z
       .enum(["person", "system"])
       .meta({ description: "Whether this is a human or an external system" }),
+    requires: splitListRequiredSchema.meta({
+      description: "Comma-separated IDs of interfaces this actor requires",
+    }),
     description: z.string().optional().meta({ description: "What this actor does or needs" }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.requires.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["requires"],
+        message: "actor.requires must contain at least one interface ID",
+      });
+    }
   })
   .meta({
     description: "A human role or external system that interacts with the architecture.",
     arc42Chapter: 3,
-    crossRefs: [] satisfies CrossRefMeta[],
+    crossRefs: [
+      { field: "requires", targetKind: "interface", cardinality: "many" },
+    ] satisfies CrossRefMeta[],
     authoringTips: [
       "Actors are *external* — they live outside the system boundary. Internal components are building-blocks.",
       "In the business context show *what* data flows (domain inputs/outputs), not technical protocols — those belong in interfaces.",
       "Keep the context overview lean; a diagram plus a table of actors is usually enough (arc42 Tips 3-2, 3-3).",
-      "Every actor should eventually appear in at least one interface (W002).",
+      "Every actor must declare at least one required interface.",
     ],
   });
 
@@ -203,6 +217,9 @@ export const BuildingBlockSchema = z
     implements: splitListSchema.meta({
       description: "Comma-separated concept IDs this block implements",
     }),
+    requires: splitListSchema.meta({
+      description: "Comma-separated IDs of interfaces this building block requires",
+    }),
   })
   .meta({
     description: "An independently deployable software component or group of components.",
@@ -210,6 +227,7 @@ export const BuildingBlockSchema = z
     crossRefs: [
       { field: "parent", targetKind: "building-block", cardinality: "one" },
       { field: "implements", targetKind: "concept", cardinality: "many" },
+      { field: "requires", targetKind: "interface", cardinality: "many" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "The building block view is mandatory — always document at least level 1 (the top-level decomposition) as your starting point (arc42 Tip 5-3).",
@@ -223,9 +241,8 @@ export const InterfaceSchema = z
   .object({
     id: z.string().min(1).meta({ description: "Unique identifier" }),
     title: z.string().min(1).meta({ description: "Short name for the interface" }),
-    between: splitListRequiredSchema.meta({
-      description:
-        "Exactly two comma-separated IDs: caller first, callee second (e.g. `bb-cli, bb-core` for a CLI→Core import). The order is significant — diagram edges must match this direction.",
+    provider: z.string().min(1).meta({
+      description: "ID of the building block that provides this interface",
     }),
     protocol: z
       .string()
@@ -236,24 +253,14 @@ export const InterfaceSchema = z
       .optional()
       .meta({ description: "Path to the implementation file or directory" }),
   })
-  .superRefine((data, ctx) => {
-    if (data.between.length !== 2) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["between"],
-        message: `interface.between must have exactly 2 ids (got ${data.between.length})`,
-      });
-    }
-  })
   .meta({
-    description:
-      "A defined communication boundary between two building blocks or a building block and an actor.",
+    description: "A defined interface provided by one building block and required by consumers.",
     arc42Chapter: 5,
     crossRefs: [
-      { field: "between", targetKind: "building-block or actor", cardinality: "many" },
+      { field: "provider", targetKind: "building-block", cardinality: "one" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
-      "between must reference exactly 2 IDs — any other count is a parse error.",
+      "provider must reference the building block that owns and provides this interface.",
       "Document the protocol to describe the technical contract; unit tests and runtime scenarios are also valid interface specifications (arc42 Tips 5-21, 5-22, 5-23).",
       "Keep interface descriptions focused on the external contract — implementation details belong inside the building block.",
       "Business context shows data flows; the technical interface documents the protocol/channel.",

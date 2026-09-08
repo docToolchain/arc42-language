@@ -1,29 +1,9 @@
 import type { Rule, Diagnostic } from "../types.ts";
-import type {
-  Actor,
-  BuildingBlock,
-  ContextDiagram,
-  Interface,
-  Workspace,
-} from "../../model/types.ts";
+import type { ContextDiagram, Workspace } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
 import { extractMermaidEdges } from "../mermaid-utils.ts";
 
-/**
- * W023 — Context diagram edge validation.
- *
- * Every edge between known model elements in a context diagram must:
- * 1. Be backed by a model interface whose `between` order matches the edge direction.
- *    between[0] is the caller/consumer; between[1] is the callee/provider.
- *    A diagram edge `A --> B` is valid only if `interface.between = [A, B]`.
- * 2. Have a label that is the interface id.
- *
- * An edge drawn in the wrong direction (matching `between` in reverse) is flagged
- * separately so the author knows whether the diagram or the model declaration is wrong.
- *
- * DSL convention:
- *   actor-customer -->|"if-customer-gateway"| bb-api-gateway
- */
+/** Validate that context diagram edges represent actor/building-block requirements. */
 export const w023ContextDiagramEdgeWithoutInterface: Rule = {
   meta: {
     code: "W023",
@@ -31,117 +11,82 @@ export const w023ContextDiagramEdgeWithoutInterface: Rule = {
     type: "suggestion",
     docs: {
       description:
-        "Context diagram edge is not backed by a model interface, missing interface id label, or drawn in the wrong direction",
+        "Context diagram edge is not backed by a model interface or is missing its label",
       rationale:
-        "Context diagram edges must correspond to documented interfaces in the correct direction. between[0] is the caller, between[1] is the callee. A reversed edge misrepresents the interaction direction.",
+        "Context edges must correspond to a consumer requirement whose interface is provided by the target block.",
       arc42Chapter: 3,
       recommended: true,
     },
   },
-  check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
+  check(workspace: Workspace, index: ReferenceIndex): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
-
-    const interfaceMap = new Map<string, Interface>();
-    for (const e of workspace.elements) {
-      if (e.kind === "interface") interfaceMap.set(e.id, e);
-    }
-
-    const actorIds = new Set(
-      workspace.elements.filter((e): e is Actor => e.kind === "actor").map((e) => e.id),
-    );
-    const blockIds = new Set(
+    const knownIds = new Set(
       workspace.elements
-        .filter((e): e is BuildingBlock => e.kind === "building-block")
+        .filter((e) => e.kind === "actor" || e.kind === "building-block")
         .map((e) => e.id),
     );
-    const knownIds = new Set([...actorIds, ...blockIds]);
+    const interfaces = new Set(
+      workspace.elements.filter((e) => e.kind === "interface").map((e) => e.id),
+    );
 
     for (const diagram of workspace.diagrams) {
-      if (diagram.diagramType !== "context") continue;
-      if (!diagram.source || diagram.source.trim() === "") continue;
-
+      if (diagram.diagramType !== "context" || !diagram.source?.trim()) continue;
       const ctx = diagram as ContextDiagram;
-      const edges = extractMermaidEdges(diagram.source);
-
-      for (const edge of edges) {
-        // Only validate edges where both endpoints are known model elements
+      for (const edge of extractMermaidEdges(diagram.source)) {
         if (!knownIds.has(edge.from) || !knownIds.has(edge.to)) continue;
-
         const label = edge.label?.trim();
-
-        // Case 1: label matches a known interface id
-        if (label && interfaceMap.has(label)) {
-          const iface = interfaceMap.get(label)!;
-          const [caller, callee] = iface.between;
-
-          if (caller === edge.from && callee === edge.to) {
-            // Direction correct — no diagnostic
-            continue;
-          }
-
-          if (caller === edge.to && callee === edge.from) {
-            // Direction reversed
-            diagnostics.push({
-              code: "W023",
-              severity: "warning",
-              message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' is drawn in the wrong direction — interface '${label}' declares caller='${caller}', callee='${callee}' (between is ordered: caller first)`,
-              file: ctx.loc.file,
-              line: ctx.loc.line,
-            });
-          } else {
-            // Endpoints don't match at all
-            diagnostics.push({
-              code: "W023",
-              severity: "warning",
-              message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' uses label '${label}' but interface '${label}' connects '${caller}' and '${callee}'`,
-              file: ctx.loc.file,
-              line: ctx.loc.line,
-            });
-          }
-          continue;
-        }
-
-        // Case 2: no label or label is not an interface id — find matching interface (direction-aware)
-        const forwardMatch = [...interfaceMap.values()].find(
-          (iface) => iface.between[0] === edge.from && iface.between[1] === edge.to,
+        const match = index.interfaceEdges.find(
+          (candidate) =>
+            candidate.consumer === edge.from &&
+            candidate.provider === edge.to &&
+            (!label || label === candidate.interface),
         );
+        if (match && label === match.interface) continue;
 
-        if (forwardMatch) {
+        const unlabeledMatch = index.interfaceEdges.find(
+          (candidate) => candidate.consumer === edge.from && candidate.provider === edge.to,
+        );
+        if (unlabeledMatch && !label) {
           diagnostics.push({
             code: "W023",
             severity: "warning",
-            message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' should use interface id '${forwardMatch.id}' as its label`,
+            message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' should use interface id '${unlabeledMatch.interface}' as its label`,
             file: ctx.loc.file,
             line: ctx.loc.line,
           });
           continue;
         }
 
-        const reverseMatch = [...interfaceMap.values()].find(
-          (iface) => iface.between[0] === edge.to && iface.between[1] === edge.from,
+        const reverse = index.interfaceEdges.find(
+          (candidate) =>
+            candidate.consumer === edge.to &&
+            candidate.provider === edge.from &&
+            (!label || label === candidate.interface),
         );
-
-        if (reverseMatch) {
+        if (reverse) {
           diagnostics.push({
             code: "W023",
             severity: "warning",
-            message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' is drawn in the wrong direction — interface '${reverseMatch.id}' declares caller='${reverseMatch.between[0]}', callee='${reverseMatch.between[1]}' (between is ordered: caller first)`,
+            message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' is drawn in the wrong direction — interface '${reverse.interface}' requires '${reverse.consumer}' from '${reverse.provider}'`,
             file: ctx.loc.file,
             line: ctx.loc.line,
           });
           continue;
         }
 
+        const labelIssue =
+          label && interfaces.has(label)
+            ? ` uses label '${label}' that does not match its consumer/provider relationship`
+            : " has no corresponding interface in the model";
         diagnostics.push({
           code: "W023",
           severity: "warning",
-          message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}' has no corresponding interface in the model`,
+          message: `Context diagram '${ctx.id}': edge '${edge.from}' → '${edge.to}'${labelIssue}`,
           file: ctx.loc.file,
           line: ctx.loc.line,
         });
       }
     }
-
     return diagnostics;
   },
 };

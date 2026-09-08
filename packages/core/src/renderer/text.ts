@@ -126,7 +126,7 @@ export class TextGetRenderer implements GetRenderer {
   }
 
   private renderActor(el: Actor): string {
-    let line = `  ${el.id}  ${el.title}  [${el.type}]`;
+    let line = `  ${el.id}  ${el.title}  [${el.type}]  requires: ${el.requires.join(", ")}`;
     if (el.description) {
       line += `  — ${el.description}`;
     }
@@ -153,6 +153,9 @@ export class TextGetRenderer implements GetRenderer {
     if (el.implements.length > 0) {
       lines.push(`    implements: ${el.implements.join(", ")}`);
     }
+    if (el.requires.length > 0) {
+      lines.push(`    requires: ${el.requires.join(", ")}`);
+    }
 
     if (el.parent) {
       lines.push(`    parent: ${el.parent}`);
@@ -170,7 +173,7 @@ export class TextGetRenderer implements GetRenderer {
       line += `  [${el.protocol}]`;
     }
     lines.push(line);
-    lines.push(`    between: ${el.between[0]} ↔ ${el.between[1]}`);
+    lines.push(`    provider: ${el.provider}`);
     if (el.path) lines.push(`    path: ${el.path}`);
 
     return lines.join("\n");
@@ -262,6 +265,7 @@ export class TextGetRenderer implements GetRenderer {
         break;
       case "actor":
         lines.push(`  type: ${el.type}`);
+        lines.push(`  requires: ${el.requires.join(", ")}`);
         if (el.description) lines.push(`  description: ${el.description}`);
         break;
       case "solution-strategy":
@@ -271,11 +275,12 @@ export class TextGetRenderer implements GetRenderer {
         if (el.technology) lines.push(`  technology: ${el.technology}`);
         if (el.parent) lines.push(`  parent: ${el.parent}`);
         if (el.implements.length > 0) lines.push(`  implements: ${el.implements.join(", ")}`);
+        if (el.requires.length > 0) lines.push(`  requires: ${el.requires.join(", ")}`);
         if (el.path) lines.push(`  path: ${el.path}`);
         break;
       case "interface":
         if (el.protocol) lines.push(`  protocol: ${el.protocol}`);
-        lines.push(`  between: ${el.between[0]} ↔ ${el.between[1]}`);
+        lines.push(`  provider: ${el.provider}`);
         if (el.path) lines.push(`  path: ${el.path}`);
         break;
       case "runtime-scenario":

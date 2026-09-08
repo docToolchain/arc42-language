@@ -37,7 +37,7 @@ export const h016BuildingBlockDiagramMissingInterfaces: Rule = {
       recommended: true,
     },
   },
-  check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
+  check(workspace: Workspace, index: ReferenceIndex): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
 
     for (const doc of workspace.documents) {
@@ -64,14 +64,19 @@ export const h016BuildingBlockDiagramMissingInterfaces: Rule = {
       const interfaces = workspace.elements.filter((e): e is Interface => e.kind === "interface");
 
       for (const iface of interfaces) {
-        const [a, b] = iface.between;
-        if (visualizedBlockIds.has(a) && visualizedBlockIds.has(b)) {
+        const relationships = index.interfaceEdges.filter((edge) => edge.interface === iface.id);
+        if (
+          relationships.some(
+            (edge) =>
+              visualizedBlockIds.has(edge.consumer) && visualizedBlockIds.has(edge.provider),
+          )
+        ) {
           // Both endpoints are visualized — the interface id should appear in at least one source
           if (!sourceContainsId(unionSource, iface.id)) {
             diagnostics.push({
               code: "H016",
               severity: "hint",
-              message: `Interface '${iface.id}' (${iface.title}) between visualized blocks '${a}' and '${b}' is not shown in any building-block diagram`,
+              message: `Interface '${iface.id}' (${iface.title}) between visualized blocks is not shown in any building-block diagram`,
               file: firstDiagram.loc.file,
               line: firstDiagram.loc.line,
             });

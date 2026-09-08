@@ -103,6 +103,7 @@ export interface Actor {
   id: string;
   title: string;
   type: "person" | "system";
+  requires: string[];
   description?: string;
   loc: SourceLocation;
 }
@@ -124,6 +125,8 @@ export interface BuildingBlock {
   parent?: string;
   path?: string;
   implements: string[];
+  /** Omitted DSL values are normalized to [] by the builder. */
+  requires: string[];
   loc: SourceLocation;
 }
 
@@ -131,7 +134,7 @@ export interface Interface {
   kind: "interface";
   id: string;
   title: string;
-  between: [string, string];
+  provider: string;
   protocol?: string;
   path?: string;
   loc: SourceLocation;

@@ -16,11 +16,13 @@ const MINIMAL_ACTORS = `:::actor
 id: act-user
 title: End User
 type: person
+requires: if-user
 :::
 :::actor
 id: act-system
 title: External System
 type: system
+requires: if-system
 :::`;
 
 const MERMAID_SOURCE = `graph TD
