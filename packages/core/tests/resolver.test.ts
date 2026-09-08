@@ -59,6 +59,38 @@ describe("buildIndex", () => {
     expect(idx.refsTo.get("qg-1")).toContain("d-1");
   });
 
+  test("decision.supersedes uses the semantic supersedes edge relation", () => {
+    const ws: Workspace = {
+      elements: [
+        {
+          kind: "decision",
+          id: "dec-new",
+          title: "New",
+          status: "accepted",
+          addresses: [],
+          supersedes: "dec-old",
+          loc: { file: "f", line: 1 },
+        },
+        {
+          kind: "decision",
+          id: "dec-old",
+          title: "Old",
+          status: "superseded",
+          addresses: [],
+          loc: { file: "f", line: 5 },
+        },
+      ],
+      parseErrors: [],
+      documents: [],
+      diagrams: [],
+    };
+    expect(buildIndex(ws).edges).toContainEqual({
+      from: "dec-new",
+      to: "dec-old",
+      relation: "supersedes",
+    });
+  });
+
   test("solution-strategy.addresses populates both refsFrom and refsTo", () => {
     const ws: Workspace = {
       elements: [

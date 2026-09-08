@@ -1,28 +1,21 @@
-import { readFile } from "node:fs/promises";
-import { discoverFiles } from "./discovery.ts";
 import { MarkdownParser } from "./parser/markdown-parser.ts";
 import { buildWorkspace } from "./model/builder.ts";
 import { buildIndex } from "./resolver/index.ts";
 import { validate } from "./validator/index.ts";
 import { ELEMENT_KIND_ORDER } from "./model/types.ts";
-import type { Diagnostic } from "./validator/types.ts";
+import type { Diagnostic, ValidationContext } from "./validator/types.ts";
 import type { Element } from "./model/types.ts";
 import type { ReferenceIndex } from "./resolver/types.ts";
 import type { DocumentAst } from "./ast.ts";
+import type { Workspace } from "./model/types.ts";
 import type {
   GetQuery,
   GetResult,
   WorkspaceView,
   ElementView,
-  Edge,
   ResolvedRef,
   WorkspacePayload,
 } from "./renderer/types.ts";
-
-export interface ValidateOptions {
-  dir: string;
-  root?: string;
-}
 
 export interface ValidateResult {
   version: 1;
@@ -30,8 +23,8 @@ export interface ValidateResult {
   diagnostics: Diagnostic[];
 }
 
-export interface GetOptions {
-  dir: string;
+export interface GetDocumentsOptions {
+  documents: DocumentAst[];
   query: GetQuery;
 }
 
@@ -39,95 +32,45 @@ export function parseArchitectureDocument(filePath: string, content: string): Do
   return new MarkdownParser().parse(filePath, content);
 }
 
-async function runPipeline(dir: string) {
-  const parser = new MarkdownParser();
-  const files = await discoverFiles(dir);
-  const documents = await Promise.all(
-    files.map(async (f) => {
-      const content = await readFile(f, "utf-8");
-      return parser.parse(f, content);
-    }),
-  );
+/** Build the workspace from documents and index reference relationships */
+export function processArchitecture(
+  documents: DocumentAst[],
+  context?: ValidationContext,
+): {
+  workspace: Workspace;
+  index: ReferenceIndex;
+  diagnostics: Diagnostic[];
+} {
   const workspace = buildWorkspace(documents);
   const index = buildIndex(workspace);
-  return { workspace, index };
+  const diagnostics = validate(workspace, index, context);
+  return { workspace, index, diagnostics };
 }
 
-export async function validateWorkspace(opts: ValidateOptions): Promise<ValidateResult> {
-  const { workspace, index } = await runPipeline(opts.dir);
-  const diagnostics = validate(workspace, index, { dir: opts.dir, root: opts.root });
+export function validateDocuments(
+  documents: DocumentAst[],
+  context?: ValidationContext,
+): ValidateResult {
+  const { diagnostics } = processArchitecture(documents, context);
   const valid = !diagnostics.some((d) => d.severity === "error");
   return { version: 1, valid, diagnostics };
 }
 
-/** Build all edges from the reference index */
-function buildEdges(workspace: { elements: Element[] }, _index: ReferenceIndex): Edge[] {
-  const edges: Edge[] = [];
-  for (const el of workspace.elements) {
-    if (el.kind === "building-block") {
-      if (el.parent) {
-        edges.push({ from: el.id, to: el.parent, relation: "parent" });
-      }
-      for (const ref of el.implements) {
-        edges.push({ from: el.id, to: ref, relation: "implements" });
-      }
-    } else if (el.kind === "interface") {
-      edges.push({ from: el.id, to: el.between[0], relation: "between" });
-      edges.push({ from: el.id, to: el.between[1], relation: "between" });
-    } else if (el.kind === "decision") {
-      for (const ref of el.addresses) {
-        edges.push({ from: el.id, to: ref, relation: "addresses" });
-      }
-    } else if (el.kind === "solution-strategy") {
-      for (const ref of el.addresses) {
-        edges.push({ from: el.id, to: ref, relation: "addresses" });
-      }
-    } else if (el.kind === "runtime-scenario") {
-      for (const ref of el.involves) {
-        edges.push({ from: el.id, to: ref, relation: "involves" });
-      }
-    } else if (el.kind === "deployment-node") {
-      if (el.parent) edges.push({ from: el.id, to: el.parent, relation: "parent" });
-      for (const ref of el.hosts) {
-        edges.push({ from: el.id, to: ref, relation: "hosts" });
-      }
-    } else if (el.kind === "quality-scenario") {
-      edges.push({ from: el.id, to: el.quality, relation: "elaborates" });
-    }
-  }
-  return edges;
-}
-
-/** Sort elements: canonical kind order, then priority descending for quality-goal, then alphabetical by id */
-function sortElements(elements: Element[]): Element[] {
-  const kindRank = new Map(ELEMENT_KIND_ORDER.map((k, i) => [k, i]));
-  const priorityRank: Record<string, number> = { high: 2, medium: 1, low: 0 };
-  return [...elements].sort((a, b) => {
-    const kindDiff = (kindRank.get(a.kind) ?? 99) - (kindRank.get(b.kind) ?? 99);
-    if (kindDiff !== 0) return kindDiff;
-    // Secondary sort for quality-goal: descending priority (high first)
-    if (a.kind === "quality-goal" && b.kind === "quality-goal") {
-      const priorityDiff = (priorityRank[b.priority] ?? 0) - (priorityRank[a.priority] ?? 0);
-      if (priorityDiff !== 0) return priorityDiff;
-    }
-    return a.id.localeCompare(b.id);
-  });
-}
-
-export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
-  const { workspace, index } = await runPipeline(dir);
+export function loadWorkspaceFromDocuments(documents: DocumentAst[]): WorkspacePayload {
+  const workspace = buildWorkspace(documents);
+  const index = buildIndex(workspace);
   const elements = sortElements(workspace.elements);
-  const edges = buildEdges(workspace, index);
   return {
     elements,
-    edges,
+    edges: index.edges,
     diagrams: workspace.diagrams,
     documents: workspace.documents,
   };
 }
 
-export async function getElements(opts: GetOptions): Promise<GetResult> {
-  const { workspace, index } = await runPipeline(opts.dir);
+export function getElementsFromDocuments(opts: GetDocumentsOptions): GetResult {
+  const workspace = buildWorkspace(opts.documents);
+  const index = buildIndex(workspace);
   const query = opts.query;
 
   if (query.kind === "element") {
@@ -156,18 +99,33 @@ export async function getElements(opts: GetOptions): Promise<GetResult> {
     elements = elements.filter((e) => e.kind === query.typeFilter);
   }
   elements = sortElements(elements);
-  const edges = buildEdges(workspace, index);
 
   const view: WorkspaceView = {
     kind: "workspace",
     elements,
-    edges,
+    edges: index.edges,
     typeFilter: query.typeFilter,
   };
   return view;
 }
 
-export type { Diagnostic, Severity } from "./validator/types.ts";
+/** Sort elements: canonical kind order, then priority descending for quality-goal, then alphabetical by id */
+function sortElements(elements: Element[]): Element[] {
+  const kindRank = new Map(ELEMENT_KIND_ORDER.map((k, i) => [k, i]));
+  const priorityRank: Record<string, number> = { high: 2, medium: 1, low: 0 };
+  return [...elements].sort((a, b) => {
+    const kindDiff = (kindRank.get(a.kind) ?? 99) - (kindRank.get(b.kind) ?? 99);
+    if (kindDiff !== 0) return kindDiff;
+    // Secondary sort for quality-goal: descending priority (high first)
+    if (a.kind === "quality-goal" && b.kind === "quality-goal") {
+      const priorityDiff = (priorityRank[b.priority] ?? 0) - (priorityRank[a.priority] ?? 0);
+      if (priorityDiff !== 0) return priorityDiff;
+    }
+    return a.id.localeCompare(b.id);
+  });
+}
+
+export type { Diagnostic, Severity, PathEvidence, ValidationContext } from "./validator/types.ts";
 export type {
   Element,
   QualityGoal,
@@ -191,7 +149,7 @@ export type {
   Workspace,
   ParseError,
 } from "./model/types.ts";
-export type { ReferenceIndex } from "./resolver/types.ts";
+export type { ReferenceIndex, Edge } from "./resolver/types.ts";
 export type { BlockType } from "./ast.ts";
 export type {
   GetQuery,
@@ -200,7 +158,6 @@ export type {
   ElementQuery,
   WorkspaceView,
   ElementView,
-  Edge,
   ResolvedRef,
   GetRenderer,
   RendererMeta,

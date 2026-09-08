@@ -10,7 +10,7 @@ const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 function runCli(...args: string[]): string {
   return execFileSync(
     process.execPath,
-    ["--experimental-strip-types", "--no-warnings", cliPath, ...args],
+    ["--experimental-strip-types", "--no-warnings", "--conditions=development", cliPath, ...args],
     { cwd: projectRoot, encoding: "utf8" },
   );
 }

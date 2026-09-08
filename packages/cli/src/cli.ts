@@ -15,9 +15,6 @@ import { spawn } from "node:child_process";
 import { discoverArc42Dir } from "./discover.ts";
 import { fileURLToPath } from "node:url";
 import {
-  validateWorkspace,
-  getElements,
-  loadWorkspace,
   builtinRules,
   builtinGetRenderers,
   rendererById,
@@ -25,11 +22,10 @@ import {
   formatExplainText,
   formatExplainListText,
   analyzeArchitectureDiff,
-  parseArchitectureDocument,
   ELEMENT_KIND_ORDER,
 } from "@arc42/core";
 import type { BlockType, Diagnostic } from "@arc42/core";
-import { collectGitDiff } from "./git-diff.ts";
+import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText } from "./guide.ts";
 
@@ -168,16 +164,10 @@ async function runDiff(dir: string, args: string[]) {
 
   try {
     const diff = collectGitDiff(dir, positionals[0], Boolean(values.staged || values.cached));
-    const current = [...diff.currentDocuments.entries()].map(([file, content]) =>
-      parseArchitectureDocument(file, content),
-    );
-    const base = [...diff.baseDocuments.entries()].map(([file, content]) =>
-      parseArchitectureDocument(file, content),
-    );
     const result = analyzeArchitectureDiff({
       changes: diff.changes,
-      current,
-      base,
+      current: diff.currentDocuments,
+      base: diff.baseDocuments,
       knownPaths: diff.knownPaths,
     });
     const findings = [...result.consistencyFindings, ...result.pathFindings].sort(
@@ -231,7 +221,7 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
   const strict = values["strict"] as boolean;
 
   try {
-    const result = await validateWorkspace({ dir, root });
+    const result = await validateWorkspace(dir, root);
 
     if (format === "json") {
       console.log(JSON.stringify(result, null, 2));

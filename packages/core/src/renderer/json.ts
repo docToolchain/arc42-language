@@ -1,4 +1,5 @@
-import type { GetRenderer, GetResult, WorkspaceView, ElementView, Edge } from "./types.ts";
+import type { GetRenderer, GetResult, WorkspaceView, ElementView } from "./types.ts";
+import type { Edge } from "../resolver/types.ts";
 
 export class JsonGetRenderer implements GetRenderer {
   meta = {

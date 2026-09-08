@@ -6,7 +6,7 @@ import type {
   Workspace,
 } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
-import path from "node:path";
+import { basename } from "../../path-utils.ts";
 import { sourceContainsId } from "../mermaid-utils.ts";
 
 /**
@@ -41,7 +41,7 @@ export const h016BuildingBlockDiagramMissingInterfaces: Rule = {
     const diagnostics: Diagnostic[] = [];
 
     for (const doc of workspace.documents) {
-      const base = path.basename(doc.filePath);
+      const base = basename(doc.filePath);
       if (!/^05-.*\.arc42\.md$/.test(base)) continue;
 
       const fileDiagrams = workspace.diagrams.filter(

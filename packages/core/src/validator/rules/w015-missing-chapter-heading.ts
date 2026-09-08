@@ -1,7 +1,7 @@
 import type { Rule, Diagnostic } from "../types.ts";
 import type { Workspace } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
-import path from "node:path";
+import { basename } from "../../path-utils.ts";
 
 /**
  * W015 — A numbered arc42 chapter document is missing a correct h1 heading.
@@ -34,7 +34,7 @@ function formatAccepted(titles: readonly string[]): string {
 
 /** Extract the chapter number from a filename like "06-runtime-view.arc42.md". */
 function chapterNumberFromFile(filePath: string): number | null {
-  const base = path.basename(filePath);
+  const base = basename(filePath);
   if (!base.endsWith(".arc42.md")) return null;
   const match = /^(\d{2})-/.exec(base);
   if (!match) return null;

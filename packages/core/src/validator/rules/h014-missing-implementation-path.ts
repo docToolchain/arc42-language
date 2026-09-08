@@ -13,6 +13,7 @@ export const h014MissingImplementationPath: Rule = {
     },
   },
   check(workspace, _index, options) {
+    // Direct rule callers without a validation context intentionally opt out of path checks.
     if (!options) return [];
     return workspace.elements.flatMap((element): Diagnostic[] => {
       if (element.kind !== "building-block" && element.kind !== "interface") return [];

@@ -9,7 +9,9 @@ const missingPriority = (file: string) =>
 
 function diagnostics(documents: ReturnType<typeof missingPriority>[]) {
   const workspace = buildWorkspace(documents);
-  return validate(workspace, buildIndex(workspace), { dir: "." });
+  // Validation options with empty dir are still accepted for backwards compatibility
+  // Rules receive the source-neutral ValidationContext when path evidence is needed.
+  return validate(workspace, buildIndex(workspace), {});
 }
 
 describe("ignore directives", () => {

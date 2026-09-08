@@ -1,5 +1,12 @@
 import type { Rule } from "../types.ts";
-import { resolveAuthoredPath, resolveRepositoryRoot } from "../../repository-root.ts";
+
+function pathIsKnown(path: string, knownPaths: string[]): boolean {
+  const normalized = path.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/$/, "");
+  return knownPaths.some((known) => {
+    const candidate = known.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/$/, "");
+    return candidate === normalized || candidate.startsWith(`${normalized}/`);
+  });
+}
 
 export const e011UnresolvedImplementationPath: Rule = {
   meta: {
@@ -15,7 +22,7 @@ export const e011UnresolvedImplementationPath: Rule = {
   },
   check(workspace, _index, options) {
     if (!options) return [];
-    const root = resolveRepositoryRoot(workspace, options);
+    const knownPaths = options.pathEvidence?.knownPaths ?? [];
     return workspace.elements.flatMap((element) => {
       if (
         (element.kind !== "building-block" && element.kind !== "interface") ||
@@ -23,7 +30,7 @@ export const e011UnresolvedImplementationPath: Rule = {
       ) {
         return [];
       }
-      if (resolveAuthoredPath(root, element.path)) return [];
+      if (pathIsKnown(element.path, knownPaths)) return [];
       return [
         {
           code: "E011",

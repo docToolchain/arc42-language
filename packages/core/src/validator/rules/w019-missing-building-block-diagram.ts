@@ -1,7 +1,7 @@
 import type { Rule, Diagnostic } from "../types.ts";
 import type { Workspace } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
-import path from "node:path";
+import { basename } from "../../path-utils.ts";
 
 export const w019MissingBuildingBlockDiagram: Rule = {
   meta: {
@@ -19,7 +19,7 @@ export const w019MissingBuildingBlockDiagram: Rule = {
   check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     for (const doc of workspace.documents) {
-      const base = path.basename(doc.filePath);
+      const base = basename(doc.filePath);
       if (!/^05-.*\.arc42\.md$/.test(base)) continue;
       const hasDiagram = workspace.diagrams.some(
         (d) => d.diagramType === "building-block" && d.loc.file === doc.filePath,

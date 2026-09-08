@@ -31,3 +31,18 @@ severity: low
 mitigation: Validate templates and the project documentation after DSL changes, and update SKILL.md with the block reference and rule summary.
 :::
 ```
+
+## Zod Runtime Dependency
+
+The core package currently depends on Zod at runtime for model schema validation. Replacing it
+would require a deliberate schema-validation redesign; the dependency is accepted and tracked
+instead of being hidden by the pure-core boundary.
+
+```arc42
+:::risk
+id: risk-runtime-dependency
+title: Core runtime retains a Zod dependency
+severity: low
+mitigation: Keep Zod explicit in the core package and revisit removal only as a separately scoped schema-validation change.
+:::
+```

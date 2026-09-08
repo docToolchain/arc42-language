@@ -8,7 +8,7 @@ export default defineConfig({
     // and must survive the clean step so serve can find the SPA assets.
     clean: ["dist/cli.mjs"],
     deps: {
-      alwaysBundle: ["@arc42/core"],
+      alwaysBundle: ["@arc42/core", "@arc42/workspace-fs"],
     },
     copy: [
       {

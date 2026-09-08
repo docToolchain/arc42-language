@@ -34,7 +34,16 @@ function architecture(prose: string, title: string): string {
 function runDiff(root: string, args: string[] = [], env?: Record<string, string>) {
   return spawnSync(
     process.execPath,
-    ["--experimental-strip-types", "--no-warnings", cliPath, "--dir", root, "diff", ...args],
+    [
+      "--experimental-strip-types",
+      "--no-warnings",
+      "--conditions=development",
+      cliPath,
+      "--dir",
+      root,
+      "diff",
+      ...args,
+    ],
     { encoding: "utf8", env: { ...process.env, ...env } },
   );
 }
