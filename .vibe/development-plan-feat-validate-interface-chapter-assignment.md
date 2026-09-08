@@ -31,6 +31,11 @@ this convention.
    consuming building blocks.
 8. **Shared filename parsing:** Keep numbered arc42 filename parsing in the shared path utility so
    W015 and E016 apply identical `.arc42.md` and `01`–`12` boundaries.
+9. **Provisioning versus consumption:** Define one interface for one provider-owned contract,
+   even when several actors or building blocks consume it. Consumer-specific relationships belong
+   in `requires` and diagrams, not in duplicate interface definitions.
+10. **Diagram reuse:** A shared interface may label multiple diagram edges when the endpoints differ;
+    duplicate-edge validation compares the complete endpoint-and-label combination.
 
 ## Evidence and Findings
 
@@ -125,6 +130,8 @@ The implementation and tests must cover:
 - [x] Verify diagnostics, formatting, and the complete test suite.
 - [x] Incorporated review feedback by adding same-kind multi-element and chapter-boundary tests,
   and by making the W027 context-scope test exercise an existing provider.
+- [x] Consolidated duplicate consumer-specific CLI and bookstore API interface definitions into
+  single provider-owned contracts with shared consumer references.
 
 ## Commit
 

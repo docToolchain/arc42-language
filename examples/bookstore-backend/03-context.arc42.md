@@ -24,8 +24,8 @@ graph TD
         bb-notification-service["Notification Service"]
     end
 
-    actor-customer -->|"if-customer-gateway"| bb-api-gateway
-    actor-admin -->|"if-admin-gateway"| bb-api-gateway
+    actor-customer -->|"if-gateway-api"| bb-api-gateway
+    actor-admin -->|"if-gateway-api"| bb-api-gateway
     actor-payment -->|"if-order-payment"| bb-order-service
     actor-email -->|"if-notify-email"| bb-notification-service
     actor-sms -->|"if-notify-sms"| bb-notification-service
@@ -39,7 +39,7 @@ id: actor-customer
 title: Customer
 type: person
 description: End user who browses, searches, and purchases books via web or mobile clients
-requires: if-customer-gateway
+requires: if-gateway-api
 :::
 ```
 
@@ -53,7 +53,7 @@ id: actor-admin
 title: Store Administrator
 type: person
 description: Internal staff who manage the book catalog, inventory, and order fulfillment
-requires: if-admin-gateway
+requires: if-gateway-api
 :::
 ```
 

@@ -26,14 +26,14 @@ graph TD
         bb-workspace["Documentation Workspace"]
     end
 
-    actor-architect -->|"if-architect-cli"| bb-cli
+    actor-architect -->|"if-cli"| bb-cli
     actor-architect -->|"if-architect-workspace"| bb-workspace
-    actor-agent -->|"if-agent-cli"| bb-cli
+    actor-agent -->|"if-cli"| bb-cli
     actor-agent -->|"if-agent-workspace"| bb-workspace
     actor-agent -->|"if-agent-skill"| bb-skill
-    actor-ci -->|"if-ci-cli"| bb-cli
+    actor-ci -->|"if-cli"| bb-cli
     actor-reader -->|"if-reader-web"| bb-web-renderer
-    bb-skill -->|"if-skill-cli"| bb-cli
+    bb-skill -->|"if-cli"| bb-cli
     bb-cli -->|"if-cli-web"| bb-web-renderer
 ```
 
@@ -53,7 +53,7 @@ id: actor-architect
 title: Architect
 type: person
 description: Human architect who authors and validates arc42 documentation
-requires: if-architect-cli, if-architect-workspace, if-architect-serve
+requires: if-cli, if-architect-workspace
 :::
 ```
 
@@ -71,7 +71,7 @@ id: actor-agent
 title: AI Agent
 type: system
 description: LLM-based coding assistant operating via the arc42-language skill
-requires: if-agent-cli, if-agent-skill, if-agent-workspace
+requires: if-cli, if-agent-skill, if-agent-workspace
 :::
 ```
 
@@ -87,7 +87,7 @@ id: actor-ci
 title: CI Pipeline
 type: system
 description: Automated pipeline enforcing architecture consistency on every PR
-requires: if-ci-cli
+requires: if-cli
 :::
 ```
 

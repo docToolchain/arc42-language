@@ -53,29 +53,16 @@ requires: if-gateway-catalog, if-gateway-order, if-gateway-auth
 :::
 ```
 
-### Customer → API Gateway
+### Bookstore Backend API
 
-The public customer contract is provided by the API Gateway.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-:::interface
-id: if-customer-gateway
-title: Customer → API Gateway
-provider: bb-api-gateway
-protocol: HTTPS / REST + JSON
-:::
-```
-
-### Store Administrator → API Gateway
-
-The administrator contract is provided by the same API Gateway with elevated authorization.
+The API Gateway provides the same backend API to customer and administrator clients; authorization
+determines which operations each consumer may perform.
 
 ```arc42
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
 :::interface
-id: if-admin-gateway
-title: Administrator → API Gateway
+id: if-gateway-api
+title: Bookstore Backend API
 provider: bb-api-gateway
 protocol: HTTPS / REST + JSON
 :::

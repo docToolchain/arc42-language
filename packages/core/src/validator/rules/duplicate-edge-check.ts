@@ -25,36 +25,27 @@ export function checkDuplicateEdges(
 
     const edges = extractMermaidEdges(diagram.source);
 
-    const seenLabels = new Set<string>();
-    const seenPairs = new Set<string>();
+    const seenEdges = new Set<string>();
 
     for (const edge of edges) {
-      if (edge.label !== undefined) {
-        if (seenLabels.has(edge.label)) {
-          diagnostics.push({
-            code: ruleCode,
-            severity: "warning",
-            message: `Diagram '${diagram.id}' contains a duplicate edge with interface label '${edge.label}' — remove the redundant occurrence`,
-            file: diagram.loc.file,
-            line: diagram.loc.line,
-          });
-        } else {
-          seenLabels.add(edge.label);
-        }
-      } else {
-        const pair = `${edge.from}→${edge.to}`;
-        if (seenPairs.has(pair)) {
-          diagnostics.push({
-            code: ruleCode,
-            severity: "warning",
-            message: `Diagram '${diagram.id}' contains a duplicate edge from '${edge.from}' to '${edge.to}' — remove the redundant occurrence`,
-            file: diagram.loc.file,
-            line: diagram.loc.line,
-          });
-        } else {
-          seenPairs.add(pair);
-        }
+      const pair = `${edge.from}→${edge.to}`;
+      const key = edge.label === undefined ? pair : `${pair}|${edge.label}`;
+      if (!seenEdges.has(key)) {
+        seenEdges.add(key);
+        continue;
       }
+
+      const detail =
+        edge.label === undefined
+          ? `edge from '${edge.from}' to '${edge.to}'`
+          : `edge from '${edge.from}' to '${edge.to}' with interface label '${edge.label}'`;
+      diagnostics.push({
+        code: ruleCode,
+        severity: "warning",
+        message: `Diagram '${diagram.id}' contains a duplicate ${detail} — remove the redundant occurrence`,
+        file: diagram.loc.file,
+        line: diagram.loc.line,
+      });
     }
   }
 
