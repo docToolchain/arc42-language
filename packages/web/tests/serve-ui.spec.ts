@@ -276,6 +276,15 @@ test.describe("Cross-document element card links", () => {
 // ─── Clickable diagram nodes ──────────────────────────────────────────────────
 
 test.describe("Clickable diagram nodes", () => {
+  test("deployment architecture diagrams render without flowchart click directives", async ({
+    page,
+  }) => {
+    await page.goto("/#07-deployment-view.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+    await expect(page.getByTestId("diagram").locator("svg").first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator(".diagram-error")).toHaveCount(0);
+  });
+
   test("building block diagram nodes that are known elements have click links in the SVG", async ({
     page,
   }) => {

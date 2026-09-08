@@ -45,6 +45,9 @@
     "version:major": "npm version major --no-git-tag-version",
     "release": "pnpm publish --access public"
   },
+  "dependencies": {
+    "mermaid": "11.17.2"
+  },
   "devDependencies": {
     "@arc42/core": "workspace:*",
     "@arc42/workspace-fs": "workspace:*",

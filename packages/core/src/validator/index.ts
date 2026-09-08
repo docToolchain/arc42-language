@@ -2,6 +2,7 @@ import type { Workspace } from "../model/types.ts";
 import type { ReferenceIndex } from "../resolver/types.ts";
 import type { Diagnostic, ValidationContext } from "./types.ts";
 import { builtinRules } from "./rules/index.ts";
+import { suppressInvalidMermaidDiagnostics, validateMermaidSyntax } from "./mermaid-syntax.ts";
 
 const STALE_IGNORE_CODE = "W019";
 
@@ -52,4 +53,19 @@ export function validate(
 ): Diagnostic[] {
   const diagnostics = builtinRules.flatMap((rule) => rule.check(workspace, index, context));
   return applyIgnoreDirectives(workspace, diagnostics);
+}
+
+export async function validateAsync(
+  workspace: Workspace,
+  index: ReferenceIndex,
+  context?: ValidationContext,
+): Promise<Diagnostic[]> {
+  const syntaxDiagnostics = await validateMermaidSyntax(workspace);
+  const ruleDiagnostics = builtinRules.flatMap((rule) => rule.check(workspace, index, context));
+  const semanticDiagnostics = suppressInvalidMermaidDiagnostics(
+    workspace,
+    ruleDiagnostics,
+    syntaxDiagnostics,
+  );
+  return applyIgnoreDirectives(workspace, [...semanticDiagnostics, ...syntaxDiagnostics]);
 }

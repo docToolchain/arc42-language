@@ -33,7 +33,14 @@ function cleanSource(source: string): string {
  * Must be called after cleanSource so there are no trailing fence markers.
  */
 function applyClickDirectives(source: string, clickableNodes: Map<string, string>): string {
-  if (clickableNodes.size === 0) return source;
+  // Mermaid architecture-beta has no `click ... href ...` directive grammar.
+  // Keep deployment diagrams renderable; flowchart-based diagrams retain
+  // their interactive node links.
+  const firstMeaningfulLine = source
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line !== "" && !line.startsWith("%%"));
+  if (clickableNodes.size === 0 || firstMeaningfulLine === "architecture-beta") return source;
   const lines: string[] = [];
   for (const [nodeId, url] of clickableNodes) {
     lines.push(`click ${nodeId} href "${url}" "_self"`);
@@ -65,6 +72,11 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
           setRendered(true);
         }
       } catch (err) {
+        // Mermaid may append its own error SVG before rejecting. Remove that
+        // generated element so the React error state remains the sole error
+        // presentation instead of showing a duplicate Mermaid placeholder.
+        containerRef.current?.querySelector(`#${CSS.escape(diagramId.current)}`)?.remove();
+        containerRef.current?.replaceChildren();
         if (!cancelled) {
           setError(String(err));
         }

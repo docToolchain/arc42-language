@@ -1,7 +1,7 @@
 import { MarkdownParser } from "./parser/markdown-parser.ts";
 import { buildWorkspace } from "./model/builder.ts";
 import { buildIndex } from "./resolver/index.ts";
-import { validate } from "./validator/index.ts";
+import { validate, validateAsync } from "./validator/index.ts";
 import { ELEMENT_KIND_ORDER } from "./model/types.ts";
 import type { Diagnostic, ValidationContext } from "./validator/types.ts";
 import type { Element } from "./model/types.ts";
@@ -52,6 +52,29 @@ export function validateDocuments(
   context?: ValidationContext,
 ): ValidateResult {
   const { diagnostics } = processArchitecture(documents, context);
+  const valid = !diagnostics.some((d) => d.severity === "error");
+  return { version: 1, valid, diagnostics };
+}
+
+export async function processArchitectureAsync(
+  documents: DocumentAst[],
+  context?: ValidationContext,
+): Promise<{
+  workspace: Workspace;
+  index: ReferenceIndex;
+  diagnostics: Diagnostic[];
+}> {
+  const workspace = buildWorkspace(documents);
+  const index = buildIndex(workspace);
+  const diagnostics = await validateAsync(workspace, index, context);
+  return { workspace, index, diagnostics };
+}
+
+export async function validateDocumentsAsync(
+  documents: DocumentAst[],
+  context?: ValidationContext,
+): Promise<ValidateResult> {
+  const { diagnostics } = await processArchitectureAsync(documents, context);
   const valid = !diagnostics.some((d) => d.severity === "error");
   return { version: 1, valid, diagnostics };
 }

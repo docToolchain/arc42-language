@@ -5,6 +5,8 @@ export {
   parseArchitectureDocument,
   loadWorkspaceFromDocuments,
   processArchitecture,
+  processArchitectureAsync,
+  validateDocumentsAsync,
 } from "./arc42.ts";
 export { analyzeArchitectureDiff } from "./diff.ts";
 
@@ -83,6 +85,16 @@ export type {
   WorkspacePayload,
 } from "./renderer/types.ts";
 export type { Edge } from "./resolver/types.ts";
+
+// Mermaid syntax boundary
+export type {
+  MermaidNotation,
+  MermaidParseFailure,
+  MermaidParseRequest,
+  MermaidParseResult,
+  MermaidParseSuccess,
+  MermaidSyntaxParser,
+} from "@arc42/mermaid";
 
 // explain command API
 export { explainElement, formatExplainText, formatExplainListText } from "./explain.ts";

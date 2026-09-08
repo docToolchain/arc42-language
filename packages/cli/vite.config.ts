@@ -8,6 +8,9 @@ export default defineConfig({
     // and must survive the clean step so serve can find the SPA assets.
     clean: ["dist/cli.mjs"],
     deps: {
+      // Keep Mermaid as a runtime dependency. Bundling it into the CLI
+      // transforms its DOMPurify integration and breaks Node parsing.
+      onlyBundle: false,
       alwaysBundle: ["@arc42/core", "@arc42/workspace-fs"],
     },
     copy: [
