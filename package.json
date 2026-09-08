@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vp run -r build",
     "test": "vp test",
+    "test:e2e": "pnpm --filter @arc42/web test:e2e",
     "check": "vp check",
     "ready": "pnpm run check && pnpm run test && pnpm run build",
     "check-diff:docs": "node packages/cli/dist/cli.mjs --dir docs/arc42 diff --strict",

@@ -1,3 +1,4 @@
 pnpm run build
 pnpm run check
 pnpm run test
+pnpm run test:e2e

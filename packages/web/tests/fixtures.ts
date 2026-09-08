@@ -1,7 +1,9 @@
+/// <reference types="node" />
+
 import { test as base, expect, type Page } from "@playwright/test";
-import { spawn, type ChildProcess } from "child_process";
-import { fileURLToPath } from "url";
-import { resolve, dirname } from "path";
+import { spawn, type ChildProcess } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { resolve, dirname } from "node:path";
 
 // ─── Server fixture ───────────────────────────────────────────────────────────
 //
@@ -27,30 +29,46 @@ async function waitForServer(url: string, timeoutMs = 8000): Promise<void> {
   throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`);
 }
 
+async function stopServer(server: ChildProcess): Promise<void> {
+  if (server.exitCode !== null || server.signalCode !== null) return;
+
+  const exited = new Promise<void>((resolve) => server.once("exit", () => resolve()));
+  server.kill("SIGTERM");
+
+  await Promise.race([exited, new Promise<void>((resolve) => setTimeout(resolve, 2000))]);
+
+  if (server.exitCode === null && server.signalCode === null) {
+    server.kill("SIGKILL");
+    await exited;
+  }
+}
+
 // Worker-scoped fixture: one arc42 serve per Playwright worker
 type WorkerFixtures = { serverBaseURL: string };
 
 export const test = base.extend<object, WorkerFixtures>({
   serverBaseURL: [
-    async (_fixtures, use, workerInfo) => {
+    async ({ playwright }, use, workerInfo) => {
+      void playwright;
       const port = 3200 + workerInfo.workerIndex;
       const url = `http://localhost:${port}`;
 
       const server: ChildProcess = spawn(
         "node",
         [cliPath, "--dir", bookstoreDir, "serve", "--port", String(port)],
-        { stdio: "pipe" },
+        { stdio: "ignore" },
       );
 
-      server.on("error", (err) => {
+      server.on("error", (err: Error) => {
         throw new Error(`arc42 serve failed to start: ${err.message}`);
       });
 
       await waitForServer(`${url}/api/workspace`);
-      await use(url);
-
-      server.kill("SIGTERM");
-      await new Promise((r) => setTimeout(r, 200));
+      try {
+        await use(url);
+      } finally {
+        await stopServer(server);
+      }
     },
     { scope: "worker" },
   ],

@@ -9,6 +9,7 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
+    "types": ["node"],
     "strict": true
   },
   "include": ["tests", "playwright.config.ts"]

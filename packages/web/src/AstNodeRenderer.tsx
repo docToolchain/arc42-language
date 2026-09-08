@@ -271,7 +271,7 @@ function ProseRun({
     // Card mode: full-width, no outer stripe — the card's left border IS the stripe.
     // Clicking anywhere on the card's left border (the button overlay) dismisses back to prose.
     return (
-      <div className="prose-run prose-run--card-expanded">
+      <div data-testid="expanded-card" className="prose-run prose-run--card-expanded">
         <div className="prose-run__card-view">
           <ElementCard
             elementId={block.attributes["id"] ?? ""}
@@ -298,7 +298,9 @@ function ProseRun({
         aria-expanded={false}
       />
       <div className="prose-run__content">
-        <div className="prose-run__prose-view">{text && <ProseBlock text={text} />}</div>
+        <div data-testid="prose-view" className="prose-run__prose-view">
+          {text && <ProseBlock text={text} />}
+        </div>
       </div>
     </div>
   );

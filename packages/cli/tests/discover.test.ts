@@ -54,7 +54,7 @@ describe("discoverArc42Dir — walk-up", () => {
     mkdirSync(child, { recursive: true });
     try {
       const result = discoverArc42Dir(child);
-      expect(result === undefined || typeof result === "string").toBe(true);
+      expect(result).toBeUndefined();
     } finally {
       rmSync(dir, { recursive: true });
     }
