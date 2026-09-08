@@ -35,7 +35,11 @@ this convention.
    even when several actors or building blocks consume it. Consumer-specific relationships belong
    in `requires` and diagrams, not in duplicate interface definitions.
 10. **Diagram reuse:** A shared interface may label multiple diagram edges when the endpoints differ;
-    duplicate-edge validation compares the complete endpoint-and-label combination.
+   duplicate-edge validation compares the complete endpoint-and-label combination.
+11. **Navigation colors:** Building blocks and interfaces use separate visual markers even though
+   both belong to chapter 5, so navigation distinguishes ownership from the provided contract.
+12. **Navigation density:** Do not aggregate block markers onto document-level navigation items;
+   show markers only on the heading that directly owns the block.
 
 ## Evidence and Findings
 
@@ -132,6 +136,8 @@ The implementation and tests must cover:
   and by making the W027 context-scope test exercise an existing provider.
 - [x] Consolidated duplicate consumer-specific CLI and bookstore API interface definitions into
   single provider-owned contracts with shared consumer references.
+- [x] Fixed sidebar marker ownership and density: document rows have no aggregated markers,
+  heading rows show only directly owned blocks, and building blocks/interfaces use distinct colors.
 
 ## Commit
 
