@@ -1,7 +1,9 @@
 # Building Blocks
 
 The arc42-language toolchain is a pnpm monorepo. Each package is a vertical slice of the system —
-the core library owns all logic; the CLI and skill are thin consumers of it.
+the core library owns architecture processing; the CLI and skill are thin consumers of it. Each
+building-block diagram uses one abstraction level: the overview shows peer/package-level blocks,
+while a parent and its direct children appear only in that parent's adjacent drill-down.
 
 :::diagram
 id: diag-building-blocks
@@ -12,24 +14,47 @@ notation: mermaid
 ```mermaid
 graph TD
     bb-cli["CLI"]
-    subgraph bb-core["Core Library"]
-        bb-diff["Architecture Diff"]
-    end
+    bb-core["Core Library"]
     bb-workspace-fs["Filesystem Workspace Adapter"]
     bb-skill["Skill"]
     bb-web-renderer["Web Renderer"]
     bb-workspace["Documentation Workspace"]
 
     bb-cli -->|"if-cli-core"| bb-core
-    bb-cli -->|"if-cli-diff"| bb-diff
     bb-cli -->|"if-cli-workspace-adapter"| bb-workspace-fs
     bb-workspace-fs -->|"if-fs-workspace"| bb-workspace
     bb-cli -->|"if-cli-web"| bb-web-renderer
-    bb-web-renderer -->|"if-web-core"| bb-core
+    bb-web-renderer -->|"if-web-cli-api"| bb-cli
     bb-skill -->|"if-skill-cli"| bb-cli
 ```
 
-The Core Library is decomposed into a four-stage pipeline. See the drill-down diagram below.
+The overview intentionally treats `@arc42/core` as opaque. Its diff capability is reached through
+the same package boundary as the rest of the core API and is shown only in the Core Library
+drill-down below.
+
+## Core Library
+
+The architecture-processing heart of the system. It transforms already-acquired architecture
+documents into a typed model, resolves references, validates the model, renders queries, and
+provides the pure architecture-diff analysis used by the CLI. It does not discover files, read
+filesystem resources, select repository roots, or watch for changes. Source acquisition belongs to
+workspace adapters; the processing pipeline is: parse Markdown → build element model → index
+references → validate or render.
+
+```arc42
+:::building-block
+id: bb-core
+title: Core Library
+technology: TypeScript / Node.js
+implements: concept-pipeline, concept-rule-registry
+path: packages/core
+:::
+```
+
+The Core Library is decomposed into one parent and its direct logical children. The children are
+all internal responsibilities of the same package and are therefore not peer packages in the
+overview. Architecture Diff is deliberately shown here, alongside the processing pipeline, but
+not in the package-level diagram.
 
 :::diagram
 id: diag-core-internals
@@ -52,30 +77,12 @@ graph TD
     bb-builder -->|"if-builder-resolver"| bb-resolver
     bb-resolver -->|"if-resolver-validator"| bb-validator
     bb-validator -->|"if-validator-renderer"| bb-renderer
+    bb-core -->|"if-core-diff"| bb-diff
 ```
 
 ---
 
-## Core Library
-
-The architecture-processing heart of the system. It transforms already-acquired architecture
-documents into a typed model, resolves references, validates the model, renders queries, and
-provides the pure architecture-diff analysis used by the CLI. It does not discover files, read
-filesystem resources, select repository roots, or watch for changes. Source acquisition belongs to
-workspace adapters; the processing pipeline is: parse Markdown → build element model → index
-references → validate or render.
-
-```arc42
-:::building-block
-id: bb-core
-title: Core Library
-technology: TypeScript / Node.js
-implements: concept-pipeline, concept-rule-registry
-path: packages/core
-:::
-```
-
-## Markdown Parser
+### Markdown Parser
 
 Reads acquired `.arc42.md` document content line by line and produces a `DocumentAst` — a sequence of heading,
 prose, and block nodes with line numbers. Deliberately dumb: it emits all block types including
@@ -93,7 +100,7 @@ path: packages/core/src/parser
 :::
 ```
 
-## Meta-model Builder
+### Meta-model Builder
 
 Turns `DocumentAst[]` into a typed `Workspace` — a flat list of `Element` objects covering quality
 goals, constraints, building blocks, interfaces, concepts, decisions, risks, and glossary terms,
@@ -111,7 +118,7 @@ path: packages/core/src/model
 :::
 ```
 
-## Reference Resolver
+### Reference Resolver
 
 Builds a bidirectional reference index from the workspace: `byId` (id → element), `refsFrom`
 (id → ids this element references), and `refsTo` (id → ids that reference this element). The index
@@ -129,7 +136,7 @@ path: packages/core/src/resolver
 :::
 ```
 
-## Validator
+### Validator
 
 Runs all registered rules against the workspace and index. Each rule is a self-describing object
 with metadata (code, severity, type, description, rationale, arc42 chapter) and a `check()` function.
@@ -147,7 +154,7 @@ path: packages/core/src/validator
 :::
 ```
 
-## Renderer Registry
+### Renderer Registry
 
 Produces human-readable text or JSON from workspace and element query results. Each renderer
 implements the `GetRenderer` interface. The registry (`builtinGetRenderers`, `rendererById`)
@@ -165,7 +172,7 @@ path: packages/core/src/renderer
 :::
 ```
 
-## Architecture Diff
+### Architecture Diff
 
 Compares current and base architecture documents with a set of changed file ranges. It reports
 inconsistencies between prose and architecture blocks and can produce implementation-path hints
@@ -182,13 +189,31 @@ path: packages/core/src/diff.ts
 :::
 ```
 
+## Core Library → Architecture Diff Interface
+
+The Core Library exposes Architecture Diff as an internal capability of the package. The CLI
+reaches that capability through the opaque Core Library boundary; it does not depend directly on
+the child building block.
+
+```arc42
+:::interface
+id: if-core-diff
+title: Core Library → Architecture Diff
+between: bb-core, bb-diff
+protocol: In-process TypeScript function call
+path: packages/core/src/index.ts
+:::
+```
+
 ## Filesystem Workspace Adapter
 
 Provides the filesystem-backed workspace boundary used by the CLI. It discovers architecture
 documents, reads their contents, establishes repository-root context, and performs validations that
 depend on filesystem paths. Other acquisition mechanisms, such as web resources, can provide their
 own adapters without expanding the responsibilities of the architecture-processing core. File
-watching and workspace-directory selection remain CLI responsibilities.
+watching and workspace-directory selection remain CLI responsibilities. No separate child
+building blocks are modeled here because discovery, loading, and path evidence form one cohesive
+adapter boundary at this architectural level.
 
 ```arc42
 :::building-block
@@ -345,22 +370,6 @@ path: packages/core/src/validator/types.ts
 :::
 ```
 
-## CLI → Architecture Diff Interface
-
-The CLI requests Git change information and workspace-provided path knowledge from the filesystem
-workspace adapter, supplies those source-neutral inputs to the architecture diff building block,
-and renders the resulting findings for the user.
-
-```arc42
-:::interface
-id: if-cli-diff
-title: CLI → Architecture Diff
-between: bb-cli, bb-diff
-protocol: In-process TypeScript function call
-path: packages/cli
-:::
-```
-
 ## arc42 Documentation Workspace
 
 The set of `.arc42.md` files that make up a project's architecture documentation.
@@ -425,19 +434,18 @@ path: packages/cli/src/cli.ts
 :::
 ```
 
-## Web Renderer → Core Interface
+## Web Renderer → CLI Workspace API Interface
 
-The web renderer fetches the workspace payload from the core library via the CLI's HTTP
-API endpoint (`/api/workspace`). In the static export case the payload is a JSON file
-generated at build time by the core library. Either way the web renderer only consumes
-the serialised `WorkspacePayload` type — it has no direct dependency on the core library
-code itself.
+The web renderer fetches the workspace payload from the CLI's HTTP API endpoint (`/api/workspace`).
+The CLI obtains that payload through its Core Library boundary. In the static export case the
+payload is a JSON file generated during the CLI/web build. The web renderer therefore has no
+direct dependency on `@arc42/core`.
 
 ```arc42
 :::interface
-id: if-web-core
-title: Web Renderer → Core
-between: bb-web-renderer, bb-core
+id: if-web-cli-api
+title: Web Renderer → CLI Workspace API
+between: bb-web-renderer, bb-cli
 protocol: HTTP JSON (serve) or static JSON file (export)
 path: packages/web/src/types.ts
 :::

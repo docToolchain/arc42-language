@@ -170,6 +170,9 @@ the resulting building-block boundaries.
 - Keep `git-diff` acquisition in the filesystem/Git workspace package; the CLI remains responsible for
   selecting the workspace and presenting diff results, while the core Architecture Diff analyzer
   receives documents, changes, and optional path evidence.
+- Enforce one abstraction level per building-block diagram: package-level peer blocks belong in the
+  overview, and each parent with meaningful children gets an adjacent drill-down containing only
+  that parent and its direct children. Treat `@arc42/core` as opaque in the overview.
 - Preserve the `WorkspacePayload` HTTP contract used by the web renderer unless a coordinated web and
   CLI change is deliberately required; treat payload shape and ordering as an explicit regression
   boundary.
@@ -447,8 +450,17 @@ set rather than treated as a successful refactor by assumption.
 - Added the `supersedes` relation to the web Edge contract, converted core implementation-path tests
   to in-memory path evidence, removed the empty workspace-fs renderer directory, and resolved the
   architecture validation hints with implementation paths and the missing diff diagram edge.
-- Nested `bb-diff` inside the top-level `bb-core` Mermaid subgraph so the diagram explicitly declares
-  the parent containment required by H019.
+- The earlier mixed-level overview placed `bb-diff` inside the top-level `bb-core` Mermaid subgraph;
+  the documentation follow-up replaced that with a peer-only `bb-core` node and retained the child
+  only in the Core Library drill-down.
+- Reworked the building-block chapter so its overview contains only peer/package-level blocks; moved
+  Architecture Diff visibility to the adjacent Core Library drill-down, removed the separate CLI-to-
+  diff interface in favor of the opaque Core boundary, and documented the Web Renderer-to-CLI API
+  boundary instead of a direct web-to-core dependency.
+- Researched the arc42 interface meta-model question: the current ordered `between: [consumer, provider]`
+  interface remains an intentional collaboration-level abstraction, while a full provided/required
+  interface plus dependency model would be a separate, high-impact design change. Tracked that future
+  evaluation in issue #54 rather than expanding this refactor.
 
 ### Follow-up verification
 
@@ -469,6 +481,33 @@ set rather than treated as a successful refactor by assumption.
 
 ### Completed
 *None yet*
+
+## Validation Rule Follow-up
+
+### Decision
+- Add recommended warning rule W026 for every building block with a `parent`: the child must have
+  a Markdown heading exactly one level deeper than the parent's heading and must occur after the
+  parent in document order. The rule also validates the reverse direction: a heading is treated as a
+  claimed parent section only when it contains direct child building-block sections whose `parent:`
+  references the same declared building block, and that section must contain the parent's own block.
+  Pure chapter/group headings remain allowed when they do not claim a building-block parent. The rule
+  reports missing parent headings, orphan parent sections, wrong heading depth, and wrong ordering,
+  using the raw document AST because element locations retain heading text but not heading levels.
+- Keep the rule limited to building-block hierarchy. Deployment-node hierarchy remains governed by
+  its existing model and diagram rules because this requirement is specifically about building-block
+  prose structure.
+
+### Progress
+- [x] Added focused red/green tests for missing parent heading, orphan parent section, heading depth,
+  ordering, and valid parent-child structure.
+- [x] Implemented and registered W026 in both directions; documented the convention in the project
+  skill metadata.
+- [x] Updated the Core Library architecture document so the parent block and its level-3 child
+  building blocks share the same parent section rather than using an undocumented drill-down heading.
+- [x] Run repository-wide no-build tests, checks, production builds, and strict architecture
+  validation after the rule is included in the built CLI: 47 test files/246 tests passed, checks and
+  builds passed, and docs strict validation passed with 0 errors, warnings, and hints. Existing
+  bookstore example validation remains at 0 errors/0 warnings with its pre-existing five H007 hints.
 
 
 
