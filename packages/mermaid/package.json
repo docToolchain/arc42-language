@@ -1,8 +1,8 @@
 {
-  "name": "@arc42/core",
-  "version": "0.1.1",
+  "name": "@arc42/mermaid",
+  "version": "0.1.0",
   "private": true,
-  "description": "Core validation engine for arc42 DSL files.",
+  "description": "Node-compatible Mermaid syntax boundary for arc42 validation.",
   "license": "MIT",
   "files": [
     "dist"
@@ -10,6 +10,7 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./src/index.ts",
       "development": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
@@ -19,12 +20,10 @@
     "build": "vp pack",
     "dev": "vp pack --watch",
     "test": "vp test",
-    "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "check": "vp check"
   },
   "dependencies": {
-    "@arc42/mermaid": "workspace:*",
-    "zod": "4.5.4"
+    "mermaid": "11.17.2"
   },
   "devDependencies": {
     "@types/node": "catalog:",

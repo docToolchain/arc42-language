@@ -2,6 +2,13 @@ import type { Rule, Diagnostic } from "../types.ts";
 import type { DiagramArtifact, Workspace } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
 
+const SUPPORTED_MERMAID_NOTATIONS = new Set([
+  "mermaid",
+  "mermaid-class",
+  "mermaid-architecture",
+  "mermaid-sequence",
+]);
+
 function diagnostic(
   diagram: DiagramArtifact,
   message: string,
@@ -53,6 +60,13 @@ export const e008DiagramValidation: Rule = {
       }
       seenIds.add(diagram.id);
 
+      // Empty source is a diagram-wide structural error. Report it here so
+      // specialized notation rules do not emit a second, less useful error.
+      if (!diagram.source.trim()) {
+        diagnostics.push(diagnostic(diagram, "source must not be empty"));
+        continue;
+      }
+
       // Diagram types with dedicated semantic rules — nothing more to check here.
       if (
         diagram.diagramType === "deployment" ||
@@ -63,8 +77,11 @@ export const e008DiagramValidation: Rule = {
         continue;
       }
 
-      // Generic diagrams: no notation adapter registered yet.
-      diagnostics.push(diagnostic(diagram, `unsupported notation '${diagram.notation}'`));
+      // Generic diagrams are supported when their Mermaid notation has a
+      // parser adapter. Other notation values still require an adapter.
+      if (!SUPPORTED_MERMAID_NOTATIONS.has(diagram.notation)) {
+        diagnostics.push(diagnostic(diagram, `unsupported notation '${diagram.notation}'`));
+      }
     }
 
     return diagnostics;

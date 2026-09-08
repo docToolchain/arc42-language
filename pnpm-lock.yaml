@@ -62,6 +62,10 @@ importers:
         version: 0.1.24(@types/node@24.13.3)(typescript@5.9.3)(vite@8.2.1(@types/node@24.13.3))
 
   packages/cli:
+    dependencies:
+      mermaid:
+        specifier: 11.17.2
+        version: 11.17.2
     devDependencies:
       '@arc42/core':
         specifier: workspace:*
@@ -81,9 +85,28 @@ importers:
 
   packages/core:
     dependencies:
+      '@arc42/mermaid':
+        specifier: workspace:*
+        version: link:../mermaid
       zod:
         specifier: 4.5.4
         version: 4.5.4
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.1.24(@types/node@24.13.3)(typescript@5.9.3)(vite@8.2.1(@types/node@24.13.3))
+
+  packages/mermaid:
+    dependencies:
+      mermaid:
+        specifier: 11.17.2
+        version: 11.17.2
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

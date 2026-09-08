@@ -4,7 +4,7 @@ import {
   getElementsFromDocuments,
   loadWorkspaceFromDocuments,
   parseArchitectureDocument,
-  validateDocuments,
+  validateDocumentsAsync,
 } from "@arc42/core";
 import type {
   DocumentAst,
@@ -84,7 +84,7 @@ export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
 
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {
   const documents = await readWorkspaceDocuments(dir);
-  return validateDocuments(documents, { pathEvidence: await pathEvidence(dir, root) });
+  return validateDocumentsAsync(documents, { pathEvidence: await pathEvidence(dir, root) });
 }
 
 export async function getElements(opts: {
