@@ -447,6 +447,8 @@ set rather than treated as a successful refactor by assumption.
 - Added the `supersedes` relation to the web Edge contract, converted core implementation-path tests
   to in-memory path evidence, removed the empty workspace-fs renderer directory, and resolved the
   architecture validation hints with implementation paths and the missing diff diagram edge.
+- Nested `bb-diff` inside the top-level `bb-core` Mermaid subgraph so the diagram explicitly declares
+  the parent containment required by H019.
 
 ### Follow-up verification
 

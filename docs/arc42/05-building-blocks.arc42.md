@@ -13,6 +13,7 @@ notation: mermaid
 graph TD
     bb-cli["CLI"]
     subgraph bb-core["Core Library"]
+        bb-diff["Architecture Diff"]
     end
     bb-workspace-fs["Filesystem Workspace Adapter"]
     bb-skill["Skill"]
