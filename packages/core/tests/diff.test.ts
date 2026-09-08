@@ -201,4 +201,23 @@ describe("architecture diff analyzer", () => {
     });
     expect(result.pathFindings.map((finding) => finding.elementId)).toEqual(["dir", "file"]);
   });
+
+  test("keeps consistency findings independent from supplied path evidence", () => {
+    const ast = document([
+      { kind: "heading", line: 1 },
+      { kind: "prose", line: 2, text: "Updated prose" },
+      { kind: "block", line: 3 },
+    ]);
+    const options = {
+      changes: [change(ast.filePath, [[2, 2]])],
+      current: [ast],
+    };
+    const withoutPaths = analyzeArchitectureDiff(options);
+    const withPaths = analyzeArchitectureDiff({
+      ...options,
+      knownPaths: new Set(["src/service.ts"]),
+    });
+    expect(withPaths.consistencyFindings).toEqual(withoutPaths.consistencyFindings);
+    expect(withPaths.pathFindings).toEqual(withoutPaths.pathFindings);
+  });
 });

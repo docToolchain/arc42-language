@@ -1,13 +1,15 @@
 // Core barrel export
 export {
-  validateWorkspace,
-  getElements,
-  loadWorkspace,
+  validateDocuments,
+  getElementsFromDocuments,
   parseArchitectureDocument,
+  loadWorkspaceFromDocuments,
+  processArchitecture,
 } from "./arc42.ts";
 export { analyzeArchitectureDiff } from "./diff.ts";
 
-export type { ValidateOptions, ValidateResult, GetOptions } from "./arc42.ts";
+export type { ValidateResult, GetDocumentsOptions } from "./arc42.ts";
+export type { PathEvidence, ValidationContext } from "./validator/types.ts";
 export type { AnalyzeDiffOptions, DiffFinding, DiffResult, FileChange, LineRange } from "./diff.ts";
 
 export type { Diagnostic, Severity } from "./validator/types.ts";
@@ -74,13 +76,13 @@ export type {
   ElementQuery,
   WorkspaceView,
   ElementView,
-  Edge,
   ResolvedRef,
   GetRenderer,
   RendererMeta,
   ElementRenderers,
   WorkspacePayload,
 } from "./renderer/types.ts";
+export type { Edge } from "./resolver/types.ts";
 
 // explain command API
 export { explainElement, formatExplainText, formatExplainListText } from "./explain.ts";

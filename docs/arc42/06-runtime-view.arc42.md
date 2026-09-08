@@ -11,7 +11,7 @@ quality gate at commit or merge time, rather than as a manual step in the archit
 id: scenario-agent-architecture-evolution
 title: Agent-driven architecture evolution
 trigger: An architect asks an agent for an improvement
-involves: bb-skill, bb-workspace, bb-cli, bb-core
+involves: bb-skill, bb-workspace, bb-cli, bb-core, bb-workspace-fs, bb-diff
 :::
 ```
 
@@ -19,7 +19,7 @@ involves: bb-skill, bb-workspace, bb-cli, bb-core
 id: agent-architecture-evolution-sequence
 scenario: scenario-agent-architecture-evolution
 notation: mermaid-sequence
-aliases: bb_skill=bb-skill, bb_workspace=bb-workspace, bb_cli=bb-cli, bb_core=bb-core
+aliases: bb_skill=bb-skill, bb_workspace=bb-workspace, bb_cli=bb-cli, bb_core=bb-core, bb_workspace_fs=bb-workspace-fs, bb_diff=bb-diff
 :::
 
 ```mermaid
@@ -30,7 +30,9 @@ sequenceDiagram
     participant bb_skill as Opencode Skill
     participant bb_workspace as Documentation Workspace
     participant bb_cli as CLI
+    participant bb_workspace_fs as Filesystem Workspace Adapter
     participant bb_core as Core Library
+    participant bb_diff as Architecture Diff
 
     actor_architect->>actor_agent: Ask for an improvement
     actor_agent->>bb_workspace: Read architecture documentation
@@ -42,9 +44,17 @@ sequenceDiagram
     actor_agent->>bb_workspace: Update code and related architecture documentation
     actor_agent->>bb_workspace: Commit the change
     actor_ci->>bb_cli: Validate on commit or merge request
+    bb_cli->>bb_workspace_fs: Discover and read workspace
+    bb_workspace_fs->>bb_workspace: Read architecture documents
+    bb_workspace_fs-->>bb_cli: Documents and path evidence
     bb_cli->>bb_core: Parse, build, resolve, and validate
     bb_core-->>bb_cli: Return validation diagnostics
     bb_cli-->>actor_ci: Return status and diagnostics
+    actor_ci->>bb_cli: Compare changed architecture
+    bb_cli->>bb_workspace_fs: Acquire Git diff and path evidence
+    bb_workspace_fs-->>bb_cli: Base/current documents and changes
+    bb_cli->>bb_diff: Analyze architecture diff
+    bb_diff-->>bb_cli: Consistency and path findings
     actor_ci-->>actor_agent: Report validation failure when inconsistent
     actor_agent->>actor_architect: Ask for correction when needed
     actor_architect-->>actor_agent: Clarify or correct the documentation

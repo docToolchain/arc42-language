@@ -102,29 +102,46 @@ addresses: qg-agent-writability, qg-extensibility
 
 ## No third-party runtime dependencies
 
-The core library and CLI use only Node.js built-ins: `fs`, `path`, `util.parseArgs`,
-`fs.readdir` for glob. No `fast-glob`, no arg-parser libraries, no runtime npm packages.
-This eliminates supply-chain risk, keeps the install fast, and ensures the toolchain works
-in locked-down CI environments. The one external dependency is the TypeScript toolchain,
-which is dev-only.
+The original v1 target was a runtime made only of Node.js built-ins. The core model schemas now
+use Zod at runtime, so that target is superseded rather than silently claimed as true. Removing
+Zod would require replacing the schema system and is tracked as technical debt.
 
 ```arc42
 :::decision
 id: dec-no-deps
 title: Use only Node.js built-ins at runtime — no third-party packages
-status: accepted
+status: superseded
 date: 2026-08-14
 addresses: qg-cli-usability, qg-extensibility
 :::
 ```
 
-## Same pipeline for all commands, no caching
+## Accept Zod as tracked core runtime technical debt
 
-Every CLI command — `validate`, `get`, `rules` — runs the full discover→parse→build→index
-pipeline from scratch. We considered caching the parsed workspace on disk or in memory,
-but the added complexity (cache invalidation, stale state, file watching) is not justified
-for v1 workspace sizes. The pipeline is fast enough (sub-100ms for typical workspaces)
-that cold-start on every invocation is acceptable.
+Zod remains a deliberate runtime dependency of `@arc42/core` because the model schema definitions
+currently provide the parser/builder validation boundary. This is accepted technical debt, not a
+general policy that core may accumulate dependencies: replacing it requires an explicit schema
+validation redesign and separate scope.
+
+```arc42
+:::decision
+id: dec-zod-runtime-debt
+title: Accept Zod as a tracked runtime dependency in core
+status: accepted
+date: 2026-09-08
+supersedes: dec-no-deps
+addresses: qg-extensibility, risk-runtime-dependency
+:::
+```
+
+## Shared processing pipeline for commands, no caching
+
+Each filesystem-backed command acquires and parses its workspace from scratch before invoking the
+core processing pipeline. `validate` additionally runs validation; `get` builds query views, while
+`rules` reads static rule metadata. We considered caching the parsed workspace on disk or in memory,
+but the added complexity (cache invalidation, stale state, file watching) is not justified for v1
+workspace sizes. The pipeline is fast enough (sub-100ms for typical workspaces) that cold-start on
+every invocation is acceptable.
 
 ```arc42
 :::decision

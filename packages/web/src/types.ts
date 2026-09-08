@@ -274,7 +274,15 @@ export type Element =
 export interface Edge {
   from: string;
   to: string;
-  relation: "implements" | "parent" | "between" | "addresses" | "involves" | "hosts" | "elaborates";
+  relation:
+    | "implements"
+    | "parent"
+    | "between"
+    | "addresses"
+    | "supersedes"
+    | "involves"
+    | "hosts"
+    | "elaborates";
 }
 
 // ─── Diagram artifacts ───────────────────────────────────────────────────────

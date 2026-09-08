@@ -39,6 +39,9 @@ importers:
 
   .:
     devDependencies:
+      '@arc42/workspace-fs':
+        specifier: workspace:*
+        version: link:packages/workspace-fs
       '@semantic-release/changelog':
         specifier: 'catalog:'
         version: 7.0.0(semantic-release@25.0.9(typescript@5.9.3))
@@ -63,6 +66,9 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
+      '@arc42/workspace-fs':
+        specifier: workspace:*
+        version: link:../workspace-fs
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -128,6 +134,22 @@ importers:
       vite-plus:
         specifier: 'catalog:'
         version: 0.1.24(@types/node@24.13.3)(@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3))(typescript@5.9.3)
+
+  packages/workspace-fs:
+    dependencies:
+      '@arc42/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite-plus:
+        specifier: 'catalog:'
+        version: 0.1.24(@types/node@24.13.3)(typescript@5.9.3)(vite@8.2.1(@types/node@24.13.3))
 
 packages:
 

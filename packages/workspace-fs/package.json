@@ -1,8 +1,8 @@
 {
-  "name": "@arc42/core",
-  "version": "0.1.1",
+  "name": "@arc42/workspace-fs",
+  "version": "0.1.0",
   "private": true,
-  "description": "Core validation engine for arc42 DSL files.",
+  "description": "Filesystem workspace adapter for arc42-language.",
   "license": "MIT",
   "files": [
     "dist"
@@ -17,13 +17,11 @@
   },
   "scripts": {
     "build": "vp pack",
-    "dev": "vp pack --watch",
     "test": "vp test",
-    "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "check": "vp check"
   },
   "dependencies": {
-    "zod": "4.5.4"
+    "@arc42/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",

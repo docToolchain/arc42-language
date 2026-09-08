@@ -1,6 +1,6 @@
 import type { Workspace } from "../model/types.ts";
 import type { ReferenceIndex } from "../resolver/types.ts";
-import type { Diagnostic, ValidationOptions } from "./types.ts";
+import type { Diagnostic, ValidationContext } from "./types.ts";
 import { builtinRules } from "./rules/index.ts";
 
 const STALE_IGNORE_CODE = "W019";
@@ -48,8 +48,8 @@ function applyIgnoreDirectives(workspace: Workspace, diagnostics: Diagnostic[]):
 export function validate(
   workspace: Workspace,
   index: ReferenceIndex,
-  options?: ValidationOptions,
+  context?: ValidationContext,
 ): Diagnostic[] {
-  const diagnostics = builtinRules.flatMap((rule) => rule.check(workspace, index, options));
+  const diagnostics = builtinRules.flatMap((rule) => rule.check(workspace, index, context));
   return applyIgnoreDirectives(workspace, diagnostics);
 }

@@ -2,15 +2,16 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-import type { FileChange, LineRange } from "@arc42/core";
+import { parseArchitectureDocument } from "@arc42/core";
+import type { DocumentAst, FileChange, LineRange } from "@arc42/core";
 
 export interface GitArchitectureDiff {
   root: string;
   base: string;
   acceptanceBase?: string;
   changes: FileChange[];
-  currentDocuments: Map<string, string>;
-  baseDocuments: Map<string, string>;
+  currentDocuments: DocumentAst[];
+  baseDocuments: DocumentAst[];
   knownPaths: Set<string>;
   patch: string;
 }
@@ -136,6 +137,12 @@ function gitContents(root: string, spec: string, filePath: string): string | und
   }
 }
 
+function parseDocuments(documents: Map<string, string>): DocumentAst[] {
+  return [...documents.entries()].map(([filePath, content]) =>
+    parseArchitectureDocument(filePath, content),
+  );
+}
+
 export function collectGitDiff(
   root: string,
   reference?: string,
@@ -187,8 +194,8 @@ export function collectGitDiff(
     base,
     acceptanceBase,
     changes,
-    currentDocuments,
-    baseDocuments,
+    currentDocuments: parseDocuments(currentDocuments),
+    baseDocuments: parseDocuments(baseDocuments),
     knownPaths,
     patch,
   };

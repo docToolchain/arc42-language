@@ -14,9 +14,17 @@ export interface Diagnostic {
   line: number;
 }
 
-export interface ValidationOptions {
-  dir: string;
+export interface PathEvidence {
+  /** Known file/directory paths in the repository for implementation-path validation */
+  knownPaths: string[];
+  /** Optional repository root for resolving paths */
   root?: string;
+}
+
+/** Validation context passed to rules. */
+export interface ValidationContext {
+  /** Path evidence for implementation-path rules (source-neutral) */
+  pathEvidence?: PathEvidence;
 }
 
 /** Which arc42 chapter this rule primarily relates to.
@@ -64,5 +72,5 @@ export interface RuleMeta {
 export interface Rule {
   meta: RuleMeta;
   /** Run this rule against the fully-built workspace + index */
-  check(workspace: Workspace, index: ReferenceIndex, options?: ValidationOptions): Diagnostic[];
+  check(workspace: Workspace, index: ReferenceIndex, context?: ValidationContext): Diagnostic[];
 }

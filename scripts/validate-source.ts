@@ -1,6 +1,6 @@
 import { relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateWorkspace } from "../packages/core/src/arc42.ts";
+import { validateWorkspace } from "@arc42/workspace-fs";
 
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const targets = ["docs/arc42", "examples/bookstore-backend"];
@@ -23,7 +23,7 @@ for (const target of targets) {
   console.log(`Validating ${target} from TypeScript source...`);
 
   try {
-    const result = await validateWorkspace({ dir: directory });
+    const result = await validateWorkspace(directory);
     for (const diagnostic of result.diagnostics) {
       console.log(
         formatDiagnostic(

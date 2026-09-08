@@ -34,6 +34,7 @@
   },
   "scripts": {
     "build:web": "pnpm --filter @arc42/web build",
+    "prebuild": "pnpm --filter @arc42/workspace-fs build",
     "build": "pnpm build:web && vp pack",
     "dev": "vp pack --watch",
     "test": "vp test",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@arc42/core": "workspace:*",
+    "@arc42/workspace-fs": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"

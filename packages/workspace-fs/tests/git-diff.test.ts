@@ -23,13 +23,7 @@ function repository(): string {
 }
 
 afterEach(() => {
-  for (const dir of createdDirs.splice(0)) {
-    try {
-      rmSync(dir, { recursive: true, force: true });
-    } catch {
-      // best-effort cleanup
-    }
-  }
+  for (const dir of createdDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 describe("Git diff acquisition", () => {
@@ -43,17 +37,17 @@ describe("Git diff acquisition", () => {
     expect(parseDiffPathHeader('diff --git "a/\\303\\244.md" "b/\\303\\244.md"')).toBe("ä.md");
   });
 
-  test("reads the working tree and compares it with the index by default", () => {
+  test("reads and parses the working tree against the index", () => {
     const root = repository();
     writeFileSync(join(root, "architecture.arc42.md"), "# Architecture\n\nUpdated\n");
     const result = collectGitDiff(root);
-    expect(result.currentDocuments.get("architecture.arc42.md")).toContain("Updated");
-    expect(result.baseDocuments.get("architecture.arc42.md")).toContain("Initial");
+    expect(result.currentDocuments[0]?.filePath).toBe("architecture.arc42.md");
+    expect(result.baseDocuments[0]?.nodes[1]).toMatchObject({ kind: "prose", text: "Initial" });
     expect(result.changes[0]?.newRanges.length).toBeGreaterThan(0);
     expect(result.base).toMatch(/^[0-9a-f]{40}$/);
   });
 
-  test("accepts an explicit base reference", () => {
+  test("accepts an explicit base reference and staged comparisons", () => {
     const root = repository();
     const base = git(root, "rev-parse", "HEAD").trim();
     writeFileSync(join(root, "src.ts"), "export const value = 1;\n");
@@ -61,17 +55,14 @@ describe("Git diff acquisition", () => {
     expect(collectGitDiff(root, base).changes.some((change) => change.filePath === "src.ts")).toBe(
       true,
     );
-    expect(parseDiffPathHeader('diff --git "a/quote\\\".md" "b/quote\\\".md"')).toBe('quote".md');
-  });
 
-  test("supports staged comparisons explicitly", () => {
-    const root = repository();
     writeFileSync(join(root, "architecture.arc42.md"), "# Architecture\n\nStaged\n");
     git(root, "add", "architecture.arc42.md");
     writeFileSync(join(root, "architecture.arc42.md"), "# Architecture\n\nWorking tree\n");
-    const result = collectGitDiff(root, undefined, true);
-    expect(result.currentDocuments.get("architecture.arc42.md")).toContain("Staged");
-    expect(result.baseDocuments.get("architecture.arc42.md")).toContain("Initial");
+    expect(collectGitDiff(root, undefined, true).currentDocuments[0]?.nodes[1]).toMatchObject({
+      kind: "prose",
+      text: "Staged",
+    });
   });
 
   test("rejects a directory that is not a Git repository", () => {

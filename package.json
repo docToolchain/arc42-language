@@ -12,7 +12,7 @@
     "validate:docs": "node packages/cli/dist/cli.mjs --dir docs/arc42 validate --strict",
     "validate:examples": "node packages/cli/dist/cli.mjs --dir examples/bookstore-backend validate",
     "validate:all": "pnpm run validate:docs && pnpm run validate:examples",
-    "validate:source": "node --experimental-strip-types --no-warnings scripts/validate-source.ts",
+    "validate:source": "node --conditions=development --experimental-strip-types --no-warnings scripts/validate-source.ts",
     "hooks:install": "vp config && echo 'git hooks installed via vp config (core.hooksPath=.vite-hooks/_)'",
     "version:patch": "pnpm --filter @doctc/arc42 exec npm version patch --no-git-tag-version",
     "version:minor": "pnpm --filter @doctc/arc42 exec npm version minor --no-git-tag-version",
@@ -20,6 +20,7 @@
     "release": "pnpm publish -r --access public"
   },
   "devDependencies": {
+    "@arc42/workspace-fs": "workspace:*",
     "@semantic-release/changelog": "catalog:",
     "@semantic-release/exec": "catalog:",
     "@semantic-release/github": "catalog:",

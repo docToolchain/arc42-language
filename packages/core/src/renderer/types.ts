@@ -29,6 +29,8 @@ import type {
   DiagramArtifact,
 } from "../model/types.ts";
 import type { BlockType, DocumentAst } from "../ast.ts";
+import type { Edge } from "../resolver/types.ts";
+export type { Edge } from "../resolver/types.ts";
 
 // ---------------------------------------------------------------------------
 // Query context — passed to renderers so they know what was asked
@@ -58,14 +60,6 @@ export type GetQuery = WorkspaceQuery | ElementQuery;
 // ---------------------------------------------------------------------------
 // Result types — what the core API returns for `get`
 // ---------------------------------------------------------------------------
-
-/** A graph edge connecting two elements */
-export interface Edge {
-  from: string;
-  to: string;
-  /** The semantic relationship type */
-  relation: "implements" | "parent" | "between" | "addresses" | "involves" | "hosts" | "elaborates";
-}
 
 /** Result of a workspace-level get query */
 export interface WorkspaceView {

@@ -1,5 +1,8 @@
 import type { Rule } from "../types.ts";
-import { normalizedPath, resolveRepositoryRoot } from "../../repository-root.ts";
+
+function normalizedPath(value: string): string[] {
+  return value.replaceAll("\\", "/").replace(/^\.\//, "").split("/").filter(Boolean);
+}
 
 function isPrefix(parent: string[], child: string[]): boolean {
   return parent.length < child.length && parent.every((part, index) => part === child[index]);
@@ -20,7 +23,6 @@ export const w018ImplementationPathOverlap: Rule = {
   },
   check(workspace, _index, options) {
     if (!options) return [];
-    const root = resolveRepositoryRoot(workspace, options);
     const blocks = workspace.elements.filter(
       (element) => element.kind === "building-block" && element.path,
     );
@@ -31,8 +33,8 @@ export const w018ImplementationPathOverlap: Rule = {
         const b = blocks[j];
         if (a.kind !== "building-block" || b.kind !== "building-block" || !a.path || !b.path)
           continue;
-        const pa = normalizedPath(root, a.path);
-        const pb = normalizedPath(root, b.path);
+        const pa = normalizedPath(a.path);
+        const pb = normalizedPath(b.path);
         if (!pa || !pb || pa.join("/") === pb.join("/")) continue;
         const nested = isPrefix(pa, pb) || isPrefix(pb, pa);
         if (!nested) continue;

@@ -1,13 +1,13 @@
 import { expect, test, describe } from "vite-plus/test";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateWorkspace } from "../src/arc42.ts";
+import { validateWorkspace } from "../src/index.ts";
 
-const fixtureDir = join(fileURLToPath(import.meta.url), "../../src/__fixtures__/mini-arch");
+const fixtureDir = join(fileURLToPath(import.meta.url), "../../../core/src/__fixtures__/mini-arch");
 
 describe("validateWorkspace — mini-arch fixture", () => {
   test("returns all expected diagnostic codes", async () => {
-    const result = await validateWorkspace({ dir: fixtureDir });
+    const result = await validateWorkspace(fixtureDir);
 
     const codes = result.diagnostics.map((d) => d.code);
 
@@ -40,12 +40,12 @@ describe("validateWorkspace — mini-arch fixture", () => {
   });
 
   test("result.valid is false when there are errors", async () => {
-    const result = await validateWorkspace({ dir: fixtureDir });
+    const result = await validateWorkspace(fixtureDir);
     expect(result.valid).toBe(false);
   });
 
   test("diagnostics have required fields", async () => {
-    const result = await validateWorkspace({ dir: fixtureDir });
+    const result = await validateWorkspace(fixtureDir);
     for (const d of result.diagnostics) {
       expect(d.code).toBeTruthy();
       expect(d.severity).toMatch(/^(error|warning|hint)$/);

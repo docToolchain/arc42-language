@@ -12,13 +12,17 @@ notation: mermaid
 ```mermaid
 graph TD
     bb-cli["CLI"]
-    bb-core["Core Library"]
+    subgraph bb-core["Core Library"]
+    end
+    bb-workspace-fs["Filesystem Workspace Adapter"]
     bb-skill["Skill"]
     bb-web-renderer["Web Renderer"]
     bb-workspace["Documentation Workspace"]
 
     bb-cli -->|"if-cli-core"| bb-core
-    bb-cli -->|"if-cli-workspace"| bb-workspace
+    bb-cli -->|"if-cli-diff"| bb-diff
+    bb-cli -->|"if-cli-workspace-adapter"| bb-workspace-fs
+    bb-workspace-fs -->|"if-fs-workspace"| bb-workspace
     bb-cli -->|"if-cli-web"| bb-web-renderer
     bb-web-renderer -->|"if-web-core"| bb-core
     bb-skill -->|"if-skill-cli"| bb-cli
@@ -40,6 +44,7 @@ graph TD
         bb-resolver["Resolver"]
         bb-validator["Validator"]
         bb-renderer["Renderer Registry"]
+        bb-diff["Architecture Diff"]
     end
 
     bb-parser -->|"if-parser-builder"| bb-builder
@@ -52,10 +57,12 @@ graph TD
 
 ## Core Library
 
-The heart of the system. Implements the full pipeline from file discovery to validation output and
-provides the pure, Git-independent architecture-diff analysis used by the CLI.
-Has no runtime dependencies beyond Node.js built-ins. All other packages import from here.
-The pipeline is: discover files → parse Markdown → build element model → index references → validate.
+The architecture-processing heart of the system. It transforms already-acquired architecture
+documents into a typed model, resolves references, validates the model, renders queries, and
+provides the pure architecture-diff analysis used by the CLI. It does not discover files, read
+filesystem resources, select repository roots, or watch for changes. Source acquisition belongs to
+workspace adapters; the processing pipeline is: parse Markdown → build element model → index
+references → validate or render.
 
 ```arc42
 :::building-block
@@ -69,7 +76,7 @@ path: packages/core
 
 ## Markdown Parser
 
-Reads `.arc42.md` files line by line and produces a `DocumentAst` — a sequence of heading,
+Reads acquired `.arc42.md` document content line by line and produces a `DocumentAst` — a sequence of heading,
 prose, and block nodes with line numbers. Deliberately dumb: it emits all block types including
 unknown ones. The meta-model builder rejects what it does not understand. This keeps the parser
 stable as the block type set evolves.
@@ -106,8 +113,9 @@ path: packages/core/src/model
 ## Reference Resolver
 
 Builds a bidirectional reference index from the workspace: `byId` (id → element), `refsFrom`
-(id → ids this element references), `refsTo` (id → ids that reference this element). The index
-is passed to every validation rule and to the `get` command for 1-hop relationship resolution.
+(id → ids this element references), and `refsTo` (id → ids that reference this element). The index
+also owns the canonical semantic edge representation used by query and payload consumers. It is
+passed to every validation rule and to the `get` command for 1-hop relationship resolution.
 
 ```arc42
 :::building-block
@@ -156,19 +164,54 @@ path: packages/core/src/renderer
 :::
 ```
 
+## Architecture Diff
+
+Compares current and base architecture documents with a set of changed file ranges. It reports
+inconsistencies between prose and architecture blocks and can produce implementation-path hints
+when a workspace supplies known source paths. The analysis itself is source-independent and does
+not access the filesystem; path knowledge is supplied by the relevant workspace adapter.
+
+```arc42
+:::building-block
+id: bb-diff
+title: Architecture Diff
+technology: TypeScript
+parent: bb-core
+path: packages/core/src/diff.ts
+:::
+```
+
+## Filesystem Workspace Adapter
+
+Provides the filesystem-backed workspace boundary used by the CLI. It discovers architecture
+documents, reads their contents, establishes repository-root context, and performs validations that
+depend on filesystem paths. Other acquisition mechanisms, such as web resources, can provide their
+own adapters without expanding the responsibilities of the architecture-processing core. File
+watching and workspace-directory selection remain CLI responsibilities.
+
+```arc42
+:::building-block
+id: bb-workspace-fs
+title: Filesystem Workspace Adapter
+technology: TypeScript / Node.js
+implements: concept-pipeline
+path: packages/workspace-fs
+:::
+```
+
 ## CLI
 
-A thin entry point over the core library. Parses arguments with Node.js `util.parseArgs`
-(no third-party parser), resolves the workspace directory (`--dir` flag → `$ARC42_DIR` → cwd),
-and delegates workspace operations to core. Implements five commands: `validate`, `get`, `rules`,
-`diff`, and `serve`; `diff` acquires staged Git changes and renders consistency findings and
-implementation-path review hints. At build time, the CLI copies the compiled `@arc42/web`
+A thin entry point over the core library and workspace adapters. Parses arguments with Node.js
+`util.parseArgs` (no third-party parser), resolves the workspace directory (`--dir` flag →
+`$ARC42_DIR` → cwd), and coordinates the selected workspace adapter with core processing. Implements
+five commands: `validate`, `get`, `rules`, `diff`, and `serve`; `diff` selects the workspace and
+renders findings acquired by the filesystem workspace adapter through the core diff building block. At build time, the CLI copies the compiled `@arc42/web`
 SPA assets into its own `dist/web/` directory so they can be served statically.
 
 ```arc42
 :::building-block
 id: bb-cli
-title: CLI with architecture diff
+title: CLI
 technology: TypeScript / Node.js
 implements: concept-pipeline
 path: packages/cli
@@ -301,12 +344,27 @@ path: packages/core/src/validator/types.ts
 :::
 ```
 
+## CLI → Architecture Diff Interface
+
+The CLI requests Git change information and workspace-provided path knowledge from the filesystem
+workspace adapter, supplies those source-neutral inputs to the architecture diff building block,
+and renders the resulting findings for the user.
+
+```arc42
+:::interface
+id: if-cli-diff
+title: CLI → Architecture Diff
+between: bb-cli, bb-diff
+protocol: In-process TypeScript function call
+path: packages/cli
+:::
+```
+
 ## arc42 Documentation Workspace
 
 The set of `.arc42.md` files that make up a project's architecture documentation.
-Written by architects and AI agents, read by architects, the CLI, and CI pipelines.
-The CLI discovers, parses, and validates these files — they are both the input to the
-toolchain and the primary human-readable output it produces and maintains.
+Written by architects and AI agents, read by architects, workspace adapters, and CI pipelines.
+They are the input to the toolchain and the primary human-readable output it produces and maintains.
 
 ```arc42
 :::building-block
@@ -318,19 +376,34 @@ path: docs/arc42
 :::
 ```
 
-## CLI → Documentation Workspace Interface
+## CLI → Filesystem Workspace Adapter Interface
 
-The CLI reads `.arc42.md` files from the workspace directory on every `validate` or
-`get` invocation. It does not write to them — that is the responsibility of the
-architect or AI agent.
+The CLI selects the workspace directory and delegates filesystem-backed discovery, loading, and
+path-context operations to the filesystem workspace adapter. File watching remains a CLI concern.
 
 ```arc42
 :::interface
-id: if-cli-workspace
-title: CLI → Documentation Workspace
-between: bb-cli, bb-workspace
-protocol: File system read (glob + parse)
-path: packages/cli/src/discover.ts
+id: if-cli-workspace-adapter
+title: CLI → Filesystem Workspace Adapter
+between: bb-cli, bb-workspace-fs
+protocol: TypeScript module import
+path: packages/cli
+:::
+```
+
+## Filesystem Workspace Adapter → Documentation Workspace Interface
+
+The filesystem workspace adapter reads `.arc42.md` files from the selected documentation workspace
+and supplies their contents and filesystem context to the core processing pipeline. It does not write
+to the documentation files — that remains the responsibility of the architect or AI agent.
+
+```arc42
+:::interface
+id: if-fs-workspace
+title: Filesystem Workspace Adapter → Documentation Workspace
+between: bb-workspace-fs, bb-workspace
+protocol: File system read (discovery + file content)
+path: packages/workspace-fs/src/index.ts
 :::
 ```
 
