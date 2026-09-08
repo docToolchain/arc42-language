@@ -5,7 +5,11 @@ import { buildIndex } from "../src/resolver/index.ts";
 import { validate } from "../src/validator/index.ts";
 
 function workspace(content: string) {
-  return buildWorkspace([parseMarkdown("review.arc42.md", content)]);
+  const wrapped = content.replace(
+    /:::diagram[\s\S]*?:::/g,
+    (block) => `\`\`\`arc42\n${block}\n\`\`\``,
+  );
+  return buildWorkspace([parseMarkdown("review.arc42.md", wrapped)]);
 }
 
 describe("deployment diagram review regressions", () => {

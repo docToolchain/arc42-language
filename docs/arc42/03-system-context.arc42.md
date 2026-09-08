@@ -4,11 +4,13 @@ The arc42-language toolchain sits at the boundary between human architects, AI a
 CI pipelines, and the files they all read and write. The system boundary is the CLI and
 the core library. Everything else is external.
 
+```arc42
 :::diagram
 id: diag-context
 view: context
 notation: mermaid
 :::
+```
 
 ```mermaid
 graph TD

@@ -28,11 +28,13 @@ involves: bb-api, bb-order-service, bb-payment-service
 Mermaid sequence diagrams may be attached using the project's explicit diagram association syntax.
 Use model IDs (or explicit safe aliases) for participants and labels only for display:
 
+```arc42
 :::diagram
 id: checkout-sequence
 scenario: scenario-checkout
 notation: mermaid-sequence
 :::
+```
 
 ```mermaid
 sequenceDiagram

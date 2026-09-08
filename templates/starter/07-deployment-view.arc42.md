@@ -31,11 +31,13 @@ Example:
 There are two environments: production and staging. Production is the primary target; staging
 mirrors it for pre-release validation.
 
+```arc42
 :::diagram
 id: my-system-deployment
 view: deployment
 notation: mermaid-architecture
 :::
+```
 
 ```mermaid
 architecture-beta
@@ -74,7 +76,3 @@ hosts: bb-api, bb-database
 ```
 
 -->
-
-```
-
-```

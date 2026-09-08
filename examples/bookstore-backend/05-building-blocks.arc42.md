@@ -2,11 +2,13 @@
 
 The bookstore backend follows a service-oriented decomposition. Each service owns its data and exposes a well-defined HTTP/JSON interface. The API Gateway is the single entry point for all external clients — it routes requests to the appropriate service but does not contain business logic.
 
+```arc42
 :::diagram
 id: bb-view-all
 view: building-block
 notation: mermaid
 :::
+```
 
 ```mermaid
 graph TD

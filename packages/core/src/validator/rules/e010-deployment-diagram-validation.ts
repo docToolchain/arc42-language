@@ -180,9 +180,9 @@ function validateMermaidArchitecture(
     `^service\\s+(${MERMAID_ID})\\(([^)]+)\\)\\[([^\\]]*)\\](?:\\s+in\\s+(${MERMAID_ID}))?\\s*$`,
   );
   const edgePattern = new RegExp(
-    `^(${MERMAID_ID})(?::${MERMAID_ID})?\\s+(?:<-->|-->|<--|---)\\s+(?:${MERMAID_ID}:)?(${MERMAID_ID})\\s*$`,
+    `^(${MERMAID_ID})(?::${MERMAID_ID})?\\s+(?:<-->|-->|<--|---|--)\\s+(?:${MERMAID_ID}:)?(${MERMAID_ID})\\s*$`,
   );
-  const edgeMarker = /(?:<-->|-->|<--|---)/;
+  const edgeMarker = /(?:<-->|-->|<--|---|--)/;
 
   const resolveDeclaration = (
     id: string,
@@ -291,7 +291,15 @@ function validateMermaidArchitecture(
           );
         }
       }
+      continue;
     }
+
+    // Do not silently accept source that is neither a declaration nor an edge.
+    // Previously malformed Mermaid lines fell through this loop and validate
+    // reported a clean document even though the renderer could not parse it.
+    diagnostics.push(
+      diagnostic(diagram, `invalid Mermaid architecture syntax '${line}'`, lineNumber),
+    );
   }
 }
 

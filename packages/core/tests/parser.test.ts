@@ -183,11 +183,19 @@ describe("parser — arc42 fence handling", () => {
     expect(result[1]!.inArc42Fence).toBe(true);
   });
 
-  test("arc42 fence does not interfere with diagram source fence", () => {
-    // :::diagram without arc42 wrapper — the mermaid ``` fence must still work
-    const md = `:::diagram\nid: d-1\nscenario: s-1\nnotation: mermaid-sequence\n:::\n\`\`\`mermaid\nsequenceDiagram\n  A->>B: hi\n\`\`\``;
+  test("diagram metadata is parsed only inside an arc42 fence", () => {
+    const md = `\`\`\`arc42\n:::diagram\nid: d-1\nscenario: s-1\nnotation: mermaid-sequence\n:::\n\`\`\`\n\`\`\`mermaid\nsequenceDiagram\n  A->>B: hi\n\`\`\``;
     const diagrams = parseMarkdown("test.arc42.md", md).nodes.filter((n) => n.kind === "diagram");
     expect(diagrams).toHaveLength(1);
+  });
+
+  test("unwrapped diagram metadata is not parsed as a diagram", () => {
+    const md = `:::diagram\nid: d-1\nnotation: mermaid-architecture\n:::`;
+    const result = parseMarkdown("test.arc42.md", md);
+    expect(result.nodes.some((node) => node.kind === "diagram")).toBe(false);
+    expect(result.nodes.some((node) => node.kind === "block" && node.blockType === "diagram")).toBe(
+      true,
+    );
   });
 });
 

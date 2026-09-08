@@ -41,13 +41,13 @@ provider: bb-database
 :::`;
 
 function contextDiagram(nodes: string) {
-  return `:::diagram
+  return `\`\`\`arc42
+:::diagram
 id: context
 view: context
 notation: mermaid
 :::
-
-
+\`\`\`
 
 \`\`\`mermaid
 graph TD

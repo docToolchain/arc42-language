@@ -32,11 +32,13 @@ const MERMAID_SOURCE = `graph TD
 describe("context diagrams", () => {
   describe("parser", () => {
     test("parses view: context with a following fence → produces ContextDiagramNode", () => {
-      const content = `:::diagram
+      const content = `\`\`\`arc42
+:::diagram
 id: ctx-view
 view: context
 notation: mermaid
 :::
+\`\`\`
 \`\`\`mermaid
 ${MERMAID_SOURCE}
 \`\`\``;
@@ -54,12 +56,14 @@ ${MERMAID_SOURCE}
     });
 
     test("parses view: context with roots", () => {
-      const content = `:::diagram
+      const content = `\`\`\`arc42
+:::diagram
 id: ctx-view
 view: context
 notation: mermaid
 roots: act-user, bb-api
 :::
+\`\`\`
 \`\`\`mermaid
 ${MERMAID_SOURCE}
 \`\`\``;
@@ -70,11 +74,13 @@ ${MERMAID_SOURCE}
     });
 
     test("parses view: context without a following fence (no source)", () => {
-      const content = `:::diagram
+      const content = `\`\`\`arc42
+:::diagram
 id: ctx-view
 view: context
 notation: mermaid
-:::`;
+:::
+\`\`\``;
       const doc = parseMarkdown("test.arc42.md", content);
       expect(doc.nodes).toHaveLength(1);
       expect(doc.nodes[0]).toMatchObject({
@@ -88,11 +94,13 @@ notation: mermaid
   describe("builder", () => {
     test("diagram artifact carries the Mermaid source", () => {
       const content = `${MINIMAL_ACTORS}
+\`\`\`arc42
 :::diagram
 id: ctx-view
 view: context
 notation: mermaid
 :::
+\`\`\`
 \`\`\`mermaid
 ${MERMAID_SOURCE}
 \`\`\``;
@@ -111,12 +119,14 @@ ${MERMAID_SOURCE}
 
     test("roots are stored on the diagram artifact", () => {
       const content = `${MINIMAL_ACTORS}
+\`\`\`arc42
 :::diagram
 id: ctx-view
 view: context
 notation: mermaid
 roots: act-user
 :::
+\`\`\`
 \`\`\`mermaid
 graph TD
     act-user(["End User"])
@@ -137,11 +147,13 @@ graph TD
 
     test("W020 does not fire when a context diagram is present", () => {
       const content = `${MINIMAL_ACTORS}
+\`\`\`arc42
 :::diagram
 id: ctx-view
 view: context
 notation: mermaid
 :::
+\`\`\`
 \`\`\`mermaid
 ${MERMAID_SOURCE}
 \`\`\``;

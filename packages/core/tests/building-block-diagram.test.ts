@@ -5,11 +5,19 @@ import { buildIndex } from "../src/resolver/index.ts";
 import { validate } from "../src/validator/index.ts";
 
 function workspaceFromChapter(filePath: string, content: string) {
-  return buildWorkspace([parseMarkdown(filePath, content)]);
+  return buildWorkspace([parseMarkdown(filePath, wrapDiagramMetadata(content))]);
 }
 
 function workspace(content: string) {
-  return buildWorkspace([parseMarkdown("05-building-blocks.arc42.md", content)]);
+  return buildWorkspace([
+    parseMarkdown("05-building-blocks.arc42.md", wrapDiagramMetadata(content)),
+  ]);
+}
+
+function wrapDiagramMetadata(content: string): string {
+  return content.replace(/:::diagram[\s\S]*?:::/g, (block, offset: number, source: string) =>
+    source.slice(0, offset).endsWith("```arc42\n") ? block : `\`\`\`arc42\n${block}\n\`\`\``,
+  );
 }
 
 const MINIMAL_BLOCKS = `:::building-block
@@ -35,6 +43,10 @@ const MERMAID_SOURCE = `graph TD
     bb-db["Database"]
     bb-api -->|"API to DB [SQL]"| bb-db`;
 
+function parseDiagramDocument(content: string) {
+  return parseMarkdown("test.arc42.md", `\`\`\`arc42\n${content}\n\`\`\``);
+}
+
 describe("building-block diagrams", () => {
   describe("parser", () => {
     test("parses view: building-block with a following fence → produces BuildingBlockDiagramNode", () => {
@@ -46,7 +58,7 @@ notation: mermaid
 \`\`\`mermaid
 ${MERMAID_SOURCE}
 \`\`\``;
-      const doc = parseMarkdown("test.arc42.md", content);
+      const doc = parseDiagramDocument(content);
       expect(doc.nodes).toHaveLength(1);
       expect(doc.nodes[0]).toMatchObject({
         kind: "diagram",
@@ -69,7 +81,7 @@ roots: bb-api, bb-db
 \`\`\`mermaid
 ${MERMAID_SOURCE}
 \`\`\``;
-      const doc = parseMarkdown("test.arc42.md", content);
+      const doc = parseDiagramDocument(content);
       expect(doc.nodes).toHaveLength(1);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((doc.nodes[0] as any).roots).toEqual(["bb-api", "bb-db"]);
@@ -81,7 +93,7 @@ id: bb-view
 view: building-block
 notation: mermaid
 :::`;
-      const doc = parseMarkdown("test.arc42.md", content);
+      const doc = parseDiagramDocument(content);
       expect(doc.nodes).toHaveLength(1);
       expect(doc.nodes[0]).toMatchObject({
         kind: "diagram",
