@@ -12,7 +12,7 @@ export const KIND_COLOR: Record<string, string> = {
   actor: "var(--c-ch3)",
   "solution-strategy": "var(--c-ch4)",
   "building-block": "var(--c-ch5)",
-  interface: "var(--c-ch5)",
+  interface: "var(--c-interface)",
   "runtime-scenario": "var(--c-ch6)",
   "deployment-node": "var(--c-ch7)",
   concept: "var(--c-ch8)",

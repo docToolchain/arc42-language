@@ -28,9 +28,6 @@ export function Sidebar({
     [activeDoc],
   );
 
-  // All-document block kind aggregates (for collapsed doc rows)
-  const docKinds = useMemo(() => documents.map((doc) => computeDocKinds(doc)), [documents]);
-
   return (
     <nav className="sidebar" aria-label="Document navigation">
       <div className="sidebar__header">
@@ -49,7 +46,6 @@ export function Sidebar({
       <ul className="sidebar__docs" role="list">
         {documents.map((doc, i) => {
           const isActive = i === activeDocIndex;
-          const kinds = docKinds[i] ?? [];
           return (
             <li key={doc.filePath} className="sidebar__doc">
               <a
@@ -63,18 +59,6 @@ export function Sidebar({
                 }}
               >
                 <span className="sidebar__doc-label">{basename(doc.filePath)}</span>
-                {kinds.length > 0 && (
-                  <span className="sidebar__heading-dots" aria-hidden="true">
-                    {kinds.map((kind: string) => (
-                      <span
-                        key={kind}
-                        className="sidebar__block-dot"
-                        style={{ backgroundColor: KIND_COLOR[kind] ?? "var(--c-ch0)" }}
-                        title={kind}
-                      />
-                    ))}
-                  </span>
-                )}
               </a>
 
               {isActive && activeDoc && (
@@ -137,55 +121,26 @@ function headingAnchor(text: string): string {
     .replace(/\s+/g, "-");
 }
 
-/**
- * All unique arc42 block kinds in the whole document (for collapsed doc row dots).
- */
-function computeDocKinds(doc: DocumentAst): string[] {
-  const kinds = new Set<string>();
-  for (const node of doc.nodes) {
-    if (node.kind === "block" && (node as BlockNode).inArc42Fence) {
-      kinds.add((node as BlockNode).blockType);
-    }
-  }
-  return [...kinds];
-}
-
-/**
- * For each heading, collect the unique arc42 block types that appear between
- * that heading and the next heading of the same or higher level.
- */
+/** Collect the unique arc42 block types directly belonging to each heading. */
 function computeBlockKindsByHeading(doc: DocumentAst): Map<string, string[]> {
   const result = new Map<string, string[]>();
-  const nodes = doc.nodes;
   let currentHeadingSlug: string | null = null;
-  let currentHeadingLevel = 0;
-  const kindsInSection = new Set<string>();
 
-  function flush() {
-    if (currentHeadingSlug && kindsInSection.size > 0) {
-      result.set(currentHeadingSlug, [...kindsInSection]);
-    }
-    kindsInSection.clear();
-  }
-
-  for (const node of nodes) {
+  for (const node of doc.nodes) {
     if (node.kind === "heading") {
       const h = node as HeadingNode;
-      const slug = headingAnchor(h.text);
-      if (currentHeadingSlug !== null && h.level <= currentHeadingLevel) {
-        flush();
-      }
-      currentHeadingSlug = slug;
-      currentHeadingLevel = h.level;
+      currentHeadingSlug = headingAnchor(h.text);
+      if (!result.has(currentHeadingSlug)) result.set(currentHeadingSlug, []);
     } else if (
       node.kind === "block" &&
       (node as BlockNode).inArc42Fence &&
       currentHeadingSlug !== null
     ) {
-      kindsInSection.add((node as BlockNode).blockType);
+      const kinds = result.get(currentHeadingSlug)!;
+      const kind = (node as BlockNode).blockType;
+      if (!kinds.includes(kind)) kinds.push(kind);
     }
   }
-  flush();
 
   return result;
 }

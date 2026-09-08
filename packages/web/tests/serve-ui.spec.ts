@@ -91,6 +91,34 @@ test.describe("Document navigation", () => {
     expect(count).toBeGreaterThan(0);
   });
 
+  test("shows only directly owned block markers for nested headings", async ({ page }) => {
+    await page.goto("/#05-building-blocks.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+
+    const buildingBlock = page
+      .getByTestId("sidebar-heading-link")
+      .filter({ hasText: "API Gateway" })
+      .first();
+    const interfaceHeading = page
+      .getByTestId("sidebar-heading-link")
+      .filter({ hasText: "Bookstore Backend API" })
+      .first();
+
+    await expect(buildingBlock.locator(".sidebar__block-dot")).toHaveCount(1);
+    await expect(buildingBlock.locator(".sidebar__block-dot")).toHaveAttribute(
+      "title",
+      "building-block",
+    );
+    await expect(interfaceHeading.locator(".sidebar__block-dot")).toHaveCount(1);
+    await expect(interfaceHeading.locator(".sidebar__block-dot")).toHaveAttribute(
+      "title",
+      "interface",
+    );
+    expect(await buildingBlock.locator(".sidebar__block-dot").getAttribute("style")).not.toBe(
+      await interfaceHeading.locator(".sidebar__block-dot").getAttribute("style"),
+    );
+  });
+
   test("clicking a heading link does NOT change the document part of the hash", async ({
     page,
   }) => {
