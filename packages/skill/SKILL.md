@@ -1,179 +1,35 @@
 ---
 name: arc42-language
-description: Use when working on this project's architecture — reading, writing, or validating .arc42.md files. _trigger keywords:_ arc42, architecture, quality goal, solution strategy, building block, deployment node, actor, sequence diagram, concept, decision, ADR, constraint, risk, glossary.
+description: Use when working on this project's architecture documentation in .arc42.md files.
 allowed-tools: Bash(arc42:*)
 ---
 
 # arc42 Language
 
-This project documents its architecture in the arc42 DSL — Markdown files with typed `:::block`
-fences for structured elements. The format is human-readable first: prose explains intent, the
-block records the machine-readable summary. The CLI validates consistency and coherence across
-all elements.
+Use this skill as the navigation entry point for arc42 architecture work. The chapter templates and
+the CLI guide contain the authoring rules and chapter-specific guidance; consult them instead of
+relying on remembered conventions.
 
-> **One-time migration:** To migrate an existing repository, run `arc42 guide migration` first and
-> follow its step-by-step coordinator workflow. It establishes dependency order, evidence tracking,
-> and human-review gates. Do not start writing chapters before reading it; request chapter-specific
-> instructions with `arc42 guide chapter <number>`. The guide is read-only and never auto-fixes content.
+## Workflow
 
-## Getting started
+1. For an existing repository, start with `arc42 guide migration` and follow its review gates.
+2. For a new workspace, run `arc42 init template --dir <workspace>`.
+3. Before authoring a chapter, run `arc42 guide chapter <number>` and read that chapter's template.
+4. Inspect the current model with `arc42 get` and use `arc42 explain <type>` when a block is needed.
+5. Finish with `arc42 validate --dir <workspace>` and resolve errors before continuing.
 
-Before making architectural changes, familiarise yourself with the current state:
+The guide is read-only. Do not invent facts, silently repair contradictions, or replace human review
+with validation output.
 
-```bash
-arc42 validate          # check consistency — fix all errors before proceeding
-arc42 get               # browse all elements
-arc42 rules             # understand what the validator enforces and why
-arc42 explain           # list all block types with one-line descriptions
-arc42 explain <type>    # full guidance for a block type: fields, enums, cross-refs, tips
-```
-
-_Important: If `arc42` cli command is not available, use the npm package via npx: `npx @doctc/arc42 ...`_
-
-`--dir <path>` scopes to a specific workspace. Defaults to `$ARC42_DIR` or cwd.
-
-### Scaffold a new workspace
-
-If the project has no arc42 files yet, copy the starter templates into the workspace directory:
+## Commands
 
 ```bash
-arc42 init template              # copies all 12 chapter templates into cwd
-arc42 init template --dir <path> # copies into a specific directory
+arc42 guide migration
+arc42 guide chapter <number>
+arc42 init template --dir <workspace>
+arc42 get --dir <workspace>
+arc42 explain <type>
+arc42 validate --dir <workspace>
 ```
 
-Each template file is a blank chapter with HTML comments explaining what to write and showing
-a DSL block example. Remove the comment block once you no longer need the guidance.
-
-## Authoring convention
-
-Each element lives in its own `##` section: one heading → one prose paragraph explaining purpose
-and rationale → one `:::block` as the machine-readable summary at the end of the section.
-**Never put two blocks under the same `##` heading.** Prose without a block is valid (for
-sections that do not need a machine-readable record).
-
-Every `:::block` must be wrapped in a ` ```arc42 ` / ` ``` ` fence so that standard Markdown
-renderers (GitHub, VS Code, editors) display it as a styled code block rather than raw text.
-This is enforced by W016. `:::diagram` blocks are exempt — they already have a ` ```mermaid `
-fence as their visual pair.
-
-Example:
-
-````markdown
-## Catalog Service
-
-Owns all product data. The only service that writes to the catalog database.
-Search results are cached to meet the p95 latency target.
-
-```arc42
-:::building-block
-id: bb-catalog-service
-title: Catalog Service
-technology: Node.js / Express
-implements: concept-logging, concept-error-handling
-:::
-```
-````
-
-```
-
-## Block type reference
-
-| Block type          | Required fields             | Optional fields                      |
-| ------------------- | --------------------------- | ------------------------------------ |
-| `quality-goal`      | `id`, `title`, `priority`   | `scenario`                           |
-| `quality-scenario`  | `id`, `title`, `quality`    | `stimulus`, `response`, `metric`     |
-| `constraint`        | `id`, `title`, `category`   | `source`                             |
-| `actor`             | `id`, `title`, `type`       | `description`                        |
-| `solution-strategy` | `id`, `title`               | `addresses`                          |
-| `building-block`    | `id`, `title`               | `technology`, `parent`, `implements` |
-| `interface`         | `id`, `title`, `between`    | `protocol`                           |
-| `deployment-node`   | `id`, `title`               | `type`, `hosts`, `parent`            |
-| `concept`           | `id`, `title`               | `category`                           |
-| `decision`          | `id`, `title`, `status`     | `date`, `addresses`, `supersedes`    |
-| `risk`              | `id`, `title`, `severity`   | `mitigation`                         |
-| `glossary-term`     | `id`, `title`, `definition` | —                                    |
-
-### Field value constraints
-
-- `quality-goal.priority`: `high` | `medium` | `low` — goals in ch.10; `priority: high` goals are architecture-driving; list goals in descending order within the file (high → medium → low), enforced by W014
-- `constraint.category`: `technical` | `organizational` | `convention`
-- `actor.type`: `person` | `system` — `person` for human roles (user, operator, team); `system` for external software systems or services
-- `decision.status`: `proposed` | `accepted` | `deprecated` | `superseded`
-- `decision.supersedes`: on the _new_ decision — points to the id of the decision it replaces
-- `risk.severity`: `high` | `medium` | `low`
-- `deployment-node.type`: `server` | `container` | `device` | `cloud-region` | `environment`
-
-### Cross-reference fields
-
-| Field        | On type             | References                                                                                |
-| ------------ | ------------------- | ----------------------------------------------------------------------------------------- |
-| `parent`     | `building-block`    | another `building-block` id                                                               |
-| `implements` | `building-block`    | one or more `concept` ids (comma-separated)                                               |
-| `between`    | `interface`         | one `building-block` id and one `actor` id, or two `building-block` ids (comma-separated) |
-| `addresses`  | `decision`          | one or more `quality-goal`, `constraint`, or `risk` ids                                   |
-| `addresses`  | `solution-strategy` | one or more `quality-goal` ids                                                            |
-| `quality`    | `quality-scenario`  | a `quality-goal` id (required — the goal this scenario elaborates)                        |
-| `supersedes` | `decision`          | another `decision` id                                                                     |
-| `parent`     | `deployment-node`   | another `deployment-node` id                                                              |
-| `hosts`      | `deployment-node`   | one or more `building-block` ids (comma-separated)                                        |
-
-All referenced IDs must resolve to an existing element (rule E002). IDs are unique across the
-entire workspace (all `*.arc42.md` files in the directory).
-
-## Validation rules
-
-Run `arc42 rules` to see the full list of rules with rationale. Use `--format json` for machine-readable output.
-
-Building blocks with a `parent` must be documented in Markdown under that parent: the parent must
-have its own building-block section, and each child heading must be exactly one level deeper and
-appear after the parent heading. A heading used as a parent drill-down section must itself contain
-the declared parent building block; ordinary chapter/group headings that do not claim a parent are
-allowed. W026 reports missing parent documentation, an orphan parent section, incorrect heading
-depth, or incorrect ordering.
-
-### Diagram convention
-
-Diagrams are explicitly associated with a structured element or section using a `:::diagram`
-metadata block. They provide a visual overview of the surrounding prose and blocks — they do not
-replace or contradict the structured model, and they do not create additional model elements.
-
-Place a diagram **immediately after the introductory prose of a section**, before the per-element
-blocks, so readers get the overview before the detail. A chapter-level overview diagram goes near
-the top of the chapter; a scoped diagram for one area goes in its own `##` section.
-
-When a diagram identifier cannot match a model ID directly — for example, Mermaid sequence
-diagrams forbid hyphens in participant names — declare an explicit alias in the `:::diagram`
-metadata block using `aliases: diagram-id=model-id` (comma-separated for multiple). There is no
-implicit normalization; undeclared identifiers that don't match a model ID produce E008.
-
-The starter templates contain worked examples and notation-specific guidance in their HTML
-comments. Follow the example in the relevant template when adding a diagram for the first time.
-
-Fix all errors before committing. Warnings should be resolved before merging. Hints are
-best-practice suggestions — address them when the context allows.
-
-If you are unsure what a rule requires, run `arc42 rules` for the full rationale.
-If you are unsure what already exists, run `arc42 get` or `arc42 get <id>`.
-
-## Starter templates
-
-`templates/starter/` contains ready-to-use files for each chapter. Each file is a blank
-template with HTML comments (`<!-- ... -->`) explaining what to write and showing a DSL
-block example. The comments are ignored by the parser and validator — they are authoring
-guidance only, not part of the document.
-
-To use a template:
-
-1. Copy the relevant file(s) into your workspace directory
-2. Read the HTML comment at the top of each file — it explains the arc42 intent for that chapter
-3. Add `##` sections with your actual content, following the example in the comment
-4. Remove the comment block once you no longer need the guidance
-5. Run `arc42 validate` to confirm 0 errors
-
-## Your responsibility
-
-**Every architectural change must be reflected in the arc42 files.**
-After any change to the system — adding a component, making a technology decision,
-introducing a cross-cutting concern — update or add the relevant arc42 elements and
-run `arc42 validate` to confirm 0 errors.
-```
+If `arc42` is unavailable, use `npx @doctc/arc42 ...`.

@@ -19,7 +19,6 @@ graph TD
 
     subgraph system["System"]
         bb-cli["CLI"]
-        bb-core["Core Library"]
         bb-skill["Skill"]
         bb-web-renderer["Web Renderer"]
         bb-workspace["Documentation Workspace"]
@@ -52,6 +51,7 @@ id: actor-architect
 title: Architect
 type: person
 description: Human architect who authors and validates arc42 documentation
+requires: if-architect-cli, if-architect-workspace, if-architect-serve
 :::
 ```
 
@@ -69,6 +69,7 @@ id: actor-agent
 title: AI Agent
 type: system
 description: LLM-based coding assistant operating via the arc42-language skill
+requires: if-agent-cli, if-agent-skill, if-agent-workspace
 :::
 ```
 
@@ -84,6 +85,7 @@ id: actor-ci
 title: CI Pipeline
 type: system
 description: Automated pipeline enforcing architecture consistency on every PR
+requires: if-ci-cli
 :::
 ```
 
@@ -96,7 +98,7 @@ the terminal. The CLI reads `.arc42.md` files from the current directory (or `--
 :::interface
 id: if-architect-cli
 title: Architect → CLI
-between: actor-architect, bb-cli
+provider: bb-cli
 protocol: Terminal (stdin/stdout)
 path: packages/cli/src/cli.ts
 :::
@@ -112,7 +114,7 @@ elements before adding new ones.
 :::interface
 id: if-agent-cli
 title: AI Agent → CLI (via Bash tool)
-between: actor-agent, bb-cli
+provider: bb-cli
 protocol: Bash tool call (arc42 commands)
 path: packages/cli/src/cli.ts
 :::
@@ -129,7 +131,7 @@ skill is a Markdown file installed by file copy.
 :::interface
 id: if-agent-skill
 title: AI Agent → Skill
-between: actor-agent, bb-skill
+provider: bb-skill
 protocol: SKILL.md loaded at agent startup
 path: packages/skill/SKILL.md
 :::
@@ -144,7 +146,7 @@ triggers a pipeline failure. The JSON output may be parsed for reporting.
 :::interface
 id: if-ci-cli
 title: CI Pipeline → CLI
-between: actor-ci, bb-cli
+provider: bb-cli
 protocol: Shell command / exit code
 path: packages/cli/src/cli.ts
 :::
@@ -160,7 +162,7 @@ primary human-readable artifact of the toolchain.
 :::interface
 id: if-architect-workspace
 title: Architect → Documentation Workspace
-between: actor-architect, bb-workspace
+provider: bb-workspace
 protocol: Plain text / Markdown editor
 path: docs/arc42
 :::
@@ -176,7 +178,7 @@ used afterwards to validate the result.
 :::interface
 id: if-agent-workspace
 title: AI Agent → Documentation Workspace
-between: actor-agent, bb-workspace
+provider: bb-workspace
 protocol: File Read/Write tools
 path: docs/arc42
 :::
@@ -195,6 +197,7 @@ id: actor-reader
 title: Reader
 type: person
 description: Human stakeholder or team member browsing rendered arc42 documentation via the web UI
+requires: if-reader-web
 :::
 ```
 
@@ -209,7 +212,7 @@ touching the CLI or the source files.
 :::interface
 id: if-reader-web
 title: Reader → Web UI
-between: actor-reader, bb-web-renderer
+provider: bb-web-renderer
 protocol: HTTP / browser
 path: packages/web/src/App.tsx
 :::
@@ -227,7 +230,7 @@ and opens a browser rather than printing to stdout.
 :::interface
 id: if-architect-serve
 title: Architect → serve
-between: actor-architect, bb-cli
+provider: bb-cli
 protocol: Terminal (arc42 serve) → HTTP browser session
 path: packages/cli/src/cli.ts
 :::

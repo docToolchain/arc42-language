@@ -20,6 +20,7 @@ describe("E003 — circular parent reference", () => {
         title: "A",
         parent: "bb-b",
         implements: [],
+        requires: [],
         loc: loc(1),
       },
       {
@@ -28,6 +29,7 @@ describe("E003 — circular parent reference", () => {
         title: "B",
         parent: "bb-a",
         implements: [],
+        requires: [],
         loc: loc(5),
       },
     ]);

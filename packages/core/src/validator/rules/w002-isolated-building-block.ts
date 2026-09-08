@@ -16,14 +16,13 @@ export const w002IsolatedBuildingBlock: Rule = {
       recommended: true,
     },
   },
-  check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
+  check(workspace: Workspace, index: ReferenceIndex): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     const interfaceIds = new Set<string>();
     for (const el of workspace.elements) {
-      if (el.kind !== "interface") continue;
-      interfaceIds.add(el.between[0]);
-      interfaceIds.add(el.between[1]);
+      if (el.kind === "interface") interfaceIds.add(el.provider);
     }
+    for (const edge of index.interfaceEdges) interfaceIds.add(edge.consumer);
     for (const el of workspace.elements) {
       if (el.kind !== "building-block") continue;
       // Root blocks (no parent) are checked by H004 at hint level.

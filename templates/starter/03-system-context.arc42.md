@@ -12,11 +12,13 @@ Two types of actors:
             message broker, external database, partner service
 
 For each actor, write a ## section with a prose paragraph explaining who or what the
-external party is and why it matters to the system, followed by an actor block.
+external party is and why it matters to the system, followed by an actor block with a
+`requires` field listing the interface IDs it depends on.
 
-Then add an interface section for each significant interaction between an actor and a
-building-block. The interface.between field accepts one actor id and one building-block id.
-Building-block ids must match elements defined in your 05-building-blocks.arc42.md.
+Then add a context diagram containing the actors and only those building blocks that provide an
+interface directly required by an actor. Internal-only providers belong in chapter 5. Define each
+interface under the building block that provides it; each interface has exactly one provider and may
+be required by multiple actors.
 
 See https://docs.arc42.org/section-3/ for further guidance.
 
@@ -34,6 +36,7 @@ id: actor-end-user
 title: End User
 type: person
 description: Authenticated customer browsing and purchasing via the web UI
+requires: if-user-checkout
 :::
 ```
 
@@ -47,28 +50,11 @@ to authorise charges and process refunds. No payment data is stored in the syste
 id: actor-payment-provider
 title: Payment Provider
 type: system
+requires: if-checkout-payment
 :::
 ```
 
-## End User → Checkout Service
-
-```arc42
-:::interface
-id: if-user-checkout
-title: End User → Checkout
-between: actor-end-user, bb-checkout-service
-protocol: HTTPS / REST
-:::
-```
-
-## Checkout → Payment Provider
-
-```arc42
-:::interface
-id: if-checkout-payment
-title: Checkout → Payment Provider
-between: bb-checkout-service, actor-payment-provider
-protocol: HTTPS / REST (Stripe API)
-:::
-```
+Interface blocks belong in chapter 5 beneath their provider building blocks. Keep this chapter's
+actor blocks focused on the interfaces they require and use the context diagram for actor-facing
+building blocks only.
 -->

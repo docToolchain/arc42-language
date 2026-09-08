@@ -14,7 +14,14 @@ function loc(line = 1) {
 describe("W012 and H012 — deployment mapping and empty nodes", () => {
   test("W012/H012 not activated for non-deployment workspaces", () => {
     const inactive = makeWorkspace([
-      { kind: "building-block", id: "bb-api", title: "API", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-api",
+        title: "API",
+        implements: [],
+        requires: [],
+        loc: loc(1),
+      },
     ]);
     expect(
       validate(inactive, buildIndex(inactive)).some((diagnostic) =>
@@ -30,6 +37,7 @@ describe("W012 and H012 — deployment mapping and empty nodes", () => {
         id: "bb-composite",
         title: "Composite",
         implements: [],
+        requires: [],
         loc: loc(1),
       },
       {
@@ -38,9 +46,17 @@ describe("W012 and H012 — deployment mapping and empty nodes", () => {
         title: "Leaf",
         parent: "bb-composite",
         implements: [],
+        requires: [],
         loc: loc(5),
       },
-      { kind: "building-block", id: "bb-unmapped", title: "Unmapped", implements: [], loc: loc(9) },
+      {
+        kind: "building-block",
+        id: "bb-unmapped",
+        title: "Unmapped",
+        implements: [],
+        requires: [],
+        loc: loc(9),
+      },
       { kind: "deployment-node", id: "node-root", title: "Root", hosts: [], loc: loc(13) },
       {
         kind: "deployment-node",
@@ -62,7 +78,14 @@ describe("W012 and H012 — deployment mapping and empty nodes", () => {
 
   test("W012 accepts many-to-many deployment mappings", () => {
     const ws = makeWorkspace([
-      { kind: "building-block", id: "bb-api", title: "API", implements: [], loc: loc(1) },
+      {
+        kind: "building-block",
+        id: "bb-api",
+        title: "API",
+        implements: [],
+        requires: [],
+        loc: loc(1),
+      },
       {
         kind: "deployment-node",
         id: "node-a",

@@ -28,9 +28,8 @@ graph TD
     bb-skill -->|"if-skill-cli"| bb-cli
 ```
 
-The overview intentionally treats `@arc42/core` as opaque. Its diff capability is reached through
-the same package boundary as the rest of the core API and is shown only in the Core Library
-drill-down below.
+The overview intentionally treats `@arc42/core` as opaque. Its internal responsibilities are
+shown only in the Core Library drill-down below.
 
 ## Core Library
 
@@ -47,6 +46,7 @@ id: bb-core
 title: Core Library
 technology: TypeScript / Node.js
 implements: concept-pipeline, concept-rule-registry
+requires: if-core-diff
 path: packages/core
 :::
 ```
@@ -80,6 +80,22 @@ graph TD
     bb-core -->|"if-core-diff"| bb-diff
 ```
 
+### Core Library API
+
+The Core Library provides its top-level API to the CLI as a workspace dependency. The CLI consumes
+this contract for argument coordination, output formatting, and exit codes; the business logic
+remains in Core Library.
+
+```arc42
+:::interface
+id: if-cli-core
+title: Core Library API
+provider: bb-core
+protocol: TypeScript module import (pnpm workspace:\*)
+path: packages/core/src/index.ts
+:::
+```
+
 ---
 
 ### Markdown Parser
@@ -96,6 +112,7 @@ title: Markdown Parser
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+requires: if-parser-builder
 path: packages/core/src/parser
 :::
 ```
@@ -114,7 +131,22 @@ title: Meta-model Builder
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+requires: if-builder-resolver
 path: packages/core/src/model
+:::
+```
+
+#### Parser Input Contract
+
+The parser produces `DocumentAst` structs consumed by the builder to construct the workspace model.
+
+```arc42
+:::interface
+id: if-parser-builder
+title: Parser Input Contract
+provider: bb-builder
+protocol: In-process TypeScript function call
+path: packages/core/src/ast.ts
 :::
 ```
 
@@ -132,7 +164,22 @@ title: Reference Resolver
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+requires: if-resolver-validator
 path: packages/core/src/resolver
+:::
+```
+
+#### Builder Output Contract
+
+The builder produces a `Workspace`; the resolver consumes it to build the reference index.
+
+```arc42
+:::interface
+id: if-builder-resolver
+title: Builder Output Contract
+provider: bb-resolver
+protocol: In-process TypeScript function call
+path: packages/core/src/model/types.ts
 :::
 ```
 
@@ -150,7 +197,22 @@ title: Validator
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline, concept-rule-registry
+requires: if-validator-renderer
 path: packages/core/src/validator
+:::
+```
+
+#### Resolver Validation Input
+
+The validator receives both the workspace and the reference index from the resolver.
+
+```arc42
+:::interface
+id: if-resolver-validator
+title: Resolver Validation Input
+provider: bb-validator
+protocol: In-process TypeScript function call
+path: packages/core/src/resolver/types.ts
 :::
 ```
 
@@ -172,6 +234,20 @@ path: packages/core/src/renderer
 :::
 ```
 
+#### Renderer Output Contract
+
+The CLI passes validation results and element queries to the renderer registry for output.
+
+```arc42
+:::interface
+id: if-validator-renderer
+title: Renderer Output Contract
+provider: bb-renderer
+protocol: In-process TypeScript function call
+path: packages/core/src/validator/types.ts
+:::
+```
+
 ### Architecture Diff
 
 Compares current and base architecture documents with a set of changed file ranges. It reports
@@ -189,7 +265,7 @@ path: packages/core/src/diff.ts
 :::
 ```
 
-## Core Library → Architecture Diff Interface
+#### Architecture Diff Contract
 
 The Core Library exposes Architecture Diff as an internal capability of the package. The CLI
 reaches that capability through the opaque Core Library boundary; it does not depend directly on
@@ -198,8 +274,8 @@ the child building block.
 ```arc42
 :::interface
 id: if-core-diff
-title: Core Library → Architecture Diff
-between: bb-core, bb-diff
+title: Architecture Diff Contract
+provider: bb-diff
 protocol: In-process TypeScript function call
 path: packages/core/src/index.ts
 :::
@@ -221,7 +297,23 @@ id: bb-workspace-fs
 title: Filesystem Workspace Adapter
 technology: TypeScript / Node.js
 implements: concept-pipeline
+requires: if-fs-workspace
 path: packages/workspace-fs
+:::
+```
+
+### Filesystem Adapter Contract
+
+The CLI selects the workspace directory and delegates filesystem-backed discovery, loading, and
+path-context operations to the filesystem workspace adapter. File watching remains a CLI concern.
+
+```arc42
+:::interface
+id: if-cli-workspace-adapter
+title: Filesystem Adapter Contract
+provider: bb-workspace-fs
+protocol: TypeScript module import
+path: packages/cli
 :::
 ```
 
@@ -240,7 +332,40 @@ id: bb-cli
 title: CLI
 technology: TypeScript / Node.js
 implements: concept-pipeline
+requires: if-cli-core, if-cli-workspace-adapter, if-cli-web
 path: packages/cli
+:::
+```
+
+### CLI Agent Command Contract
+
+The skill is installed into the agent's skill directory by file copy. At runtime the agent reads
+the SKILL.md and uses the `arc42` CLI via Bash tool calls. This is the primary integration point
+between the toolchain and AI agents.
+
+```arc42
+:::interface
+id: if-skill-cli
+title: CLI Agent Command Contract
+provider: bb-cli
+protocol: Bash tool call (arc42 commands)
+path: packages/skill
+:::
+```
+
+### CLI Workspace API
+
+The web renderer fetches the workspace payload from the CLI's HTTP API endpoint (`/api/workspace`).
+The CLI obtains that payload through its Core Library boundary. In the static export case the
+payload is a JSON file generated during the CLI/web build.
+
+```arc42
+:::interface
+id: if-web-cli-api
+title: CLI Workspace API
+provider: bb-cli
+protocol: HTTP JSON (serve) or static JSON file (export)
+path: packages/web/src/types.ts
 :::
 ```
 
@@ -257,6 +382,7 @@ id: bb-skill
 title: Opencode Skill
 technology: Markdown
 implements: concept-prose-first
+requires: if-skill-cli
 path: packages/skill
 :::
 ```
@@ -277,96 +403,24 @@ id: bb-web-renderer
 title: Web Renderer
 technology: TypeScript / React / Vite
 implements: concept-prose-first
+requires: if-web-cli-api
 path: packages/web
 :::
 ```
 
-## Skill → Agent Runtime Interface
+### Web Renderer Hosting Contract
 
-The skill is installed into the agent's skill directory by file copy. At runtime the agent
-reads the SKILL.md and uses the `arc42` CLI via Bash tool calls. This interface is
-conceptual — there is no code-level dependency — but it is the primary integration point
-between the toolchain and AI agents.
-
-```arc42
-:::interface
-id: if-skill-cli
-title: Skill → CLI (via agent)
-between: bb-skill, bb-cli
-protocol: Bash tool call (arc42 commands)
-path: packages/skill
-:::
-```
-
-## CLI → Core Interface
-
-The CLI imports the top-level API from the core library as a workspace dependency.
-All business logic lives in core; the CLI only handles argument parsing, output formatting,
-and exit codes.
+The CLI hosts the web renderer as a local HTTP server. On `arc42 serve`, it builds the workspace
+payload via the core library, exposes it at `/api/workspace`, and serves the web renderer's static
+assets.
 
 ```arc42
 :::interface
-id: if-cli-core
-title: CLI → Core
-between: bb-cli, bb-core
-protocol: TypeScript module import (pnpm workspace:\*)
-path: packages/cli
-:::
-```
-
-## Parser → Builder Interface
-
-The parser produces `DocumentAst` structs consumed by the builder to construct the workspace model.
-
-```arc42
-:::interface
-id: if-parser-builder
-title: Parser → Builder
-between: bb-parser, bb-builder
-protocol: In-process TypeScript function call
-path: packages/core/src/ast.ts
-:::
-```
-
-## Builder → Resolver Interface
-
-The builder produces a `Workspace`; the resolver consumes it to build the reference index.
-
-```arc42
-:::interface
-id: if-builder-resolver
-title: Builder → Resolver
-between: bb-builder, bb-resolver
-protocol: In-process TypeScript function call
-path: packages/core/src/model/types.ts
-:::
-```
-
-## Resolver → Validator Interface
-
-The validator receives both the workspace and the reference index from the resolver.
-
-```arc42
-:::interface
-id: if-resolver-validator
-title: Resolver → Validator
-between: bb-resolver, bb-validator
-protocol: In-process TypeScript function call
-path: packages/core/src/resolver/types.ts
-:::
-```
-
-## Validator → Renderer Interface
-
-The CLI passes validation results and element queries to the renderer registry for output.
-
-```arc42
-:::interface
-id: if-validator-renderer
-title: Validator → Renderer
-between: bb-validator, bb-renderer
-protocol: In-process TypeScript function call
-path: packages/core/src/validator/types.ts
+id: if-cli-web
+title: Web Renderer Hosting Contract
+provider: bb-web-renderer
+protocol: HTTP (localhost) — static assets + JSON API
+path: packages/cli/src/cli.ts
 :::
 ```
 
@@ -386,67 +440,17 @@ path: docs/arc42
 :::
 ```
 
-## CLI → Filesystem Workspace Adapter Interface
-
-The CLI selects the workspace directory and delegates filesystem-backed discovery, loading, and
-path-context operations to the filesystem workspace adapter. File watching remains a CLI concern.
-
-```arc42
-:::interface
-id: if-cli-workspace-adapter
-title: CLI → Filesystem Workspace Adapter
-between: bb-cli, bb-workspace-fs
-protocol: TypeScript module import
-path: packages/cli
-:::
-```
-
-## Filesystem Workspace Adapter → Documentation Workspace Interface
+### Documentation Workspace Contract
 
 The filesystem workspace adapter reads `.arc42.md` files from the selected documentation workspace
-and supplies their contents and filesystem context to the core processing pipeline. It does not write
-to the documentation files — that remains the responsibility of the architect or AI agent.
+and supplies their contents and filesystem context to the core processing pipeline.
 
 ```arc42
 :::interface
 id: if-fs-workspace
-title: Filesystem Workspace Adapter → Documentation Workspace
-between: bb-workspace-fs, bb-workspace
+title: Documentation Workspace Contract
+provider: bb-workspace
 protocol: File system read (discovery + file content)
 path: packages/workspace-fs/src/index.ts
-:::
-```
-
-## CLI → Web Renderer Interface
-
-The CLI hosts the web renderer as a local HTTP server. On `arc42 serve`, it builds
-the workspace payload via the core library, exposes it at `/api/workspace`, and serves
-the web renderer's static assets. The web renderer is a build-time dependency of the
-CLI — its compiled assets are bundled into the CLI distribution.
-
-```arc42
-:::interface
-id: if-cli-web
-title: CLI → Web Renderer
-between: bb-cli, bb-web-renderer
-protocol: HTTP (localhost) — static assets + JSON API
-path: packages/cli/src/cli.ts
-:::
-```
-
-## Web Renderer → CLI Workspace API Interface
-
-The web renderer fetches the workspace payload from the CLI's HTTP API endpoint (`/api/workspace`).
-The CLI obtains that payload through its Core Library boundary. In the static export case the
-payload is a JSON file generated during the CLI/web build. The web renderer therefore has no
-direct dependency on `@arc42/core`.
-
-```arc42
-:::interface
-id: if-web-cli-api
-title: Web Renderer → CLI Workspace API
-between: bb-web-renderer, bb-cli
-protocol: HTTP JSON (serve) or static JSON file (export)
-path: packages/web/src/types.ts
 :::
 ```

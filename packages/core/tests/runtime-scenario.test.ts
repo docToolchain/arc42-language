@@ -71,6 +71,7 @@ describe("runtime scenarios", () => {
         ":::building-block",
         "id: bb-a",
         "title: A",
+        "requires: if-a-b",
         ":::",
         ":::building-block",
         "id: bb-b",
@@ -79,7 +80,7 @@ describe("runtime scenarios", () => {
         ":::interface",
         "id: if-a-b",
         "title: A to B",
-        "between: bb-a, bb-b",
+        "provider: bb-b",
         ":::",
         ":::runtime-scenario",
         "id: scenario-a",
@@ -103,6 +104,7 @@ describe("runtime scenarios", () => {
       id: "bb-a",
       title: "A",
       implements: [],
+      requires: [],
       loc: { file: "runtime.arc42.md", line: 1 },
     });
     covered.elements.push({
@@ -110,13 +112,14 @@ describe("runtime scenarios", () => {
       id: "bb-b",
       title: "B",
       implements: [],
+      requires: [],
       loc: { file: "runtime.arc42.md", line: 2 },
     });
     covered.elements.push({
       kind: "interface",
       id: "if-covered",
       title: "A to B",
-      between: ["bb-a", "bb-b"],
+      provider: "bb-b",
       loc: { file: "runtime.arc42.md", line: 3 },
     });
     covered.elements.push({
@@ -135,6 +138,7 @@ describe("runtime scenarios", () => {
         ":::building-block",
         "id: bb-a",
         "title: A",
+        "requires: if-a-b",
         ":::",
         ":::building-block",
         "id: bb-b",
@@ -143,7 +147,7 @@ describe("runtime scenarios", () => {
         ":::interface",
         "id: if-a-b",
         "title: A to B",
-        "between: bb-a, bb-b",
+        "provider: bb-b",
         ":::",
         ":::runtime-scenario",
         "id: scenario-a",

@@ -21,8 +21,11 @@ export const h004BuildingBlockUnreferencedByInterface: Rule = {
       if (el.kind !== "building-block") continue;
       // Leaf blocks (those inside a parent) are excluded to avoid false positives
       if (el.parent) continue;
-      const referencedBy = index.refsTo.get(el.id) ?? [];
-      const hasInterface = referencedBy.some((id) => index.byId.get(id)?.kind === "interface");
+      const hasInterface =
+        workspace.elements.some(
+          (candidate) => candidate.kind === "interface" && candidate.provider === el.id,
+        ) ||
+        index.interfaceEdges.some((edge) => edge.consumer === el.id || edge.provider === el.id);
       if (!hasInterface) {
         diagnostics.push({
           code: "H004",

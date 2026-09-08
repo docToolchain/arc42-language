@@ -10,12 +10,20 @@ export interface Edge {
   relation:
     | "implements"
     | "parent"
-    | "between"
+    | "provides"
+    | "requires"
     | "addresses"
     | "supersedes"
     | "involves"
     | "hosts"
     | "elaborates";
+}
+
+/** Derived consumer-to-provider relationship from interface requirements */
+export interface DirectedInterfaceEdge {
+  consumer: string;
+  provider: string;
+  interface: string;
 }
 
 export interface ReferenceIndex {
@@ -27,4 +35,6 @@ export interface ReferenceIndex {
   refsTo: Map<string, string[]>;
   /** All reference edges in the workspace */
   edges: Edge[];
+  /** Derived consumer→provider edges (from requires + provider fields) */
+  interfaceEdges: DirectedInterfaceEdge[];
 }

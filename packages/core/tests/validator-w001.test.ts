@@ -22,7 +22,14 @@ describe("W001 — concept not implemented", () => {
   test("NOT emitted when a building-block implements the concept", () => {
     const ws = makeWorkspace([
       { kind: "concept", id: "c-1", title: "Logging", loc: loc(1) },
-      { kind: "building-block", id: "bb-1", title: "Logger", implements: ["c-1"], loc: loc(5) },
+      {
+        kind: "building-block",
+        id: "bb-1",
+        title: "Logger",
+        implements: ["c-1"],
+        requires: [],
+        loc: loc(5),
+      },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);

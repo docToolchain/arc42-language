@@ -12,11 +12,13 @@ architecturally significant.
 
 An interface connects exactly two building blocks and makes their collaboration explicit.
 Every significant communication path should have an interface.
-`between` is ordered: caller/consumer first, callee/provider second — and diagram edges
-must be drawn in that same direction.
+The `provider` field identifies the building block that provides the interface.
+Consumers declare which interfaces they require in their `requires` list.
 
-For each building block or interface, write a ## section with a prose paragraph explaining
-purpose, responsibility, and key constraints, followed by a DSL block.
+For each building block, write a ## section with a prose paragraph explaining purpose, responsibility,
+and key constraints, followed by a DSL block. Define each provided interface as a direct subheading
+of its provider building block. Use a provider-oriented heading and put interface consumption on the
+consumer building block's `requires` list.
 
 Prefer relevance over completeness — document what is surprising, risky, or complex.
 Leave out boring, standardised, or self-explanatory parts.
@@ -52,7 +54,7 @@ implements: concept-auth, concept-logging
 :::
 ```
 
-## API Gateway → User Service
+### User Service Interface
 
 The API Gateway forwards authentication requests to the User Service.
 This is the only path through which external login requests reach the User Service.
@@ -60,8 +62,8 @@ This is the only path through which external login requests reach the User Servi
 ```arc42
 :::interface
 id: if-gateway-user
-title: API Gateway → User Service
-between: bb-api-gateway, bb-user-service
+title: User Service Interface
+provider: bb-user-service
 protocol: HTTP/REST
 :::
 ```

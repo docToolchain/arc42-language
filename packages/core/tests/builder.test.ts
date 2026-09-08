@@ -72,10 +72,10 @@ describe("buildWorkspace", () => {
     expect(ws.parseErrors[0]!.message).toMatch(/Unknown block type/);
   });
 
-  test("interface.between with 3 items → ParseError", () => {
-    const ws = buildWorkspace([doc("interface\nid: i-1\ntitle: I\nbetween: a, b, c")]);
+  test("interface.provider is required", () => {
+    const ws = buildWorkspace([doc("interface\nid: i-1\ntitle: I")]);
     expect(ws.elements).toHaveLength(0);
-    expect(ws.parseErrors[0]!.message).toMatch(/between.*exactly 2/);
+    expect(ws.parseErrors[0]!.message).toMatch(/provider/);
   });
 
   test("invalid priority → ParseError", () => {
@@ -171,7 +171,9 @@ describe("buildWorkspace", () => {
 
   test("valid actor → correct element with type and description", () => {
     const ws = buildWorkspace([
-      doc("actor\nid: actor-1\ntitle: End User\ntype: person\ndescription: Primary human user"),
+      doc(
+        "actor\nid: actor-1\ntitle: End User\ntype: person\nrequires: if-user\ndescription: Primary human user",
+      ),
     ]);
     expect(ws.elements).toHaveLength(1);
     const el = ws.elements[0]!;
@@ -190,7 +192,9 @@ describe("buildWorkspace", () => {
   });
 
   test("actor with system type → correct enum value", () => {
-    const ws = buildWorkspace([doc("actor\nid: actor-2\ntitle: Payment API\ntype: system")]);
+    const ws = buildWorkspace([
+      doc("actor\nid: actor-2\ntitle: Payment API\ntype: system\nrequires: if-payment"),
+    ]);
     const el = ws.elements[0]!;
     if (el.kind !== "actor") throw new Error();
     expect(el.type).toBe("system");
