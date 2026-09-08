@@ -6,10 +6,9 @@ import { checkDuplicateEdges } from "./duplicate-edge-check.ts";
 /**
  * W025 — A context diagram contains duplicate edges.
  *
- * When the same interface id appears as an edge label more than once in a
- * context diagram, one occurrence is redundant. This is typically a
- * copy-paste mistake and makes the diagram visually noisy without adding
- * information.
+ * When the same labeled edge appears more than once in a context diagram, one
+ * occurrence is redundant. A single provider-owned interface may legitimately
+ * connect multiple consumers, so the edge endpoints are part of the identity.
  */
 export const w025ContextDiagramDuplicateEdge: Rule = {
   meta: {
@@ -18,9 +17,9 @@ export const w025ContextDiagramDuplicateEdge: Rule = {
     type: "problem",
     docs: {
       description:
-        "A context diagram contains a duplicate edge — the same interface id (or from→to pair) appears more than once",
+        "A context diagram contains a duplicate edge — the same labeled edge or from→to pair appears more than once",
       rationale:
-        "Duplicate edges add visual noise without conveying additional information. They are almost always copy-paste mistakes. Each interface should appear at most once as an edge in any given context diagram.",
+        "Duplicate edges add visual noise without conveying additional information. The same provider-owned interface may be used by multiple consumers, so only repeated edge endpoints and labels are duplicates.",
       arc42Chapter: 3,
       recommended: true,
     },

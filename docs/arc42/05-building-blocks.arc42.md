@@ -27,7 +27,7 @@ graph TD
     bb-workspace-fs -->|"if-fs-workspace"| bb-workspace
     bb-cli -->|"if-cli-web"| bb-web-renderer
     bb-web-renderer -->|"if-web-cli-api"| bb-cli
-    bb-skill -->|"if-skill-cli"| bb-cli
+    bb-skill -->|"if-cli"| bb-cli
 ```
 
 The overview intentionally treats `@arc42/core` as opaque. Its internal responsibilities are
@@ -341,75 +341,18 @@ path: packages/cli
 :::
 ```
 
-### Architect → CLI
+### CLI Command Interface
 
-The architect invokes validation and query commands directly from the terminal.
+Architects, AI agents, CI pipelines, and the skill invoke the CLI commands provided by this
+building block.
 
 ```arc42
 :::interface
-id: if-architect-cli
-title: Architect → CLI
+id: if-cli
+title: CLI Command Interface
 provider: bb-cli
-protocol: Terminal (stdin/stdout)
+protocol: CLI commands via terminal, Bash, or CI process
 path: packages/cli/src/cli.ts
-:::
-```
-
-### AI Agent → CLI
-
-The agent invokes the CLI through Bash tool calls during authoring and validation.
-
-```arc42
-:::interface
-id: if-agent-cli
-title: AI Agent → CLI (via Bash tool)
-provider: bb-cli
-protocol: Bash tool call (arc42 commands)
-path: packages/cli/src/cli.ts
-:::
-```
-
-### CI Pipeline → CLI
-
-The CI pipeline invokes validation as a build step and consumes its exit code and JSON output.
-
-```arc42
-:::interface
-id: if-ci-cli
-title: CI Pipeline → CLI
-provider: bb-cli
-protocol: Shell command / exit code
-path: packages/cli/src/cli.ts
-:::
-```
-
-### Architect → serve
-
-The architect starts the local server and browses the workspace in a browser.
-
-```arc42
-:::interface
-id: if-architect-serve
-title: Architect → serve
-provider: bb-cli
-protocol: Terminal (arc42 serve) → HTTP browser session
-path: packages/cli/src/cli.ts
-:::
-```
-
-### CLI Agent Command Contract
-
-The skill is installed into the agent's skill directory by file copy. At runtime the agent reads
-the SKILL.md and uses the `arc42` CLI via Bash tool calls. This is the primary integration point
-between the toolchain and AI agents.
-
-```arc42
-:::interface
-id: if-skill-cli
-title: CLI Agent Command Contract
-provider: bb-cli
-protocol: Bash tool call (arc42 commands)
-path: packages/skill
 :::
 ```
 
@@ -442,7 +385,7 @@ id: bb-skill
 title: Opencode Skill
 technology: Markdown
 implements: concept-prose-first
-requires: if-skill-cli
+requires: if-cli
 path: packages/skill
 :::
 ```
