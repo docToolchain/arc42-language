@@ -6,7 +6,11 @@ import { validate } from "../src/validator/index.ts";
 import type { Workspace } from "../src/model/types.ts";
 
 function workspace(content: string): Workspace {
-  return buildWorkspace([parseMarkdown("runtime.arc42.md", content)]);
+  const wrapped = content.replace(
+    /:::diagram[\s\S]*?:::/g,
+    (block) => `\`\`\`arc42\n${block}\n\`\`\``,
+  );
+  return buildWorkspace([parseMarkdown("runtime.arc42.md", wrapped)]);
 }
 
 describe("runtime scenarios", () => {

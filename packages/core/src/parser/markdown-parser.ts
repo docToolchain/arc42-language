@@ -179,6 +179,13 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
 
     if (pendingDiagram) {
       if (line.trim() === "") continue;
+      // A diagram metadata block is closed before its Mermaid source fence.
+      // While waiting for that source, the first bare fence is the enclosing
+      // ```arc42 fence, not the diagram source itself.
+      if (inArc42Fence && /^```\s*$/.test(line)) {
+        inArc42Fence = false;
+        continue;
+      }
       const fenceMatch = /^```([a-zA-Z0-9_-]+)?\s*$/.exec(line);
       if (fenceMatch) {
         // Opening fence of the diagram source — do NOT include it in source.
@@ -258,7 +265,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     if (openBlock !== null) {
       // Closing fence: ::: optionally followed only by whitespace
       if (/^:::\s*$/.test(line)) {
-        if (openBlock.blockType === "diagram") {
+        if (openBlock.blockType === "diagram" && inArc42Fence) {
           pendingDiagram = {
             id: openBlock.attributes["id"] ?? "",
             scenario: openBlock.attributes["scenario"] ?? "",

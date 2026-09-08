@@ -10,8 +10,8 @@ import type { ReferenceIndex } from "../../resolver/types.ts";
  * (GitHub, VS Code, editors) display it as a styled, bordered code block
  * instead of rendering the ::: lines as raw text.
  *
- * :::diagram blocks are exempt — they already have a visual pair in the
- * form of the ```mermaid ... ``` fence that follows them.
+ * Diagram metadata follows the same rule as every other block: it must be
+ * inside the arc42 fence before the parser can turn it into a diagram.
  */
 export const w016BlockNotInArc42Fence: Rule = {
   meta: {
@@ -22,7 +22,7 @@ export const w016BlockNotInArc42Fence: Rule = {
       description:
         "Block is not wrapped in a ```arc42 fence — wrap :::blocks with ```arc42 / ``` for proper Markdown rendering",
       rationale:
-        "Standard Markdown renderers do not understand the :::type syntax and render the delimiter lines as raw text. Wrapping a :::block in ```arc42 ... ``` causes renderers to display it as a styled, bordered code block, making the document readable in GitHub, VS Code, and AI tools without changing the DSL or the parser output. :::diagram blocks are exempt because they already have a visual pair in their ```mermaid fence.",
+        "Standard Markdown renderers do not understand the :::type syntax and render the delimiter lines as raw text. Wrapping a :::block in ```arc42 ... ``` causes renderers to display it as a styled, bordered code block, making the document readable in GitHub, VS Code, and AI tools without changing the DSL or the parser output. Diagram metadata must also be inside the ```arc42 fence so the parser can distinguish it from prose.",
       arc42Chapter: 0,
       recommended: true,
     },
@@ -33,7 +33,6 @@ export const w016BlockNotInArc42Fence: Rule = {
     for (const doc of workspace.documents) {
       for (const node of doc.nodes) {
         if (node.kind !== "block") continue;
-        if (node.blockType === "diagram") continue; // exempt — has ```mermaid pair
         if (node.inArc42Fence) continue; // correctly wrapped
 
         diagnostics.push({

@@ -7,12 +7,14 @@ toolchain packages, the opencode skill, and the author's own arc42 documentation
 overview intentionally stays at deployment-unit level; the npm package contents are detailed below.
 There is no server, cloud infrastructure, or network dependency beyond npm for installation.
 
+```arc42
 :::diagram
 id: arc42-language-deployment
 view: deployment
 notation: mermaid-architecture
 aliases: npm_packages=bb-cli, agent_skill=bb-skill, documentation_workspace=bb-workspace
 :::
+```
 
 ```mermaid
 architecture-beta
@@ -39,6 +41,7 @@ hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-ren
 :::
 ```
 
+```arc42
 :::diagram
 id: arc42-language-npm-package
 view: deployment
@@ -46,6 +49,7 @@ notation: mermaid-architecture
 roots: node-npm-package
 aliases: node_npm_package=node-npm-package, bb_cli=bb-cli, bb_core=bb-core, bb_workspace_fs=bb-workspace-fs, bb_web_renderer=bb-web-renderer
 :::
+```
 
 ```mermaid
 architecture-beta

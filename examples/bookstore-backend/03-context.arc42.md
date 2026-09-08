@@ -2,11 +2,13 @@
 
 The Bookstore Backend sits at the center of a small ecosystem. External clients (web browsers and mobile apps) interact with it through a single API surface. The system integrates with three external services: a payment processor for charging customers, an email delivery service for transactional notifications, and an SMS gateway for order status updates.
 
+```arc42
 :::diagram
 id: ctx-view-all
 view: context
 notation: mermaid
 :::
+```
 
 ```mermaid
 graph TD

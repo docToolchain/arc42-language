@@ -43,11 +43,13 @@ const source = `architecture-beta
 
 describe("deployment diagrams", () => {
   test("parses and validates an unscoped Mermaid deployment view", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: prod-view
 view: deployment
 notation: mermaid-architecture
 :::
+\`\`\`
 \`\`\`mermaid
 ${source}
 \`\`\``);
@@ -66,12 +68,14 @@ ${source}
   });
 
   test("resolves explicit aliases without normalizing identifiers", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: prod-view
 view: deployment
 notation: mermaid-architecture
 aliases: prod_env=env-prod, main_region=region-main, api_service=bb-api, db_service=bb-db
 :::
+\`\`\`
 \`\`\`mermaid
 architecture-beta
     group prod_env(cloud)[Production]
@@ -87,12 +91,14 @@ architecture-beta
   });
 
   test("rejects malformed and duplicate aliases", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: prod-view
 view: deployment
 notation: mermaid-architecture
 aliases: env=env-prod, env=region-main, other=env-prod, malformed, empty=
 :::
+\`\`\`
 \`\`\`mermaid
 ${source}
 \`\`\``);
@@ -109,11 +115,13 @@ ${source}
   });
 
   test("rejects duplicate declarations and undeclared nesting parents", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: malformed-view
 view: deployment
 notation: mermaid-architecture
 :::
+\`\`\`
 \`\`\`mermaid
 architecture-beta
     group env-prod(cloud)[Production]
@@ -154,12 +162,14 @@ title: Other region
 parent: env-prod
 hosts: bb-db
 :::
+\`\`\`arc42
 :::diagram
 id: main-view
 view: deployment
 notation: mermaid-architecture
 roots: region-main
 :::
+\`\`\`
 \`\`\`mermaid
 architecture-beta
     group region-main(cloud)[Primary region]
@@ -183,12 +193,14 @@ id: env-prod
 title: Production
 hosts: bb-api
 :::
+\`\`\`arc42
 :::diagram
 id: invalid-view
 view: deployment
 notation: mermaid-architecture
 roots: bb-api
 :::
+\`\`\`
 \`\`\`mermaid
 architecture-beta
     group env-prod(cloud)[Production]
@@ -203,11 +215,13 @@ architecture-beta
   });
 
   test("requires every edge endpoint to be declared in the same diagram", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: broken-view
 view: deployment
 notation: mermaid-architecture
 :::
+\`\`\`
 \`\`\`mermaid
 architecture-beta
     group env-prod(cloud)[Production]
@@ -223,16 +237,39 @@ architecture-beta
     ).toBe(true);
   });
 
+  test("reports unrecognized Mermaid architecture syntax", () => {
+    const ws = validModel(`\`\`\`arc42
+:::diagram
+id: malformed-syntax
+view: deployment
+notation: mermaid-architecture
+:::
+\`\`\`
+\`\`\`mermaid
+architecture-beta
+    this is not valid architecture-beta syntax
+\`\`\``);
+
+    const errors = validate(ws, buildIndex(ws)).filter((diagnostic) => diagnostic.code === "E010");
+    expect(
+      errors.some((diagnostic) =>
+        diagnostic.message.includes("invalid Mermaid architecture syntax"),
+      ),
+    ).toBe(true);
+  });
+
   test("uses an unscoped mapping diagnostic when a building block is not hosted", () => {
     const ws = validModel(`:::building-block
 id: bb-unhosted
 title: Unhosted
 :::
+\`\`\`arc42
 :::diagram
 id: unscoped-view
 view: deployment
 notation: mermaid-architecture
 :::
+\`\`\`
 \`\`\`mermaid
 architecture-beta
     group env-prod(cloud)[Production]
@@ -249,19 +286,23 @@ architecture-beta
   });
 
   test("rejects duplicate ids shared by runtime and deployment diagrams", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: shared-view
 view: deployment
 notation: mermaid-architecture
 :::
+\`\`\`
 \`\`\`mermaid
 ${source}
 \`\`\`
+\`\`\`arc42
 :::diagram
 id: shared-view
 scenario: missing-scenario
 notation: mermaid-sequence
 :::
+\`\`\`
 \`\`\`mermaid
 sequenceDiagram
 \`\`\``);
@@ -275,12 +316,14 @@ sequenceDiagram
   });
 
   test("reports unknown roots and unsupported deployment notation with E010", () => {
-    const ws = validModel(`:::diagram
+    const ws = validModel(`\`\`\`arc42
+:::diagram
 id: invalid-view
 view: deployment
 notation: plantuml-deployment
 roots: missing-root
 :::
+\`\`\`
 \`\`\`plantuml
 @startuml
 @enduml
@@ -300,11 +343,13 @@ roots: missing-root
 id: scenario-api
 title: API request
 :::
+\`\`\`arc42
 :::diagram
 id: runtime-view
 scenario: scenario-api
 notation: mermaid-sequence
 :::
+\`\`\`
 \`\`\`mermaid
 sequenceDiagram
     participant unknown

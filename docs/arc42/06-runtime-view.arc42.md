@@ -15,12 +15,14 @@ involves: bb-skill, bb-workspace, bb-cli, bb-core, bb-workspace-fs, bb-diff
 :::
 ```
 
+```arc42
 :::diagram
 id: agent-architecture-evolution-sequence
 scenario: scenario-agent-architecture-evolution
 notation: mermaid-sequence
 aliases: bb_skill=bb-skill, bb_workspace=bb-workspace, bb_cli=bb-cli, bb_core=bb-core, bb_workspace_fs=bb-workspace-fs, bb_diff=bb-diff
 :::
+```
 
 ```mermaid
 sequenceDiagram
@@ -81,12 +83,14 @@ involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer
 :::
 ```
 
+```arc42
 :::diagram
 id: core-validation-pipeline-sequence
 scenario: scenario-core-validation-pipeline
 notation: mermaid-sequence
 aliases: bb_parser=bb-parser, bb_builder=bb-builder, bb_resolver=bb-resolver, bb_validator=bb-validator, bb_renderer=bb-renderer
 :::
+```
 
 ```mermaid
 sequenceDiagram
@@ -137,12 +141,14 @@ involves: bb-cli, bb-core, bb-web-renderer
 :::
 ```
 
+```arc42
 :::diagram
 id: serve-browser-sequence
 scenario: scenario-serve-browser
 notation: mermaid-sequence
 aliases: bb_cli=bb-cli, bb_core=bb-core, bb_web=bb-web-renderer
 :::
+```
 
 ```mermaid
 sequenceDiagram

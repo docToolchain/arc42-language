@@ -35,8 +35,18 @@ describe("W016 — block not wrapped in ```arc42 fence", () => {
     expect(w016.some((d) => d.message.includes("bb-unwrapped"))).toBe(true);
   });
 
-  test("NOT emitted for :::diagram blocks (exempt)", () => {
-    const content = `:::diagram\nid: d-1\nscenario: s-1\nnotation: mermaid-sequence\n:::\n\`\`\`mermaid\nsequenceDiagram\n  A->>B: hi\n\`\`\``;
+  test("NOT emitted for :::diagram blocks wrapped in an arc42 fence", () => {
+    const content = `\`\`\`arc42
+:::diagram
+id: d-1
+scenario: s-1
+notation: mermaid-sequence
+:::
+\`\`\`
+\`\`\`mermaid
+sequenceDiagram
+  A->>B: hi
+\`\`\``;
     const ws = workspaceFromContent("test.arc42.md", content);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);

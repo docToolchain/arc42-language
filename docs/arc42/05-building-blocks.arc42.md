@@ -5,11 +5,13 @@ the core library owns architecture processing; the CLI and skill are thin consum
 building-block diagram uses one abstraction level: the overview shows peer/package-level blocks,
 while a parent and its direct children appear only in that parent's adjacent drill-down.
 
+```arc42
 :::diagram
 id: diag-building-blocks
 view: building-block
 notation: mermaid
 :::
+```
 
 ```mermaid
 graph TD
@@ -56,11 +58,13 @@ all internal responsibilities of the same package and are therefore not peer pac
 overview. Architecture Diff is deliberately shown here, alongside the processing pipeline, but
 not in the package-level diagram.
 
+```arc42
 :::diagram
 id: diag-core-internals
 view: building-block
 notation: mermaid
 :::
+```
 
 ```mermaid
 graph TD
