@@ -35,6 +35,8 @@ graph TD
     bb-notification-service -->|"if-notify-queue"| bb-message-queue
 ```
 
+## API Gateway
+
 The gateway is the single entry point for all external traffic. It terminates TLS, validates JWT tokens, enforces rate limits, and routes requests to the appropriate downstream service. No business logic lives here — the gateway is a pure infrastructure component. It rejects unauthenticated requests before they reach any business service (except for public endpoints like catalog search and login).
 
 The gateway propagates a trace identifier on every request. If the incoming request carries an `X-Trace-Id` header, the gateway preserves it; otherwise, it generates a new one. This trace id flows through all downstream calls and appears in every log entry.
@@ -48,6 +50,34 @@ title: API Gateway
 technology: nginx
 implements: concept-logging, concept-auth, concept-error-handling
 requires: if-gateway-catalog, if-gateway-order, if-gateway-auth
+:::
+```
+
+### Customer → API Gateway
+
+The public customer contract is provided by the API Gateway.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+:::interface
+id: if-customer-gateway
+title: Customer → API Gateway
+provider: bb-api-gateway
+protocol: HTTPS / REST + JSON
+:::
+```
+
+### Store Administrator → API Gateway
+
+The administrator contract is provided by the same API Gateway with elevated authorization.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+:::interface
+id: if-admin-gateway
+title: Administrator → API Gateway
+provider: bb-api-gateway
+protocol: HTTPS / REST + JSON
 :::
 ```
 
@@ -120,6 +150,20 @@ requires: if-order-db, if-order-catalog, if-order-queue
 :::
 ```
 
+### Order Service → Payment Processor
+
+The Order Service payment contract covers authorization and asynchronous payment lifecycle events.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+:::interface
+id: if-order-payment
+title: Order Service → Payment Processor
+provider: bb-order-service
+protocol: HTTPS / REST (Stripe API v2)
+:::
+```
+
 ### Order Service HTTP API
 
 The gateway's order-management request contract is provided by the Order Service.
@@ -183,6 +227,34 @@ title: Notification Service
 technology: Node.js / Express
 implements: concept-logging, concept-error-handling
 requires: if-notify-queue
+:::
+```
+
+### Notification Service → Email Delivery
+
+The Notification Service provides the contract for transactional email delivery.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+:::interface
+id: if-notify-email
+title: Notification Service → Email Delivery
+provider: bb-notification-service
+protocol: HTTPS / AWS SES API
+:::
+```
+
+### Notification Service → SMS Gateway
+
+The Notification Service provides the contract for transactional SMS delivery.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+:::interface
+id: if-notify-sms
+title: Notification Service → SMS Gateway
+provider: bb-notification-service
+protocol: HTTPS / AWS SNS API
 :::
 ```
 

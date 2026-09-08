@@ -2,3 +2,15 @@
 export function basename(path: string): string {
   return path.replaceAll("\\", "/").split("/").pop() ?? "";
 }
+
+/** Extract the arc42 chapter number from a numbered chapter filename. */
+export function chapterNumberFromFile(path: string): number | null {
+  const file = basename(path);
+  if (!file.endsWith(".arc42.md")) return null;
+
+  const match = /^(\d{2})-/.exec(file);
+  if (!match) return null;
+
+  const chapter = Number(match[1]);
+  return chapter >= 1 && chapter <= 12 ? chapter : null;
+}

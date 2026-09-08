@@ -46,7 +46,7 @@ describe("W027 — interfaces are provider building-block subchapters", () => {
   test("does not constrain context-view interface descriptions", () => {
     expect(
       diagnosticsFor(
-        `## Actor Interface\n\n${iface.replace("bb-provider", "bb-context")}`,
+        `## Context Provider\n\n${provider.replace("bb-provider", "bb-context")}\n\n### Actor Interface\n\n${iface.replace("bb-provider", "bb-context")}`,
         "03-system-context.arc42.md",
       ),
     ).toHaveLength(0);

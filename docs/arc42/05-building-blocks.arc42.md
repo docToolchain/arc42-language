@@ -341,6 +341,62 @@ path: packages/cli
 :::
 ```
 
+### Architect → CLI
+
+The architect invokes validation and query commands directly from the terminal.
+
+```arc42
+:::interface
+id: if-architect-cli
+title: Architect → CLI
+provider: bb-cli
+protocol: Terminal (stdin/stdout)
+path: packages/cli/src/cli.ts
+:::
+```
+
+### AI Agent → CLI
+
+The agent invokes the CLI through Bash tool calls during authoring and validation.
+
+```arc42
+:::interface
+id: if-agent-cli
+title: AI Agent → CLI (via Bash tool)
+provider: bb-cli
+protocol: Bash tool call (arc42 commands)
+path: packages/cli/src/cli.ts
+:::
+```
+
+### CI Pipeline → CLI
+
+The CI pipeline invokes validation as a build step and consumes its exit code and JSON output.
+
+```arc42
+:::interface
+id: if-ci-cli
+title: CI Pipeline → CLI
+provider: bb-cli
+protocol: Shell command / exit code
+path: packages/cli/src/cli.ts
+:::
+```
+
+### Architect → serve
+
+The architect starts the local server and browses the workspace in a browser.
+
+```arc42
+:::interface
+id: if-architect-serve
+title: Architect → serve
+provider: bb-cli
+protocol: Terminal (arc42 serve) → HTTP browser session
+path: packages/cli/src/cli.ts
+:::
+```
+
 ### CLI Agent Command Contract
 
 The skill is installed into the agent's skill directory by file copy. At runtime the agent reads
@@ -391,6 +447,20 @@ path: packages/skill
 :::
 ```
 
+### AI Agent → Skill
+
+The agent loads the installed skill to obtain the authoring convention and validation workflow.
+
+```arc42
+:::interface
+id: if-agent-skill
+title: AI Agent → Skill
+provider: bb-skill
+protocol: SKILL.md loaded at agent startup
+path: packages/skill/SKILL.md
+:::
+```
+
 ## Web Renderer
 
 A browser-side single-page application that renders arc42 documentation as a navigable web UI.
@@ -409,6 +479,20 @@ technology: TypeScript / React / Vite
 implements: concept-prose-first
 requires: if-web-cli-api
 path: packages/web
+:::
+```
+
+### Reader → Web UI
+
+The reader opens the rendered architecture documentation in a browser.
+
+```arc42
+:::interface
+id: if-reader-web
+title: Reader → Web UI
+provider: bb-web-renderer
+protocol: HTTP / browser
+path: packages/web/src/App.tsx
 :::
 ```
 
@@ -440,6 +524,34 @@ id: bb-workspace
 title: arc42 Documentation Workspace
 technology: Markdown (.arc42.md files)
 implements: concept-prose-first, concept-pipeline
+path: docs/arc42
+:::
+```
+
+### Architect → Documentation Workspace
+
+The architect reads and writes the Markdown workspace directly in an editor or during review.
+
+```arc42
+:::interface
+id: if-architect-workspace
+title: Architect → Documentation Workspace
+provider: bb-workspace
+protocol: Plain text / Markdown editor
+path: docs/arc42
+:::
+```
+
+### AI Agent → Documentation Workspace
+
+The agent reads and writes the Markdown workspace using file tools.
+
+```arc42
+:::interface
+id: if-agent-workspace
+title: AI Agent → Documentation Workspace
+provider: bb-workspace
+protocol: File Read/Write tools
 path: docs/arc42
 :::
 ```

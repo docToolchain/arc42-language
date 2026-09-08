@@ -38,10 +38,10 @@ const CHAPTERS: readonly Chapter[] = [
     file: "03-system-context.arc42.md",
     focus: "Describe the system boundary, actors, and neighboring systems.",
     content:
-      "Identify human and system actors, external systems, responsibilities, and the interfaces crossing the boundary. Keep the context view at the boundary: list only building blocks that provide interfaces directly required by actors; document internal-only providers in chapter 5.",
+      "Identify human and system actors, external systems, and responsibilities crossing the system boundary. Actors declare the interface IDs they require; define those provider-owned interfaces beneath their building blocks in chapter 5.",
     dependencies:
       "Establishes actors and actor requirements for the building-block and runtime views.",
-    commands: ["arc42 explain actor", "arc42 explain interface"],
+    commands: ["arc42 explain actor"],
   },
   {
     number: 4,
@@ -61,7 +61,7 @@ const CHAPTERS: readonly Chapter[] = [
     content:
       "Describe the system, containers, components, technologies, responsibilities, and stable relationships. Define each interface under the building block that provides it; consumers declare the interface in requires.",
     dependencies: "Create stable building-block IDs before dependent chapters add references.",
-    commands: ["arc42 explain building-block"],
+    commands: ["arc42 explain building-block", "arc42 explain interface"],
   },
   {
     number: 6,

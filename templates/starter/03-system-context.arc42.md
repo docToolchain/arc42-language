@@ -16,9 +16,9 @@ external party is and why it matters to the system, followed by an actor block w
 `requires` field listing the interface IDs it depends on.
 
 Then add a context diagram containing the actors and only those building blocks that provide an
-interface directly required by an actor. Internal-only providers belong in chapter 5. Define each
-interface under the building block that provides it; each interface has exactly one provider and may
-be required by multiple actors.
+interface directly required by an actor. Internal-only providers belong in chapter 5. Actors
+reference the interface IDs they require; interface definitions belong beneath their provider
+building blocks in chapter 5.
 
 See https://docs.arc42.org/section-3/ for further guidance.
 
@@ -54,7 +54,6 @@ requires: if-checkout-payment
 :::
 ```
 
-Interface blocks belong in chapter 5 beneath their provider building blocks. Keep this chapter's
-actor blocks focused on the interfaces they require and use the context diagram for actor-facing
-building blocks only.
+Keep this chapter's actor blocks focused on the interfaces they require and use the context diagram
+for actor-facing building blocks only. Do not define interface blocks in chapter 3.
 -->
