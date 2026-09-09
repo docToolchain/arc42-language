@@ -69,6 +69,9 @@
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
 *,
 *::before,
 *::after {
@@ -105,6 +108,7 @@ code {
 .section {
   padding: var(--section-gap) 0;
   border-top: 1px solid var(--border);
+  scroll-margin-top: var(--nav-h);
 }
 
 /* ─── Nav ────────────────────────────────────────────────────────────────────── */
@@ -193,6 +197,11 @@ code {
   flex-direction: column;
   justify-content: center;
   padding: 5rem 0 4rem;
+}
+
+.hero__inner {
+  display: flex;
+  flex-direction: column;
 }
 
 .hero__eyebrow {
@@ -300,6 +309,31 @@ code {
 .btn--outline:hover {
   border-color: var(--text-muted);
   opacity: 1;
+}
+
+.hero__scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  width: fit-content;
+  animation: bounce 2s ease-in-out infinite;
+}
+.hero__scroll-hint:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
 }
 
 /* ─── Feature strip ───────────────────────────────────────────────────────────── */

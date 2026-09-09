@@ -1,6 +1,6 @@
 export function LiveSection() {
   return (
-    <section className="section" aria-labelledby="live-heading">
+    <section className="section" aria-labelledby="live-heading" id="examples">
       <div className="container">
         <h2 className="live__title" id="live-heading">
           See it live
