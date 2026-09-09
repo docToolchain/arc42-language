@@ -2,10 +2,10 @@ import { useState } from "react";
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
-  const installCmd = "npx @doctc/arc42 serve";
+  const startCommand = "npx @doctc/arc42 --help";
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(installCmd).then(() => {
+    void navigator.clipboard.writeText(startCommand).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -23,7 +23,7 @@ export function Hero() {
         <p className="hero__sub">Human-readable. Agent-writable. Machine-verifiable.</p>
         <div className="hero__install" role="group" aria-label="Install command">
           <span className="hero__install-prompt">$</span>
-          <code>{installCmd}</code>
+          <code>{startCommand}</code>
           <button
             className="hero__install-copy"
             onClick={handleCopy}

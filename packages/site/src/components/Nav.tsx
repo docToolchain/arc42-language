@@ -23,6 +23,13 @@ export function Nav() {
           <a href="#examples" className="nav__link">
             Examples
           </a>
+          <a
+            href="https://github.com/docToolchain/arc42-language#readme"
+            target="_blank"
+            className="nav__link"
+          >
+            README ↗
+          </a>
         </div>
         <div className="nav__actions">
           <a
