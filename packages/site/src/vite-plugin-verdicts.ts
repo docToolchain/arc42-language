@@ -33,6 +33,14 @@ function extractTldr(body: string): string {
   return sentences.slice(0, 2).join(" ").trim();
 }
 
+function formatDate(raw: unknown): string {
+  if (!raw) return "";
+  // gray-matter auto-parses ISO date strings into JS Date objects (UTC midnight).
+  // Use toISOString() to stay in UTC and avoid local-timezone shift.
+  if (raw instanceof Date) return raw.toISOString().slice(0, 10).replace(/-/g, "/");
+  return String(raw);
+}
+
 function loadVerdicts(dir: string): Verdict[] {
   const files = readdirSync(dir)
     .filter((f) => f.endsWith(".md"))
@@ -52,7 +60,7 @@ function loadVerdicts(dir: string): Verdict[] {
       model: String(data["model"] ?? ""),
       harness: String(data["harness"] ?? ""),
       agent: String(data["agent"] ?? ""),
-      date: String(data["date"] ?? ""),
+      date: formatDate(data["date"]),
       task: String(data["task"] ?? ""),
       version: String(data["version"] ?? ""),
       title,
