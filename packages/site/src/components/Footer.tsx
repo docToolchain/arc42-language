@@ -16,13 +16,13 @@ export function Footer() {
             />
           </a>
           <a
-            href="https://github.com/doctc/arc42-language/actions"
+            href="https://github.com/doctoolchain/arc42-language/actions"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="CI status"
           >
             <img
-              src="https://img.shields.io/github/actions/workflow/status/doctc/arc42-language/ci.yml?style=flat-square&label=CI"
+              src="https://img.shields.io/github/actions/workflow/status/doctoolchain/arc42-language/ci.yml?style=flat-square&label=CI"
               alt="CI status"
               height="20"
             />
@@ -30,7 +30,7 @@ export function Footer() {
         </div>
         <div className="footer__links">
           <a
-            href="https://github.com/doctc/arc42-language/blob/main/LICENSE"
+            href="https://github.com/doctoolchain/arc42-language/blob/main/LICENSE"
             className="footer__link"
             target="_blank"
             rel="noopener noreferrer"
@@ -41,7 +41,7 @@ export function Footer() {
             ·
           </span>
           <a
-            href="https://github.com/doctc/arc42-language"
+            href="https://github.com/doctoolchain/arc42-language"
             className="footer__link"
             target="_blank"
             rel="noopener noreferrer"

@@ -1,6 +1,6 @@
 export function LiveSection() {
   return (
-    <section className="section" aria-labelledby="live-heading">
+    <section className="section" aria-labelledby="live-heading" id="examples">
       <div className="container">
         <h2 className="live__title" id="live-heading">
           See it live
@@ -9,7 +9,7 @@ export function LiveSection() {
           Two real workspaces, built with <code>arc42 build</code> and deployed here.
         </p>
         <div className="live__grid">
-          <a href="/docs/" className="live-card" aria-label="View architecture docs workspace">
+          <a href="./docs/" className="live-card" aria-label="View architecture docs workspace">
             <div className="live-card__icon" aria-hidden="true">
               <BookIcon />
             </div>
@@ -22,7 +22,11 @@ export function LiveSection() {
               Open →
             </span>
           </a>
-          <a href="/bookstore/" className="live-card" aria-label="View bookstore example workspace">
+          <a
+            href="./bookstore/"
+            className="live-card"
+            aria-label="View bookstore example workspace"
+          >
             <div className="live-card__icon" aria-hidden="true">
               <LayersIcon />
             </div>

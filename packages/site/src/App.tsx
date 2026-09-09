@@ -1,5 +1,6 @@
 import { Nav } from "./components/Nav";
 import { Hero } from "./components/Hero";
+import { GettingStarted } from "./components/GettingStarted";
 import { FeatureStrip } from "./components/FeatureStrip";
 import { VerdictSection } from "./components/VerdictSection";
 import { LiveSection } from "./components/LiveSection";
@@ -11,6 +12,7 @@ export function App() {
       <Nav />
       <main>
         <Hero />
+        <GettingStarted />
         <FeatureStrip />
         <VerdictSection />
         <LiveSection />

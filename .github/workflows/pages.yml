@@ -41,13 +41,15 @@ jobs:
 
       - name: Build landing page
         run: pnpm run build:site
+        env:
+          VITE_BASE: /arc42-language/
 
       - name: Assemble site
         run: |
           mkdir -p site
           cp -r packages/site/dist/. site/
-          node packages/cli/dist/cli.mjs --dir docs/arc42 build --out site/docs --base /docs/
-          node packages/cli/dist/cli.mjs --dir examples/bookstore-backend build --out site/bookstore --base /bookstore/
+          node packages/cli/dist/cli.mjs --dir docs/arc42 build --out site/docs --base /arc42-language/docs/
+          node packages/cli/dist/cli.mjs --dir examples/bookstore-backend build --out site/bookstore --base /arc42-language/bookstore/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

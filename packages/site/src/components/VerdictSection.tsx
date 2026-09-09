@@ -3,7 +3,7 @@ import { VerdictCard } from "./VerdictCard";
 
 export function VerdictSection() {
   return (
-    <section className="section" aria-labelledby="verdicts-heading">
+    <section className="section" aria-labelledby="verdicts-heading" id="verdicts">
       <div className="container">
         <header className="verdicts__header">
           <h2 className="verdicts__title" id="verdicts-heading">

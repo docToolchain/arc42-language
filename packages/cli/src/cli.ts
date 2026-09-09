@@ -713,10 +713,14 @@ async function runBuild(dir: string, args: string[]) {
 
   let html = readFileSync(indexPath, "utf8");
 
-  // Rewrite asset paths if a non-default base is provided
-  if (base !== "./") {
-    html = html.replace(/src="\.\/assets\//g, `src="${base}assets/`);
-    html = html.replace(/href="\.\/assets\//g, `href="${base}assets/`);
+  // Rewrite asset paths if a non-default base is provided.
+  // The web SPA is built with absolute /assets/ paths; rewrite them to the
+  // given base so the site works under a subpath (e.g. /arc42-language/docs/).
+  if (base !== "./" && base !== "/") {
+    html = html.replace(/src="\/assets\//g, `src="${base}assets/`);
+    html = html.replace(/href="\/assets\//g, `href="${base}assets/`);
+    // modulepreload links use crossorigin href without quotes after href=
+    html = html.replace(/ href="\/assets\//g, ` href="${base}assets/`);
   }
 
   // Inject workspace before </head>

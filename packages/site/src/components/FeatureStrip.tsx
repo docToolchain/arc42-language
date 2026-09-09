@@ -29,7 +29,7 @@ const FEATURES: Feature[] = [
 
 export function FeatureStrip() {
   return (
-    <section className="section" aria-label="Features">
+    <section className="section" aria-label="Features" id="features">
       <div className="container">
         <div className="features" role="list">
           {FEATURES.map((f) => (
