@@ -23,10 +23,10 @@ function copyToClipboard(text: string): Promise<void> {
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
-  const installCmd = "npx @doctc/arc42 serve";
+  const startCmd = "npx @doctc/arc42 --help";
 
   const handleCopy = () => {
-    copyToClipboard(installCmd)
+    copyToClipboard(startCmd)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -48,7 +48,7 @@ export function Hero() {
         <p className="hero__sub">Human-readable. Agent-writable. Machine-verifiable.</p>
         <div className="hero__install" role="group" aria-label="Install command">
           <span className="hero__install-prompt">$</span>
-          <code>{installCmd}</code>
+          <code>{startCmd}</code>
           <button
             className="hero__install-copy"
             onClick={handleCopy}
