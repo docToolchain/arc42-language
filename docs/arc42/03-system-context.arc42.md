@@ -39,11 +39,9 @@ graph TD
 
 ---
 
-:::
-
 ## Architect
 
-The human who designs and maintains the architecture. Uses the CLI directly from a
+The human who designs and maintains the architecture. Uses the CLI directly and a web UI from a
 terminal or IDE to validate workspaces and query elements. Also the primary author of
 `.arc42.md` files — writes prose and DSL blocks by hand or reviews agent-authored content.
 
@@ -53,7 +51,7 @@ id: actor-architect
 title: Architect
 type: person
 description: Human architect who authors and validates arc42 documentation
-requires: if-cli, if-architect-workspace
+requires: if-cli, if-architect-workspace, if-reader-web
 :::
 ```
 
