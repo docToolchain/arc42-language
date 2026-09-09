@@ -11,10 +11,10 @@ export function Nav() {
           arc42
         </a>
         <div className="nav__links">
-          <a href="/docs/" className="nav__link">
+          <a href="./docs/" className="nav__link">
             Docs
           </a>
-          <a href="/bookstore/" className="nav__link">
+          <a href="./bookstore/" className="nav__link">
             Bookstore
           </a>
         </div>

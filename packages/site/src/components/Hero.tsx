@@ -33,10 +33,10 @@ export function Hero() {
         </button>
       </div>
       <div className="hero__ctas">
-        <a href="/docs/" className="btn btn--primary">
+        <a href="./docs/" className="btn btn--primary">
           View architecture docs →
         </a>
-        <a href="/bookstore/" className="btn btn--outline">
+        <a href="./bookstore/" className="btn btn--outline">
           See bookstore example →
         </a>
       </div>
