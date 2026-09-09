@@ -21,12 +21,15 @@ import {
   builtinGetRenderers,
   rendererById,
   explainElement,
+  explainDiagram,
   formatExplainText,
   formatExplainListText,
+  formatExplainDiagramText,
+  formatExplainDiagramListText,
   analyzeArchitectureDiff,
   ELEMENT_KIND_ORDER,
 } from "@arc42/core";
-import type { BlockType, Diagnostic } from "@arc42/core";
+import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText } from "./guide.ts";
@@ -45,6 +48,18 @@ const BLOCK_TYPES: readonly BlockType[] = ELEMENT_KIND_ORDER;
 
 function isBlockType(s: string): s is BlockType {
   return (BLOCK_TYPES as readonly string[]).includes(s);
+}
+
+const DIAGRAM_TYPES: readonly DiagramType[] = [
+  "context",
+  "building-block",
+  "sequence",
+  "deployment",
+  "generic",
+];
+
+function isDiagramType(s: string): s is DiagramType {
+  return (DIAGRAM_TYPES as readonly string[]).includes(s);
 }
 
 const CHAPTER_NAMES: Record<number, string> = Object.fromEntries(
@@ -374,12 +389,40 @@ function runExplain(args: string[]) {
     allowPositionals: true,
   });
 
-  const blockTypeArg = positionals[0];
   const format = values["format"] as string;
+
+  // `arc42 explain diagram [<type>]`
+  if (positionals[0] === "diagram") {
+    const diagramTypeArg = positionals[1];
+    if (diagramTypeArg !== undefined && !isDiagramType(diagramTypeArg)) {
+      console.error(
+        `Unknown diagram type '${diagramTypeArg}'. Must be one of: ${DIAGRAM_TYPES.join(", ")}`,
+      );
+      process.exit(2);
+    }
+    if (diagramTypeArg) {
+      const result = explainDiagram(diagramTypeArg as DiagramType);
+      if (format === "json") {
+        console.log(JSON.stringify(result, null, 2));
+      } else {
+        console.log(formatExplainDiagramText(result));
+      }
+    } else {
+      const summaries = explainDiagram();
+      if (format === "json") {
+        console.log(JSON.stringify(summaries, null, 2));
+      } else {
+        console.log(formatExplainDiagramListText(summaries));
+      }
+    }
+    process.exit(0);
+  }
+
+  const blockTypeArg = positionals[0];
 
   if (blockTypeArg !== undefined && !isBlockType(blockTypeArg)) {
     console.error(
-      `Unknown block type '${blockTypeArg}'. Must be one of: ${BLOCK_TYPES.join(", ")}`,
+      `Unknown block type '${blockTypeArg}'. Run \`arc42 explain\` to list block types, or \`arc42 explain diagram\` to list diagram types.`,
     );
     process.exit(2);
   }
