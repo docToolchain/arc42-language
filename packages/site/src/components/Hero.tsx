@@ -41,7 +41,11 @@ export function Hero() {
             See bookstore example →
           </a>
         </div>
-        <a href="#features" className="hero__scroll-hint" aria-label="Scroll to features">
+        <a
+          href="#getting-started"
+          className="hero__scroll-hint"
+          aria-label="Scroll to getting started"
+        >
           <ChevronDownIcon />
         </a>
       </div>

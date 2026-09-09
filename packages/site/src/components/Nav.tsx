@@ -11,6 +11,9 @@ export function Nav() {
           arc42
         </a>
         <div className="nav__links">
+          <a href="#getting-started" className="nav__link">
+            Get started
+          </a>
           <a href="#features" className="nav__link">
             Features
           </a>
