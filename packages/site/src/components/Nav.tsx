@@ -11,24 +11,11 @@ export function Nav() {
           arc42
         </a>
         <div className="nav__links">
-          <a href="#getting-started" className="nav__link">
-            Get started
+          <a href="./docs/" className="nav__link">
+            Docs
           </a>
-          <a href="#features" className="nav__link">
-            Features
-          </a>
-          <a href="#verdicts" className="nav__link">
-            Verdicts
-          </a>
-          <a href="#examples" className="nav__link">
-            Examples
-          </a>
-          <a
-            href="https://github.com/docToolchain/arc42-language#readme"
-            target="_blank"
-            className="nav__link"
-          >
-            README ↗
+          <a href="./bookstore/" className="nav__link">
+            Bookstore
           </a>
         </div>
         <div className="nav__actions">
