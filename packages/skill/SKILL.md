@@ -16,7 +16,9 @@ relying on remembered conventions.
 2. For a new workspace, run `arc42 init template --dir <workspace>`.
 3. Before authoring a chapter, run `arc42 guide chapter <number>` and read that chapter's template.
 4. Inspect the current model with `arc42 get` and use `arc42 explain <type>` when a block is needed.
-5. Finish with `arc42 validate --dir <workspace>` and resolve errors before continuing.
+5. When authoring or debugging a diagram, run `arc42 explain diagram <type>` to see required fields,
+   allowed notations, alias syntax, and authoring tips for that diagram type.
+6. Finish with `arc42 --dir <workspace> validate` and resolve errors before continuing.
 
 The guide is read-only. Do not invent facts, silently repair contradictions, or replace human review
 with validation output.
@@ -29,7 +31,9 @@ arc42 guide chapter <number>
 arc42 init template --dir <workspace>
 arc42 get --dir <workspace>
 arc42 explain <type>
-arc42 validate --dir <workspace>
+arc42 explain diagram
+arc42 explain diagram <type>
+arc42 --dir <workspace> validate
 ```
 
 If `arc42` is unavailable, use `npx @doctc/arc42 ...`.

@@ -5,8 +5,15 @@
 
 import { z } from "zod";
 import type { BlockType } from "./ast.ts";
-import { ELEMENT_SCHEMAS, deriveFields, type CrossRefMeta } from "./model/schemas.ts";
+import {
+  ELEMENT_SCHEMAS,
+  DIAGRAM_SCHEMAS,
+  deriveFields,
+  type CrossRefMeta,
+} from "./model/schemas.ts";
 import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "./model/types.ts";
+
+export type DiagramType = keyof typeof DIAGRAM_SCHEMAS;
 
 // ---------------------------------------------------------------------------
 // Public result types
@@ -41,6 +48,22 @@ export interface ExplainResult {
 export interface ExplainSummary {
   blockType: BlockType;
   arc42Chapter: number;
+  description: string;
+}
+
+/** Full guidance for a single diagram type. */
+export interface ExplainDiagramResult {
+  diagramType: DiagramType;
+  description: string;
+  requiredFields: ExplainFieldResult[];
+  optionalFields: ExplainFieldResult[];
+  crossRefs: ExplainCrossRefResult[];
+  authoringTips: string[];
+}
+
+/** One-line summary entry for the diagram list view. */
+export interface ExplainDiagramSummary {
+  diagramType: DiagramType;
   description: string;
 }
 
@@ -166,6 +189,115 @@ export function formatExplainListText(summaries: ExplainSummary[]): string {
     lines.push(
       `  ${s.blockType.padEnd(20)} ch.${String(s.arc42Chapter).padEnd(3)}  ${s.description}`,
     );
+  }
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Diagram explain
+// ---------------------------------------------------------------------------
+
+const DIAGRAM_TYPE_ORDER: DiagramType[] = [
+  "context",
+  "building-block",
+  "sequence",
+  "deployment",
+  "generic",
+];
+
+function buildDiagramResult(diagramType: DiagramType): ExplainDiagramResult {
+  const schema = DIAGRAM_SCHEMAS[diagramType];
+  const meta = (z.globalRegistry.get(schema) ?? {}) as SchemaMeta;
+
+  const description = meta.description ?? diagramType;
+  const crossRefs = meta.crossRefs ?? [];
+  const authoringTips = meta.authoringTips ?? [];
+
+  const allFields = deriveFields(schema as z.ZodObject<z.ZodRawShape>);
+
+  return {
+    diagramType,
+    description,
+    requiredFields: allFields.filter((f) => f.required),
+    optionalFields: allFields.filter((f) => !f.required),
+    crossRefs,
+    authoringTips,
+  };
+}
+
+/**
+ * Return full guidance for a specific diagram type, or summary entries for all
+ * diagram types when called without an argument.
+ */
+export function explainDiagram(diagramType: DiagramType): ExplainDiagramResult;
+export function explainDiagram(): ExplainDiagramSummary[];
+export function explainDiagram(
+  diagramType?: DiagramType,
+): ExplainDiagramResult | ExplainDiagramSummary[] {
+  if (diagramType !== undefined) {
+    return buildDiagramResult(diagramType);
+  }
+
+  return DIAGRAM_TYPE_ORDER.map((dt) => {
+    const schema = DIAGRAM_SCHEMAS[dt];
+    const meta = (z.globalRegistry.get(schema) ?? {}) as SchemaMeta;
+    return {
+      diagramType: dt,
+      description: meta.description ?? dt,
+    };
+  });
+}
+
+export function formatExplainDiagramText(result: ExplainDiagramResult): string {
+  const lines: string[] = [];
+  lines.push(`diagram ${result.diagramType}`);
+  lines.push("");
+  lines.push(`  ${result.description}`);
+
+  if (result.requiredFields.length > 0) {
+    lines.push("");
+    lines.push("  Required fields:");
+    for (const f of result.requiredFields) {
+      const enumSuffix = f.enumValues ? `  [${f.enumValues.join(" | ")}]` : "";
+      lines.push(`    ${f.name.padEnd(14)} ${f.description}${enumSuffix}`);
+    }
+  }
+
+  if (result.optionalFields.length > 0) {
+    lines.push("");
+    lines.push("  Optional fields:");
+    for (const f of result.optionalFields) {
+      const enumSuffix = f.enumValues ? `  [${f.enumValues.join(" | ")}]` : "";
+      lines.push(`    ${f.name.padEnd(14)} ${f.description}${enumSuffix}`);
+    }
+  }
+
+  if (result.crossRefs.length > 0) {
+    lines.push("");
+    lines.push("  Cross-references:");
+    for (const c of result.crossRefs) {
+      const card = c.cardinality === "many" ? "(comma-separated)" : "";
+      lines.push(`    ${c.field.padEnd(14)} → ${c.targetKind} ${card}`.trimEnd());
+    }
+  }
+
+  if (result.authoringTips.length > 0) {
+    lines.push("");
+    lines.push("  Authoring tips:");
+    for (const tip of result.authoringTips) {
+      lines.push(`    - ${tip}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+export function formatExplainDiagramListText(summaries: ExplainDiagramSummary[]): string {
+  const lines: string[] = [];
+  lines.push("Diagram types (run `arc42 explain diagram <type>` for full guidance):");
+  lines.push("");
+  for (const s of summaries) {
+    lines.push(`  ${s.diagramType.padEnd(20)} ${s.description}`);
   }
   return lines.join("\n");
 }

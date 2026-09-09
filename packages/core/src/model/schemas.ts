@@ -455,40 +455,97 @@ export const ELEMENT_SCHEMAS: Record<BlockType, z.ZodType> = {
 const diagramBaseSchema = {
   id: z.string().min(1).meta({ description: "Unique diagram identifier" }),
   notation: z.string().optional().meta({
-    description: "Notation variant (e.g. mermaid, mermaid-sequence, mermaid-architecture)",
+    description:
+      "Notation variant. Allowed values: mermaid, mermaid-class, mermaid-architecture, mermaid-sequence",
   }),
-  aliases: z.string().optional().meta({ description: "Alias mappings (safe-id=model-id, ...)" }),
+  aliases: z.string().optional().meta({
+    description:
+      "Comma-separated safe-id=model-id pairs. Use when a Mermaid participant id cannot match the model id directly (e.g. hyphens are invalid in some Mermaid contexts). Example: aliases: bb_api=bb-api, ext_user=actor-user",
+  }),
 };
 
 /** Shared roots field — optional comma-separated list of scoping ids. */
 const diagramRootsField = splitListSchema.meta({
-  description: "Optional comma-separated list of ids to scope the view",
+  description:
+    "Optional comma-separated list of model ids to scope the view to a subset of elements",
 });
 
-export const DeploymentDiagramMetaSchema = z.object({
-  ...diagramBaseSchema,
-  notation: z.string().min(1).meta({ description: "Must be mermaid-architecture" }),
-  roots: diagramRootsField,
-});
+export const DeploymentDiagramMetaSchema = z
+  .object({
+    ...diagramBaseSchema,
+    notation: z.string().min(1).meta({ description: "Must be mermaid-architecture" }),
+    roots: diagramRootsField,
+  })
+  .meta({
+    description: "Visualises the deployment topology: nodes, services, and their connections.",
+    crossRefs: [] satisfies CrossRefMeta[],
+    authoringTips: [
+      "The diagram body must start with the architecture-beta keyword (Mermaid architecture diagram syntax).",
+      "Every service and group id in the diagram must match a deployment-node or building-block id in the model.",
+      "Use aliases when a Mermaid id cannot contain hyphens: aliases: safe_id=model-id",
+      "Use roots to restrict the view to a subtree of your deployment model.",
+    ],
+  });
 
-export const SequenceDiagramMetaSchema = z.object({
-  ...diagramBaseSchema,
-  notation: z.string().min(1).meta({ description: "Must be mermaid-sequence" }),
-  scenario: z
-    .string()
-    .min(1)
-    .meta({ description: "ID of the runtime-scenario this diagram belongs to" }),
-});
+export const SequenceDiagramMetaSchema = z
+  .object({
+    ...diagramBaseSchema,
+    notation: z.string().min(1).meta({ description: "Must be mermaid-sequence" }),
+    scenario: z
+      .string()
+      .min(1)
+      .meta({ description: "ID of the runtime-scenario this diagram belongs to" }),
+  })
+  .meta({
+    description:
+      "Illustrates a runtime flow as a Mermaid sequence diagram. Must be linked to a runtime-scenario.",
+    crossRefs: [
+      { field: "scenario", targetKind: "runtime-scenario", cardinality: "one" },
+    ] satisfies CrossRefMeta[],
+    authoringTips: [
+      "The diagram body must start with the sequenceDiagram keyword.",
+      "Use the participant keyword (not actor) to declare model elements. The Mermaid actor keyword marks participants as external and skips model-id validation — only use it for parties that truly have no model element.",
+      "Participant ids must match building-block or actor ids in the model. If the model id contains hyphens (which Mermaid rejects in some positions), use aliases: safe_id=model-id to map them.",
+      "All participants must be declared before they appear in messages.",
+      "The scenario field must reference a runtime-scenario whose involves list includes all building-block participants in this diagram.",
+    ],
+  });
 
-export const BuildingBlockDiagramMetaSchema = z.object({
-  ...diagramBaseSchema,
-  roots: diagramRootsField,
-});
+export const BuildingBlockDiagramMetaSchema = z
+  .object({
+    ...diagramBaseSchema,
+    roots: diagramRootsField,
+  })
+  .meta({
+    description:
+      "Shows the static decomposition of building blocks and their interfaces using a Mermaid flowchart.",
+    crossRefs: [] satisfies CrossRefMeta[],
+    authoringTips: [
+      "Use notation: mermaid (default flowchart) or notation: mermaid-class.",
+      "Every hyphen-separated node id extracted from the diagram source must match a building-block or interface id in the model.",
+      "Group child building blocks inside their parent using Mermaid subgraph.",
+      "Use roots to show only a subtree of the building block hierarchy (e.g. for a level-2 zoom).",
+      "Label every edge — unlabelled edges produce a warning (W022).",
+    ],
+  });
 
-export const ContextDiagramMetaSchema = z.object({
-  ...diagramBaseSchema,
-  roots: diagramRootsField,
-});
+export const ContextDiagramMetaSchema = z
+  .object({
+    ...diagramBaseSchema,
+    roots: diagramRootsField,
+  })
+  .meta({
+    description:
+      "Shows the system in its environment: actors, external systems, and the interfaces crossing the system boundary.",
+    crossRefs: [] satisfies CrossRefMeta[],
+    authoringTips: [
+      "Use notation: mermaid (default flowchart).",
+      "Every node id in the diagram must match an actor or building-block id in the model.",
+      "Wrap the internal system in a Mermaid subgraph to draw the system boundary (required by W021).",
+      "Draw edges from actors to the system boundary, not directly to internal building blocks (W028).",
+      "Label every edge with the interface or data flow it represents (W023).",
+    ],
+  });
 
 export const GenericDiagramMetaSchema = z.object({
   ...diagramBaseSchema,

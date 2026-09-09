@@ -97,7 +97,15 @@ export type {
 } from "@arc42/mermaid";
 
 // explain command API
-export { explainElement, formatExplainText, formatExplainListText } from "./explain.ts";
+export {
+  explainElement,
+  explainDiagram,
+  formatExplainText,
+  formatExplainListText,
+  formatExplainDiagramText,
+  formatExplainDiagramListText,
+  type DiagramType,
+} from "./explain.ts";
 export type {
   ExplainResult,
   ExplainSummary,
