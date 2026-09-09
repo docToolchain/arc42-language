@@ -1,14 +1,39 @@
 import { useState } from "react";
 
+function copyToClipboard(text: string): Promise<void> {
+  // Prefer the async Clipboard API (requires secure context)
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  // Fallback: create a temporary textarea and use execCommand
+  return new Promise((resolve, reject) => {
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(el);
+    if (ok) resolve();
+    else reject(new Error("execCommand copy failed"));
+  });
+}
+
 export function Hero() {
   const [copied, setCopied] = useState(false);
-  const startCommand = "npx @doctc/arc42 --help";
+  const installCmd = "npx @doctc/arc42 serve";
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(startCommand).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    copyToClipboard(installCmd)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        // Copy failed — nothing to show, button state stays unchanged
+      });
   };
 
   return (
@@ -23,7 +48,7 @@ export function Hero() {
         <p className="hero__sub">Human-readable. Agent-writable. Machine-verifiable.</p>
         <div className="hero__install" role="group" aria-label="Install command">
           <span className="hero__install-prompt">$</span>
-          <code>{startCommand}</code>
+          <code>{installCmd}</code>
           <button
             className="hero__install-copy"
             onClick={handleCopy}
