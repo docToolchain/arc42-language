@@ -70,34 +70,15 @@ function loadVerdicts(dir: string): Verdict[] {
 }
 
 export function verdictsPlugin(verdictsDir: string): Plugin {
-  // README is at the monorepo root, two levels above packages/site/src/
-  const readmePath = join(verdictsDir, "../../README.md");
-
   return {
     name: "vite-plugin-verdicts",
     resolveId(id: string) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
-      if (id === "virtual:readme") return "\0virtual:readme";
     },
     load(id: string) {
-      if (id === RESOLVED_ID) {
-        const verdicts = loadVerdicts(verdictsDir);
-        return `export const verdicts = ${JSON.stringify(verdicts)};`;
-      }
-      if (id === "\0virtual:readme") {
-        const raw = readFileSync(readmePath, "utf8");
-        // Keep only the "For architects" section (before "For contributors")
-        const architectsMatch = raw.match(
-          /## For architects\n([\s\S]*?)(?=\n## For contributors|$)/,
-        );
-        const content = architectsMatch
-          ? architectsMatch[1].trim()
-          : raw
-              .replace(/^#[^\n]*\n/, "")
-              .replace(/\[!\[.*?\]\(.*?\)\]\(.*?\)\n?/g, "")
-              .trim();
-        return `export const readmeContent = ${JSON.stringify(content)};`;
-      }
+      if (id !== RESOLVED_ID) return;
+      const verdicts = loadVerdicts(verdictsDir);
+      return `export const verdicts = ${JSON.stringify(verdicts)};`;
     },
   };
 }

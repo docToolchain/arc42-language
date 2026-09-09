@@ -13,7 +13,7 @@ export function GettingStarted() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              README
+              README ↗
             </a>
             .
           </p>
