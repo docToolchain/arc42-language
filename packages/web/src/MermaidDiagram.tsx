@@ -1,9 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import mermaid from "mermaid";
 
-mermaid.initialize({ startOnLoad: false, theme: "default", securityLevel: "loose" });
-
 let mermaidCounter = 0;
+
+/** Read the current effective theme from the data-theme attribute or system preference. */
+function getEffectiveMermaidTheme(): "dark" | "default" {
+  const attr = document.documentElement.getAttribute("data-theme");
+  if (attr === "dark") return "dark";
+  if (attr === "light") return "default";
+  // Fall back to system preference
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default";
+}
 
 interface MermaidDiagramProps {
   source: string;
@@ -48,11 +55,44 @@ function applyClickDirectives(source: string, clickableNodes: Map<string, string
   return source + "\n" + lines.join("\n");
 }
 
+/** Hook that returns the current mermaid theme and updates when data-theme changes. */
+function useMermaidTheme(): "dark" | "default" {
+  const [mermaidTheme, setMermaidTheme] = useState<"dark" | "default">(getEffectiveMermaidTheme);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setMermaidTheme(getEffectiveMermaidTheme());
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    // Also listen for system preference changes (when no override is set)
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const mqHandler = () => {
+      if (!document.documentElement.getAttribute("data-theme")) {
+        setMermaidTheme(getEffectiveMermaidTheme());
+      }
+    };
+    mq.addEventListener("change", mqHandler);
+
+    return () => {
+      observer.disconnect();
+      mq.removeEventListener("change", mqHandler);
+    };
+  }, []);
+
+  return mermaidTheme;
+}
+
 export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [rendered, setRendered] = useState(false);
   const diagramId = useRef(`mermaid-${id ?? ++mermaidCounter}`);
+  const mermaidTheme = useMermaidTheme();
+
   const cleanedSource = useMemo(() => {
     const clean = cleanSource(source);
     return clickableNodes && clickableNodes.size > 0
@@ -64,9 +104,17 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
     if (!containerRef.current) return;
     let cancelled = false;
 
+    // Reset rendered state while re-rendering with new theme
+    setRendered(false);
+    setError(null);
+
+    mermaid.initialize({ startOnLoad: false, theme: mermaidTheme, securityLevel: "loose" });
+
     async function render() {
       try {
-        const { svg } = await mermaid.render(diagramId.current, cleanedSource);
+        // Each render call needs a unique id to avoid mermaid's internal cache
+        const renderId = `${diagramId.current}-${mermaidTheme}`;
+        const { svg } = await mermaid.render(renderId, cleanedSource);
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
           setRendered(true);
@@ -87,7 +135,7 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
     return () => {
       cancelled = true;
     };
-  }, [cleanedSource]);
+  }, [cleanedSource, mermaidTheme]);
 
   if (error) {
     return (

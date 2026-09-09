@@ -10,6 +10,8 @@ interface SidebarProps {
   onSelectHeading: (headingSlug: string) => void;
   viewMode: "human" | "agent";
   onToggleViewMode: () => void;
+  theme: "dark" | "light";
+  onToggleTheme: () => void;
 }
 
 export function Sidebar({
@@ -19,6 +21,8 @@ export function Sidebar({
   onSelectHeading,
   viewMode,
   onToggleViewMode,
+  theme,
+  onToggleTheme,
 }: SidebarProps) {
   const activeDoc = documents[activeDocIndex];
 
@@ -40,6 +44,16 @@ export function Sidebar({
           aria-pressed={viewMode === "agent"}
         >
           {viewMode === "human" ? "Human" : "Agent"}
+        </button>
+        <button
+          data-testid="theme-toggle"
+          className="view-toggle"
+          onClick={onToggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-pressed={theme === "dark"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === "dark" ? "☀" : "☾"}
         </button>
       </div>
 

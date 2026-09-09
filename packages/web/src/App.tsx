@@ -3,6 +3,7 @@ import type { WorkspacePayload, Element } from "./types";
 import { Sidebar } from "./Sidebar";
 import { DocumentView } from "./DocumentView";
 import { filename } from "./utils";
+import { useTheme } from "./useTheme";
 
 interface AppProps {
   payload: WorkspacePayload;
@@ -118,6 +119,7 @@ export function App({ payload }: AppProps) {
     navigateToHeading,
   } = useHashRouter(payload.documents);
   const [viewMode, setViewMode] = useState<"human" | "agent">("human");
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const elementsMap = useMemo(() => {
     const map = new Map<string, Element>();
@@ -146,6 +148,8 @@ export function App({ payload }: AppProps) {
         onSelectHeading={navigateToHeading}
         viewMode={viewMode}
         onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       <main className="app-main">
         <DocumentView
