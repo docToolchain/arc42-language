@@ -19,11 +19,6 @@ export default defineConfig({
         to: "dist/skill",
         flatten: true,
       },
-      {
-        from: "../../templates/starter/*.arc42.md",
-        to: "dist/templates",
-        flatten: true,
-      },
       // Copy SPA assets from packages/web/dist/ into dist/web/.
       // The glob matches individual files; flatten: false preserves the
       // assets/ subdirectory alongside index.html.

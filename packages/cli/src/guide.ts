@@ -1,155 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { CHAPTERS, chapter } from "./chapters.ts";
 
-type Chapter = {
-  number: number;
-  title: string;
-  file: string;
-  focus: string;
-  content: string;
-  dependencies: string;
-  commands: string[];
-};
+export { CHAPTERS };
 
-const CHAPTERS: readonly Chapter[] = [
-  {
-    number: 1,
-    title: "Introduction and Goals",
-    file: "01-introduction-and-goals.arc42.md",
-    focus: "Establish the system purpose, stakeholders, and measurable quality goals.",
-    content:
-      "Document the requirements that drive architecture and the quality scenarios that make success measurable.",
-    dependencies: "Start here; quality-goal IDs are used by chapters 4, 5, and 9.",
-    commands: ["arc42 explain quality-goal", "arc42 explain quality-scenario"],
-  },
-  {
-    number: 2,
-    title: "Constraints",
-    file: "02-constraints.arc42.md",
-    focus: "Record constraints that restrict architecture decisions, with their source.",
-    content:
-      "Capture technical, organizational, and convention constraints; distinguish evidence from assumptions.",
-    dependencies: "Do early; constraint IDs are used by strategy and decisions.",
-    commands: ["arc42 explain constraint"],
-  },
-  {
-    number: 3,
-    title: "System Scope and Context",
-    file: "03-system-context.arc42.md",
-    focus: "Describe the system boundary, actors, and neighboring systems.",
-    content:
-      "Identify human and system actors, external systems, and responsibilities crossing the system boundary. Actors declare the interface IDs they require; define those provider-owned interfaces beneath their building blocks in chapter 5.",
-    dependencies:
-      "Establishes actors and actor requirements for the building-block and runtime views.",
-    commands: ["arc42 explain actor"],
-  },
-  {
-    number: 4,
-    title: "Solution Strategy",
-    file: "04-solution-strategy.arc42.md",
-    focus: "Summarize the fundamental approaches used to meet goals and constraints.",
-    content:
-      "Explain the few architecture-shaping strategies and link them to the quality goals they address.",
-    dependencies: "Depends on goals and constraints.",
-    commands: ["arc42 explain solution-strategy"],
-  },
-  {
-    number: 5,
-    title: "Building Blocks",
-    file: "05-building-blocks.arc42.md",
-    focus: "Identify the important logical building blocks and their responsibilities.",
-    content:
-      "Describe the system, containers, components, technologies, responsibilities, and stable relationships. Define each interface under the building block that provides it; consumers declare the interface in requires.",
-    dependencies: "Create stable building-block IDs before dependent chapters add references.",
-    commands: ["arc42 explain building-block", "arc42 explain interface"],
-  },
-  {
-    number: 6,
-    title: "Runtime View",
-    file: "06-runtime-view.arc42.md",
-    focus: "Show important runtime scenarios, interactions, and interfaces.",
-    content:
-      "Trace representative use cases through actors, building blocks, and interfaces; document observable behavior rather than every call.",
-    dependencies: "Depends on actors, building blocks, and interfaces.",
-    commands: ["arc42 explain interface", "arc42 explain actor"],
-  },
-  {
-    number: 7,
-    title: "Deployment View",
-    file: "07-deployment-view.arc42.md",
-    focus: "Describe the technical deployment topology and hosted building blocks.",
-    content:
-      "Record environments, nodes, hosting relationships, and operational boundaries supported by repository evidence.",
-    dependencies: "Depends on building-block IDs and deployment evidence.",
-    commands: ["arc42 explain deployment-node"],
-  },
-  {
-    number: 8,
-    title: "Cross-cutting Concepts",
-    file: "08-concepts.arc42.md",
-    focus: "Capture concepts that shape multiple parts of the architecture.",
-    content:
-      "Describe shared rules and mechanisms such as security, error handling, persistence, communication, or observability.",
-    dependencies: "Define concept IDs before linking building blocks with implements.",
-    commands: ["arc42 explain concept"],
-  },
-  {
-    number: 9,
-    title: "Architecture Decisions",
-    file: "09-decisions.arc42.md",
-    focus: "Record significant decisions, their status, and what they address.",
-    content:
-      "Capture the decision, context, status, date when known, and the goals, constraints, or risks it addresses.",
-    dependencies: "Depends on goals, constraints, risks, and strategy IDs.",
-    commands: ["arc42 explain decision"],
-  },
-  {
-    number: 10,
-    title: "Quality Requirements",
-    file: "10-quality-requirements.arc42.md",
-    focus: "Detail quality scenarios and the measurable criteria for success.",
-    content:
-      "Elaborate important quality goals with stimulus, response, and measurable metrics; do not invent measurements without evidence.",
-    dependencies: "Elaborates the quality goals from chapter 1.",
-    commands: ["arc42 explain quality-scenario"],
-  },
-  {
-    number: 11,
-    title: "Risks and Technical Debt",
-    file: "11-risks.arc42.md",
-    focus: "Make technical risks and debt visible, including mitigation or acceptance.",
-    content:
-      "Describe each risk or debt item, its cause and consequence, severity, and mitigation or explicit acceptance.",
-    dependencies: "Risks may be referenced by architecture decisions.",
-    commands: ["arc42 explain risk"],
-  },
-  {
-    number: 12,
-    title: "Glossary",
-    file: "12-glossary.arc42.md",
-    focus: "Define domain and technical terms used consistently in the documentation.",
-    content:
-      "Define terms that carry architectural meaning, clarify synonyms, and keep the typed definition concise.",
-    dependencies: "Independent; complete alongside the other chapters.",
-    commands: ["arc42 explain glossary-term"],
-  },
-];
-
-function templatePath(assetDir: string, file: string): string {
-  const bundled = join(assetDir, "templates", file);
-  if (existsSync(bundled)) return bundled;
-  return join(assetDir, "../../../templates/starter", file);
-}
-
-function chapter(number: number): Chapter | undefined {
-  return CHAPTERS.find((item) => item.number === number);
-}
-
-export function guideText(
-  subcommand = "migration",
-  argument?: string,
-  assetDir = process.cwd(),
-): string {
+export function guideText(subcommand = "migration", argument?: string): string {
   if (subcommand === "migration") {
     return `# arc42 migration guide
 
@@ -256,17 +109,11 @@ all medium/low-confidence and \`OPEN:\` rows to a human before final validation.
   if (subcommand === "chapter") {
     const item = chapter(Number(argument));
     if (!item) throw new Error("Chapter must be a number from 1 to 12.");
-    const template = readFileSync(templatePath(assetDir, item.file), "utf8");
+    const template = item.template;
     return `# Chapter ${item.number}: ${item.title}
-
-## Focus
-${item.focus}
 
 ## Dependencies
 ${item.dependencies}
-
-## Content to capture
-${item.content}
 
 ## Your role
 You are a chapter author subagent. Write this chapter only. Do not modify other chapters, invent
@@ -304,5 +151,3 @@ ${template.trimEnd()}
 
   throw new Error("Unknown guide topic. Use migration, chapter <1-12>, or evidence.");
 }
-
-export { CHAPTERS };

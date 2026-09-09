@@ -1,8 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { commandHelp, rootHelp } from "../src/help.ts";
+import { CHAPTERS, filename } from "../src/chapters.ts";
 
 const cliPath = fileURLToPath(new URL("../src/cli.ts", import.meta.url));
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -16,6 +19,27 @@ function runCli(...args: string[]): string {
 }
 
 describe("CLI help", () => {
+  test("chapter metadata covers the twelve starter files without duplicates", () => {
+    expect(CHAPTERS).toHaveLength(12);
+    expect(new Set(CHAPTERS.map((chapter) => chapter.number)).size).toBe(12);
+    expect(new Set(CHAPTERS.map(filename)).size).toBe(12);
+    expect(CHAPTERS.map((chapter) => chapter.number)).toEqual(
+      Array.from({ length: 12 }, (_, index) => index + 1),
+    );
+  });
+
+  test("init template generates the canonical files dynamically", () => {
+    const directory = mkdtempSync(join(tmpdir(), "arc42-template-test-"));
+    try {
+      runCli("init", "template", "--dir", directory);
+      const files = readdirSync(directory).sort();
+      expect(files).toEqual(CHAPTERS.map(filename).sort());
+      expect(readFileSync(join(directory, files[0]!), "utf8")).toContain("<!--");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   test("root help lists every command with its purpose", () => {
     const help = rootHelp();
     for (const command of [
@@ -39,7 +63,8 @@ describe("CLI help", () => {
     expect(commandHelp("diff")).toContain("--staged, --cached");
     expect(commandHelp("init", "template")).toContain("default: current directory");
     expect(commandHelp("guide")).toContain("guide chapter <1-12>");
-    expect(commandHelp("guide", "chapter")).toContain("bundled starter template");
+    expect(commandHelp("guide", "chapter")).toContain("generated starter template");
+    expect(commandHelp("guide", "chapter")).not.toContain("chapter focus");
     expect(commandHelp("guide", "evidence")).toContain("evidence document");
     expect(commandHelp("guide", "migration")).toContain("complete migration workflow");
     // block types injected from outside — not hardcoded in help module
@@ -57,7 +82,7 @@ describe("CLI help", () => {
     expect(runCli("validate", "--help")).toContain("arc42 validate");
     expect(runCli("--help", "diff")).toContain("working tree versus index");
     expect(runCli("init", "template", "--help")).toContain("scaffold arc42");
-    expect(runCli("guide", "chapter", "1", "--help")).toContain("bundled starter template");
+    expect(runCli("guide", "chapter", "1", "--help")).toContain("generated starter template");
     expect(runCli("guide", "evidence", "--help")).toContain("evidence document");
     expect(runCli("guide", "migration", "--help")).toContain("complete migration workflow");
   });
@@ -66,7 +91,8 @@ describe("CLI help", () => {
     for (let chapter = 1; chapter <= 12; chapter++) {
       const output = runCli("guide", "chapter", String(chapter));
       expect(output).toContain(`# Chapter ${chapter}:`);
-      expect(output).toContain("## Content to capture");
+      expect(output).not.toContain("## Content to capture");
+      expect(output).toContain("## Dependencies");
       expect(output).toContain("## Starter template");
       expect(output).toContain("arc42 explain");
       expect(output).toContain("## Your role");

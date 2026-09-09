@@ -2,14 +2,14 @@
 import { parseArgs } from "node:util";
 import {
   copyFileSync,
+  writeFileSync,
   existsSync,
   mkdirSync,
-  readdirSync,
   readFileSync,
   createReadStream,
   watch,
 } from "node:fs";
-import { join, dirname, basename, extname } from "node:path";
+import { join, dirname, extname } from "node:path";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { discoverArc42Dir } from "./discover.ts";
@@ -28,6 +28,7 @@ import type { BlockType, Diagnostic } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText } from "./guide.ts";
+import { filename } from "./chapters.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -453,33 +454,19 @@ function runInitTemplate(args: string[]) {
   });
 
   const destDir = (values["dir"] as string | undefined) ?? process.cwd();
-  const srcDir = join(__dirname, "templates");
-
-  if (!existsSync(srcDir)) {
-    console.error(`Bundled templates not found at ${srcDir}`);
-    process.exit(1);
-  }
-
-  const files = readdirSync(srcDir).filter((f) => f.endsWith(".arc42.md"));
-
-  if (files.length === 0) {
-    console.error(`No template files found in ${srcDir}`);
-    process.exit(1);
-  }
-
   mkdirSync(destDir, { recursive: true });
 
   let copied = 0;
   let skipped = 0;
 
-  for (const file of files) {
-    const src = join(srcDir, file);
-    const dest = join(destDir, basename(file));
+  for (const chapter of CHAPTERS) {
+    const file = filename(chapter);
+    const dest = join(destDir, file);
     if (existsSync(dest)) {
       console.warn(`Skipping (already exists): ${dest}`);
       skipped++;
     } else {
-      copyFileSync(src, dest);
+      writeFileSync(dest, chapter.template, "utf8");
       copied++;
     }
   }
@@ -504,7 +491,7 @@ function runGuide(args: string[]) {
   const subcommand = positionals[0] ?? "migration";
   const argument = positionals[1];
   try {
-    console.log(guideText(subcommand, argument, __dirname));
+    console.log(guideText(subcommand, argument));
     process.exit(0);
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);

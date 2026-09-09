@@ -200,8 +200,8 @@ Use arc42 init <subcommand> --help for options and defaults.
 Usage:
   arc42 guide chapter <1-12>
 
-The output includes the chapter focus, dependencies, evidence prompts, relevant explain commands,
-and the bundled starter template. It never creates or modifies files.
+The output includes chapter dependencies, evidence prompts, relevant explain commands, and the
+generated starter template. It never creates or modifies files.
 `;
     }
     if (nestedCommand === "evidence") {
