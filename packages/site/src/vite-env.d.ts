@@ -14,3 +14,7 @@ declare module "virtual:verdicts" {
   }
   export const verdicts: Verdict[];
 }
+
+declare module "virtual:readme" {
+  export const readmeContent: string;
+}

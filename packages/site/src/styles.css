@@ -631,10 +631,6 @@ code {
   gap: 1rem;
 }
 
-.gs__grid--3 {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
 .gs__card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -676,14 +672,6 @@ code {
   font-family: var(--font-mono);
   font-size: 0.825rem;
   color: var(--text);
-}
-
-.gs__link {
-  display: inline-block;
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-link);
 }
 
 /* ─── README section ──────────────────────────────────────────────────────────── */
@@ -783,9 +771,7 @@ code {
   }
 
   .verdicts__grid,
-  .live__grid,
-  .gs__grid,
-  .gs__grid--3 {
+  .live__grid {
     grid-template-columns: 1fr;
   }
 
