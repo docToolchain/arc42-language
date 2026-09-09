@@ -151,6 +151,9 @@ and `arc42 guide chapter <n>` cannot drift or contradict each other.
   implementation detail of `bb-cli`; the CLI command interface, workspace-adapter boundary, core
   responsibilities, and web hosting contract are unchanged. The existing decision that neutral starter
   templates provide authoring guidance remains true because `init template` still produces them.
+- Serve-navigation fix: document labels now render as `<number>: <H1>` using the numeric filename
+  prefix and the document's level-one heading. Lower-level headings remain subsection navigation;
+  filenames are retained only in URL hashes and fallback labels.
 
 ## Code
 ### Tasks
@@ -170,6 +173,8 @@ and `arc42 guide chapter <n>` cannot drift or contradict each other.
   numbered starter artifacts.
 - [x] Obtain final independent review; no P1/P2 findings remained and the implementation received a GO
   recommendation.
+- [x] Fix serve sidebar document labels to show chapter number plus H1 instead of filename labels, and
+  update the browser navigation regression tests.
 
 ### Completed
 - Removed `focus` and `content` from all chapter metadata and from `guide chapter` output.
@@ -190,6 +195,8 @@ and `arc42 guide chapter <n>` cannot drift or contradict each other.
 - Final verification after dynamic generation: full suite (54 files / 278 tests), root check, definition
   consistency check, CLI package check/build, root build, and temporary-directory `init template` smoke
   test all passed.
+- Serve-navigation verification passed: web build, repository check, and 8 document-navigation Playwright
+  tests.
 - Starter validation still reports the recorded baseline: 4 errors and 2 warnings in existing example
   guidance content.
 

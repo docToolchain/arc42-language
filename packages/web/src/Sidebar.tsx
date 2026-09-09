@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import type { DocumentAst, AstNode, HeadingNode, BlockNode } from "./types";
-import { basename, filename } from "./utils";
+import { filename } from "./utils";
 import { KIND_COLOR } from "./ElementCard";
 
 interface SidebarProps {
@@ -58,7 +58,7 @@ export function Sidebar({
                   onSelectDoc(i);
                 }}
               >
-                <span className="sidebar__doc-label">{basename(doc.filePath)}</span>
+                <span className="sidebar__doc-label">{chapterLabel(doc)}</span>
               </a>
 
               {isActive && activeDoc && (
@@ -112,6 +112,15 @@ export function Sidebar({
 
 function getDocHeadings(doc: DocumentAst): HeadingNode[] {
   return doc.nodes.filter((n: AstNode): n is HeadingNode => n.kind === "heading");
+}
+
+function chapterLabel(doc: DocumentAst): string {
+  const heading = getDocHeadings(doc)
+    .find((h) => h.level === 1)
+    ?.text.trim();
+  const chapter = doc.filePath.match(/(?:^|\/)0*(\d+)-/)?.[1];
+  if (chapter && heading) return `${Number(chapter)}: ${heading}`;
+  return heading ?? filename(doc.filePath);
 }
 
 function headingAnchor(text: string): string {
