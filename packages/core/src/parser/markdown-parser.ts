@@ -404,10 +404,12 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       continue;
     }
 
-    // Prose (non-empty lines outside blocks)
-    if (line.trim().length > 0) {
-      nodes.push({ kind: "prose", text: line, line: lineNo });
-    }
+    // Prose: emit all lines outside blocks, including blank lines.
+    // Blank lines must be preserved so that marked receives the correct
+    // paragraph/table boundaries (e.g. a blank line between a table and the
+    // following paragraph prevents marked from absorbing the paragraph as a
+    // table row in its first column).
+    nodes.push({ kind: "prose", text: line, line: lineNo });
   }
 
   // Unclosed block: silently ignored (validator will catch missing required attrs)

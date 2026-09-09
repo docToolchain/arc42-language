@@ -58,6 +58,17 @@ priority: high
     expect(result.some((p) => p.text.includes("More prose"))).toBe(true);
   });
 
+  test("preserves blank lines between prose paragraphs as empty prose nodes", () => {
+    // Blank lines between a table and a following paragraph must be preserved
+    // so that marked does not absorb the paragraph as a table row.
+    const md = `| col |\n| --- |\n| row |\n\n**After table**`;
+    const result = prose(md);
+    // There must be at least one empty-text prose node (the blank line)
+    expect(result.some((p) => p.text === "")).toBe(true);
+    // The bold line must also be present
+    expect(result.some((p) => p.text.includes("After table"))).toBe(true);
+  });
+
   test("parses multiple blocks in one file", () => {
     const md = `:::quality-goal\nid: qg-1\ntitle: A\npriority: high\n:::\n:::concept\nid: c-1\ntitle: B\n:::`;
     const result = blocks(md);
