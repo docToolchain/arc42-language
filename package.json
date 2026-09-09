@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm run check:templates && vp run -r build",
+    "build:site": "pnpm --filter @arc42/site build",
     "test": "vp test",
     "test:e2e": "pnpm --filter @arc42/web test:e2e",
     "check": "pnpm run check:templates && vp check",
