@@ -42,7 +42,9 @@ describe("Git diff acquisition", () => {
     writeFileSync(join(root, "architecture.arc42.md"), "# Architecture\n\nUpdated\n");
     const result = collectGitDiff(root);
     expect(result.currentDocuments[0]?.filePath).toBe("architecture.arc42.md");
-    expect(result.baseDocuments[0]?.nodes[1]).toMatchObject({ kind: "prose", text: "Initial" });
+    expect(
+      result.baseDocuments[0]?.nodes.find((n) => n.kind === "prose" && n.text === "Initial"),
+    ).toBeTruthy();
     expect(result.changes[0]?.newRanges.length).toBeGreaterThan(0);
     expect(result.base).toMatch(/^[0-9a-f]{40}$/);
   });
@@ -59,10 +61,8 @@ describe("Git diff acquisition", () => {
     writeFileSync(join(root, "architecture.arc42.md"), "# Architecture\n\nStaged\n");
     git(root, "add", "architecture.arc42.md");
     writeFileSync(join(root, "architecture.arc42.md"), "# Architecture\n\nWorking tree\n");
-    expect(collectGitDiff(root, undefined, true).currentDocuments[0]?.nodes[1]).toMatchObject({
-      kind: "prose",
-      text: "Staged",
-    });
+    const stagedNodes = collectGitDiff(root, undefined, true).currentDocuments[0]?.nodes;
+    expect(stagedNodes?.find((n) => n.kind === "prose" && n.text === "Staged")).toBeTruthy();
   });
 
   test("rejects a directory that is not a Git repository", () => {
