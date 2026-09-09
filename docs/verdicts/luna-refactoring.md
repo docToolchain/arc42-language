@@ -1,3 +1,11 @@
+---
+model: GPT Luna 5.6
+harness: opencode
+agent: workflow (based on @codemcp/workflows)
+date: 2026/09/07
+version: 0.6.0
+---
+
 # Verdict: Using the arc42 CLI During Core Refactoring
 
 ## TL;DR

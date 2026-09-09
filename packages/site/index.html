@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>arc42-language — Architecture docs that stay correct</title>
+    <meta
+      name="description"
+      content="Human-readable. Agent-writable. Machine-verifiable. arc42-language makes architecture a first-class citizen — readable by humans, checkable by machines, visible to agents."
+    />
+    <script>
+      // Apply theme before React hydrates to avoid flash of wrong theme
+      (function () {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
