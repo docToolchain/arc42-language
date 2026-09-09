@@ -33,7 +33,7 @@ export function Nav() {
         </div>
         <div className="nav__actions">
           <a
-            href="https://github.com/doctc/arc42-language"
+            href="https://github.com/doctoolchain/arc42-language"
             className="nav__icon-btn"
             aria-label="GitHub repository"
             target="_blank"

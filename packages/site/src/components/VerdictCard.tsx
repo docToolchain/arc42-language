@@ -36,7 +36,7 @@ export function VerdictCard({ verdict, index }: VerdictCardProps) {
         {verdict.tldr && <p className="verdict-card__tldr">{verdict.tldr}</p>}
         <div className="verdict-card__footer">
           <a
-            href={`https://github.com/doctc/arc42-language/blob/main/docs/verdicts/${verdict.slug}.md`}
+            href={`https://github.com/doctoolchain/arc42-language/blob/main/docs/verdicts/${verdict.slug}.md`}
             className="verdict-card__link"
             target="_blank"
             rel="noopener noreferrer"
