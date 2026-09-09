@@ -6,6 +6,7 @@ const COMMANDS = [
   ["guide", "Guide a one-time migration from existing docs or source to typed arc42."],
   ["diff", "Report architecture-document changes that need review."],
   ["serve", "Serve the workspace in the browser for interactive exploration."],
+  ["build", "Build a self-contained static site from a workspace for deployment."],
   ["init", "Create starter architecture files or install the agent skill."],
 ] as const;
 
@@ -190,6 +191,30 @@ Subcommands:
   template              Copy starter architecture templates
 
 Use arc42 init <subcommand> --help for options and defaults.
+`;
+  }
+
+  if (command === "build") {
+    return `arc42 build — build a self-contained static site from a workspace
+
+Usage:
+  arc42 [--dir <path>] build --out <dir> [options]
+
+Options:
+  --out <dir>           Output directory (required)
+  --base <url-path>     Base URL path for assets, e.g. /docs/ (default: ./)
+  -h, --help            Show this help
+
+The command reads the workspace, copies the bundled web assets to --out, and injects
+the workspace data so the site works without a server. The output directory is
+created if it does not exist and overwritten if it does.
+
+It exits 0 on success, 1 when the workspace or web assets cannot be loaded, and 2
+for invalid command options.
+
+Examples:
+  arc42 build --out site/docs
+  arc42 --dir examples/bookstore-backend build --out site/bookstore --base /bookstore/
 `;
   }
 

@@ -2,10 +2,12 @@
 import { parseArgs } from "node:util";
 import {
   copyFileSync,
-  writeFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
+  writeFileSync,
   createReadStream,
   watch,
 } from "node:fs";
@@ -127,6 +129,8 @@ async function main() {
     runInit(commandArgs);
   } else if (command === "serve") {
     await runServe(dir, commandArgs);
+  } else if (command === "build") {
+    await runBuild(dir, commandArgs);
   } else if (command === "diff") {
     await runDiff(dir, commandArgs);
   } else {
@@ -655,6 +659,84 @@ async function runServe(dir: string, args: string[]) {
       process.exit(0);
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// build
+// ---------------------------------------------------------------------------
+
+async function runBuild(dir: string, args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      out: { type: "string" },
+      base: { type: "string", default: "./" },
+    },
+    strict: false,
+  });
+
+  const outDir = values["out"] as string | undefined;
+  const base = (values["base"] as string) || "./";
+
+  if (!outDir) {
+    console.error("arc42 build: --out <dir> is required");
+    console.log(commandHelp("build", undefined, BLOCK_TYPES));
+    process.exit(2);
+  }
+
+  const webDir = join(__dirname, "web");
+  if (!existsSync(webDir)) {
+    console.error(`Web assets not found at ${webDir}. Run 'pnpm build:web' first.`);
+    process.exit(1);
+  }
+
+  // Load workspace
+  let workspaceJson: string;
+  try {
+    const payload = await loadWorkspace(dir);
+    workspaceJson = JSON.stringify(payload);
+  } catch (err) {
+    console.error(`Failed to load workspace from ${dir}: ${String(err)}`);
+    process.exit(1);
+  }
+
+  // Copy web assets to output directory
+  mkdirSync(outDir, { recursive: true });
+  cpSync(webDir, outDir, { recursive: true });
+
+  // Inject workspace data into index.html
+  const indexPath = join(outDir, "index.html");
+  if (!existsSync(indexPath)) {
+    console.error(`index.html not found in output directory ${outDir}`);
+    process.exit(1);
+  }
+
+  let html = readFileSync(indexPath, "utf8");
+
+  // Rewrite asset paths if a non-default base is provided
+  if (base !== "./") {
+    html = html.replace(/src="\.\/assets\//g, `src="${base}assets/`);
+    html = html.replace(/href="\.\/assets\//g, `href="${base}assets/`);
+  }
+
+  // Inject workspace before </head>
+  const injection = `<script>window.__WORKSPACE__=${workspaceJson};</script>`;
+  html = html.replace("</head>", `${injection}\n</head>`);
+
+  writeFileSync(indexPath, html, "utf8");
+
+  // Count output files for summary
+  const countFiles = (d: string): number => {
+    let n = 0;
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      n += entry.isDirectory() ? countFiles(join(d, entry.name)) : 1;
+    }
+    return n;
+  };
+
+  const fileCount = countFiles(outDir);
+  console.log(`arc42 build  →  ${outDir}  (${fileCount} files)`);
+  process.exit(0);
 }
 
 main().catch((err) => {
