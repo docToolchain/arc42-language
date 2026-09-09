@@ -570,14 +570,21 @@ code {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .footer__badges {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.footer__badges img {
+  display: block;
+  height: 20px;
+  width: auto;
+  vertical-align: middle;
 }
 
 .footer__sep {
