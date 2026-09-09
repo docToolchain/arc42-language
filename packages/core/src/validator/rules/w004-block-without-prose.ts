@@ -35,7 +35,10 @@ export const w004BlockWithoutProse: Rule = {
         if (node.kind === "heading") {
           // Reset prose tracking when entering a new section
           hasProseAfterLastHeading = false;
-        } else if (node.kind === "prose") {
+        } else if (node.kind === "prose" && node.text.trim().length > 0) {
+          // Only non-blank prose counts as an introduction.
+          // Blank-line prose nodes are emitted by the parser to preserve
+          // Markdown paragraph boundaries and must not count as introductions.
           hasProseAfterLastHeading = true;
         } else if (node.kind === "block") {
           if (!hasProseAfterLastHeading) {
