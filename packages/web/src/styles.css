@@ -46,6 +46,32 @@
   }
 }
 
+/* Manual dark override (toggle) */
+[data-theme="dark"] {
+  --bg: #09090b;
+  --bg-sidebar: #111113;
+  --bg-card: #18181b;
+  --bg-code: #1c1c20;
+  --border: #27272a;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-link: #60a5fa;
+  --accent: #60a5fa;
+}
+
+/* Force light even when system prefers dark */
+[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-sidebar: #f7f7f8;
+  --bg-card: #fafafa;
+  --bg-code: #f4f4f5;
+  --border: #e4e4e7;
+  --text: #18181b;
+  --text-muted: #71717a;
+  --text-link: #2563eb;
+  --accent: #3b82f6;
+}
+
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */
 *,
 *::before,
