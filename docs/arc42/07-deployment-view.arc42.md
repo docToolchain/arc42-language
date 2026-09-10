@@ -37,7 +37,7 @@ There is no separate deploy step — the packages are consumed directly from the
 id: node-npm-package
 title: npm-distributed Toolchain Packages
 type: server
-hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-diff, bb-workspace-fs, bb-web-renderer
+hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-diff, bb-mermaid, bb-workspace-fs, bb-web-renderer
 :::
 ```
 
@@ -91,5 +91,20 @@ id: node-workspace
 title: arc42 Documentation Workspace
 type: device
 hosts: bb-workspace
+:::
+```
+
+## Project Site
+
+The project site and the agent verdicts it reads are deployed independently as a GitHub Pages
+static site. They are not part of the installed toolchain. `bb-verdicts` is physically
+co-located with the rest of the repository but treated as a separate deployment concern.
+
+```arc42
+:::deployment-node
+id: node-site
+title: GitHub Pages (Project Site)
+type: server
+hosts: bb-site, bb-verdicts
 :::
 ```

@@ -172,3 +172,51 @@ sequenceDiagram
 The web renderer is a static SPA served from the CLI's distribution directory. The CLI does not
 re-parse on every browser request — the workspace payload is loaded once at server startup and
 cached in memory for the lifetime of the process.
+
+## Site build with Mermaid validation and verdict loading
+
+This scenario describes the two build-time flows specific to the Project Site and the Mermaid
+Syntax building block. During `arc42 validate`, the Validator calls `@arc42/mermaid` to parse
+and check Mermaid diagram syntax (W017). Separately, when the Project Site is built, the Verdicts
+Vite Plugin reads `docs/verdicts` markdown files and exposes them as a virtual module consumed by
+the site's React components.
+
+```arc42
+:::runtime-scenario
+id: scenario-site-build-verdicts
+title: Site build: Mermaid validation and verdict loading
+trigger: Architect runs arc42 validate; separately, site build runs
+involves: bb-validator, bb-mermaid, bb-site, bb-verdicts
+:::
+```
+
+```arc42
+:::diagram
+id: site-build-verdicts-sequence
+scenario: scenario-site-build-verdicts
+notation: mermaid-sequence
+aliases: bb_validator=bb-validator, bb_mermaid=bb-mermaid, bb_site=bb-site, bb_verdicts=bb-verdicts
+:::
+```
+
+```mermaid
+sequenceDiagram
+    actor actor_ci as CI / Architect
+    participant bb_validator as Validator
+    participant bb_mermaid as Mermaid Syntax
+    participant bb_site as Project Site
+    participant bb_verdicts as Agent Verdicts
+
+    actor_ci->>bb_validator: arc42 validate (includes W017 rule)
+    bb_validator->>bb_mermaid: parseMermaid(diagramSource)
+    bb_mermaid-->>bb_validator: MermaidParseResult (ok or failure)
+    bb_validator-->>actor_ci: Diagnostics including W017 for invalid syntax
+
+    actor_ci->>bb_site: vite build (site)
+    bb_site->>bb_verdicts: Read docs/verdicts/*.md (via Vite plugin)
+    bb_verdicts-->>bb_site: Parsed verdict frontmatter as virtual module
+    bb_site-->>actor_ci: Static site with embedded verdict cards
+```
+
+`if-core-mermaid` is exercised during `arc42 validate` whenever a diagram block is present.
+`if-site-verdicts` is exercised only at site build time — no runtime network calls are involved.
