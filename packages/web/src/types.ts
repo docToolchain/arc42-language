@@ -1,4 +1,5 @@
-// Browser-side mirror of the WorkspacePayload and AST types from @arc42/core.
+// Browser-side mirror of WorkspacePayload and AST types from @arc42/core.
+// WorkspacePayload is defined in packages/core/src/workspace.ts.
 // These are kept in sync by hand — no direct import from the Node.js package.
 
 // ─── AST ────────────────────────────────────────────────────────────────────

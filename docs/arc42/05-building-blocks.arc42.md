@@ -250,7 +250,7 @@ id: if-validator-renderer
 title: Renderer Output Contract
 provider: bb-renderer
 protocol: In-process TypeScript function call
-path: packages/core/src/validator/types.ts
+path: packages/core/src/renderer/types.ts
 :::
 ```
 
