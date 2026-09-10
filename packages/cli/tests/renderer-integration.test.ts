@@ -5,7 +5,7 @@ import { getElements } from "@arc42/workspace-fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
-const fixtureDir = join(fileURLToPath(import.meta.url), "../../core/src/__fixtures__/mini-arch");
+const fixtureDir = join(fileURLToPath(import.meta.url), "../../../core/src/__fixtures__/mini-arch");
 
 describe("filesystem workspace queries", () => {
   test("loads a workspace with resolved relationships through the adapter API", async () => {
