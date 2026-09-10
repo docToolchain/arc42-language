@@ -27,9 +27,9 @@ graph TD
     end
 
     actor-architect -->|"if-cli"| bb-cli
-    actor-architect -->|"if-architect-workspace"| bb-workspace
+    actor-architect -->|"if-workspace-access"| bb-workspace
     actor-agent -->|"if-cli"| bb-cli
-    actor-agent -->|"if-agent-workspace"| bb-workspace
+    actor-agent -->|"if-workspace-access"| bb-workspace
     actor-agent -->|"if-agent-skill"| bb-skill
     actor-ci -->|"if-cli"| bb-cli
     actor-reader -->|"if-reader-web"| bb-web-renderer
@@ -44,6 +44,7 @@ graph TD
 The human who designs and maintains the architecture. Uses the CLI directly and a web UI from a
 terminal or IDE to validate workspaces and query elements. Also the primary author of
 `.arc42.md` files — writes prose and DSL blocks by hand or reviews agent-authored content.
+Both architect and AI agent access the workspace through the same file-based contract.
 
 ```arc42
 :::actor
@@ -51,7 +52,7 @@ id: actor-architect
 title: Architect
 type: person
 description: Human architect who authors and validates arc42 documentation
-requires: if-cli, if-architect-workspace, if-reader-web
+requires: if-cli, if-workspace-access, if-reader-web
 :::
 ```
 
@@ -61,7 +62,8 @@ An LLM-based coding assistant (e.g. Kiro, GitHub Copilot, Claude) that reads and
 `.arc42.md` files as part of its development workflow. Loaded with the arc42-language
 SKILL.md, it uses the CLI to validate its output and discover existing elements before
 making changes. The agent is a first-class author — the DSL is deliberately simple enough
-that agents can produce valid files without handholding.
+that agents can produce valid files without handholding. Access to the workspace uses the
+same file-based contract as the architect.
 
 ```arc42
 :::actor
@@ -69,7 +71,7 @@ id: actor-agent
 title: AI Agent
 type: system
 description: LLM-based coding assistant operating via the arc42-language skill
-requires: if-cli, if-agent-skill, if-agent-workspace
+requires: if-cli, if-agent-skill, if-workspace-access
 :::
 ```
 
