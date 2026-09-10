@@ -14,3 +14,11 @@ export function chapterNumberFromFile(path: string): number | null {
   const chapter = Number(match[1]);
   return chapter >= 1 && chapter <= 12 ? chapter : null;
 }
+
+/**
+ * Normalise an implementation path to a comparable array of segments.
+ * Strips leading `./`, normalises backslashes, and removes empty parts.
+ */
+export function normalizedPathSegments(value: string): string[] {
+  return value.replaceAll("\\", "/").replace(/^\.\//, "").split("/").filter(Boolean);
+}

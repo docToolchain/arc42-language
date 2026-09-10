@@ -68,6 +68,7 @@ import { h016BuildingBlockDiagramMissingInterfaces } from "./h016-building-block
 import { h017BuildingBlockDiagramMissingParent } from "./h017-building-block-diagram-missing-parent.ts";
 import { h018BuildingBlockDiagramMixedAbstractionLevels } from "./h018-building-block-diagram-mixed-abstraction-levels.ts";
 import { h019BuildingBlockDiagramParentNotSubgraph } from "./h019-building-block-diagram-parent-not-subgraph.ts";
+import { h020DuplicateInterfacePath } from "./h020-duplicate-interface-path.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -137,6 +138,7 @@ export const builtinRules: readonly Rule[] = [
   h017BuildingBlockDiagramMissingParent, // Chapter 5
   h018BuildingBlockDiagramMixedAbstractionLevels, // Chapter 5
   h019BuildingBlockDiagramParentNotSubgraph, // Chapter 5
+  h020DuplicateInterfacePath, // Chapter 5
 ];
 
 /** All rules indexed by code for O(1) lookup */
