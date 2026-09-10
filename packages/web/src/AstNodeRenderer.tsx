@@ -75,17 +75,15 @@ export function AstNodeRenderer({
       // H1 is the chapter title — it lives in the nav, so skip it in the document body.
       if (node.level === 1) return null;
       // Shift levels down by one so H2 renders as h1, H3 as h2, etc.
-      const renderedLevel = node.level - 1;
-      const Tag = `h${Math.min(renderedLevel, 6)}` as keyof React.JSX.IntrinsicElements;
+      const Tag = `h${Math.min(node.level, 6)}` as keyof React.JSX.IntrinsicElements;
       const anchor = node.text
         .toLowerCase()
         .replace(/[^\w\s-]/g, "")
         .replace(/\s+/g, "-");
       // Helper to get heading level class (levels 1-3 have specific rules, 4+ share heading4)
       const levelClass =
-        [docStyles.heading1, docStyles.heading2, docStyles.heading3, docStyles.heading4][
-          renderedLevel - 1
-        ] ?? docStyles.heading4;
+        [docStyles.heading2, docStyles.heading3, docStyles.heading4][node.level - 1] ??
+        docStyles.heading4;
       return (
         <Tag id={anchor} className={[docStyles.heading, levelClass].join(" ")}>
           {node.text}

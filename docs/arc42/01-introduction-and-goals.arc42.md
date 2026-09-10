@@ -5,7 +5,7 @@ architecture documentation following the arc42 template. It targets architects, 
 and AI agents who need to write, read, and validate architecture documentation without
 heavyweight tooling.
 
-## 1.1 Requirements Overview
+## Requirements Overview
 
 The toolchain must:
 
@@ -17,12 +17,12 @@ The toolchain must:
   conventional exit codes
 - Support AI agents as first-class authors of architecture documentation
 
-## 1.2 Quality Goals
+## Quality Goals
 
 See [10-quality-requirements.arc42.md](10-quality-requirements.arc42.md) for the complete
 quality catalog with priorities and measurable scenarios.
 
-## 1.3 Stakeholders
+## Stakeholders
 
 | Role/Name   | Contact | Expectations                                                              |
 | ----------- | ------- | ------------------------------------------------------------------------- |
