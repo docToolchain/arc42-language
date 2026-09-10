@@ -21,6 +21,8 @@ graph TD
     bb-skill["Skill"]
     bb-web-renderer["Web Renderer"]
     bb-workspace["Documentation Workspace"]
+    bb-site["Project Site"]
+    bb-verdicts["Agent Verdicts"]
 
     bb-cli -->|"if-cli-core"| bb-core
     bb-cli -->|"if-cli-workspace-adapter"| bb-workspace-fs
@@ -28,6 +30,7 @@ graph TD
     bb-cli -->|"if-cli-web"| bb-web-renderer
     bb-web-renderer -->|"if-web-cli-api"| bb-cli
     bb-skill -->|"if-cli"| bb-cli
+    bb-site -->|"if-site-verdicts"| bb-verdicts
 ```
 
 The overview intentionally treats `@arc42/core` as opaque. Its internal responsibilities are
@@ -75,6 +78,7 @@ graph TD
         bb-validator["Validator"]
         bb-renderer["Renderer Registry"]
         bb-diff["Architecture Diff"]
+        bb-mermaid["Mermaid Syntax"]
     end
 
     bb-parser -->|"if-parser-builder"| bb-builder
@@ -82,6 +86,7 @@ graph TD
     bb-resolver -->|"if-resolver-validator"| bb-validator
     bb-validator -->|"if-validator-renderer"| bb-renderer
     bb-core -->|"if-core-diff"| bb-diff
+    bb-validator -->|"if-core-mermaid"| bb-mermaid
 ```
 
 ### Core Library API
@@ -201,7 +206,7 @@ title: Validator
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline, concept-rule-registry
-requires: if-validator-renderer
+requires: if-validator-renderer, if-core-mermaid
 path: packages/core/src/validator
 :::
 ```
@@ -276,12 +281,44 @@ reaches that capability through the opaque Core Library boundary; it does not de
 the child building block.
 
 ```arc42
+:::ignore H020 if-cli-core and if-core-diff share packages/core/src/index.ts as the entry point but represent distinct contracts: if-cli-core is the full Core Library API surface for the CLI, if-core-diff exposes only the diff capability :::
 :::interface
 id: if-core-diff
 title: Architecture Diff Contract
 provider: bb-diff
 protocol: In-process TypeScript function call
 path: packages/core/src/index.ts
+:::
+```
+
+### Mermaid Syntax
+
+A thin wrapper around the upstream `mermaid` npm package that exposes a Node-compatible,
+tree-shaken syntax check for Mermaid diagrams. Kept as a separate package to isolate the
+large Mermaid bundle from the rest of the toolchain. The Validator uses it for W017 (invalid
+Mermaid syntax) without bundling the full browser-oriented Mermaid runtime into `@arc42/core`.
+
+```arc42
+:::building-block
+id: bb-mermaid
+title: Mermaid Syntax
+technology: TypeScript / Node.js
+parent: bb-core
+path: packages/mermaid
+:::
+```
+
+#### Mermaid Syntax Contract
+
+The Validator calls the Mermaid Syntax building block to parse and validate diagram syntax.
+
+```arc42
+:::interface
+id: if-core-mermaid
+title: Mermaid Syntax Contract
+provider: bb-mermaid
+protocol: In-process TypeScript function call
+path: packages/mermaid/src/index.ts
 :::
 ```
 
@@ -446,6 +483,7 @@ payload via the core library, exposes it at `/api/workspace`, and serves the web
 assets.
 
 ```arc42
+:::ignore H020 if-cli and if-cli-web share packages/cli/src/cli.ts as the entry point but represent distinct contracts: if-cli is the command-line interface for all actors, if-cli-web is the HTTP hosting contract specifically for the Web Renderer :::
 :::interface
 id: if-cli-web
 title: Web Renderer Hosting Contract
@@ -499,5 +537,57 @@ title: Documentation Workspace Contract
 provider: bb-workspace
 protocol: File system read (discovery + file content)
 path: packages/workspace-fs/src/index.ts
+:::
+```
+
+## Project Site
+
+A static marketing and documentation website aimed at non-users who want to understand what
+the arc42-language toolchain does and why they might adopt it. Built with React and Vite-Plus;
+deployed to GitHub Pages. Shows a hero section, a feature strip, live examples (the tool's
+own arc42 workspace and a bookstore sample), and agent verdict cards sourced from
+`docs/verdicts`. Not part of the installed toolchain — it is informational only and is
+never shipped as an npm package.
+
+```arc42
+:::building-block
+id: bb-site
+title: Project Site
+technology: TypeScript / React / Vite
+requires: if-site-verdicts
+path: packages/site
+:::
+```
+
+## Agent Verdicts
+
+A directory of structured Markdown files that record evaluations of AI agent runs against
+the arc42-language toolchain. Each file has YAML frontmatter (model, agent, harness, date,
+task, version, title, tldr) and a free-form body. Consumed at build time by the Project Site;
+not part of the installed toolchain. The verdicts are the primary evidence base for
+communicating agent compatibility to potential adopters.
+
+```arc42
+:::building-block
+id: bb-verdicts
+title: Agent Verdicts
+technology: Markdown
+path: docs/verdicts
+:::
+```
+
+### Verdicts Vite Plugin Contract
+
+The site reads verdict frontmatter from `docs/verdicts` at build time through a custom Vite
+plugin that exposes the parsed list as a virtual module. The interface boundary is a build-time
+Vite plugin; no runtime network calls are involved.
+
+```arc42
+:::interface
+id: if-site-verdicts
+title: Verdicts Vite Plugin Contract
+provider: bb-verdicts
+protocol: Vite virtual module (build-time Markdown → JSON)
+path: packages/site/src/vite-plugin-verdicts.ts
 :::
 ```
