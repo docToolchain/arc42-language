@@ -51,7 +51,7 @@ id: bb-core
 title: Core Library
 technology: TypeScript / Node.js
 implements: concept-pipeline, concept-rule-registry
-requires: if-core-diff, if-workspace-paths
+requires: if-core-diff, if-workspace-paths, if-workspace-diff
 path: packages/core
 :::
 ```
@@ -85,6 +85,7 @@ graph TD
     bb-builder -->|"if-workspace-model"| bb-resolver
     bb-resolver -->|"if-validation-input"| bb-validator
     bb-validator -->|"if-workspace-paths"| bb-workspace-fs
+    bb-diff -->|"if-workspace-diff"| bb-workspace-fs
     bb-core -->|"if-core-diff"| bb-diff
     bb-validator -->|"if-mermaid-syntax"| bb-mermaid
 ```
@@ -238,6 +239,7 @@ id: bb-diff
 title: Architecture Diff
 technology: TypeScript
 parent: bb-core
+requires: if-workspace-diff
 path: packages/core/src/diff.ts
 :::
 ```
@@ -340,6 +342,22 @@ title: Workspace Path Context
 provider: bb-workspace-fs
 protocol: In-process TypeScript function call
 path: packages/workspace-fs/src/index.ts
+:::
+```
+
+### Workspace Diff Input
+
+The filesystem workspace adapter acquires the git diff — base and current documents, changed
+file hunks, and known paths — and passes them to the Architecture Diff building block for
+analysis. This is a filesystem concern; the diff analysis itself is pure and source-independent.
+
+```arc42
+:::interface
+id: if-workspace-diff
+title: Workspace Diff Input
+provider: bb-workspace-fs
+protocol: In-process TypeScript function call
+path: packages/workspace-fs/src/git-diff.ts
 :::
 ```
 
