@@ -101,7 +101,20 @@ export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
 
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {
   const documents = await readWorkspaceDocuments(dir);
-  return validateDocumentsAsync(documents, { pathEvidence: await pathEvidence(dir, root) });
+  const repositoryRoot = resolve(root ?? (await findRepositoryRoot(dir)));
+  let trackedPaths: string[];
+  try {
+    trackedPaths = gitLsFiles(repositoryRoot);
+  } catch {
+    trackedPaths = await collectPaths(dir, repositoryRoot);
+  }
+  // Build workspace once and reuse elements for coverage computation
+  const payload = loadWorkspaceFromDocuments(documents);
+  const coverage = computeCoverage(payload.elements, trackedPaths);
+  return validateDocumentsAsync(documents, {
+    pathEvidence: { root: repositoryRoot, knownPaths: trackedPaths },
+    coverage,
+  });
 }
 
 export async function getElements(opts: {

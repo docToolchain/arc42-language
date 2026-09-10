@@ -103,10 +103,7 @@ const styles = {
 export function CoverageView({ coverage, elementDocMap }: CoverageViewProps) {
   if (coverage.totalFiles === 0) return null;
 
-  const pct =
-    coverage.totalFiles > 0
-      ? Math.round((coverage.coveredFileCount / coverage.totalFiles) * 100)
-      : 0;
+  const pct = Math.round((coverage.coveredFileCount / coverage.totalFiles) * 100);
 
   return (
     <section style={styles.section} aria-label="Path coverage">
@@ -114,11 +111,10 @@ export function CoverageView({ coverage, elementDocMap }: CoverageViewProps) {
       <p style={styles.intro}>
         Based on the paths of components and interfaces, the top level source paths are determined.
         If there are files within these directories that are not claimed by any of the building
-        blocks and interfaces above, it's probably something forgoten to document.
+        blocks and interfaces above, it's probably something forgotten to document.
       </p>
       <p style={styles.summary}>
         {coverage.coveredFileCount} of {coverage.totalFiles} files covered ({pct}%)
-        {coverage.uncoveredFileCount > 0 && ` — ${coverage.uncoveredFileCount} uncovered`}
       </p>
 
       {coverage.covered.length > 0 && (

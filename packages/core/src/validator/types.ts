@@ -3,6 +3,7 @@
 
 import type { Workspace } from "../model/types.ts";
 import type { ReferenceIndex } from "../resolver/types.ts";
+import type { CoverageResult } from "../coverage.ts";
 
 export type Severity = "error" | "warning" | "hint";
 
@@ -25,6 +26,8 @@ export interface PathEvidence {
 export interface ValidationContext {
   /** Path evidence for implementation-path rules (source-neutral) */
   pathEvidence?: PathEvidence;
+  /** Pre-computed coverage result for structural coverage rules */
+  coverage?: CoverageResult;
 }
 
 /** Which arc42 chapter this rule primarily relates to.
