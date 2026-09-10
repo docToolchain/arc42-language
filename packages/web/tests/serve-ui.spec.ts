@@ -37,12 +37,12 @@ test.describe("Document navigation", () => {
 
     const bbLink = page
       .getByTestId("sidebar-doc-link")
-      .filter({ hasText: "5: Building Blocks" })
+      .filter({ hasText: "5. Building Blocks" })
       .first();
     await bbLink.click();
 
     expect(await getActiveHash(page)).toBe("#05-building-blocks.arc42.md");
-    await expect(page.locator('[aria-current="page"]')).toHaveText("5: Building Blocks");
+    await expect(page.locator('[aria-current="page"]')).toHaveText("5. Building Blocks");
     await expect(page.locator("article h1")).toBeVisible();
     const h1 = await getDocH1(page);
     expect(h1.length).toBeGreaterThan(0);
@@ -52,7 +52,7 @@ test.describe("Document navigation", () => {
     await page.goto("/#09-decisions.arc42.md");
     await expect(page.locator("article h1")).toBeVisible();
 
-    await expect(page.locator('[aria-current="page"]')).toHaveText("9: Architecture Decisions");
+    await expect(page.locator('[aria-current="page"]')).toHaveText("9. Architecture Decisions");
     expect(await getActiveHash(page)).toBe("#09-decisions.arc42.md");
   });
 
@@ -75,7 +75,7 @@ test.describe("Document navigation", () => {
 
     await page
       .getByTestId("sidebar-doc-link")
-      .filter({ hasText: "9: Architecture Decisions" })
+      .filter({ hasText: "9. Architecture Decisions" })
       .first()
       .click();
     await expect(page.locator("article h1")).toBeVisible();
@@ -108,18 +108,12 @@ test.describe("Document navigation", () => {
       .filter({ hasText: "Bookstore Backend API" })
       .first();
 
-    await expect(buildingBlock.locator(".sidebar__block-dot")).toHaveCount(1);
-    await expect(buildingBlock.locator(".sidebar__block-dot")).toHaveAttribute(
-      "title",
-      "building-block",
-    );
-    await expect(interfaceHeading.locator(".sidebar__block-dot")).toHaveCount(1);
-    await expect(interfaceHeading.locator(".sidebar__block-dot")).toHaveAttribute(
-      "title",
-      "interface",
-    );
-    expect(await buildingBlock.locator(".sidebar__block-dot").getAttribute("style")).not.toBe(
-      await interfaceHeading.locator(".sidebar__block-dot").getAttribute("style"),
+    await expect(buildingBlock.locator("span[title]")).toHaveCount(1);
+    await expect(buildingBlock.locator("span[title]")).toHaveAttribute("title", "building-block");
+    await expect(interfaceHeading.locator("span[title]")).toHaveCount(1);
+    await expect(interfaceHeading.locator("span[title]")).toHaveAttribute("title", "interface");
+    expect(await buildingBlock.locator("span[title]").getAttribute("style")).not.toBe(
+      await interfaceHeading.locator("span[title]").getAttribute("style"),
     );
   });
 
@@ -140,7 +134,7 @@ test.describe("Document navigation", () => {
     const activeLabel = await page.evaluate(
       () => document.querySelector('[aria-current="page"]')?.textContent?.trim() ?? "",
     );
-    expect(activeLabel).toBe("5: Building Blocks");
+    expect(activeLabel).toBe("5. Building Blocks");
   });
 });
 
@@ -271,7 +265,7 @@ test.describe("Cross-document element card links", () => {
     await refChips.nth(targetIdx).click();
 
     // Sidebar should now show chapter 10 as active
-    await expect(page.locator('[aria-current="page"]')).toHaveText("10: Quality Requirements");
+    await expect(page.locator('[aria-current="page"]')).toHaveText("10. Quality Requirements");
     expect(await getActiveHash(page)).toContain("10-quality.arc42.md");
   });
 
@@ -296,7 +290,7 @@ test.describe("Cross-document element card links", () => {
     await refChips.nth(hrefs.indexOf(targetHref!)).click();
 
     // The target chapter is shown
-    await expect(page.locator('[aria-current="page"]')).toHaveText("10: Quality Requirements");
+    await expect(page.locator('[aria-current="page"]')).toHaveText("10. Quality Requirements");
 
     // The target element card must be auto-expanded and visible
     await expect(
