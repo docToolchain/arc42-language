@@ -19,6 +19,20 @@ relying on remembered conventions.
 5. When authoring or debugging a diagram, run `arc42 explain diagram <type>` to see required fields,
    allowed notations, alias syntax, and authoring tips for that diagram type.
 6. Finish with `arc42 --dir <workspace> validate` and resolve errors before continuing.
+   Warnings and hints that are intentional — for example two interfaces that deliberately share an
+   implementation path — can be suppressed with a single-line ignore directive placed inside any
+   `arc42` fence in the affected file:
+
+   ```arc42
+   :::ignore H020 Two interfaces, same entry point — intentional split contract :::
+   ```
+
+   The rule code is case-insensitive. A reason is optional but recommended. One directive suppresses
+   all diagnostics for that rule in the same file. Use `arc42 rules` to look up rule codes.
+
+7. Use `arc42 --dir <workspace> coverage --format tree` to see which source directories are claimed
+   by building-block or interface elements, and which are not. Uncovered paths are not errors — they
+   may be tooling, tests, or documentation that is intentionally out of model scope.
 
 The guide is read-only. Do not invent facts, silently repair contradictions, or replace human review
 with validation output.
@@ -34,6 +48,8 @@ arc42 explain <type>
 arc42 explain diagram
 arc42 explain diagram <type>
 arc42 --dir <workspace> validate
+arc42 --dir <workspace> coverage --format tree
+arc42 rules
 ```
 
 If `arc42` is unavailable, use `npx @doctc/arc42 ...`.
