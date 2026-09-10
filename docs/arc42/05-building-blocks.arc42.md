@@ -471,30 +471,18 @@ path: docs/arc42
 :::
 ```
 
-### Architect → Documentation Workspace
+### Documentation Workspace Access
 
-The architect reads and writes the Markdown workspace directly in an editor or during review.
-
-```arc42
-:::interface
-id: if-architect-workspace
-title: Architect → Documentation Workspace
-provider: bb-workspace
-protocol: Plain text / Markdown editor
-path: docs/arc42
-:::
-```
-
-### AI Agent → Documentation Workspace
-
-The agent reads and writes the Markdown workspace using file tools.
+Architects and AI agents both read and write the Markdown workspace — architects via an editor
+or review workflow, agents via file tools. The contract is the same: a directory of `.arc42.md`
+files that can be read, written, and validated.
 
 ```arc42
 :::interface
-id: if-agent-workspace
-title: AI Agent → Documentation Workspace
+id: if-workspace-access
+title: Documentation Workspace Access
 provider: bb-workspace
-protocol: File Read/Write tools
+protocol: File Read/Write (editor or file tools)
 path: docs/arc42
 :::
 ```
