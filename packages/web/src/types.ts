@@ -341,4 +341,27 @@ export interface WorkspacePayload {
   edges: Edge[];
   diagrams: DiagramArtifact[];
   documents: DocumentAst[];
+  /**
+   * Pre-computed path coverage result.
+   * Populated by the server via loadWorkspace(). Optional — absent when
+   * workspace was built without filesystem context.
+   * The SPA renders this directly without recomputing.
+   */
+  coverage?: CoverageResult;
+}
+
+// ─── Coverage ────────────────────────────────────────────────────────────────
+
+export interface CoveredPath {
+  path: string;
+  claimedBy: Array<{ id: string; path: string; kind: "building-block" | "interface" }>;
+  overlapping: boolean;
+}
+
+export interface CoverageResult {
+  covered: CoveredPath[];
+  uncovered: string[];
+  totalFiles: number;
+  coveredFileCount: number;
+  uncoveredFileCount: number;
 }

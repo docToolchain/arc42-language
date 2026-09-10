@@ -28,12 +28,14 @@ import {
   formatExplainDiagramListText,
   analyzeArchitectureDiff,
   ELEMENT_KIND_ORDER,
+  computeCoverage,
 } from "@arc42/core";
 import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText } from "./guide.ts";
 import { filename } from "./chapters.ts";
+import { formatCoverageTree } from "./coverage-tree.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -148,6 +150,8 @@ async function main() {
     await runBuild(dir, commandArgs);
   } else if (command === "diff") {
     await runDiff(dir, commandArgs);
+  } else if (command === "coverage") {
+    await runCoverage(dir, commandArgs);
   } else {
     console.error(`Unknown command: ${command}`);
     console.log(rootHelp());
@@ -702,6 +706,77 @@ async function runServe(dir: string, args: string[]) {
       process.exit(0);
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// coverage
+// ---------------------------------------------------------------------------
+
+async function runCoverage(dir: string, args: string[]) {
+  if (args.includes("--help") || args.includes("-h")) {
+    console.log(commandHelp("coverage"));
+    process.exit(0);
+  }
+
+  const { values } = parseArgs({
+    args,
+    options: {
+      format: { type: "string", default: "text" },
+    },
+    strict: false,
+  });
+
+  const format = (values["format"] as string) || "text";
+  if (format !== "text" && format !== "json" && format !== "tree") {
+    console.error(`arc42 coverage: unknown format '${format}'. Use text, json, or tree.`);
+    process.exit(2);
+  }
+
+  let payload: Awaited<ReturnType<typeof loadWorkspace>>;
+  try {
+    payload = await loadWorkspace(dir);
+  } catch (err) {
+    console.error(`Failed to load workspace from ${dir}: ${String(err)}`);
+    process.exit(1);
+  }
+
+  const result = payload.coverage ?? computeCoverage(payload.elements, []);
+
+  if (format === "json") {
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(0);
+  }
+
+  if (format === "tree") {
+    console.log(formatCoverageTree(result));
+    process.exit(0);
+  }
+
+  // Text output
+  console.log("=== Path Coverage ===\n");
+
+  if (result.covered.length > 0) {
+    console.log(`Covered (${result.covered.length} paths):`);
+    for (const { path, claimedBy, overlapping } of result.covered) {
+      const ids = claimedBy.map((c) => c.id).join(", ");
+      const overlapNote = overlapping ? " [shared]" : "";
+      console.log(`  ${path.padEnd(40)} → ${ids}${overlapNote}`);
+    }
+    console.log();
+  }
+
+  if (result.uncovered.length > 0) {
+    console.log(`Uncovered (${result.uncovered.length} paths):`);
+    for (const path of result.uncovered) {
+      console.log(`  ${path}`);
+    }
+    console.log();
+  }
+
+  const pct =
+    result.totalFiles > 0 ? Math.round((result.coveredFileCount / result.totalFiles) * 100) : 0;
+  console.log(`Coverage: ${result.coveredFileCount} of ${result.totalFiles} files (${pct}%)`);
+  process.exit(0);
 }
 
 // ---------------------------------------------------------------------------

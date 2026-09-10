@@ -125,6 +125,14 @@ function stagedFiles(root: string): string[] {
   return git(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
 }
 
+/**
+ * Returns all git-tracked file paths relative to `root`.
+ * Throws if `root` is not inside a git repository.
+ */
+export function gitLsFiles(root: string): string[] {
+  return git(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
+}
+
 function baseFiles(root: string, base: string): string[] {
   return git(root, ["ls-tree", "-r", "-z", "--name-only", base]).split("\0").filter(Boolean);
 }

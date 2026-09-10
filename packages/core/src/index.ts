@@ -83,10 +83,9 @@ export type {
   RendererMeta,
   ElementRenderers,
   WorkspacePayload,
+  CoverageResult,
+  CoveredPath,
 } from "./renderer/types.ts";
-export type { Edge } from "./resolver/types.ts";
-
-// Mermaid syntax boundary
 export type {
   MermaidNotation,
   MermaidParseFailure,
@@ -112,3 +111,6 @@ export type {
   ExplainFieldResult,
   ExplainCrossRefResult,
 } from "./explain.ts";
+
+// Coverage — computeCoverage is used by workspace-fs; types are re-exported from renderer/types
+export { computeCoverage } from "./coverage.ts";

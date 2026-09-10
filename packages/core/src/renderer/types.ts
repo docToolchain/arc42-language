@@ -93,6 +93,9 @@ export type GetResult = WorkspaceView | ElementView;
 // Web serve payload — returned by loadWorkspace() for the HTTP API
 // ---------------------------------------------------------------------------
 
+import type { CoverageResult } from "../coverage.ts";
+export type { CoverageResult, CoveredPath } from "../coverage.ts";
+
 /**
  * Full workspace payload returned by `loadWorkspace()`.
  * Serialised as JSON by the `arc42 serve` HTTP server and consumed by the SPA.
@@ -106,6 +109,13 @@ export interface WorkspacePayload {
   diagrams: DiagramArtifact[];
   /** All parsed documents (AST) — source of truth for the human view */
   documents: DocumentAst[];
+  /**
+   * Pre-computed path coverage result.
+   * Populated by `loadWorkspace()` in @arc42/workspace-fs from the repository inventory.
+   * Optional because `loadWorkspaceFromDocuments` (pure, no filesystem) does not populate it.
+   * The SPA renders this directly without recomputing.
+   */
+  coverage?: CoverageResult;
 }
 
 // ---------------------------------------------------------------------------
