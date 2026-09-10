@@ -1,0 +1,76 @@
+.documentView {
+  padding-bottom: 4rem;
+}
+
+.empty {
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.heading {
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+  scroll-margin-top: 1rem;
+}
+
+.heading1 {
+  font-size: 2rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.25em;
+}
+
+.heading2 {
+  font-size: 1.5rem;
+}
+
+.heading3 {
+  font-size: 1.2rem;
+}
+
+.heading4 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.proseBlock {
+  margin: 1em 0;
+}
+
+.proseBlock p:first-child {
+  margin-top: 0;
+}
+
+.proseBlock p:last-child {
+  margin-bottom: 0;
+}
+
+.proseBlock code {
+  background: var(--bg-code);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  font-size: 0.875em;
+}
+
+/* Prose tables */
+.proseBlock table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.875rem;
+  margin: 0.75em 0;
+}
+
+.proseBlock th,
+.proseBlock td {
+  border: 1px solid var(--border);
+  padding: 0.4em 0.75em;
+  text-align: left;
+}
+
+.proseBlock th {
+  background: var(--bg-sidebar);
+  font-weight: 600;
+}
+
+.proseBlock tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--border) 20%, transparent);
+}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { Element, Edge, IgnoreNode } from "./types";
+import styles from "./ElementCard.module.css";
 
 const RULE_LABELS: Record<string, string> = {
   W004: "Block has no prose",
@@ -55,10 +56,10 @@ export function ElementCard({
   const el = elementsMap.get(elementId);
   if (!el) {
     return (
-      <div className="element-card element-card--missing">
-        <span className="element-card__badge">unknown</span>
-        <span className="element-card__id">{elementId}</span>
-        <span className="element-card__note">element not found in workspace</span>
+      <div className={`${styles.card} ${styles.missing}`}>
+        <span className={styles.badge}>unknown</span>
+        <span className={styles.id}>{elementId}</span>
+        <span className={styles.note}>element not found in workspace</span>
       </div>
     );
   }
@@ -69,61 +70,55 @@ export function ElementCard({
   const [showIncoming, setShowIncoming] = useState(false);
 
   return (
-    <div
-      data-testid="element-card"
-      className={`element-card${onDismiss ? " element-card--dismissible" : ""}`}
-      id={`el-${el.id}`}
-    >
+    <div data-testid="element-card" className={styles.card} id={`el-${el.id}`}>
       {onDismiss ? (
         <button
           data-testid="card-dismiss-stripe"
-          className="element-card__dismiss-stripe"
+          className={styles.dismissStripe}
           style={{ backgroundColor: color }}
           onClick={onDismiss}
           title="Show prose"
           aria-label="Collapse element card"
         />
       ) : (
-        <div className="element-card__static-stripe" style={{ backgroundColor: color }} />
+        <div className={styles.staticStripe} style={{ backgroundColor: color }} />
       )}
-      <div className="element-card__body">
-        <div className="element-card__header">
-          <span className="element-card__badge" style={{ backgroundColor: color }}>
+      <div className={styles.body}>
+        <div className={styles.header}>
+          <span className={styles.badge} style={{ backgroundColor: color }}>
             {el.kind}
           </span>
-          <code className="element-card__id">{el.id}</code>
-          <span className="element-card__title">{el.title}</span>
+          <code className={styles.id}>{el.id}</code>
+          <span className={styles.title}>{el.title}</span>
         </div>
-        <dl className="element-card__fields">{renderFields(el)}</dl>
+        <dl className={styles.fields}>{renderFields(el)}</dl>
         {(outgoing.length > 0 || incoming.length > 0) && (
-          <div className="element-card__refs">
+          <div className={styles.refs}>
             {outgoing.length > 0 && (
-              <div className="element-card__refs-group">
-                <span className="element-card__refs-label">references</span>
+              <div className={styles.refsGroup}>
+                <span className={styles.refsLabel}>references</span>
                 {outgoing.map((e) => (
                   <a
                     data-testid="element-ref-chip"
                     key={`${e.to}-${e.relation}`}
                     href={refHref(e.to, elementDocMap)}
-                    className="element-card__ref-chip"
+                    className={styles.refChip}
                   >
-                    <span className="element-card__ref-rel">{e.relation}</span>
+                    <span className={styles.refRel}>{e.relation}</span>
                     {e.to}
                   </a>
                 ))}
               </div>
             )}
             {incoming.length > 0 && (
-              <div className="element-card__refs-group">
+              <div className={styles.refsGroup}>
                 <button
-                  className="element-card__refs-toggle"
+                  className={styles.refsToggle}
                   onClick={() => setShowIncoming((v) => !v)}
                   aria-expanded={showIncoming}
                 >
-                  <span className="element-card__refs-label">
-                    referenced by ({incoming.length})
-                  </span>
-                  <span className="element-card__refs-toggle-icon">{showIncoming ? "▾" : "▸"}</span>
+                  <span className={styles.refsLabel}>referenced by ({incoming.length})</span>
+                  <span className={styles.refsToggleIcon}>{showIncoming ? "▾" : "▸"}</span>
                 </button>
                 {showIncoming &&
                   incoming.map((e) => (
@@ -131,21 +126,18 @@ export function ElementCard({
                       data-testid="element-ref-chip"
                       key={`${e.from}-${e.relation}`}
                       href={refHref(e.from, elementDocMap)}
-                      className="element-card__ref-chip element-card__ref-chip--incoming"
+                      className={`${styles.refChip} ${styles.refChipIncoming}`}
                     >
-                      <span className="element-card__ref-rel">{e.relation}</span>
+                      <span className={styles.refRel}>{e.relation}</span>
                       {e.from}
                     </a>
                   ))}
               </div>
             )}
             {ignores.length > 0 && (
-              <div className="element-card__ignores" aria-label="Suppressed validation rules">
+              <div className={styles.ignores} aria-label="Suppressed validation rules">
                 {ignores.map((ignore) => (
-                  <div
-                    className="element-card__ignore"
-                    key={`${ignore.startLine}-${ignore.ruleCode}`}
-                  >
+                  <div className={styles.ignore} key={`${ignore.startLine}-${ignore.ruleCode}`}>
                     <span aria-hidden="true">⚠</span>
                     <code>ignores {ignore.ruleCode}</code>
                     <span>{ignore.reason ?? RULE_LABELS[ignore.ruleCode] ?? ignore.ruleCode}</span>
@@ -225,7 +217,7 @@ function renderFields(el: Element): React.ReactNode {
 
   return fields.map(([key, val]) =>
     val ? (
-      <div key={key} className="element-card__field">
+      <div key={key} className={styles.field}>
         <dt>{key}</dt>
         <dd>{val}</dd>
       </div>

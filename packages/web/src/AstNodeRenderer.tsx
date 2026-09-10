@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
+import docStyles from "./DocumentView.module.css";
+import styles from "./AstNodeRenderer.module.css";
 import { marked } from "marked";
 import type {
   AstNode,
@@ -75,8 +77,13 @@ export function AstNodeRenderer({
         .toLowerCase()
         .replace(/[^\w\s-]/g, "")
         .replace(/\s+/g, "-");
+      // Helper to get heading level class (levels 1-3 have specific rules, 4+ share heading4)
+      const levelClass =
+        [docStyles.heading2, docStyles.heading3, docStyles.heading4, docStyles.heading4][
+          node.level - 2
+        ] ?? docStyles.heading4;
       return (
-        <Tag id={anchor} className={`doc-heading doc-heading--${node.level}`}>
+        <Tag id={anchor} className={[docStyles.heading, levelClass].join(" ")}>
           {node.text}
         </Tag>
       );
@@ -108,7 +115,7 @@ export function AstNodeRenderer({
       const blockNode = node as BlockNode;
       if (!blockNode.inArc42Fence) {
         return (
-          <pre className="code-block">
+          <pre className={styles.codeBlock}>
             <code>{reconstructBlockSource(blockNode)}</code>
           </pre>
         );
@@ -250,7 +257,7 @@ function ProseRun({
 
   if (!hasBlock || viewMode === "agent") {
     return (
-      <div className="prose-run">
+      <div className={styles.proseRun}>
         {text && <ProseBlock text={text} />}
         {hasBlock && viewMode === "agent" && (
           <AgentBlock
@@ -271,8 +278,11 @@ function ProseRun({
     // Card mode: full-width, no outer stripe — the card's left border IS the stripe.
     // Clicking anywhere on the card's left border (the button overlay) dismisses back to prose.
     return (
-      <div data-testid="expanded-card" className="prose-run prose-run--card-expanded">
-        <div className="prose-run__card-view">
+      <div
+        data-testid="expanded-card"
+        className={[styles.proseRun, styles.proseRunCardExpanded].join(" ")}
+      >
+        <div className={styles.cardView}>
           <ElementCard
             elementId={block.attributes["id"] ?? ""}
             elementsMap={elementsMap}
@@ -288,17 +298,17 @@ function ProseRun({
   }
 
   return (
-    <div className="prose-run prose-run--has-block">
+    <div className={[styles.proseRun, styles.proseRunHasBlock].join(" ")}>
       <button
         data-testid="prose-stripe"
-        className="prose-run__stripe"
+        className={styles.stripe}
         style={{ backgroundColor: color }}
         onClick={() => setShowCard(true)}
         title="Show element details"
         aria-expanded={false}
       />
-      <div className="prose-run__content">
-        <div data-testid="prose-view" className="prose-run__prose-view">
+      <div className={styles.content}>
+        <div data-testid="prose-view" className={styles.proseView}>
           {text && <ProseBlock text={text} />}
         </div>
       </div>
@@ -320,7 +330,7 @@ function ProseBlock({ text }: ProseBlockProps) {
       return `<p>${text}</p>`;
     }
   }, [text]);
-  return <div className="prose-block" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className={docStyles.proseBlock} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 // ─── Source reconstruction helpers ───────────────────────────────────────────

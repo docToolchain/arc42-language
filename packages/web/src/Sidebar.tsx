@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import type { DocumentAst, AstNode, HeadingNode, BlockNode } from "./types";
+import styles from "./Sidebar.module.css";
 import { filename } from "./utils";
 import { KIND_COLOR } from "./ElementCard";
 
@@ -33,12 +34,14 @@ export function Sidebar({
   );
 
   return (
-    <nav className="sidebar" aria-label="Document navigation">
-      <div className="sidebar__header">
-        <span className="sidebar__logo">arc42</span>
+    <nav className={styles.sidebar} aria-label="Document navigation">
+      <div className={styles.header}>
+        <span className={styles.logo}>arc42</span>
         <button
           data-testid="view-toggle"
-          className={`view-toggle ${viewMode === "agent" ? "view-toggle--agent" : ""}`}
+          className={[styles.viewToggle, viewMode === "agent" ? styles.viewToggleAgent : ""]
+            .filter(Boolean)
+            .join(" ")}
           onClick={onToggleViewMode}
           title={viewMode === "human" ? "Switch to Agent view (raw DSL)" : "Switch to Human view"}
           aria-pressed={viewMode === "agent"}
@@ -47,7 +50,7 @@ export function Sidebar({
         </button>
         <button
           data-testid="theme-toggle"
-          className="view-toggle"
+          className={styles.viewToggle}
           onClick={onToggleTheme}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           aria-pressed={theme === "dark"}
@@ -57,51 +60,53 @@ export function Sidebar({
         </button>
       </div>
 
-      <ul className="sidebar__docs" role="list">
+      <ul className={styles.docs} role="list">
         {documents.map((doc, i) => {
           const isActive = i === activeDocIndex;
           return (
-            <li key={doc.filePath} className="sidebar__doc">
+            <li key={doc.filePath} className={styles.doc}>
               <a
                 data-testid="sidebar-doc-link"
                 aria-current={isActive ? "page" : undefined}
                 href={`#${filename(doc.filePath)}`}
-                className={`sidebar__doc-btn ${isActive ? "sidebar__doc-btn--active" : ""}`}
+                className={[styles.docBtn, isActive ? styles.docBtnActive : ""]
+                  .filter(Boolean)
+                  .join(" ")}
                 onClick={(e) => {
                   e.preventDefault();
                   onSelectDoc(i);
                 }}
               >
-                <span className="sidebar__doc-label">{chapterLabel(doc)}</span>
+                <span className={styles.docLabel}>{chapterLabel(doc)}</span>
               </a>
 
               {isActive && activeDoc && (
-                <ul className="sidebar__headings" role="list">
+                <ul className={styles.headings} role="list">
                   {getDocHeadings(activeDoc).map((h, j) => {
                     const slug = headingAnchor(h.text);
                     const headingKinds = blockKindsByHeading.get(slug) ?? [];
                     return (
                       <li
                         key={j}
-                        className="sidebar__heading"
+                        className={styles.heading}
                         style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
                       >
                         <a
                           data-testid="sidebar-heading-link"
                           href={`#${filename(doc.filePath)}:${slug}`}
-                          className="sidebar__heading-link"
+                          className={styles.headingLink}
                           onClick={(e) => {
                             e.preventDefault();
                             onSelectHeading(slug);
                           }}
                         >
-                          <span className="sidebar__heading-text">{h.text}</span>
+                          <span className={styles.headingText}>{h.text}</span>
                           {headingKinds.length > 0 && (
-                            <span className="sidebar__heading-dots" aria-hidden="true">
+                            <span className={styles.headingDots} aria-hidden="true">
                               {headingKinds.map((kind: string) => (
                                 <span
                                   key={kind}
-                                  className="sidebar__block-dot"
+                                  className={styles.blockDot}
                                   style={{ backgroundColor: KIND_COLOR[kind] ?? "var(--c-ch0)" }}
                                   title={kind}
                                 />

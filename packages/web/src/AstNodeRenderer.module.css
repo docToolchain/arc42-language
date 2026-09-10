@@ -1,0 +1,77 @@
+/* ─── Prose run with toggleable element card ───────────────────────────────── */
+.proseRun {
+  position: relative;
+}
+
+/* When a block is attached: stripe + content side by side */
+.proseRunHasBlock {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* When card is expanded: full-width, no outer wrapper stripe */
+.proseRunCardExpanded {
+  margin: 1em 0;
+}
+
+.stripe {
+  flex-shrink: 0;
+  width: 4px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0.45;
+  margin-right: 0.75rem;
+  padding: 0;
+  transition:
+    opacity 0.15s,
+    width 0.15s;
+  background: var(--c-ch0);
+  align-self: stretch;
+  min-height: 1.5rem;
+}
+.stripe:hover {
+  opacity: 0.85;
+  width: 6px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Slide transition between prose and card views */
+.proseView,
+.cardView {
+  animation: slide-in 0.18s ease;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Code blocks ───────────────────────────────────────────────────────────── */
+.codeBlock,
+.agentBlock {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.825rem;
+  line-height: 1.5;
+  margin: 1em 0;
+  color: var(--text);
+  white-space: pre;
+}
+.agentBlock code {
+  font-family: var(--font-mono);
+}

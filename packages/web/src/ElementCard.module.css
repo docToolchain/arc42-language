@@ -1,0 +1,217 @@
+.card {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 0;
+  scroll-margin-top: 1rem;
+  overflow: hidden;
+  animation: slide-in 0.18s ease;
+}
+
+/* Clickable left stripe (dismiss back to prose) */
+.dismissStripe {
+  flex-shrink: 0;
+  width: 8px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.9;
+  transition:
+    opacity 0.15s,
+    width 0.15s;
+  background: var(--c-ch0);
+  align-self: stretch;
+}
+
+.dismissStripe:hover {
+  opacity: 1;
+  width: 12px;
+}
+
+/* Static left stripe (standalone card, not in prose-run) */
+.staticStripe {
+  flex-shrink: 0;
+  width: 4px;
+  background: var(--c-ch0);
+  align-self: stretch;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 1.25rem;
+}
+
+.missing {
+  border-left: 4px solid var(--text-muted);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--c-ch0);
+}
+
+.id {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 1rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.ignores {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.75rem 0;
+}
+
+.ignore {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  background: color-mix(in srgb, var(--c-warning, #d97706) 10%, transparent);
+  font-size: 0.85rem;
+}
+
+.ignore code {
+  font-weight: 700;
+}
+
+.field {
+  display: contents;
+}
+
+.fields dt {
+  color: var(--text-muted);
+  font-weight: 500;
+  margin: 0;
+  grid-column: 1;
+}
+
+.fields dd {
+  margin: 0;
+  color: var(--text);
+  grid-column: 2;
+  word-break: break-word;
+}
+
+.refs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.refsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.refsToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+}
+
+.refsToggle:hover {
+  color: var(--text);
+}
+
+.refsToggleIcon {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.refsLabel {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.refChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.refChip:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.refChipIncoming {
+  background: color-mix(in srgb, var(--text-muted) 10%, transparent);
+  color: var(--text-muted);
+}
+
+.refRel {
+  font-size: 0.65rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

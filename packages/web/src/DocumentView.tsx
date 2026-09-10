@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import styles from "./DocumentView.module.css";
 import type {
   AstNode,
   ProseNode,
@@ -132,12 +133,12 @@ export function DocumentView({
   onTargetConsumed,
 }: DocumentViewProps) {
   const doc = documents[activeDocIndex];
-  if (!doc) return <div className="doc-empty">No document selected.</div>;
+  if (!doc) return <div className={styles.empty}>No document selected.</div>;
 
   const groups = useMemo(() => groupNodes(doc.nodes), [doc]);
 
   return (
-    <article className="document-view">
+    <article className={styles.documentView}>
       {groups.map((group, i) => {
         if (group.kind === "other") {
           return (

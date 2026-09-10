@@ -5,6 +5,7 @@ import { DocumentView } from "./DocumentView";
 import { CoverageView } from "./CoverageView";
 import { filename } from "./utils";
 import { useTheme } from "./useTheme";
+import styles from "./App.module.css";
 
 interface AppProps {
   payload: WorkspacePayload;
@@ -144,7 +145,7 @@ export function App({ payload }: AppProps) {
   const isChapter05 = activeDoc ? filename(activeDoc.filePath).startsWith("05") : false;
 
   return (
-    <div className="app-layout">
+    <div className={styles.layout}>
       <Sidebar
         documents={payload.documents}
         activeDocIndex={activeDocIndex}
@@ -155,7 +156,7 @@ export function App({ payload }: AppProps) {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      <main className="app-main">
+      <main className={styles.main}>
         <DocumentView
           documents={payload.documents}
           viewMode={viewMode}
