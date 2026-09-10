@@ -1,6 +1,6 @@
 # Quality Requirements
 
-## 10.1 Quality Goals
+## Quality Goals
 
 The bookstore backend must satisfy the following quality goals, listed in priority order. These goals drive the key architecture decisions and are referenced from the decision records in [09-decisions.arc42.md](09-decisions.arc42.md).
 
@@ -64,7 +64,7 @@ priority: medium
 :::
 ```
 
-## 10.2 Quality Scenarios
+## Quality Scenarios
 
 ### Catalog Search Latency Under Load
 

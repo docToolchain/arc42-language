@@ -5,6 +5,7 @@ import type {
   ProseNode,
   IgnoreNode,
   BlockNode,
+  HeadingNode,
   Element,
   Edge,
   DocumentAst,
@@ -137,8 +138,21 @@ export function DocumentView({
 
   const groups = useMemo(() => groupNodes(doc.nodes), [doc]);
 
+  const chapterTitle = useMemo(() => {
+    const h1 = doc.nodes.find(
+      (n): n is HeadingNode => n.kind === "heading" && (n as HeadingNode).level === 1,
+    ) as HeadingNode | undefined;
+    if (!h1) return null;
+    return h1.text.trim();
+  }, [doc]);
+
   return (
     <article className={styles.documentView}>
+      {chapterTitle && (
+        <h1 className={[styles.heading, styles.heading1, styles.chapterTitle].join(" ")}>
+          {chapterTitle}
+        </h1>
+      )}
       {groups.map((group, i) => {
         if (group.kind === "other") {
           return (

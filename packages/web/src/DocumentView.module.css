@@ -19,6 +19,10 @@
   padding-bottom: 0.25em;
 }
 
+.chapterTitle {
+  margin-top: 0;
+}
+
 .heading2 {
   font-size: 1.5rem;
 }

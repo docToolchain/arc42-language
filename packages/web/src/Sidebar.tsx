@@ -82,41 +82,43 @@ export function Sidebar({
 
               {isActive && activeDoc && (
                 <ul className={styles.headings} role="list">
-                  {getDocHeadings(activeDoc).map((h, j) => {
-                    const slug = headingAnchor(h.text);
-                    const headingKinds = blockKindsByHeading.get(slug) ?? [];
-                    return (
-                      <li
-                        key={j}
-                        className={styles.heading}
-                        style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
-                      >
-                        <a
-                          data-testid="sidebar-heading-link"
-                          href={`#${filename(doc.filePath)}:${slug}`}
-                          className={styles.headingLink}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            onSelectHeading(slug);
-                          }}
+                  {getDocHeadings(activeDoc)
+                    .filter((h) => h.level > 1)
+                    .map((h, j) => {
+                      const slug = headingAnchor(h.text);
+                      const headingKinds = blockKindsByHeading.get(slug) ?? [];
+                      return (
+                        <li
+                          key={j}
+                          className={styles.heading}
+                          style={{ paddingLeft: `${(h.level - 2) * 12}px` }}
                         >
-                          <span className={styles.headingText}>{h.text}</span>
-                          {headingKinds.length > 0 && (
-                            <span className={styles.headingDots} aria-hidden="true">
-                              {headingKinds.map((kind: string) => (
-                                <span
-                                  key={kind}
-                                  className={styles.blockDot}
-                                  style={{ backgroundColor: KIND_COLOR[kind] ?? "var(--c-ch0)" }}
-                                  title={kind}
-                                />
-                              ))}
-                            </span>
-                          )}
-                        </a>
-                      </li>
-                    );
-                  })}
+                          <a
+                            data-testid="sidebar-heading-link"
+                            href={`#${filename(doc.filePath)}:${slug}`}
+                            className={styles.headingLink}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              onSelectHeading(slug);
+                            }}
+                          >
+                            <span className={styles.headingText}>{h.text}</span>
+                            {headingKinds.length > 0 && (
+                              <span className={styles.headingDots} aria-hidden="true">
+                                {headingKinds.map((kind: string) => (
+                                  <span
+                                    key={kind}
+                                    className={styles.blockDot}
+                                    style={{ backgroundColor: KIND_COLOR[kind] ?? "var(--c-ch0)" }}
+                                    title={kind}
+                                  />
+                                ))}
+                              </span>
+                            )}
+                          </a>
+                        </li>
+                      );
+                    })}
                 </ul>
               )}
             </li>
@@ -138,7 +140,7 @@ function chapterLabel(doc: DocumentAst): string {
     .find((h) => h.level === 1)
     ?.text.trim();
   const chapter = doc.filePath.match(/(?:^|\/)0*(\d+)-/)?.[1];
-  if (chapter && heading) return `${Number(chapter)}: ${heading}`;
+  if (chapter && heading) return `${Number(chapter)}. ${heading}`;
   return heading ?? filename(doc.filePath);
 }
 
