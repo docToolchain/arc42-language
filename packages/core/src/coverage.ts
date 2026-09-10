@@ -1,4 +1,5 @@
 import type { Element } from "./model/types.ts";
+import { normalizedPathSegments } from "./path-utils.ts";
 
 // ---------------------------------------------------------------------------
 // Coverage types
@@ -92,12 +93,14 @@ function immediateChild(parentDir: string, filePath: string): string | undefined
  *   interface points to a file inside it) are expected and NOT flagged.
  */
 export function computeCoverage(elements: Element[], trackedPaths: string[]): CoverageResult {
-  // 1. Collect element paths with kind
+  // 1. Collect element paths with kind, normalized for consistent matching
   const elementPaths: Array<{ id: string; path: string; kind: "building-block" | "interface" }> =
     [];
   for (const el of elements) {
     if (el.kind !== "building-block" && el.kind !== "interface") continue;
-    const path = (el as { path?: string }).path;
+    const rawPath = (el as { path?: string }).path;
+    if (!rawPath) continue;
+    const path = normalizedPathSegments(rawPath).join("/");
     if (!path) continue;
     elementPaths.push({ id: el.id, path, kind: el.kind });
   }
