@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "./AgentBlock.module.css";
 
 interface AgentBlockProps {
   /** Raw source text to show verbatim */
@@ -9,7 +10,7 @@ interface AgentBlockProps {
 
 export function AgentBlock({ source, lang = "arc42" }: AgentBlockProps) {
   return (
-    <pre data-testid="agent-block" className="agent-block">
+    <pre data-testid="agent-block" className={styles.agentBlock}>
       <code className={`language-${lang}`}>{source}</code>
     </pre>
   );

@@ -1,0 +1,15 @@
+.agentBlock {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.825rem;
+  line-height: 1.5;
+  margin: 1em 0;
+  color: var(--text);
+  white-space: pre;
+}
+.agentBlock code {
+  font-family: var(--font-mono);
+}

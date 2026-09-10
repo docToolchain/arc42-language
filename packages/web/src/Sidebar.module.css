@@ -1,0 +1,138 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  gap: 0.5rem;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.docs {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.doc {
+  border-bottom: 1px solid var(--border);
+}
+
+.docBtn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  gap: 0.25rem;
+  text-decoration: none;
+}
+.docBtn:hover {
+  background: var(--border);
+}
+.docBtnActive {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.docLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headings {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.5rem;
+}
+
+.heading {
+  display: block;
+}
+
+.headingLink {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem 0.2rem 1rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.headingLink:hover {
+  color: var(--text);
+}
+
+.headingText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headingDots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.blockDot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.viewToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.viewToggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.viewToggleAgent {
+  background: var(--bg-code);
+  color: var(--text);
+}

@@ -1,0 +1,41 @@
+.figure {
+  margin: 1.5em 0;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+.svg svg {
+  max-width: 100%;
+  height: auto;
+}
+.loading {
+  opacity: 0.5;
+}
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 1rem auto;
+}
+.error {
+  border-color: #f97316;
+}
+.errorMsg {
+  font-size: 0.8rem;
+  color: #f97316;
+  margin-top: 0.5rem;
+}
+.raw {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import mermaid from "mermaid";
+import styles from "./MermaidDiagram.module.css";
 
 let mermaidCounter = 0;
 
@@ -139,17 +140,17 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
 
   if (error) {
     return (
-      <figure className="diagram-figure diagram-error">
-        <pre className="diagram-raw">{cleanedSource}</pre>
-        <figcaption className="diagram-error-msg">Diagram render error: {error}</figcaption>
+      <figure className={[styles.figure, styles.error].join(" ")}>
+        <pre className={styles.raw}>{cleanedSource}</pre>
+        <figcaption className={styles.errorMsg}>Diagram render error: {error}</figcaption>
       </figure>
     );
   }
 
   return (
-    <figure className={`diagram-figure${rendered ? "" : " diagram-loading"}`}>
-      <div data-testid="diagram" ref={containerRef} className="diagram-svg" />
-      {!rendered && <div className="diagram-spinner" aria-label="Rendering diagram…" />}
+    <figure className={[styles.figure, !rendered && styles.loading].filter(Boolean).join(" ")}>
+      <div data-testid="diagram" ref={containerRef} className={styles.svg} />
+      {!rendered && <div className={styles.spinner} aria-label="Rendering diagram…" />}
     </figure>
   );
 }

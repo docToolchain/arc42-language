@@ -2,6 +2,7 @@ import React, { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import type { WorkspacePayload } from "./types";
+import styles from "./App.module.css";
 import "./styles.css";
 
 function Root() {
@@ -50,7 +51,7 @@ function Root() {
 
   if (error) {
     return (
-      <div className="load-error">
+      <div className={styles.loadError}>
         <h1>Failed to load workspace</h1>
         <pre>{error}</pre>
       </div>
@@ -59,8 +60,8 @@ function Root() {
 
   if (!payload) {
     return (
-      <div className="load-spinner" role="status" aria-label="Loading…">
-        <div className="spinner" />
+      <div className={styles.loadSpinner} role="status" aria-label="Loading…">
+        <div className={styles.spinner} />
         <p>Loading workspace…</p>
       </div>
     );
