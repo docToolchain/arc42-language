@@ -18,12 +18,14 @@ graph TD
     actor-agent["AI Agent"]
     actor-ci["CI Pipeline"]
     actor-reader(["Reader"])
+    actor-visitor(["Visitor"])
 
     subgraph system["System"]
         bb-cli["CLI"]
         bb-skill["Skill"]
         bb-web-renderer["Web Renderer"]
         bb-workspace["Documentation Workspace"]
+        bb-site["Project Site"]
     end
 
     actor-architect -->|"if-cli"| bb-cli
@@ -33,6 +35,8 @@ graph TD
     actor-agent -->|"if-agent-skill"| bb-skill
     actor-ci -->|"if-cli"| bb-cli
     actor-reader -->|"if-reader-web"| bb-web-renderer
+    actor-visitor -->|"if-site-web"| bb-site
+    bb-site -->|"if-site-docs-output"| bb-web-renderer
     bb-skill -->|"if-cli"| bb-cli
     bb-cli -->|"if-cli-web"| bb-web-renderer
 ```
@@ -88,6 +92,22 @@ title: CI Pipeline
 type: system
 description: Automated pipeline enforcing architecture consistency on every PR
 requires: if-cli
+:::
+```
+
+## Visitor
+
+A potential adopter or stakeholder who browses the project website to understand what the
+arc42-language toolchain does and whether it fits their needs. Has no access to the CLI,
+the workspace, or the web renderer — interacts only with the static GitHub Pages site.
+
+```arc42
+:::actor
+id: actor-visitor
+title: Visitor
+type: person
+description: Potential adopter or stakeholder browsing the project website on GitHub Pages
+requires: if-site-web
 :::
 ```
 
