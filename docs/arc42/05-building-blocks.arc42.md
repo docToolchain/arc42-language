@@ -21,8 +21,6 @@ graph TD
     bb-skill["Skill"]
     bb-web-renderer["Web Renderer"]
     bb-workspace["Documentation Workspace"]
-    bb-site["Project Site"]
-    bb-verdicts["Agent Verdicts"]
 
     bb-cli -->|"if-cli-core"| bb-core
     bb-cli -->|"if-cli-workspace-adapter"| bb-workspace-fs
@@ -30,7 +28,6 @@ graph TD
     bb-cli -->|"if-cli-web"| bb-web-renderer
     bb-web-renderer -->|"if-web-cli-api"| bb-cli
     bb-skill -->|"if-cli"| bb-cli
-    bb-site -->|"if-site-verdicts"| bb-verdicts
 ```
 
 The overview intentionally treats `@arc42/core` as opaque. Its internal responsibilities are
@@ -493,6 +490,22 @@ path: packages/cli/src/cli.ts
 :::
 ```
 
+### Rendered Docs Build Output
+
+The web renderer is built with `arc42 build` and its static output (`dist/`) is co-deployed with
+the project site under the `/docs/` sub-path on GitHub Pages. The project site links to this output
+— it does not embed or rebuild it. The interface boundary is the build artifact directory.
+
+```arc42
+:::interface
+id: if-site-docs-output
+title: Rendered Docs Build Output
+provider: bb-web-renderer
+protocol: Static build artifact (HTML/JS/CSS at dist/)
+path: packages/web/src
+:::
+```
+
 ## arc42 Documentation Workspace
 
 The set of `.arc42.md` files that make up a project's architecture documentation.
@@ -554,8 +567,41 @@ never shipped as an npm package.
 id: bb-site
 title: Project Site
 technology: TypeScript / React / Vite
-requires: if-site-verdicts
+requires: if-site-verdicts, if-site-docs-output
 path: packages/site
+:::
+```
+
+```arc42
+:::diagram
+id: diag-site
+view: building-block
+notation: mermaid
+:::
+```
+
+```mermaid
+graph TD
+    bb-site["Project Site"]
+    bb-web-renderer["Web Renderer"]
+    bb-verdicts["Agent Verdicts"]
+
+    bb-site -->|"if-site-docs-output"| bb-web-renderer
+    bb-site -->|"if-site-verdicts"| bb-verdicts
+```
+
+### Project Site Web Interface
+
+The static website deployed to GitHub Pages. Potential adopters and stakeholders browse it
+to understand the toolchain's purpose, see live examples, and review agent verdict cards.
+
+```arc42
+:::interface
+id: if-site-web
+title: Project Site (GitHub Pages)
+provider: bb-site
+protocol: HTTPS / static HTML
+path: packages/site/index.html
 :::
 ```
 

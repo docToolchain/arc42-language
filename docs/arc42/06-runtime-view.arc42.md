@@ -186,7 +186,7 @@ the site's React components.
 id: scenario-site-build-verdicts
 title: Site build: Mermaid validation and verdict loading
 trigger: Architect runs arc42 validate; separately, site build runs
-involves: bb-validator, bb-mermaid, bb-site, bb-verdicts
+involves: bb-validator, bb-mermaid, bb-site, bb-verdicts, bb-web-renderer
 :::
 ```
 
@@ -195,7 +195,7 @@ involves: bb-validator, bb-mermaid, bb-site, bb-verdicts
 id: site-build-verdicts-sequence
 scenario: scenario-site-build-verdicts
 notation: mermaid-sequence
-aliases: bb_validator=bb-validator, bb_mermaid=bb-mermaid, bb_site=bb-site, bb_verdicts=bb-verdicts
+aliases: bb_validator=bb-validator, bb_mermaid=bb-mermaid, bb_site=bb-site, bb_verdicts=bb-verdicts, bb_web_renderer=bb-web-renderer
 :::
 ```
 
@@ -204,6 +204,7 @@ sequenceDiagram
     actor actor_ci as CI / Architect
     participant bb_validator as Validator
     participant bb_mermaid as Mermaid Syntax
+    participant bb_web_renderer as Web Renderer
     participant bb_site as Project Site
     participant bb_verdicts as Agent Verdicts
 
@@ -211,6 +212,9 @@ sequenceDiagram
     bb_validator->>bb_mermaid: parseMermaid(diagramSource)
     bb_mermaid-->>bb_validator: MermaidParseResult (ok or failure)
     bb_validator-->>actor_ci: Diagnostics including W017 for invalid syntax
+
+    actor_ci->>bb_web_renderer: arc42 build (web renderer)
+    bb_web_renderer-->>actor_ci: dist/ (HTML/JS/CSS)
 
     actor_ci->>bb_site: vite build (site)
     bb_site->>bb_verdicts: Read docs/verdicts/*.md (via Vite plugin)
@@ -220,3 +224,4 @@ sequenceDiagram
 
 `if-core-mermaid` is exercised during `arc42 validate` whenever a diagram block is present.
 `if-site-verdicts` is exercised only at site build time — no runtime network calls are involved.
+`if-site-docs-output` represents the build artifact produced by `arc42 build` and co-deployed under `/docs/` alongside the project site.
