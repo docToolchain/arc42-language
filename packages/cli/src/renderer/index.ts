@@ -1,4 +1,4 @@
-import type { GetRenderer } from "./types.ts";
+import type { GetRenderer } from "@arc42/core";
 import { TextGetRenderer } from "./text.ts";
 import { JsonGetRenderer } from "./json.ts";
 import { MarkdownGetRenderer } from "./markdown.ts";

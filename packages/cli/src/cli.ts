@@ -18,8 +18,6 @@ import { discoverArc42Dir } from "./discover.ts";
 import { fileURLToPath } from "node:url";
 import {
   builtinRules,
-  builtinGetRenderers,
-  rendererById,
   explainElement,
   explainDiagram,
   formatExplainText,
@@ -30,6 +28,7 @@ import {
   ELEMENT_KIND_ORDER,
   computeCoverage,
 } from "@arc42/core";
+import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
 import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";

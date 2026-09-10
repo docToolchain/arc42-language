@@ -1,5 +1,5 @@
-import type { GetRenderer, GetResult, WorkspaceView, ElementView, ResolvedRef } from "./types.ts";
-import { ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
+import type { GetRenderer, GetResult, WorkspaceView, ElementView, ResolvedRef } from "@arc42/core";
+import { ELEMENT_CHAPTER, CHAPTER_TITLE } from "@arc42/core";
 import type {
   Element,
   SourceLocation,
@@ -16,7 +16,7 @@ import type {
   GlossaryTerm,
   RuntimeScenario,
   DeploymentNode,
-} from "../model/types.ts";
+} from "@arc42/core";
 
 /**
  * GitHub-style heading anchor slug.

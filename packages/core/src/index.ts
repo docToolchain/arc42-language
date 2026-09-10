@@ -46,7 +46,7 @@ export type {
 
 export { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "./model/types.ts";
 
-export type { ReferenceIndex } from "./resolver/types.ts";
+export type { ReferenceIndex, Edge } from "./resolver/types.ts";
 export type {
   BlockType,
   AstNode,
@@ -70,7 +70,6 @@ export { builtinRules, rulesByCode } from "./validator/rules/index.ts";
 export type { Rule, RuleMeta, RuleDocs, RuleType, Arc42Chapter } from "./validator/types.ts";
 
 // Renderer registry
-export { builtinGetRenderers, rendererById } from "./renderer/index.ts";
 export type {
   GetQuery,
   GetResult,

@@ -6,6 +6,7 @@ building-block diagram uses one abstraction level: the overview shows peer/packa
 while a parent and its direct children appear only in that parent's adjacent drill-down.
 
 ```arc42
+:::ignore H015 bb-renderer is a CLI-internal implementation detail; its containment in bb-cli via parent is sufficient — it does not need to appear in the overview diagram :::
 :::diagram
 id: diag-building-blocks
 view: building-block
@@ -15,7 +16,8 @@ notation: mermaid
 
 ```mermaid
 graph TD
-    bb-cli["CLI"]
+    subgraph bb-cli["CLI"]
+    end
     bb-core["Core Library"]
     bb-workspace-fs["Filesystem Workspace Adapter"]
     bb-skill["Skill"]
@@ -74,7 +76,6 @@ graph TD
         bb-builder["Builder"]
         bb-resolver["Resolver"]
         bb-validator["Validator"]
-        bb-renderer["Renderer Registry"]
         bb-diff["Architecture Diff"]
         bb-mermaid["Mermaid Syntax"]
     end
@@ -224,38 +225,6 @@ path: packages/core/src/resolver/types.ts
 :::
 ```
 
-### Renderer Registry
-
-Produces human-readable text or JSON from workspace and element query results. Each renderer
-implements the `GetRenderer` interface. The registry (`builtinGetRenderers`, `rendererById`)
-mirrors the rule registry pattern. Text and JSON are the two built-in formats; graphviz and
-HTML are future work.
-
-```arc42
-:::building-block
-id: bb-renderer
-title: Renderer Registry
-technology: TypeScript
-parent: bb-core
-implements: concept-rule-registry
-path: packages/core/src/renderer
-:::
-```
-
-#### Renderer Output Contract
-
-The CLI passes validation results and element queries to the renderer registry for output.
-
-```arc42
-:::interface
-id: if-renderer
-title: Renderer Output Contract
-provider: bb-renderer
-protocol: In-process TypeScript function call
-path: packages/core/src/renderer/types.ts
-:::
-```
-
 ### Architecture Diff
 
 Compares current and base architecture documents with a set of changed file ranges. It reports
@@ -391,6 +360,38 @@ technology: TypeScript / Node.js
 implements: concept-pipeline
 requires: if-cli-core, if-cli-workspace-adapter, if-cli-web
 path: packages/cli
+:::
+```
+
+### Renderer Registry
+
+Produces human-readable text or JSON from `arc42 get` query results. Each renderer implements
+the `GetRenderer` interface; the registry (`builtinGetRenderers`, `rendererById`) mirrors the
+rule registry pattern. Moved here from core because rendering is a CLI output concern, not part
+of the core processing pipeline.
+
+```arc42
+:::building-block
+id: bb-renderer
+title: Renderer Registry
+technology: TypeScript
+parent: bb-cli
+implements: concept-rule-registry
+path: packages/cli/src/renderer
+:::
+```
+
+#### Renderer Output Contract
+
+The CLI passes element query results to the renderer registry to produce text, JSON, or Markdown output.
+
+```arc42
+:::interface
+id: if-renderer
+title: Renderer Output Contract
+provider: bb-renderer
+protocol: In-process TypeScript function call
+path: packages/cli/src/renderer/index.ts
 :::
 ```
 

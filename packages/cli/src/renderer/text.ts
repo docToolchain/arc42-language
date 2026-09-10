@@ -1,5 +1,5 @@
-import type { GetRenderer, GetResult, WorkspaceView, ElementView } from "./types.ts";
-import { ELEMENT_CHAPTER, CHAPTER_TITLE } from "../model/types.ts";
+import type { GetRenderer, GetResult, WorkspaceView, ElementView } from "@arc42/core";
+import { ELEMENT_CHAPTER, CHAPTER_TITLE } from "@arc42/core";
 import type {
   Element,
   QualityGoal,
@@ -15,7 +15,7 @@ import type {
   GlossaryTerm,
   RuntimeScenario,
   DeploymentNode,
-} from "../model/types.ts";
+} from "@arc42/core";
 
 export class TextGetRenderer implements GetRenderer {
   meta = {

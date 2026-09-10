@@ -79,7 +79,7 @@ resolver indexes references, the validator runs rules, and the renderer prepares
 id: scenario-core-validation-pipeline
 title: Core model validation pipeline
 trigger: Pre-commit hook or CI invokes architecture validation
-involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-workspace-fs, bb-core
+involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-workspace-fs, bb-core, bb-cli
 :::
 ```
 
@@ -88,7 +88,7 @@ involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-work
 id: core-validation-pipeline-sequence
 scenario: scenario-core-validation-pipeline
 notation: mermaid-sequence
-aliases: bb_parser=bb-parser, bb_builder=bb-builder, bb_resolver=bb-resolver, bb_validator=bb-validator, bb_renderer=bb-renderer, bb_workspace_fs=bb-workspace-fs
+aliases: bb_parser=bb-parser, bb_builder=bb-builder, bb_resolver=bb-resolver, bb_validator=bb-validator, bb_renderer=bb-renderer, bb_workspace_fs=bb-workspace-fs, bb_cli=bb-cli
 :::
 ```
 

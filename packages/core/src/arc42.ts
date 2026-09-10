@@ -182,8 +182,4 @@ export type {
   WorkspaceView,
   ElementView,
   ResolvedRef,
-  GetRenderer,
-  RendererMeta,
-  ElementRenderers,
 } from "./renderer/types.ts";
-export type { WorkspacePayload, CoverageResult, CoveredPath } from "./workspace.ts";
