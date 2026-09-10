@@ -4,7 +4,7 @@ The arc42-language toolchain must satisfy the following quality requirements.
 They drive the key architectural decisions in this codebase and are referenced
 from the decision records.
 
-## 10.1 Quality Goals
+## Quality Goals
 
 ## Human Readability First
 
@@ -78,7 +78,7 @@ priority: medium
 :::
 ```
 
-## 10.2 Quality Scenarios
+## Quality Scenarios
 
 ## Readability — Unfamiliar Architect Scenario
 

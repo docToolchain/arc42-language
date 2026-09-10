@@ -2,7 +2,7 @@
 
 The Bookstore Backend is the server-side platform for an online bookstore serving web and mobile clients. It provides catalog browsing and search, shopping cart management, order placement with payment processing, and transactional notifications. The system is designed for a small product team that needs to ship features quickly while meeting strict performance and security requirements.
 
-## 1.1 Requirements Overview
+## Requirements Overview
 
 The core business capabilities are:
 
@@ -14,11 +14,11 @@ The core business capabilities are:
 
 The primary business goal is maximizing conversion by keeping search fast and the checkout flow frictionless. Secondary goals are reducing operational cost through automation and enabling the team to ship weekly without manual deployment ceremonies.
 
-## 1.2 Quality Goals
+## Quality Goals
 
 The architecture is driven by its goals, listed here in priority order. See [10-quality.arc42.md](10-quality.arc42.md) for the full catalog with measurable scenarios.
 
-## 1.3 Stakeholders
+## Stakeholders
 
 | Role                | Expectations from the Architecture                                                  |
 | ------------------- | ----------------------------------------------------------------------------------- |
