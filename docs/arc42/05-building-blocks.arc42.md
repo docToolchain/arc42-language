@@ -25,6 +25,7 @@ graph TD
     bb-cli -->|"if-cli-core"| bb-core
     bb-cli -->|"if-cli-workspace-adapter"| bb-workspace-fs
     bb-workspace-fs -->|"if-fs-workspace"| bb-workspace
+    bb-core -->|"if-workspace-paths"| bb-workspace-fs
     bb-cli -->|"if-cli-web"| bb-web-renderer
     bb-web-renderer -->|"if-web-cli-api"| bb-cli
     bb-skill -->|"if-cli"| bb-cli
@@ -48,7 +49,7 @@ id: bb-core
 title: Core Library
 technology: TypeScript / Node.js
 implements: concept-pipeline, concept-rule-registry
-requires: if-core-diff
+requires: if-core-diff, if-workspace-paths
 path: packages/core
 :::
 ```
@@ -77,13 +78,14 @@ graph TD
         bb-diff["Architecture Diff"]
         bb-mermaid["Mermaid Syntax"]
     end
+    bb-workspace-fs["Filesystem Workspace Adapter"]
 
-    bb-parser -->|"if-parser-builder"| bb-builder
-    bb-builder -->|"if-builder-resolver"| bb-resolver
-    bb-resolver -->|"if-resolver-validator"| bb-validator
-    bb-validator -->|"if-validator-renderer"| bb-renderer
+    bb-parser -->|"if-ast"| bb-builder
+    bb-builder -->|"if-workspace-model"| bb-resolver
+    bb-resolver -->|"if-validation-input"| bb-validator
+    bb-validator -->|"if-workspace-paths"| bb-workspace-fs
     bb-core -->|"if-core-diff"| bb-diff
-    bb-validator -->|"if-core-mermaid"| bb-mermaid
+    bb-validator -->|"if-mermaid-syntax"| bb-mermaid
 ```
 
 ### Core Library API
@@ -118,7 +120,7 @@ title: Markdown Parser
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
-requires: if-parser-builder
+requires: if-ast
 path: packages/core/src/parser
 :::
 ```
@@ -137,7 +139,7 @@ title: Meta-model Builder
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
-requires: if-builder-resolver
+requires: if-workspace-model
 path: packages/core/src/model
 :::
 ```
@@ -148,7 +150,7 @@ The parser produces `DocumentAst` structs consumed by the builder to construct t
 
 ```arc42
 :::interface
-id: if-parser-builder
+id: if-ast
 title: Parser Input Contract
 provider: bb-builder
 protocol: In-process TypeScript function call
@@ -170,7 +172,7 @@ title: Reference Resolver
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
-requires: if-resolver-validator
+requires: if-validation-input
 path: packages/core/src/resolver
 :::
 ```
@@ -181,7 +183,7 @@ The builder produces a `Workspace`; the resolver consumes it to build the refere
 
 ```arc42
 :::interface
-id: if-builder-resolver
+id: if-workspace-model
 title: Builder Output Contract
 provider: bb-resolver
 protocol: In-process TypeScript function call
@@ -203,7 +205,7 @@ title: Validator
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline, concept-rule-registry
-requires: if-validator-renderer, if-core-mermaid
+requires: if-mermaid-syntax, if-workspace-paths
 path: packages/core/src/validator
 :::
 ```
@@ -214,7 +216,7 @@ The validator receives both the workspace and the reference index from the resol
 
 ```arc42
 :::interface
-id: if-resolver-validator
+id: if-validation-input
 title: Resolver Validation Input
 provider: bb-validator
 protocol: In-process TypeScript function call
@@ -246,7 +248,7 @@ The CLI passes validation results and element queries to the renderer registry f
 
 ```arc42
 :::interface
-id: if-validator-renderer
+id: if-renderer
 title: Renderer Output Contract
 provider: bb-renderer
 protocol: In-process TypeScript function call
@@ -311,7 +313,7 @@ The Validator calls the Mermaid Syntax building block to parse and validate diag
 
 ```arc42
 :::interface
-id: if-core-mermaid
+id: if-mermaid-syntax
 title: Mermaid Syntax Contract
 provider: bb-mermaid
 protocol: In-process TypeScript function call
@@ -352,6 +354,23 @@ title: Filesystem Adapter Contract
 provider: bb-workspace-fs
 protocol: TypeScript module import
 path: packages/cli
+:::
+```
+
+### Workspace Path Context
+
+The filesystem workspace adapter computes path evidence (`knownPaths`, repository root) and
+pre-aggregated coverage from the git-tracked file inventory, and injects both into
+`ValidationContext` before passing it to the validator.
+
+```arc42
+:::ignore H020 if-workspace-paths and if-fs-workspace share packages/workspace-fs/src/index.ts as the entry point but represent distinct contracts: if-fs-workspace is the document discovery and loading contract, if-workspace-paths is the path evidence and coverage context injected into the validator :::
+:::interface
+id: if-workspace-paths
+title: Workspace Path Context
+provider: bb-workspace-fs
+protocol: In-process TypeScript function call
+path: packages/workspace-fs/src/index.ts
 :::
 ```
 

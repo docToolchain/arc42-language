@@ -79,7 +79,7 @@ resolver indexes references, the validator runs rules, and the renderer prepares
 id: scenario-core-validation-pipeline
 title: Core model validation pipeline
 trigger: Pre-commit hook or CI invokes architecture validation
-involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer
+involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-workspace-fs, bb-core
 :::
 ```
 
@@ -88,13 +88,14 @@ involves: bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer
 id: core-validation-pipeline-sequence
 scenario: scenario-core-validation-pipeline
 notation: mermaid-sequence
-aliases: bb_parser=bb-parser, bb_builder=bb-builder, bb_resolver=bb-resolver, bb_validator=bb-validator, bb_renderer=bb-renderer
+aliases: bb_parser=bb-parser, bb_builder=bb-builder, bb_resolver=bb-resolver, bb_validator=bb-validator, bb_renderer=bb-renderer, bb_workspace_fs=bb-workspace-fs
 :::
 ```
 
 ```mermaid
 sequenceDiagram
     actor actor_ci as Pre-commit hook or CI
+    participant bb_workspace_fs as Filesystem Workspace Adapter
     participant bb_parser as Markdown Parser
     participant bb_builder as Meta-model Builder
     participant bb_resolver as Reference Resolver
@@ -105,13 +106,14 @@ sequenceDiagram
     bb_parser->>bb_builder: Return DocumentAst[]
     bb_builder->>bb_resolver: Return typed Workspace
     bb_resolver->>bb_validator: Return reference index
+    bb_workspace_fs->>bb_validator: Inject ValidationContext (path evidence + coverage)
     bb_validator->>bb_renderer: Return diagnostics and workspace result
     bb_renderer-->>actor_ci: Render text or JSON result
 ```
 
-The scenario intentionally shows the four interfaces that connect the core pipeline. It is a
-schematic flow, not a claim that each stage is a separate process or that rendering is required for
-every validation invocation.
+The scenario shows the five interfaces that connect the core pipeline, plus the path context
+injected by the filesystem workspace adapter (`if-workspace-paths`). It is a schematic flow, not a claim that each
+stage is a separate process or that rendering is required for every validation invocation.
 
 1. A user asks for an improvement.
 2. The agent reads the architecture documentation and finds the relevant system architecture.
@@ -222,6 +224,6 @@ sequenceDiagram
     bb_site-->>actor_ci: Static site with embedded verdict cards
 ```
 
-`if-core-mermaid` is exercised during `arc42 validate` whenever a diagram block is present.
+`if-mermaid-syntax` is exercised during `arc42 validate` whenever a diagram block is present.
 `if-site-verdicts` is exercised only at site build time — no runtime network calls are involved.
 `if-site-docs-output` represents the build artifact produced by `arc42 build` and co-deployed under `/docs/` alongside the project site.
