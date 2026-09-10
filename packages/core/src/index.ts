@@ -82,10 +82,8 @@ export type {
   GetRenderer,
   RendererMeta,
   ElementRenderers,
-  WorkspacePayload,
-  CoverageResult,
-  CoveredPath,
 } from "./renderer/types.ts";
+export type { WorkspacePayload, CoverageResult, CoveredPath } from "./workspace.ts";
 export type {
   MermaidNotation,
   MermaidParseFailure,

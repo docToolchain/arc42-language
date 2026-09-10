@@ -14,8 +14,8 @@ import type {
   WorkspaceView,
   ElementView,
   ResolvedRef,
-  WorkspacePayload,
 } from "./renderer/types.ts";
+import type { WorkspacePayload } from "./workspace.ts";
 
 export interface ValidateResult {
   version: 1;
@@ -185,5 +185,5 @@ export type {
   GetRenderer,
   RendererMeta,
   ElementRenderers,
-  WorkspacePayload,
 } from "./renderer/types.ts";
+export type { WorkspacePayload, CoverageResult, CoveredPath } from "./workspace.ts";
