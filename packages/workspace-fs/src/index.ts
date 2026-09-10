@@ -1,6 +1,7 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import {
+  computeCoverage,
   getElementsFromDocuments,
   loadWorkspaceFromDocuments,
   parseArchitectureDocument,
@@ -14,8 +15,9 @@ import type {
   ValidateResult,
   WorkspacePayload,
 } from "@arc42/core";
+import { gitLsFiles } from "./git-diff.ts";
 
-export { collectGitDiff, changedHunkFiles, parseDiffPathHeader } from "./git-diff.ts";
+export { collectGitDiff, changedHunkFiles, parseDiffPathHeader, gitLsFiles } from "./git-diff.ts";
 export type { GitArchitectureDiff } from "./git-diff.ts";
 
 export async function discoverFiles(dir: string): Promise<string[]> {
@@ -74,12 +76,27 @@ export async function pathEvidence(
   root?: string,
 ): Promise<NonNullable<ValidationContext["pathEvidence"]>> {
   const repositoryRoot = resolve(root ?? (await findRepositoryRoot(dir)));
-  return { root: repositoryRoot, knownPaths: await collectPaths(dir, repositoryRoot) };
+  let knownPaths: string[];
+  try {
+    knownPaths = gitLsFiles(repositoryRoot);
+  } catch {
+    knownPaths = await collectPaths(dir, repositoryRoot);
+  }
+  return { root: repositoryRoot, knownPaths };
 }
 
 export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
   const documents = await readWorkspaceDocuments(dir);
-  return loadWorkspaceFromDocuments(documents);
+  const repositoryRoot = await findRepositoryRoot(dir);
+  let trackedPaths: string[];
+  try {
+    trackedPaths = gitLsFiles(repositoryRoot);
+  } catch {
+    trackedPaths = await collectPaths(dir, repositoryRoot);
+  }
+  const payload = loadWorkspaceFromDocuments(documents);
+  const coverage = computeCoverage(payload.elements, trackedPaths);
+  return { ...payload, coverage };
 }
 
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {

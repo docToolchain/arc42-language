@@ -2,6 +2,7 @@ import React, { useMemo, useEffect, useState } from "react";
 import type { WorkspacePayload, Element } from "./types";
 import { Sidebar } from "./Sidebar";
 import { DocumentView } from "./DocumentView";
+import { CoverageView } from "./CoverageView";
 import { filename } from "./utils";
 import { useTheme } from "./useTheme";
 
@@ -139,6 +140,9 @@ export function App({ payload }: AppProps) {
     return map;
   }, [payload.elements]);
 
+  const activeDoc = payload.documents[activeDocIndex];
+  const isChapter05 = activeDoc ? filename(activeDoc.filePath).startsWith("05") : false;
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -162,6 +166,9 @@ export function App({ payload }: AppProps) {
           targetElementId={targetElementId}
           onTargetConsumed={clearTargetElementId}
         />
+        {isChapter05 && payload.coverage && (
+          <CoverageView coverage={payload.coverage} elementDocMap={elementDocMap} />
+        )}
       </main>
     </div>
   );

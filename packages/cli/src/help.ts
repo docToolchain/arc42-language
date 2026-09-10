@@ -1,6 +1,7 @@
 const COMMANDS = [
   ["validate", "Check architecture documents for consistency and rule violations."],
   ["get", "Browse or inspect elements from an architecture workspace."],
+  ["coverage", "Show which top-level source paths are claimed by the architecture model."],
   ["rules", "List the validation rules and the rationale behind them."],
   ["explain", "Explain the syntax and purpose of arc42 block types."],
   ["guide", "Guide a one-time migration from existing docs or source to typed arc42."],
@@ -38,6 +39,30 @@ export function commandHelp(
   nestedCommand?: string,
   blockTypes?: readonly string[],
 ): string | undefined {
+  if (command === "coverage") {
+    return `arc42 coverage — show path coverage of the architecture model
+
+Usage:
+  arc42 [--dir <path>] coverage [options]
+
+Options:
+  --format <text|json|tree>  Output format (default: text)
+  -h, --help                 Show this help
+
+The command lists top-level source path segments (derived from git ls-files or the
+filesystem) and shows which ones are claimed by at least one building-block or
+interface element with a path field. Uncovered segments are intentional gaps —
+test-only paths, tooling, or docs that are not part of the modeled architecture.
+
+Formats:
+  text  Covered and uncovered paths in flat lists with claimant IDs
+  json  Full coverage result as JSON
+  tree  Hierarchical tree merging covered (✓) and uncovered (✗) paths
+
+The command always exits 0.
+`;
+  }
+
   if (command === "validate") {
     return `arc42 validate — check architecture documents
 
