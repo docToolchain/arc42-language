@@ -4,7 +4,7 @@ import {
   parseArchitectureDocument,
   type ElementView,
   type WorkspaceView,
-} from "../src/arc42.ts";
+} from "@arc42/core";
 import { JsonGetRenderer } from "../src/renderer/json.ts";
 import { MarkdownGetRenderer, toSlug } from "../src/renderer/markdown.ts";
 import { TextGetRenderer } from "../src/renderer/text.ts";
