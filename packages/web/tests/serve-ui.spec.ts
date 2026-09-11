@@ -138,6 +138,28 @@ test.describe("Document navigation", () => {
   });
 });
 
+// ─── Responsive navigation ────────────────────────────────────────────────────
+
+test.describe("Responsive navigation", () => {
+  test("mobile navigation opens and closes the document drawer", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+
+    const openButton = page.getByRole("button", { name: "Open document navigation" });
+    await expect(openButton).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Document navigation" })).not.toHaveClass(
+      /sidebarOpen/,
+    );
+
+    await openButton.click();
+    const navigation = page.getByRole("navigation", { name: "Document navigation" });
+    await expect(navigation).toHaveClass(/sidebarOpen/);
+
+    await page.getByRole("button", { name: "Close document navigation" }).first().click();
+    await expect(navigation).not.toHaveClass(/sidebarOpen/);
+  });
+});
+
 // ─── Human / Agent view toggle ────────────────────────────────────────────────
 
 test.describe("Human / Agent view toggle", () => {
@@ -347,6 +369,58 @@ test.describe("Clickable diagram nodes", () => {
     expect(hash).toContain("el-bb-catalog-service");
     // Still on the building-blocks document
     expect(hash).toContain("05-building-blocks.arc42.md");
+  });
+});
+
+// ─── Diagram controls ─────────────────────────────────────────────────────────
+
+test.describe("Diagram controls", () => {
+  test("opens Mermaid diagrams fullscreen and closes with Escape", async ({ page }) => {
+    await page.goto("/#05-building-blocks.arc42.md");
+    const diagram = page.getByTestId("diagram").first();
+    await expect(diagram.locator("svg")).toBeVisible({ timeout: 5000 });
+
+    const fullscreenButton = page.getByRole("button", { name: "Open diagram fullscreen" }).first();
+    await fullscreenButton.click();
+    await expect(page.getByRole("button", { name: "Close fullscreen diagram" })).toBeVisible();
+    await expect(diagram.locator("svg")).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("button", { name: "Open diagram fullscreen" }).first(),
+    ).toBeVisible();
+  });
+
+  test("zooms and pans a Mermaid diagram", async ({ page }) => {
+    await page.goto("/#05-building-blocks.arc42.md");
+    const diagram = page.getByTestId("diagram").first();
+    await expect(diagram.locator("svg")).toBeVisible({ timeout: 5000 });
+
+    const viewport = diagram.locator("..");
+    await page.getByRole("button", { name: "Zoom in" }).first().click();
+    await expect(page.getByText("110%")).toBeVisible();
+
+    await viewport.evaluate((element) => {
+      const viewport = element as HTMLDivElement;
+      viewport.scrollLeft = 20;
+      viewport.scrollTop = 20;
+    });
+    const before = await viewport.evaluate((element) => ({
+      left: (element as HTMLDivElement).scrollLeft,
+      top: (element as HTMLDivElement).scrollTop,
+    }));
+    const box = await viewport.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + 40, box!.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(box!.x + 20, box!.y + 20);
+    await page.mouse.up();
+    const after = await viewport.evaluate((element) => ({
+      left: (element as HTMLDivElement).scrollLeft,
+      top: (element as HTMLDivElement).scrollTop,
+    }));
+    expect(after.left).toBeGreaterThan(before.left);
+    expect(after.top).toBeGreaterThan(before.top);
   });
 });
 
