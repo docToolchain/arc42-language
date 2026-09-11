@@ -121,6 +121,7 @@ export function App({ payload }: AppProps) {
     navigateToHeading,
   } = useHashRouter(payload.documents);
   const [viewMode, setViewMode] = useState<"human" | "agent">("human");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggle: toggleTheme } = useTheme();
 
   const elementsMap = useMemo(() => {
@@ -146,6 +147,24 @@ export function App({ payload }: AppProps) {
 
   return (
     <div className={styles.layout}>
+      <button
+        className={styles.menuButton}
+        type="button"
+        aria-label="Open document navigation"
+        aria-expanded={sidebarOpen}
+        onClick={() => setSidebarOpen(true)}
+      >
+        <span aria-hidden="true">☰</span>
+        <span>Contents</span>
+      </button>
+      {sidebarOpen && (
+        <button
+          className={styles.sidebarBackdrop}
+          type="button"
+          aria-label="Close document navigation"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       <Sidebar
         documents={payload.documents}
         activeDocIndex={activeDocIndex}
@@ -155,6 +174,8 @@ export function App({ payload }: AppProps) {
         onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
         theme={theme}
         onToggleTheme={toggleTheme}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
       <main className={styles.main}>
         <DocumentView

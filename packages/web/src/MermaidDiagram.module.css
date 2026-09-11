@@ -4,11 +4,67 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow-x: auto;
+  overflow: hidden;
+}
+.viewport {
+  overflow: auto;
+  max-height: 70vh;
+}
+.pannable {
+  cursor: grab;
+  touch-action: none;
+}
+.panning {
+  cursor: grabbing;
+  user-select: none;
 }
 .svg svg {
   max-width: 100%;
   height: auto;
+}
+.svg {
+  width: max-content;
+  min-width: 100%;
+  transform-origin: top left;
+  transition: transform 120ms ease;
+}
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+.toolbar button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+.fullscreenButton {
+  padding: 0.25rem 0.5rem !important;
+}
+.toolbar span {
+  min-width: 3.5rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.fullscreen {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-radius: 0;
+  background: var(--bg);
+}
+.fullscreen .viewport {
+  flex: 1;
+  max-height: none;
 }
 .loading {
   opacity: 0.5;

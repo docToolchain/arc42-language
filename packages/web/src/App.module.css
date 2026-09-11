@@ -13,7 +13,13 @@
 .main {
   overflow-y: auto;
   padding: 2rem 2.5rem;
-  max-width: 860px;
+  width: min(100%, 920px);
+  justify-self: center;
+}
+
+.menuButton,
+.sidebarBackdrop {
+  display: none;
 }
 
 .loadSpinner {
@@ -57,4 +63,43 @@
   border-radius: var(--radius);
   font-size: 0.85rem;
   color: var(--text);
+}
+
+@media (max-width: 700px) {
+  .layout {
+    display: block;
+  }
+
+  .main {
+    width: 100%;
+    padding: 4.5rem 1rem 1.5rem;
+  }
+
+  .menuButton {
+    position: fixed;
+    z-index: 10;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-sidebar);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+
+  .sidebarBackdrop {
+    position: fixed;
+    z-index: 19;
+    inset: 0;
+    display: block;
+    width: 100%;
+    border: 0;
+    background: color-mix(in srgb, #000 35%, transparent);
+  }
 }

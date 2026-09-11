@@ -13,6 +13,8 @@ interface SidebarProps {
   onToggleViewMode: () => void;
   theme: "dark" | "light";
   onToggleTheme: () => void;
+  open: boolean;
+  onClose: () => void;
 }
 
 export function Sidebar({
@@ -24,6 +26,8 @@ export function Sidebar({
   onToggleViewMode,
   theme,
   onToggleTheme,
+  open,
+  onClose,
 }: SidebarProps) {
   const activeDoc = documents[activeDocIndex];
 
@@ -34,9 +38,20 @@ export function Sidebar({
   );
 
   return (
-    <nav className={styles.sidebar} aria-label="Document navigation">
+    <nav
+      className={[styles.sidebar, open ? styles.sidebarOpen : ""].filter(Boolean).join(" ")}
+      aria-label="Document navigation"
+    >
       <div className={styles.header}>
         <span className={styles.logo}>arc42</span>
+        <button
+          className={styles.closeButton}
+          type="button"
+          aria-label="Close document navigation"
+          onClick={onClose}
+        >
+          ×
+        </button>
         <button
           data-testid="view-toggle"
           className={[styles.viewToggle, viewMode === "agent" ? styles.viewToggleAgent : ""]

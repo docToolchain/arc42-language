@@ -91,8 +91,48 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [rendered, setRendered] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [panning, setPanning] = useState(false);
+  const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
   const diagramId = useRef(`mermaid-${id ?? ++mermaidCounter}`);
   const mermaidTheme = useMermaidTheme();
+
+  function startPan(event: React.PointerEvent<HTMLDivElement>) {
+    const viewport = event.currentTarget;
+    if (zoom <= 1) return;
+    viewport.setPointerCapture(event.pointerId);
+    panStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: viewport.scrollLeft,
+      scrollTop: viewport.scrollTop,
+    };
+    setPanning(true);
+  }
+
+  function movePan(event: React.PointerEvent<HTMLDivElement>) {
+    if (!panning) return;
+    const viewport = event.currentTarget;
+    viewport.scrollLeft = panStart.current.scrollLeft - (event.clientX - panStart.current.x);
+    viewport.scrollTop = panStart.current.scrollTop - (event.clientY - panStart.current.y);
+  }
+
+  function endPan(event: React.PointerEvent<HTMLDivElement>) {
+    if (viewportHasCapture(event.currentTarget, event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setPanning(false);
+  }
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setFullscreen(false);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [fullscreen]);
 
   const cleanedSource = useMemo(() => {
     const clean = cleanSource(source);
@@ -148,9 +188,61 @@ export function MermaidDiagram({ source, id, clickableNodes }: MermaidDiagramPro
   }
 
   return (
-    <figure className={[styles.figure, !rendered && styles.loading].filter(Boolean).join(" ")}>
-      <div data-testid="diagram" ref={containerRef} className={styles.svg} />
+    <figure
+      className={[styles.figure, fullscreen ? styles.fullscreen : "", !rendered && styles.loading]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className={styles.toolbar}>
+        <button
+          type="button"
+          onClick={() => setZoom((value) => Math.max(0.5, value - 0.1))}
+          aria-label="Zoom out"
+        >
+          −
+        </button>
+        <span>{Math.round(zoom * 100)}%</span>
+        <button
+          type="button"
+          onClick={() => setZoom((value) => Math.min(3, value + 0.1))}
+          aria-label="Zoom in"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          className={styles.fullscreenButton}
+          onClick={() => {
+            setFullscreen((value) => !value);
+            setZoom(1);
+          }}
+          aria-label={fullscreen ? "Close fullscreen diagram" : "Open diagram fullscreen"}
+          title={fullscreen ? "Close fullscreen" : "Fullscreen"}
+        >
+          <span aria-hidden="true">{fullscreen ? "⤢" : "⛶"}</span>
+        </button>
+      </div>
+      <div
+        className={[styles.viewport, zoom > 1 ? styles.pannable : "", panning ? styles.panning : ""]
+          .filter(Boolean)
+          .join(" ")}
+        onPointerDown={startPan}
+        onPointerMove={movePan}
+        onPointerUp={endPan}
+        onPointerCancel={endPan}
+      >
+        <div
+          data-testid="diagram"
+          ref={containerRef}
+          className={styles.svg}
+          style={{ transform: `scale(${zoom})` }}
+        />
+      </div>
       {!rendered && <div className={styles.spinner} aria-label="Rendering diagram…" />}
     </figure>
   );
+}
+
+function viewportHasCapture(viewport: HTMLDivElement, pointerId: number): boolean {
+  return viewport.hasPointerCapture(pointerId);
 }
