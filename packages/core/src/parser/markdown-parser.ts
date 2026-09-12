@@ -4,6 +4,7 @@ interface IgnoreMetadata {
   ruleCode: string;
   reason?: string;
   startLine: number;
+  startOffset: number;
 }
 
 interface DiagramMetadata {
@@ -14,6 +15,7 @@ interface DiagramMetadata {
   roots: string[];
   aliases: string;
   startLine: number;
+  startOffset: number;
 }
 
 function splitList(value: string | undefined): string[] {
@@ -28,6 +30,7 @@ function createDiagramNode(
   metadata: DiagramMetadata,
   source: string,
   endLine: number,
+  endOffset: number,
 ): DiagramNode {
   if (metadata.view === "building-block") {
     return {
@@ -41,6 +44,9 @@ function createDiagramNode(
       source,
       startLine: metadata.startLine,
       endLine,
+      startOffset: metadata.startOffset,
+      endOffset,
+      range: { start: metadata.startOffset, end: endOffset },
     };
   }
 
@@ -56,6 +62,9 @@ function createDiagramNode(
       source,
       startLine: metadata.startLine,
       endLine,
+      startOffset: metadata.startOffset,
+      endOffset,
+      range: { start: metadata.startOffset, end: endOffset },
     };
   }
 
@@ -71,6 +80,9 @@ function createDiagramNode(
       source,
       startLine: metadata.startLine,
       endLine,
+      startOffset: metadata.startOffset,
+      endOffset,
+      range: { start: metadata.startOffset, end: endOffset },
     };
   }
 
@@ -85,6 +97,9 @@ function createDiagramNode(
       source,
       startLine: metadata.startLine,
       endLine,
+      startOffset: metadata.startOffset,
+      endOffset,
+      range: { start: metadata.startOffset, end: endOffset },
     };
   }
 
@@ -97,7 +112,47 @@ function createDiagramNode(
     source,
     startLine: metadata.startLine,
     endLine,
+    startOffset: metadata.startOffset,
+    endOffset,
+    range: { start: metadata.startOffset, end: endOffset },
   };
+}
+
+/**
+ * Compute character offset for each line start.
+ */
+function computeLineOffsets(content: string): number[] {
+  const offsets = [0];
+  let pos = 0;
+
+  while (pos < content.length) {
+    const ch = content.charCodeAt(pos);
+
+    if (ch === 0x0d) {
+      // CR
+      if (pos + 1 < content.length && content.charCodeAt(pos + 1) === 0x0a) {
+        pos += 2; // CRLF
+      } else {
+        pos += 1; // CR only
+      }
+    } else if (ch === 0x0a) {
+      // LF
+      pos += 1;
+    } else {
+      pos++;
+      // Handle UTF-16 surrogate pairs
+      if (ch >= 0xd800 && ch <= 0xdbff && pos < content.length) {
+        const nextCh = content.charCodeAt(pos);
+        if (nextCh >= 0xdc00 && nextCh <= 0xdfff) {
+          pos++;
+        }
+      }
+    }
+
+    offsets.push(pos);
+  }
+
+  return offsets;
 }
 
 /**
@@ -108,11 +163,13 @@ function createDiagramNode(
 export function parseMarkdown(filePath: string, content: string): DocumentAst {
   const lines = content.split("\n");
   const nodes: AstNode[] = [];
+  const lineOffsets = computeLineOffsets(content);
 
   let openBlock: {
     blockType: string;
     attributes: Record<string, string>;
     startLine: number;
+    startOffset: number;
   } | null = null;
 
   let pendingIgnore: IgnoreMetadata | null = null;
@@ -121,7 +178,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     metadata: DiagramMetadata;
     source: string[];
   } | null = null;
-  let openBareMermaid: { source: string[]; startLine: number } | null = null;
+  let openBareMermaid: { source: string[]; startLine: number; startOffset: number } | null = null;
 
   let inHtmlComment = false;
   let inArc42Fence = false;
@@ -129,6 +186,8 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1; // 1-indexed
     const line = lines[i]!;
+    const startOffset = lineOffsets[i]!;
+    const endOffset = lineOffsets[i + 1] ?? content.length;
 
     // Track HTML comment blocks (<!-- ... -->) and skip their contents.
     // This allows template guidance to include example :::blocks without them being parsed.
@@ -158,6 +217,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           source: openBareMermaid.source.join("\n"),
           startLine: openBareMermaid.startLine,
           endLine: lineNo,
+          startOffset: openBareMermaid.startOffset,
+          endOffset,
+          range: { start: openBareMermaid.startOffset, end: endOffset },
         };
         nodes.push(node);
         openBareMermaid = null;
@@ -169,7 +231,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
 
     if (openDiagram) {
       if (/^```\s*$/.test(line)) {
-        nodes.push(createDiagramNode(openDiagram.metadata, openDiagram.source.join("\n"), lineNo));
+        nodes.push(
+          createDiagramNode(openDiagram.metadata, openDiagram.source.join("\n"), lineNo, endOffset),
+        );
         openDiagram = null;
       } else {
         openDiagram.source.push(line);
@@ -193,7 +257,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
         pendingDiagram = null;
         continue;
       }
-      nodes.push(createDiagramNode(pendingDiagram, "", pendingDiagram.startLine));
+      nodes.push(createDiagramNode(pendingDiagram, "", pendingDiagram.startLine, startOffset));
       pendingDiagram = null;
     }
 
@@ -206,6 +270,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           reason: pendingIgnore.reason,
           startLine: pendingIgnore.startLine,
           endLine: lineNo,
+          startOffset: pendingIgnore.startOffset,
+          endOffset,
+          range: { start: pendingIgnore.startOffset, end: endOffset },
         });
         pendingIgnore = null;
         continue;
@@ -226,6 +293,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
             ruleCode: "",
             startLine: pendingIgnore.startLine,
             endLine: pendingIgnore.startLine,
+            startOffset: pendingIgnore.startOffset,
+            endOffset: pendingIgnore.startOffset,
+            range: { start: pendingIgnore.startOffset, end: pendingIgnore.startOffset },
           });
           pendingIgnore = null;
         }
@@ -235,6 +305,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           ruleCode: "",
           startLine: pendingIgnore.startLine,
           endLine: pendingIgnore.startLine,
+          startOffset: pendingIgnore.startOffset,
+          endOffset: pendingIgnore.startOffset,
+          range: { start: pendingIgnore.startOffset, end: pendingIgnore.startOffset },
         });
         pendingIgnore = null;
       }
@@ -257,7 +330,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
       // and the validator (W017) can warn about the missing :::diagram block.
       const bareMermaidMatch = /^```(mermaid[a-zA-Z0-9_-]*)\s*$/.exec(line);
       if (bareMermaidMatch && !inArc42Fence) {
-        openBareMermaid = { source: [], startLine: lineNo };
+        openBareMermaid = { source: [], startLine: lineNo, startOffset };
         continue;
       }
     }
@@ -274,6 +347,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
             roots: splitList(openBlock.attributes["roots"]),
             aliases: openBlock.attributes["aliases"] ?? "",
             startLine: openBlock.startLine,
+            startOffset: openBlock.startOffset,
           };
         } else if (openBlock.blockType === "ignore") {
           // Multi-line ignore directive (shouldn't happen with single-line syntax)
@@ -284,6 +358,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
             reason: undefined,
             startLine: openBlock.startLine,
             endLine: lineNo,
+            startOffset: openBlock.startOffset,
+            endOffset,
+            range: { start: openBlock.startOffset, end: endOffset },
           });
         } else {
           nodes.push({
@@ -292,6 +369,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
             attributes: openBlock.attributes,
             startLine: openBlock.startLine,
             endLine: lineNo,
+            startOffset: openBlock.startOffset,
+            endOffset,
+            range: { start: openBlock.startOffset, end: endOffset },
             inArc42Fence,
           });
         }
@@ -321,6 +401,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
         reason: singleLineIgnore[2] ? singleLineIgnore[2].trim() : undefined,
         startLine: lineNo,
         endLine: lineNo,
+        startOffset,
+        endOffset,
+        range: { start: startOffset, end: endOffset },
       });
       continue;
     }
@@ -332,6 +415,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
         reason: undefined,
         startLine: lineNo,
         endLine: lineNo,
+        startOffset,
+        endOffset,
+        range: { start: startOffset, end: endOffset },
       });
       continue;
     }
@@ -339,7 +425,14 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     // A bare ignore marker outside an arc42 fence is ordinary Markdown, not an
     // unknown architecture block and therefore must not create a parse error.
     if (!inArc42Fence && /^:::ignore\s*$/.test(line)) {
-      nodes.push({ kind: "prose", text: line, line: lineNo });
+      nodes.push({
+        kind: "prose",
+        text: line,
+        line: lineNo,
+        startOffset,
+        endOffset,
+        range: { start: startOffset, end: endOffset },
+      });
       continue;
     }
 
@@ -356,6 +449,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           reason: singleLineMatch[2] ? singleLineMatch[2].trim() : undefined,
           startLine: lineNo,
           endLine: lineNo,
+          startOffset,
+          endOffset,
+          range: { start: startOffset, end: endOffset },
         });
         continue;
       }
@@ -366,6 +462,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           ruleCode: "",
           reason: undefined,
           startLine: lineNo,
+          startOffset,
         };
         continue;
       }
@@ -376,6 +473,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
           ruleCode: multiLineMatch[1]!,
           reason: multiLineMatch[2] ? multiLineMatch[2].trim() : undefined,
           startLine: lineNo,
+          startOffset,
         };
         continue;
       }
@@ -388,6 +486,7 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
         blockType: openMatch[1]!,
         attributes: {},
         startLine: lineNo,
+        startOffset,
       };
       continue;
     }
@@ -400,6 +499,9 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
         level: headingMatch[1]!.length,
         text: headingMatch[2]!.trim(),
         line: lineNo,
+        startOffset,
+        endOffset,
+        range: { start: startOffset, end: endOffset },
       });
       continue;
     }
@@ -409,14 +511,21 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     // paragraph/table boundaries (e.g. a blank line between a table and the
     // following paragraph prevents marked from absorbing the paragraph as a
     // table row in its first column).
-    nodes.push({ kind: "prose", text: line, line: lineNo });
+    nodes.push({
+      kind: "prose",
+      text: line,
+      line: lineNo,
+      startOffset,
+      endOffset,
+      range: { start: startOffset, end: endOffset },
+    });
   }
 
   // Unclosed block: silently ignored (validator will catch missing required attrs)
 
   // Process any pending diagram at EOF (diagram block was closed but no fence followed)
   if (pendingDiagram) {
-    nodes.push(createDiagramNode(pendingDiagram, "", pendingDiagram.startLine));
+    nodes.push(createDiagramNode(pendingDiagram, "", pendingDiagram.startLine, content.length));
   }
 
   return { filePath, nodes };

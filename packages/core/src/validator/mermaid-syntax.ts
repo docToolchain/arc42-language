@@ -106,8 +106,8 @@ export function suppressInvalidMermaidDiagnostics(
         (range) =>
           range.code === diagnostic.code &&
           range.file === diagnostic.file &&
-          diagnostic.line >= range.start &&
-          diagnostic.line <= range.end,
+          (diagnostic.line ?? 0) >= range.start &&
+          (diagnostic.line ?? 0) <= range.end,
       ),
   );
 }

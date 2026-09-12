@@ -1,0 +1,40 @@
+{
+  "name": "@arc42/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LSP server for arc42 architecture documentation",
+  "license": "MIT",
+  "bin": {
+    "arc42-language-server": "./dist/server.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./server": {
+      "development": "./src/server.ts",
+      "default": "./dist/server.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "build:server": "vp pack src/server.ts --out-dir dist",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "test:server": "vp test server-stdio-e2e.test.ts",
+    "check": "vp check",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "@arc42/core": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

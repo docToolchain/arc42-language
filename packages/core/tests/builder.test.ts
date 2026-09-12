@@ -20,7 +20,10 @@ function doc(content: string): DocumentAst {
         attributes,
         startLine: 1,
         endLine: attrLines!.length + 1,
+        startOffset: 0,
+        endOffset: content.length,
         inArc42Fence: false,
+        range: { start: 0, end: content.length },
       },
     ],
   };

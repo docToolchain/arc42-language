@@ -1,7 +1,18 @@
 // Meta-model element types
 
-import type { BlockType, DocumentAst } from "../ast.ts";
+import type { BlockType, DocumentAst, SourceRange } from "../ast.ts";
 
+/**
+ * Half-open source range (start inclusive, end exclusive) with file reference.
+ */
+export interface SourceRangeLocation {
+  file: string;
+  range: SourceRange;
+}
+
+/**
+ * Extended source location with zero-based range information.
+ */
 export interface SourceLocation {
   file: string;
   line: number;
@@ -9,6 +20,8 @@ export interface SourceLocation {
   heading?: string;
   /** Prose lines between the nearest preceding heading and this element's block, if any. */
   prose?: string;
+  /** Half-open source range for the element */
+  range?: SourceRange;
 }
 
 /**

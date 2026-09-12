@@ -14,16 +14,16 @@ function applyIgnoreDirectives(workspace: Workspace, diagnostics: Diagnostic[]):
   // A directive belongs to the following source element and suppresses one
   // matching finding there. Assigning in source order keeps a directive tied
   // to the nearest subsequent finding, independent of rule execution order.
-  for (const directive of [...directives].sort((a, b) => a.line - b.line)) {
+  for (const directive of [...directives].sort((a, b) => (a.line ?? 0) - (b.line ?? 0))) {
     const diagnostic = diagnostics
       .filter(
         (candidate) =>
           !suppressed.has(candidate) &&
           candidate.file === directive.file &&
           candidate.code.toUpperCase() === directive.ruleCode.toUpperCase() &&
-          candidate.line >= directive.line,
+          (candidate.line ?? 0) >= directive.line,
       )
-      .sort((a, b) => a.line - b.line)[0];
+      .sort((a, b) => (a.line ?? 0) - (b.line ?? 0))[0];
     if (diagnostic) {
       directive.used = true;
       suppressed.add(diagnostic);

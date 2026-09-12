@@ -4,15 +4,24 @@
 import type { Workspace } from "../model/types.ts";
 import type { ReferenceIndex } from "../resolver/types.ts";
 import type { CoverageResult } from "../coverage.ts";
+import type { SourceRange } from "../ast.ts";
 
 export type Severity = "error" | "warning" | "hint";
 
+/**
+ * Diagnostic with optional precise source range.
+ * If range is absent, diagnostic is at a specific line only.
+ */
 export interface Diagnostic {
   code: string;
   severity: Severity;
   message: string;
   file: string;
-  line: number;
+  line?: number;
+  /** Zero-based, half-open source range (start inclusive, end exclusive) */
+  range?: SourceRange;
+  /** The rule code as a stable identifier for quick fixes */
+  sourceCode?: string;
 }
 
 export interface PathEvidence {

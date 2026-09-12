@@ -7,13 +7,14 @@ const targets = ["docs/arc42", "examples/bookstore-backend"];
 
 function formatDiagnostic(
   file: string,
-  line: number,
+  line: number | undefined,
   message: string,
   severity: string,
   code: string,
 ) {
+  const displayLine = line ?? 0;
   const displayFile = relative(repositoryRoot, file) || file;
-  return `${severity} ${code}  ${displayFile}:${line}  ${message}`;
+  return `${severity} ${code}  ${displayFile}:${displayLine}  ${message}`;
 }
 
 let failed = false;
