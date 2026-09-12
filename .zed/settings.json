@@ -1,0 +1,16 @@
+{
+  "lsp": {
+    "arc42-language-server": {
+      "binary": {
+        "path": "node",
+        "arguments": ["packages/server/dist/server.mjs"]
+      }
+    }
+  },
+  "languages": {
+    "Markdown": {
+      "file_types": ["arc42.md"],
+      "language_servers": ["arc42-language-server"]
+    }
+  }
+}
