@@ -53,7 +53,7 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] Add context-aware completion E2E tests and connect schema metadata. The packaged stdio server now returns block keywords, schema fields, and enum values only in their applicable contexts, with empty results for malformed/inapplicable input.
 - [x] Update the server unit contract test for context-aware completion: empty input returns no suggestions, while an opened block returns applicable fields.
 - [x] Add Zed configuration and a manual fixture-workspace smoke checklist.
-- [ ] Run the complete MVP release gate and document remaining non-MVP limitations.
+- [x] Run the complete MVP release gate and document remaining non-MVP limitations.
 
 ### Synchronization decisions
 - Document state is keyed by URI and stores the latest text plus LSP document version.
@@ -82,6 +82,22 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] The packaged stdio server validates opened and changed documents through `@arc42/core`.
 - [x] `textDocument/publishDiagnostics` includes URI, zero-based LSP ranges, severity, and stable rule codes; valid changes publish an empty list to clear findings.
 - [x] Queued-notification E2E coverage verifies invalid open, valid replacement, and diagnostic clearing.
+
+### MVP release gate result (2026-09-12)
+- [x] Focused packaged stdio E2E: `pnpm --filter @arc42/server test:server` passed, 1 file and 3 tests.
+- [x] All server tests: `pnpm --filter @arc42/server test` passed, 2 files and 10 tests.
+- [x] Full repository tests: `pnpm test` passed, 62 files and 352 tests.
+- [x] Server build: `pnpm --filter @arc42/server build` passed and emitted `packages/server/dist/server.mjs`.
+- [x] Full repository build: `pnpm run build` passed, including template validation and all workspace builds.
+- [x] Server check: `pnpm --filter @arc42/server check` passed with no warnings, lint errors, or type errors.
+- [x] Full repository check: `pnpm run check` passed with zero errors and one warning.
+- [x] `git diff --check` passed with no whitespace errors; the worktree remained clean.
+
+### Release-gate notes and remaining limitations
+- The single repository-check warning and build warnings are pre-existing toolchain warnings: Vite/esbuild and React Babel deprecations, plus a large web bundle chunk warning. They are unrelated to the language-server feature and did not fail the gate.
+- The MVP does not provide semantic completion for arbitrary prose, code actions, formatting, rename/references, or workspace-wide indexing beyond the implemented overlay/revalidation behavior.
+- The MVP has manual Zed fixture-workspace smoke documentation, but no automated Zed GUI or editor integration test.
+- No feature-caused failures remained, so no production code fixes were needed during the release-gate run.
 
 ## Commit
 ### Tasks
