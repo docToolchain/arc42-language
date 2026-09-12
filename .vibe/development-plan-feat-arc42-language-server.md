@@ -38,6 +38,7 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] Remove duplicate CLI LSP mock contract/harness/spec artifacts and script.
 - [x] Run focused server tests and repository tests; record pre-existing server check failures.
 - [x] Fix source E2E resolution by using Node's type-transform runtime with `.ts` source imports while preserving bundled output resolution.
+- [x] Add failing synchronization tests and implement versioned full/incremental document synchronization, stale-update rejection, close cleanup, and UTF-16/CRLF/Unicode range application.
 
 ### Completed
 - [x] Canonical smoke suite and server framing implementation completed.
@@ -45,12 +46,18 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] Focused E2E, server build, and server `check` pass for the packaged lifecycle slice.
 - [x] Removed abandoned CLI LSP implementation, duplicate parser range processor, unused server range utilities, and generated server tarball.
 - [x] Add packaged-entrypoint lifecycle E2E test, then make the built `bin` command pass.
-- [ ] Add full/incremental document synchronization and versioning tests, then implement the document store.
+- [x] Add full/incremental document synchronization and versioning tests, then implement the document store.
 - [ ] Add diagnostics publication/clearing E2E tests, then connect core validation and range conversion.
 - [ ] Add workspace overlay/revalidation tests for unsaved cross-file documents.
 - [ ] Add context-aware completion E2E tests and connect schema metadata.
 - [ ] Add Zed configuration and a manual fixture-workspace smoke checklist.
 - [ ] Run the complete MVP release gate and document remaining non-MVP limitations.
+
+### Synchronization decisions
+- Document state is keyed by URI and stores the latest text plus LSP document version.
+- Full changes replace the complete text; incremental changes are applied in order against the current text.
+- Changes with a version less than or equal to the stored version are ignored.
+- Range offsets use JavaScript string indices, which represent LSP UTF-16 positions, and preserve existing line endings.
 
 ### Zed-testable MVP acceptance criteria
 - Zed launches the built server using one documented command without a development-only runner.

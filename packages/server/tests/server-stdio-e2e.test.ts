@@ -180,6 +180,21 @@ describe("server stdio E2E smoke", () => {
     });
 
     client.notify("initialized");
+    const uri = "file:///stdio-sync.arc42.md";
+    client.notify("textDocument/didOpen", {
+      textDocument: { uri, languageId: "markdown", version: 1, text: "one\r\ntwo" },
+    });
+    client.notify("textDocument/didChange", {
+      textDocument: { uri, version: 2 },
+      contentChanges: [
+        { range: { start: { line: 0, character: 0 }, end: { line: 0, character: 3 } }, text: "😀" },
+      ],
+    });
+    client.notify("textDocument/didChange", {
+      textDocument: { uri, version: 1 },
+      contentChanges: [{ text: "stale" }],
+    });
+    client.notify("textDocument/didClose", { textDocument: { uri } });
     const shutdown = await client.request("shutdown");
     expect(shutdown).toMatchObject({ jsonrpc: "2.0", result: null });
     client.notify("exit");
