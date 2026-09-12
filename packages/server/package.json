@@ -23,7 +23,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vp pack",
+    "build": "vp pack src/server.ts --out-dir dist",
     "build:server": "vp pack src/server.ts --out-dir dist",
     "dev": "vp pack --watch",
     "test": "vp test",

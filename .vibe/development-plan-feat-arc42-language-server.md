@@ -10,6 +10,9 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - Buffer Content-Length payloads as bytes so UTF-8 length is correct across chunk boundaries.
 - Test only initialize, initialized, shutdown, exit, timeouts, and deterministic cleanup.
 - Keep NodeNext `.js` specifiers for built output generally, but use `.ts` specifiers at the server source entry boundary so Node's direct type-transform runtime can resolve source E2E imports. The bundler rewrites these imports for `dist/server.mjs`, so source and built E2E paths both remain runnable.
+- The next milestone is a Zed-testable MVP: stable executable, synchronization, core diagnostics with useful ranges, and context-aware completion.
+- Use vertical TDD slices: add a failing real-subprocess E2E test, implement the smallest change, run focused tests, then run regression checks.
+- Package the stdio server entrypoint itself (`src/server.ts`) so the published `bin` target is rebuilt as `dist/server.mjs`.
 
 ## Notes
 *Additional context and observations*
@@ -38,8 +41,33 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 
 ### Completed
 - [x] Canonical smoke suite and server framing implementation completed.
-- [x] Focused E2E and repository tests pass; server `check` remains blocked by existing LSP type/lint issues.
+- [x] Packaged-entrypoint lifecycle E2E test passes; the server build now emits the declared `bin` target.
+- [x] Focused E2E, server build, and server `check` pass for the packaged lifecycle slice.
 - [x] Removed abandoned CLI LSP implementation, duplicate parser range processor, unused server range utilities, and generated server tarball.
+- [x] Add packaged-entrypoint lifecycle E2E test, then make the built `bin` command pass.
+- [ ] Add full/incremental document synchronization and versioning tests, then implement the document store.
+- [ ] Add diagnostics publication/clearing E2E tests, then connect core validation and range conversion.
+- [ ] Add workspace overlay/revalidation tests for unsaved cross-file documents.
+- [ ] Add context-aware completion E2E tests and connect schema metadata.
+- [ ] Add Zed configuration and a manual fixture-workspace smoke checklist.
+- [ ] Run the complete MVP release gate and document remaining non-MVP limitations.
+
+### Zed-testable MVP acceptance criteria
+- Zed launches the built server using one documented command without a development-only runner.
+- Opening an invalid `.arc42.md` produces a correctly ranged diagnostic.
+- Correcting the document clears the diagnostic.
+- Full and incremental edits update state without stale results.
+- Completion offers arc42 block types in the relevant context.
+- The stdio E2E suite covers framing, initialization, synchronization, diagnostics, completion, and clean shutdown.
+
+### TDD implementation order
+1. Add a failing packaged-entrypoint lifecycle test; fix build output and executable configuration.
+2. Add failing synchronization tests for open, full change, incremental change, close, stale versions, CRLF, and Unicode; implement the versioned document store.
+3. Add failing diagnostics tests for invalid/valid open and change; implement core validation and LSP diagnostic conversion/clearing.
+4. Add failing workspace-overlay tests; implement discovery, unsaved overlays, and affected-document revalidation.
+5. Add failing completion tests for block, attribute, and value contexts; connect schema metadata and safe malformed-input handling.
+6. Add Zed configuration/manual smoke documentation; verify interactively against a fixture workspace.
+7. Run focused E2E tests, all tests, build, and check; only then mark the MVP complete.
 
 ## Commit
 ### Tasks

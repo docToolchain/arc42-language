@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -136,8 +136,17 @@ class StdioClient {
 
 function serverEntrypoint(): string {
   const root = dirname(fileURLToPath(import.meta.url));
-  const dist = join(root, "..", "dist", "server.mjs");
-  return existsSync(dist) ? dist : join(root, "..", "src", "server.ts");
+  const packageJson = JSON.parse(readFileSync(join(root, "..", "package.json"), "utf8")) as {
+    bin: string | Record<string, string>;
+  };
+  const bin =
+    typeof packageJson.bin === "string"
+      ? packageJson.bin
+      : packageJson.bin["arc42-language-server"];
+  const entrypoint = join(root, "..", bin);
+  expect(bin).toBe("./dist/server.mjs");
+  expect(existsSync(entrypoint)).toBe(true);
+  return entrypoint;
 }
 
 describe("server stdio E2E smoke", () => {
@@ -151,7 +160,7 @@ describe("server stdio E2E smoke", () => {
     await client.close();
   });
 
-  test("completes the initialize and clean lifecycle", async () => {
+  test("launches the packaged bin and completes the initialize and clean lifecycle", async () => {
     const initialize = await client.request("initialize", {
       processId: process.pid,
       clientInfo: { name: "arc42-stdio-smoke" },
