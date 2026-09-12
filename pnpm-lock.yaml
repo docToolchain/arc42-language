@@ -123,6 +123,7 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3

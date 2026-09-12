@@ -32,7 +32,9 @@
     "prepublishOnly": "vp run build"
   },
   "dependencies": {
-    "@arc42/core": "workspace:*",
+    "@arc42/core": "workspace:*"
+  },
+  "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"

@@ -11,6 +11,9 @@ import {
   type DocumentSymbol,
   type WorkspaceSymbolParams,
 } from "./types.ts";
+import { readdir, readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { parseArchitectureDocument, validateDocuments, type Diagnostic } from "@arc42/core";
 
 export type PublishDiagnostics = (params: {
@@ -30,6 +33,7 @@ export type PublishDiagnostics = (params: {
 export class LspServer {
   private capabilities: ServerCapabilities;
   private documents: Map<string, { text: string; version?: number }> = new Map();
+  private workspaceRoot?: string;
 
   constructor(private readonly publishDiagnostics: PublishDiagnostics = () => {}) {
     this.capabilities = {
@@ -48,7 +52,11 @@ export class LspServer {
     };
   }
 
-  initialize(_params: InitializeParams): InitializeResult {
+  initialize(
+    params: InitializeParams & { rootUri?: string; workspaceFolders?: Array<{ uri: string }> },
+  ): InitializeResult {
+    const workspaceUri = params.workspaceFolders?.[0]?.uri ?? params.rootUri;
+    if (workspaceUri?.startsWith("file:")) this.workspaceRoot = fileURLToPath(workspaceUri);
     return {
       capabilities: {
         ...this.capabilities,
@@ -69,18 +77,18 @@ export class LspServer {
     // Configuration changed
   }
 
-  didOpenTextDocument(params: any): void {
+  async didOpenTextDocument(params: any): Promise<void> {
     const { textDocument } = params;
     if (textDocument?.uri && typeof textDocument.text === "string") {
       this.documents.set(textDocument.uri, {
         text: textDocument.text,
         version: textDocument.version,
       });
-      this.validateDocument(textDocument.uri, textDocument.text);
+      await this.revalidateWorkspace();
     }
   }
 
-  didChangeTextDocument(params: any): void {
+  async didChangeTextDocument(params: any): Promise<void> {
     const { textDocument, contentChanges } = params;
     if (!textDocument?.uri || !Array.isArray(contentChanges) || contentChanges.length === 0) return;
 
@@ -106,15 +114,31 @@ export class LspServer {
       text = text.slice(0, start) + change.text + text.slice(end);
     }
     this.documents.set(textDocument.uri, { text, version: textDocument.version });
-    this.validateDocument(textDocument.uri, text);
+    await this.revalidateWorkspace();
   }
 
-  private validateDocument(uri: string, text: string): void {
-    const result = validateDocuments([parseArchitectureDocument(uri, text)]);
-    this.publishDiagnostics({
-      uri,
-      diagnostics: result.diagnostics.map((diagnostic) => this.toLspDiagnostic(diagnostic, text)),
-    });
+  private async revalidateWorkspace(): Promise<void> {
+    const contents = new Map<string, string>();
+    if (this.workspaceRoot) {
+      for (const file of await discoverArc42Files(this.workspaceRoot)) {
+        const uri = new URL(`file://${file}`).href;
+        contents.set(uri, await readFile(file, "utf8"));
+      }
+    }
+    for (const [uri, document] of this.documents) contents.set(uri, document.text);
+
+    const result = validateDocuments(
+      [...contents].map(([uri, text]) => parseArchitectureDocument(uri, text)),
+    );
+    for (const uri of contents.keys()) {
+      const text = contents.get(uri)!;
+      this.publishDiagnostics({
+        uri,
+        diagnostics: result.diagnostics
+          .filter((diagnostic) => diagnostic.file === uri)
+          .map((diagnostic) => this.toLspDiagnostic(diagnostic, text)),
+      });
+    }
   }
 
   private toLspDiagnostic(diagnostic: Diagnostic, text: string) {
@@ -208,6 +232,19 @@ export class LspServer {
   getDocumentUris(): string[] {
     return Array.from(this.documents.keys());
   }
+}
+
+async function discoverArc42Files(root: string): Promise<string[]> {
+  const files: string[] = [];
+  async function walk(directory: string): Promise<void> {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) await walk(path);
+      else if (entry.isFile() && entry.name.endsWith(".arc42.md")) files.push(path);
+    }
+  }
+  await walk(root);
+  return files;
 }
 
 function positionToOffset(text: string, position: any): number | undefined {

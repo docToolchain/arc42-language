@@ -143,10 +143,10 @@ export class StdioLspServer {
           result = null; // No response content, but we send response
           break;
         case "textDocument/didOpen":
-          this.server.didOpenTextDocument(request.params);
+          await this.server.didOpenTextDocument(request.params);
           return; // Notifications don't get responses
         case "textDocument/didChange":
-          this.server.didChangeTextDocument(request.params);
+          await this.server.didChangeTextDocument(request.params);
           return;
         case "textDocument/didClose":
           this.server.didCloseTextDocument(request.params);
@@ -187,10 +187,10 @@ export class StdioLspServer {
         this.server.initialized();
         break;
       case "textDocument/didOpen":
-        this.server.didOpenTextDocument(notification.params);
+        await this.server.didOpenTextDocument(notification.params);
         break;
       case "textDocument/didChange":
-        this.server.didChangeTextDocument(notification.params);
+        await this.server.didChangeTextDocument(notification.params);
         break;
       case "textDocument/didClose":
         this.server.didCloseTextDocument(notification.params);

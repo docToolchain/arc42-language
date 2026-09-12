@@ -48,7 +48,8 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] Add packaged-entrypoint lifecycle E2E test, then make the built `bin` command pass.
 - [x] Add full/incremental document synchronization and versioning tests, then implement the document store.
 - [x] Add diagnostics publication/clearing E2E tests, then connect core validation and range conversion.
-- [ ] Add workspace overlay/revalidation tests for unsaved cross-file documents.
+- [x] Add workspace overlay/revalidation tests for unsaved cross-file documents and revalidate discovered documents against open overlays.
+- [x] Align server test tooling dependency placement with the workspace convention so `vite-plus/test` resolves during checks.
 - [ ] Add context-aware completion E2E tests and connect schema metadata.
 - [ ] Add Zed configuration and a manual fixture-workspace smoke checklist.
 - [ ] Run the complete MVP release gate and document remaining non-MVP limitations.
