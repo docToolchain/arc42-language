@@ -119,13 +119,23 @@ test("revalidates cross-file references against unsaved open-document overlays",
   }
 });
 
-test("LspServer handlers return expected values", () => {
+test("LspServer handlers return expected values", async () => {
   const server = new LspServer();
 
   expect(server.definition({})).toBeNull();
   expect(server.references({})).toBeNull();
   expect(server.documentSymbol({})).toEqual([]);
-  expect(server.completion({})).toHaveLength(16);
+  expect(server.completion({})).toEqual([]);
+  const uri = "file:///completion.arc42.md";
+  await server.didOpenTextDocument({
+    textDocument: { uri, version: 1, text: ":::building-block\n\n:::" },
+  });
+  expect(
+    server.completion({
+      textDocument: { uri },
+      position: { line: 1, character: 0 },
+    }),
+  ).toContainEqual({ label: "technology", kind: 10, insertText: "technology: " });
   expect(server.hover({})).toBeDefined();
   expect(server.hover({})?.contents).toBeDefined();
   expect(server.hover({})?.range).toBeDefined();

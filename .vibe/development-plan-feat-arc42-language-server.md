@@ -50,7 +50,8 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] Add diagnostics publication/clearing E2E tests, then connect core validation and range conversion.
 - [x] Add workspace overlay/revalidation tests for unsaved cross-file documents and revalidate discovered documents against open overlays.
 - [x] Align server test tooling dependency placement with the workspace convention so `vite-plus/test` resolves during checks.
-- [ ] Add context-aware completion E2E tests and connect schema metadata.
+- [x] Add context-aware completion E2E tests and connect schema metadata. The packaged stdio server now returns block keywords, schema fields, and enum values only in their applicable contexts, with empty results for malformed/inapplicable input.
+- [x] Update the server unit contract test for context-aware completion: empty input returns no suggestions, while an opened block returns applicable fields.
 - [ ] Add Zed configuration and a manual fixture-workspace smoke checklist.
 - [ ] Run the complete MVP release gate and document remaining non-MVP limitations.
 

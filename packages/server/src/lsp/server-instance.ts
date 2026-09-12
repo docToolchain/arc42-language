@@ -14,7 +14,15 @@ import {
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-import { parseArchitectureDocument, validateDocuments, type Diagnostic } from "@arc42/core";
+import {
+  parseArchitectureDocument,
+  validateDocuments,
+  ELEMENT_SCHEMAS,
+  deriveFields,
+  ELEMENT_KIND_ORDER,
+  type Diagnostic,
+  type BlockType,
+} from "@arc42/core";
 
 export type PublishDiagnostics = (params: {
   uri: string;
@@ -171,35 +179,51 @@ export class LspServer {
     return [];
   }
 
-  completion(_params: any): CompletionItem[] {
-    // Return basic block type completions
-    const blockTypes = [
-      "building-block",
-      "decision",
-      "risk",
-      "quality-goal",
-      "concept",
-      "runtime-scenario",
-      "deployment-node",
-      "interface",
-      "actor",
-      "solution-strategy",
-      "constraint",
-      "context-diagram",
-      "building-block-diagram",
-      "sequence-diagram",
-      "deployment-diagram",
-      "glossary-term",
-    ];
+  completion(params: any): CompletionItem[] {
+    const uri = params?.textDocument?.uri;
+    const document = typeof uri === "string" ? this.documents.get(uri)?.text : undefined;
+    const position = params?.position;
+    if (
+      !document ||
+      !position ||
+      !Number.isInteger(position.line) ||
+      !Number.isInteger(position.character)
+    ) {
+      return [];
+    }
+    const lines = document.split(/\r?\n/);
+    const line = lines[position.line];
+    if (typeof line !== "string" || position.character < 0 || position.character > line.length)
+      return [];
+    const before = line.slice(0, position.character);
 
-    return blockTypes.map((type) => ({
-      label: type,
-      kind: 13, // CompletionItemKind.Keyword
-      detail: "arc42 block type",
-      documentation: `A ${type} block for architecture documentation`,
-      insertText: type,
-      filterText: type,
-    }));
+    if (/^\s*:::[\w-]*$/.test(before)) {
+      return ELEMENT_KIND_ORDER.map((type) => ({ label: type, kind: 14, insertText: type }));
+    }
+
+    let blockType: BlockType | undefined;
+    for (let index = position.line; index >= 0; index--) {
+      const match = /^\s*:::([\w-]+)\s*$/.exec(lines[index]);
+      if (match) {
+        blockType = match[1] as BlockType;
+        break;
+      }
+      if (/^\s*:::\s*$/.test(lines[index]) && index !== position.line) break;
+    }
+    if (!blockType || !(blockType in ELEMENT_SCHEMAS) || /^\s*:::/.test(before)) return [];
+    const fieldMatch = /^\s*([\w-]+):\s*(.*)$/.exec(before);
+    const schema = ELEMENT_SCHEMAS[blockType];
+    const fields = deriveFields(schema as any);
+    if (!fieldMatch) {
+      return fields.map((field) => ({
+        label: field.name,
+        kind: 10,
+        insertText: `${field.name}: `,
+      }));
+    }
+    const field = fields.find((candidate) => candidate.name === fieldMatch[1]);
+    if (!field?.enumValues || fieldMatch[2].trim() !== "") return [];
+    return field.enumValues.map((value) => ({ label: value, kind: 12, insertText: value }));
   }
 
   hover(_params: any): Hover | null {

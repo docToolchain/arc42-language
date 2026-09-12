@@ -45,6 +45,7 @@ export type {
 } from "./model/types.ts";
 
 export { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "./model/types.ts";
+export { ELEMENT_SCHEMAS, deriveFields } from "./model/schemas.ts";
 
 export type { ReferenceIndex, Edge } from "./resolver/types.ts";
 export type {

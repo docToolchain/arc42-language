@@ -247,4 +247,37 @@ describe("server stdio E2E smoke", () => {
     }
     expect(cleared.params).toEqual({ uri, diagnostics: [] });
   }, 15_000);
+
+  test("completes block types, attributes, and enum values from stdio", async () => {
+    const uri = "file:///completion.arc42.md";
+    const text = ":::building-block\n\n:::\n:::decision\nstatus: \n:::";
+    client.notify("textDocument/didOpen", { textDocument: { uri, version: 1, text } });
+    await client.waitForNotification("textDocument/publishDiagnostics");
+
+    const block = await client.request("textDocument/completion", {
+      textDocument: { uri },
+      position: { line: 0, character: 3 },
+    });
+    expect(block.result).toContainEqual({
+      label: "building-block",
+      kind: 14,
+      insertText: "building-block",
+    });
+
+    const attributes = await client.request("textDocument/completion", {
+      textDocument: { uri },
+      position: { line: 1, character: 0 },
+    });
+    expect(attributes.result).toContainEqual({
+      label: "technology",
+      kind: 10,
+      insertText: "technology: ",
+    });
+
+    const value = await client.request("textDocument/completion", {
+      textDocument: { uri },
+      position: { line: 4, character: "status: ".length },
+    });
+    expect(value.result).toContainEqual({ label: "accepted", kind: 12, insertText: "accepted" });
+  }, 15_000);
 });
