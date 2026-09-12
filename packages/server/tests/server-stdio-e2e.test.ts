@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -28,6 +28,8 @@ class StdioClient {
       timer: ReturnType<typeof setTimeout>;
     }
   >();
+  private readonly notifications: JsonRpcMessage[] = [];
+  private readonly notificationWaiters: Array<(message: JsonRpcMessage) => void> = [];
   private exitPromise: Promise<number | null>;
 
   constructor(entrypoint: string) {
@@ -69,6 +71,12 @@ class StdioClient {
 
   notify(method: string, params?: unknown): void {
     this.write({ jsonrpc: "2.0", method, params });
+  }
+
+  waitForNotification(method: string): Promise<JsonRpcMessage> {
+    const index = this.notifications.findIndex((message) => message.method === method);
+    if (index >= 0) return Promise.resolve(this.notifications.splice(index, 1)[0]);
+    return new Promise((resolve) => this.notificationWaiters.push(resolve));
   }
 
   async waitForExit(): Promise<number | null> {
@@ -116,7 +124,12 @@ class StdioClient {
       const body = this.buffer.subarray(bodyStart, bodyStart + length);
       this.buffer = this.buffer.subarray(bodyStart + length);
       const message = JSON.parse(body.toString("utf8")) as JsonRpcMessage;
-      if (message.id === undefined) continue;
+      if (message.id === undefined) {
+        const waiter = this.notificationWaiters.shift();
+        if (waiter) waiter(message);
+        else this.notifications.push(message);
+        continue;
+      }
       const pending = this.pending.get(message.id);
       if (!pending) continue;
       clearTimeout(pending.timer);
@@ -152,11 +165,11 @@ function serverEntrypoint(): string {
 describe("server stdio E2E smoke", () => {
   let client: StdioClient;
 
-  beforeAll(() => {
+  beforeEach(() => {
     client = new StdioClient(serverEntrypoint());
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await client.close();
   });
 
@@ -200,5 +213,38 @@ describe("server stdio E2E smoke", () => {
     client.notify("exit");
     client.endInput();
     await expect(client.waitForExit()).resolves.toBe(0);
+  }, 15_000);
+
+  test("publishes diagnostics for invalid, valid, and changed documents", async () => {
+    const uri = "file:///diagnostics.arc42.md";
+    client.notify("textDocument/didOpen", {
+      textDocument: {
+        uri,
+        languageId: "markdown",
+        version: 1,
+        text: "# Architecture\n\n:::decision\ntitle: Missing id\n:::",
+      },
+    });
+    const invalid = await client.waitForNotification("textDocument/publishDiagnostics");
+    expect(invalid.params).toMatchObject({ uri });
+    const invalidParams = invalid.params as {
+      uri: string;
+      diagnostics: Array<{ range: unknown }>;
+    };
+    expect(invalidParams.diagnostics[0]).toMatchObject({ severity: 1, code: "E005" });
+    expect(invalidParams.diagnostics[0].range).toEqual({
+      start: { line: expect.any(Number), character: expect.any(Number) },
+      end: { line: expect.any(Number), character: expect.any(Number) },
+    });
+
+    client.notify("textDocument/didChange", {
+      textDocument: { uri, version: 2 },
+      contentChanges: [{ text: "# Architecture\n\nValid prose." }],
+    });
+    let cleared = await client.waitForNotification("textDocument/publishDiagnostics");
+    while ((cleared.params as { diagnostics: unknown[] }).diagnostics.length > 0) {
+      cleared = await client.waitForNotification("textDocument/publishDiagnostics");
+    }
+    expect(cleared.params).toEqual({ uri, diagnostics: [] });
   }, 15_000);
 });

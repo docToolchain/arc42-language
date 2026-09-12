@@ -65,9 +65,12 @@ export class StdioLspServer {
   private buffer = Buffer.alloc(0);
   private pendingRequest: LSPRequest | null = null;
   private requestProcessing = false;
+  private notificationChain = Promise.resolve();
 
   constructor() {
-    this.server = new LspServer();
+    this.server = new LspServer((params) =>
+      this.sendLSPMessage({ jsonrpc: "2.0", method: "textDocument/publishDiagnostics", params }),
+    );
     this.setupStdio();
   }
 
@@ -121,7 +124,10 @@ export class StdioLspServer {
 
     // It's a notification
     if (message.jsonrpc === "2.0" && "method" in message) {
-      await this.handleNotification(message as LSPNotification);
+      this.notificationChain = this.notificationChain.then(() =>
+        this.handleNotification(message as LSPNotification),
+      );
+      await this.notificationChain;
     }
   }
 

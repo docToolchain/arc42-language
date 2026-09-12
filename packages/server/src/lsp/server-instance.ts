@@ -11,6 +11,17 @@ import {
   type DocumentSymbol,
   type WorkspaceSymbolParams,
 } from "./types.ts";
+import { parseArchitectureDocument, validateDocuments, type Diagnostic } from "@arc42/core";
+
+export type PublishDiagnostics = (params: {
+  uri: string;
+  diagnostics: Array<{
+    range: { start: { line: number; character: number }; end: { line: number; character: number } };
+    severity: number;
+    code: string;
+    message: string;
+  }>;
+}) => void;
 
 // ============================================================================
 // LSP Server Class
@@ -20,7 +31,7 @@ export class LspServer {
   private capabilities: ServerCapabilities;
   private documents: Map<string, { text: string; version?: number }> = new Map();
 
-  constructor() {
+  constructor(private readonly publishDiagnostics: PublishDiagnostics = () => {}) {
     this.capabilities = {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       definitionProvider: true,
@@ -65,6 +76,7 @@ export class LspServer {
         text: textDocument.text,
         version: textDocument.version,
       });
+      this.validateDocument(textDocument.uri, textDocument.text);
     }
   }
 
@@ -94,6 +106,26 @@ export class LspServer {
       text = text.slice(0, start) + change.text + text.slice(end);
     }
     this.documents.set(textDocument.uri, { text, version: textDocument.version });
+    this.validateDocument(textDocument.uri, text);
+  }
+
+  private validateDocument(uri: string, text: string): void {
+    const result = validateDocuments([parseArchitectureDocument(uri, text)]);
+    this.publishDiagnostics({
+      uri,
+      diagnostics: result.diagnostics.map((diagnostic) => this.toLspDiagnostic(diagnostic, text)),
+    });
+  }
+
+  private toLspDiagnostic(diagnostic: Diagnostic, text: string) {
+    const start = diagnostic.range?.start ?? offsetForLine(text, (diagnostic.line ?? 1) - 1);
+    const end = diagnostic.range?.end ?? start + 1;
+    return {
+      range: { start: positionAt(text, start), end: positionAt(text, end) },
+      severity: diagnostic.severity === "error" ? 1 : diagnostic.severity === "warning" ? 2 : 4,
+      code: diagnostic.code,
+      message: diagnostic.message,
+    };
   }
 
   didCloseTextDocument(params: any): void {
@@ -199,6 +231,24 @@ function positionToOffset(text: string, position: any): number | undefined {
   const end = lineEnd < 0 ? text.length : lineEnd;
   const result = offset + position.character;
   return result <= end ? result : undefined;
+}
+
+function offsetForLine(text: string, line: number): number {
+  let offset = 0;
+  for (let index = 0; index < line; index++) {
+    const newline = text.indexOf("\n", offset);
+    if (newline < 0) return text.length;
+    offset = newline + 1;
+  }
+  return offset;
+}
+
+function positionAt(text: string, offset: number): { line: number; character: number } {
+  const bounded = Math.max(0, Math.min(offset, text.length));
+  const before = text.slice(0, bounded);
+  const line = (before.match(/\n/g) ?? []).length;
+  const lineStart = before.lastIndexOf("\n") + 1;
+  return { line, character: bounded - lineStart };
 }
 
 // ============================================================================

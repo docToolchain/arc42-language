@@ -47,7 +47,7 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 - [x] Removed abandoned CLI LSP implementation, duplicate parser range processor, unused server range utilities, and generated server tarball.
 - [x] Add packaged-entrypoint lifecycle E2E test, then make the built `bin` command pass.
 - [x] Add full/incremental document synchronization and versioning tests, then implement the document store.
-- [ ] Add diagnostics publication/clearing E2E tests, then connect core validation and range conversion.
+- [x] Add diagnostics publication/clearing E2E tests, then connect core validation and range conversion.
 - [ ] Add workspace overlay/revalidation tests for unsaved cross-file documents.
 - [ ] Add context-aware completion E2E tests and connect schema metadata.
 - [ ] Add Zed configuration and a manual fixture-workspace smoke checklist.
@@ -75,6 +75,11 @@ Provide one trustworthy, minimal stdio E2E smoke test for the language server.
 5. Add failing completion tests for block, attribute, and value contexts; connect schema metadata and safe malformed-input handling.
 6. Add Zed configuration/manual smoke documentation; verify interactively against a fixture workspace.
 7. Run focused E2E tests, all tests, build, and check; only then mark the MVP complete.
+
+### Diagnostics slice result
+- [x] The packaged stdio server validates opened and changed documents through `@arc42/core`.
+- [x] `textDocument/publishDiagnostics` includes URI, zero-based LSP ranges, severity, and stable rule codes; valid changes publish an empty list to clear findings.
+- [x] Queued-notification E2E coverage verifies invalid open, valid replacement, and diagnostic clearing.
 
 ## Commit
 ### Tasks
