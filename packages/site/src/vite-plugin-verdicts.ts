@@ -38,7 +38,7 @@ function formatDate(raw: unknown): string {
   // gray-matter auto-parses ISO date strings into JS Date objects (UTC midnight).
   // Use toISOString() to stay in UTC and avoid local-timezone shift.
   if (raw instanceof Date) return raw.toISOString().slice(0, 10).replace(/-/g, "/");
-  return String(raw);
+  return typeof raw === "string" ? raw : JSON.stringify(raw);
 }
 
 function loadVerdicts(dir: string): Verdict[] {
