@@ -83,7 +83,7 @@ graph TD
 
     bb-builder -->|"if-ast"| bb-parser
     bb-resolver -->|"if-workspace-model"| bb-builder
-    bb-validator -->|"if-validation-input"| bb-resolver
+    bb-validator -->|"if-reference-index"| bb-resolver
     bb-validator -->|"if-workspace-paths"| bb-workspace-fs
     bb-diff -->|"if-workspace-diff"| bb-workspace-fs
     bb-core -->|"if-core-diff"| bb-diff
@@ -126,14 +126,14 @@ path: packages/core/src/parser
 :::
 ```
 
-#### Parser Input Contract
+#### Parser Output Contract
 
 The parser produces `DocumentAst` structs consumed by the builder to construct the workspace model.
 
 ```arc42
 :::interface
 id: if-ast
-title: Parser Input Contract
+title: Parser Output Contract
 provider: bb-parser
 protocol: In-process TypeScript function call
 path: packages/core/src/ast.ts
@@ -192,14 +192,15 @@ path: packages/core/src/resolver
 :::
 ```
 
-#### Resolver Validation Input
+#### Resolver Output Contract
 
-The validator receives both the workspace and the reference index from the resolver.
+The resolver produces a `ReferenceIndex`; the validator consumes it alongside the workspace, and
+the `get` command uses it for 1-hop relationship resolution.
 
 ```arc42
 :::interface
-id: if-validation-input
-title: Resolver Validation Input
+id: if-reference-index
+title: Resolver Output Contract
 provider: bb-resolver
 protocol: In-process TypeScript function call
 path: packages/core/src/resolver/types.ts
@@ -220,7 +221,7 @@ title: Validator
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline, concept-rule-registry
-requires: if-validation-input, if-mermaid-syntax, if-workspace-paths
+requires: if-reference-index, if-mermaid-syntax, if-workspace-paths
 path: packages/core/src/validator
 :::
 ```
@@ -344,7 +345,7 @@ path: packages/workspace-fs/src/index.ts
 :::
 ```
 
-### Workspace Diff Input
+### Workspace Diff Contract
 
 The filesystem workspace adapter acquires the git diff — base and current documents, changed
 file hunks, and known paths — and passes them to the Architecture Diff building block for
@@ -353,7 +354,7 @@ analysis. This is a filesystem concern; the diff analysis itself is pure and sou
 ```arc42
 :::interface
 id: if-workspace-diff
-title: Workspace Diff Input
+title: Workspace Diff Contract
 provider: bb-workspace-fs
 protocol: In-process TypeScript function call
 path: packages/workspace-fs/src/git-diff.ts
@@ -461,14 +462,14 @@ path: packages/skill
 :::
 ```
 
-### AI Agent → Skill
+### Skill Guide Contract
 
 The agent loads the installed skill to obtain the authoring convention and validation workflow.
 
 ```arc42
 :::interface
 id: if-agent-skill
-title: AI Agent → Skill
+title: Skill Guide Contract
 provider: bb-skill
 protocol: SKILL.md loaded at agent startup
 path: packages/skill/SKILL.md
@@ -496,14 +497,14 @@ path: packages/web
 :::
 ```
 
-### Reader → Web UI
+### Web Renderer UI
 
 The reader opens the rendered architecture documentation in a browser.
 
 ```arc42
 :::interface
 id: if-reader-web
-title: Reader → Web UI
+title: Web Renderer UI
 provider: bb-web-renderer
 protocol: HTTP / browser
 path: packages/web/src/App.tsx
