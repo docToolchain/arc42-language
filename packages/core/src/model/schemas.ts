@@ -431,7 +431,7 @@ export const GlossaryTermSchema = z
 // Schema map — keyed by BlockType for use in builder and explain
 // ---------------------------------------------------------------------------
 
-export const ELEMENT_SCHEMAS: Record<BlockType, z.ZodType> = {
+export const ELEMENT_SCHEMAS = {
   "quality-goal": QualityGoalSchema,
   "quality-scenario": QualityScenarioSchema,
   actor: ActorSchema,
@@ -445,7 +445,7 @@ export const ELEMENT_SCHEMAS: Record<BlockType, z.ZodType> = {
   constraint: ConstraintSchema,
   risk: RiskSchema,
   "glossary-term": GlossaryTermSchema,
-};
+} as const satisfies Record<BlockType, z.ZodType>;
 
 // ---------------------------------------------------------------------------
 // Diagram metadata schemas
