@@ -540,7 +540,7 @@ id: if-site-docs-output
 title: Rendered Docs Build Output
 provider: bb-web-renderer
 protocol: Static build artifact (HTML/JS/CSS at dist/)
-path: packages/web/src
+path: packages/web/package.json
 :::
 ```
 
