@@ -1,6 +1,23 @@
 // Meta-model element types
 
 import type { BlockType, DocumentAst } from "../ast.ts";
+import { z } from "zod";
+import {
+  ELEMENT_SCHEMAS,
+  QualityGoalSchema,
+  QualityScenarioSchema,
+  ActorSchema,
+  SolutionStrategySchema,
+  BuildingBlockSchema,
+  InterfaceSchema,
+  RuntimeScenarioSchema,
+  DeploymentNodeSchema,
+  ConceptSchema,
+  DecisionSchema,
+  ConstraintSchema,
+  RiskSchema,
+  GlossaryTermSchema,
+} from "./schemas.ts";
 
 export interface SourceLocation {
   file: string;
@@ -16,18 +33,8 @@ export interface SourceLocation {
  * Drives rendering order in `get` (workspace view) and all renderers.
  * Alphabetical-by-id sort is applied within each kind.
  *
- * Chapter mapping:
- *   2 — Constraints
- *   3 — System Scope and Context
- *   4 — Solution Strategy
- *   5 — Building Blocks (includes interfaces)
- *   6 — Runtime View
- *   7 — Deployment View
- *   8 — Cross-cutting Concepts
- *   9 — Architecture Decisions
- *  10 — Quality Requirements (quality goals + quality scenarios)
- *  11 — Risks and Technical Debt
- *  12 — Glossary
+ * The authoritative chapter mapping is derived at runtime in ELEMENT_CHAPTER
+ * (from schema metadata). The comments here are for quick orientation only.
  */
 export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
   "constraint", // arc42 ch. 2
@@ -45,22 +52,16 @@ export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
   "glossary-term", // arc42 ch. 12
 ] as const;
 
-/** arc42 chapter each element kind belongs to */
-export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = {
-  constraint: 2,
-  actor: 3,
-  "solution-strategy": 4,
-  "building-block": 5,
-  interface: 5,
-  "runtime-scenario": 6,
-  "deployment-node": 7,
-  concept: 8,
-  decision: 9,
-  "quality-goal": 10,
-  "quality-scenario": 10,
-  risk: 11,
-  "glossary-term": 12,
-};
+/** arc42 chapter each element kind belongs to — derived from schema metadata. */
+export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = Object.fromEntries(
+  (Object.entries(ELEMENT_SCHEMAS) as [BlockType, z.ZodType][]).map(([kind, schema]) => {
+    const meta = z.globalRegistry.get(schema) as { arc42Chapter?: number } | undefined;
+    if (meta?.arc42Chapter === undefined) {
+      throw new Error(`Schema for '${kind}' is missing arc42Chapter in .meta()`);
+    }
+    return [kind, meta.arc42Chapter];
+  }),
+) as Readonly<Record<BlockType, number>>;
 
 /** Human-readable arc42 chapter titles */
 export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
@@ -77,87 +78,93 @@ export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
   12: "Glossary",
 };
 
-export interface QualityGoal {
+// ---------------------------------------------------------------------------
+// Element types — derived from Zod schemas + { kind, loc }
+// ---------------------------------------------------------------------------
+
+export type QualityGoal = z.infer<typeof QualityGoalSchema> & {
   kind: "quality-goal";
-  id: string;
-  title: string;
-  priority: "high" | "medium" | "low";
-  scenario?: string;
   loc: SourceLocation;
-}
+};
 
-export interface QualityScenario {
+export type QualityScenario = z.infer<typeof QualityScenarioSchema> & {
   kind: "quality-scenario";
-  id: string;
-  title: string;
-  /** References a quality-goal id — required */
-  quality: string;
-  stimulus?: string;
-  response?: string;
-  metric?: string;
   loc: SourceLocation;
-}
+};
 
-export interface Actor {
+export type Actor = z.infer<typeof ActorSchema> & {
   kind: "actor";
-  id: string;
-  title: string;
-  type: "person" | "system";
-  requires: string[];
-  description?: string;
   loc: SourceLocation;
-}
+};
 
-/** The single architecture-wide strategy described by arc42 chapter 4. */
-export interface SolutionStrategy {
+export type SolutionStrategy = z.infer<typeof SolutionStrategySchema> & {
   kind: "solution-strategy";
-  id: string;
-  title: string;
-  addresses: string[];
   loc: SourceLocation;
-}
+};
 
-export interface BuildingBlock {
+export type BuildingBlock = z.infer<typeof BuildingBlockSchema> & {
   kind: "building-block";
-  id: string;
-  title: string;
-  technology?: string;
-  parent?: string;
-  path?: string;
-  implements: string[];
-  /** Omitted DSL values are normalized to [] by the builder. */
-  requires: string[];
   loc: SourceLocation;
-}
+};
 
-export interface Interface {
+export type Interface = z.infer<typeof InterfaceSchema> & {
   kind: "interface";
-  id: string;
-  title: string;
-  provider: string;
-  protocol?: string;
-  path?: string;
   loc: SourceLocation;
-}
+};
 
-export interface RuntimeScenario {
+export type RuntimeScenario = z.infer<typeof RuntimeScenarioSchema> & {
   kind: "runtime-scenario";
-  id: string;
-  title: string;
-  involves: string[];
-  trigger?: string;
   loc: SourceLocation;
-}
+};
 
-export interface DeploymentNode {
+export type DeploymentNode = z.infer<typeof DeploymentNodeSchema> & {
   kind: "deployment-node";
-  id: string;
-  title: string;
-  type?: "server" | "container" | "device" | "cloud-region" | "environment";
-  hosts: string[];
-  parent?: string;
   loc: SourceLocation;
-}
+};
+
+export type Concept = z.infer<typeof ConceptSchema> & {
+  kind: "concept";
+  loc: SourceLocation;
+};
+
+export type Decision = z.infer<typeof DecisionSchema> & {
+  kind: "decision";
+  loc: SourceLocation;
+};
+
+export type Constraint = z.infer<typeof ConstraintSchema> & {
+  kind: "constraint";
+  loc: SourceLocation;
+};
+
+export type Risk = z.infer<typeof RiskSchema> & {
+  kind: "risk";
+  loc: SourceLocation;
+};
+
+export type GlossaryTerm = z.infer<typeof GlossaryTermSchema> & {
+  kind: "glossary-term";
+  loc: SourceLocation;
+};
+
+export type Element =
+  | QualityGoal
+  | QualityScenario
+  | Constraint
+  | Actor
+  | SolutionStrategy
+  | BuildingBlock
+  | Interface
+  | RuntimeScenario
+  | DeploymentNode
+  | Concept
+  | Decision
+  | Risk
+  | GlossaryTerm;
+
+// ---------------------------------------------------------------------------
+// Diagram types — not derived from schemas (carry kind, diagramType, source, loc)
+// ---------------------------------------------------------------------------
 
 /** Abstract diagram artifact shared by all notation adapters. */
 export interface Diagram {
@@ -206,66 +213,6 @@ export type DiagramArtifact =
   | DeploymentDiagram
   | BuildingBlockDiagram
   | ContextDiagram;
-
-export interface Concept {
-  kind: "concept";
-  id: string;
-  title: string;
-  category?: string;
-  loc: SourceLocation;
-}
-
-export interface Decision {
-  kind: "decision";
-  id: string;
-  title: string;
-  status: "proposed" | "accepted" | "deprecated" | "superseded";
-  date?: string;
-  addresses: string[];
-  supersedes?: string;
-  loc: SourceLocation;
-}
-
-export interface Constraint {
-  kind: "constraint";
-  id: string;
-  title: string;
-  category: "technical" | "organizational" | "convention";
-  source?: string;
-  loc: SourceLocation;
-}
-
-export interface Risk {
-  kind: "risk";
-  id: string;
-  title: string;
-  severity: "high" | "medium" | "low";
-  mitigation?: string;
-  loc: SourceLocation;
-}
-
-export interface GlossaryTerm {
-  kind: "glossary-term";
-  id: string;
-  title: string;
-  definition: string;
-  loc: SourceLocation;
-}
-
-export type Element =
-  | QualityGoal
-  | QualityScenario
-  | Constraint
-  | Actor
-  | SolutionStrategy
-  | BuildingBlock
-  | Interface
-  | RuntimeScenario
-  | DeploymentNode
-  | Concept
-  | Decision
-  | Risk
-  | GlossaryTerm;
 
 export interface ParseError {
   message: string;

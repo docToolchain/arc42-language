@@ -1,42 +1,7 @@
 import type { DocumentAst } from "../ast.ts";
-import type {
-  Workspace,
-  Element,
-  ParseError,
-  IgnoreDirective,
-  QualityGoal,
-  QualityScenario,
-  Actor,
-  SolutionStrategy,
-  BuildingBlock,
-  Interface,
-  Concept,
-  Decision,
-  Constraint,
-  Risk,
-  GlossaryTerm,
-  RuntimeScenario,
-  DeploymentNode,
-  DiagramArtifact,
-} from "./types.ts";
+import type { Workspace, Element, ParseError, IgnoreDirective, DiagramArtifact } from "./types.ts";
 import { ELEMENT_SCHEMAS, DIAGRAM_SCHEMAS } from "./schemas.ts";
 import type { BlockType } from "../ast.ts";
-
-const KNOWN_BLOCK_TYPES = new Set<string>([
-  "quality-goal",
-  "quality-scenario",
-  "constraint",
-  "actor",
-  "solution-strategy",
-  "building-block",
-  "interface",
-  "concept",
-  "decision",
-  "risk",
-  "glossary-term",
-  "runtime-scenario",
-  "deployment-node",
-]);
 
 /**
  * Map a Zod parse failure into a human-friendly ParseError message that
@@ -237,7 +202,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
       // Prose consumed by this block — reset for next block in same section
       pendingProse = [];
 
-      if (!KNOWN_BLOCK_TYPES.has(blockType)) {
+      if (!Object.hasOwn(ELEMENT_SCHEMAS, blockType)) {
         parseErrors.push({
           message: `Unknown block type '${blockType}'`,
           file,
@@ -274,172 +239,7 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = result.data as any;
-
-      switch (blockType as BlockType) {
-        case "quality-goal": {
-          const el: QualityGoal = {
-            kind: "quality-goal",
-            id: data.id,
-            title: data.title,
-            priority: data.priority,
-            scenario: data.scenario,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "quality-scenario": {
-          const el: QualityScenario = {
-            kind: "quality-scenario",
-            id: data.id,
-            title: data.title,
-            quality: data.quality,
-            stimulus: data.stimulus || undefined,
-            response: data.response || undefined,
-            metric: data.metric || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "actor": {
-          const el: Actor = {
-            kind: "actor",
-            id: data.id,
-            title: data.title,
-            type: data.type,
-            requires: data.requires,
-            description: data.description || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "solution-strategy": {
-          const el: SolutionStrategy = {
-            kind: "solution-strategy",
-            id: data.id,
-            title: data.title,
-            addresses: data.addresses,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "building-block": {
-          const el: BuildingBlock = {
-            kind: "building-block",
-            id: data.id,
-            title: data.title,
-            technology: data.technology,
-            parent: data.parent,
-            path: data.path,
-            implements: data.implements,
-            requires: data.requires,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "interface": {
-          const el: Interface = {
-            kind: "interface",
-            id: data.id,
-            title: data.title,
-            provider: data.provider,
-            protocol: data.protocol,
-            path: data.path,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "runtime-scenario": {
-          const el: RuntimeScenario = {
-            kind: "runtime-scenario",
-            id: data.id,
-            title: data.title,
-            involves: data.involves,
-            trigger: data.trigger || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "deployment-node": {
-          const el: DeploymentNode = {
-            kind: "deployment-node",
-            id: data.id,
-            title: data.title,
-            type: data.type,
-            hosts: data.hosts,
-            parent: data.parent || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "concept": {
-          const el: Concept = {
-            kind: "concept",
-            id: data.id,
-            title: data.title,
-            category: data.category,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "decision": {
-          const el: Decision = {
-            kind: "decision",
-            id: data.id,
-            title: data.title,
-            status: data.status,
-            date: data.date,
-            addresses: data.addresses,
-            supersedes: data.supersedes || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "constraint": {
-          const el: Constraint = {
-            kind: "constraint",
-            id: data.id,
-            title: data.title,
-            category: data.category,
-            source: data.source || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "risk": {
-          const el: Risk = {
-            kind: "risk",
-            id: data.id,
-            title: data.title,
-            severity: data.severity,
-            mitigation: data.mitigation || undefined,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-        case "glossary-term": {
-          const el: GlossaryTerm = {
-            kind: "glossary-term",
-            id: data.id,
-            title: data.title,
-            definition: data.definition,
-            loc,
-          };
-          elements.push(el);
-          break;
-        }
-      }
+      elements.push({ ...data, kind: blockType, loc } as Element);
     }
   }
 
