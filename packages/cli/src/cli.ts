@@ -203,10 +203,27 @@ async function runDiff(dir: string, args: string[]) {
     const accepted =
       diff.acceptanceBase !== undefined && process.env["ARC42_CONSISTENT"] === diff.acceptanceBase;
     const remainingFindings = accepted ? [] : findings;
-    for (const finding of findings) {
-      const location =
-        finding.kind === "implementation-path" ? finding.file : `${finding.file}:${finding.line}`;
-      console.log(`${finding.severity} ${location}  ${finding.message}`);
+    // Emit consistency findings (warnings) as-is — they already have file:line context.
+    // Group path hints by file so multiple elements on the same file appear on one line.
+    const consistencyFindings = findings.filter((f) => f.kind !== "implementation-path");
+    const pathHints = findings.filter((f) => f.kind === "implementation-path");
+
+    for (const finding of consistencyFindings) {
+      console.log(`${finding.severity} ${finding.file}:${finding.line}  ${finding.message}`);
+    }
+
+    // Group path hints by changed file → collect element ids
+    const hintsByFile = new Map<string, string[]>();
+    for (const hint of pathHints) {
+      const ids = hintsByFile.get(hint.file) ?? [];
+      if (hint.elementId && !ids.includes(hint.elementId)) ids.push(hint.elementId);
+      hintsByFile.set(hint.file, ids);
+    }
+    for (const [file, ids] of [...hintsByFile.entries()].sort()) {
+      const elements = ids.length === 1 ? `'${ids[0]}'` : ids.map((id) => `'${id}'`).join(", ");
+      console.log(
+        `hint ${file}  review architecture element${ids.length === 1 ? "" : "s"} ${elements}`,
+      );
     }
     if (accepted) {
       console.log("info These changes were accepted as intentional");
