@@ -204,7 +204,9 @@ async function runDiff(dir: string, args: string[]) {
       diff.acceptanceBase !== undefined && process.env["ARC42_CONSISTENT"] === diff.acceptanceBase;
     const remainingFindings = accepted ? [] : findings;
     for (const finding of findings) {
-      console.log(`${finding.severity} ${finding.file}:${finding.line}  ${finding.message}`);
+      const location =
+        finding.kind === "implementation-path" ? finding.file : `${finding.file}:${finding.line}`;
+      console.log(`${finding.severity} ${location}  ${finding.message}`);
     }
     if (accepted) {
       console.log("info These changes were accepted as intentional");

@@ -324,7 +324,7 @@ id: if-cli-workspace-adapter
 title: Filesystem Adapter Contract
 provider: bb-workspace-fs
 protocol: TypeScript module import
-path: packages/cli
+path: packages/cli/src/cli.ts
 :::
 ```
 
