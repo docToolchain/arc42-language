@@ -219,7 +219,7 @@ async function runDiff(dir: string, args: string[]) {
       if (hint.elementId && !ids.includes(hint.elementId)) ids.push(hint.elementId);
       hintsByFile.set(hint.file, ids);
     }
-    for (const [file, ids] of [...hintsByFile.entries()].sort()) {
+    for (const [file, ids] of [...hintsByFile.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
       const elements = ids.length === 1 ? `'${ids[0]}'` : ids.map((id) => `'${id}'`).join(", ");
       console.log(
         `hint ${file}  review architecture element${ids.length === 1 ? "" : "s"} ${elements}`,
