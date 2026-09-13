@@ -582,6 +582,7 @@ The filesystem workspace adapter reads `.arc42.md` files from the selected docum
 and supplies their contents and filesystem context to the core processing pipeline.
 
 ```arc42
+:::ignore H020 if-workspace-paths and if-fs-workspace share packages/workspace-fs/src/index.ts as the entry point but represent distinct contracts: if-fs-workspace is the document discovery and loading contract, if-workspace-paths is the path evidence and coverage context injected into the validator :::
 :::interface
 id: if-fs-workspace
 title: Documentation Workspace Contract
