@@ -81,9 +81,9 @@ graph TD
     end
     bb-workspace-fs["Filesystem Workspace Adapter"]
 
-    bb-parser -->|"if-ast"| bb-builder
-    bb-builder -->|"if-workspace-model"| bb-resolver
-    bb-resolver -->|"if-validation-input"| bb-validator
+    bb-builder -->|"if-ast"| bb-parser
+    bb-resolver -->|"if-workspace-model"| bb-builder
+    bb-validator -->|"if-validation-input"| bb-resolver
     bb-validator -->|"if-workspace-paths"| bb-workspace-fs
     bb-diff -->|"if-workspace-diff"| bb-workspace-fs
     bb-core -->|"if-core-diff"| bb-diff
@@ -122,8 +122,21 @@ title: Markdown Parser
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
-requires: if-ast
 path: packages/core/src/parser
+:::
+```
+
+#### Parser Input Contract
+
+The parser produces `DocumentAst` structs consumed by the builder to construct the workspace model.
+
+```arc42
+:::interface
+id: if-ast
+title: Parser Input Contract
+provider: bb-parser
+protocol: In-process TypeScript function call
+path: packages/core/src/ast.ts
 :::
 ```
 
@@ -141,22 +154,22 @@ title: Meta-model Builder
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
-requires: if-workspace-model
+requires: if-ast
 path: packages/core/src/model
 :::
 ```
 
-#### Parser Input Contract
+#### Builder Output Contract
 
-The parser produces `DocumentAst` structs consumed by the builder to construct the workspace model.
+The builder produces a `Workspace`; the resolver consumes it to build the reference index.
 
 ```arc42
 :::interface
-id: if-ast
-title: Parser Input Contract
+id: if-workspace-model
+title: Builder Output Contract
 provider: bb-builder
 protocol: In-process TypeScript function call
-path: packages/core/src/ast.ts
+path: packages/core/src/model/types.ts
 :::
 ```
 
@@ -174,22 +187,22 @@ title: Reference Resolver
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
-requires: if-validation-input
+requires: if-workspace-model
 path: packages/core/src/resolver
 :::
 ```
 
-#### Builder Output Contract
+#### Resolver Validation Input
 
-The builder produces a `Workspace`; the resolver consumes it to build the reference index.
+The validator receives both the workspace and the reference index from the resolver.
 
 ```arc42
 :::interface
-id: if-workspace-model
-title: Builder Output Contract
+id: if-validation-input
+title: Resolver Validation Input
 provider: bb-resolver
 protocol: In-process TypeScript function call
-path: packages/core/src/model/types.ts
+path: packages/core/src/resolver/types.ts
 :::
 ```
 
@@ -207,22 +220,8 @@ title: Validator
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline, concept-rule-registry
-requires: if-mermaid-syntax, if-workspace-paths
+requires: if-validation-input, if-mermaid-syntax, if-workspace-paths
 path: packages/core/src/validator
-:::
-```
-
-#### Resolver Validation Input
-
-The validator receives both the workspace and the reference index from the resolver.
-
-```arc42
-:::interface
-id: if-validation-input
-title: Resolver Validation Input
-provider: bb-validator
-protocol: In-process TypeScript function call
-path: packages/core/src/resolver/types.ts
 :::
 ```
 
