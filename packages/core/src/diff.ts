@@ -194,8 +194,7 @@ function pathFindings(
   const seen = new Set<string>();
   for (const document of documents) {
     for (const node of document.nodes) {
-      if (node.kind !== "block" || !["building-block", "interface"].includes(node.blockType))
-        continue;
+      if (node.kind !== "block" || node.blockType !== "interface") continue;
       const path = node.attributes.path;
       const id = node.attributes.id ?? node.blockType;
       if (!path) continue;

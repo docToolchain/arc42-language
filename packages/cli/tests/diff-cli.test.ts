@@ -28,7 +28,7 @@ function repository(): string {
 }
 
 function architecture(prose: string, title: string): string {
-  return `# Architecture\n\n## Service\n\n${prose}\n\n\`\`\`arc42\n:::building-block\nid: service\ntitle: ${title}\npath: src.ts\n:::\n\`\`\`\n`;
+  return `# Architecture\n\n## Service\n\n${prose}\n\n\`\`\`arc42\n:::building-block\nid: service\ntitle: ${title}\n:::\n\`\`\`\n\`\`\`arc42\n:::interface\nid: service-api\ntitle: ${title} API\nprovider: service\npath: src.ts\n:::\n\`\`\`\n`;
 }
 
 function runDiff(root: string, args: string[] = [], env?: Record<string, string>) {

@@ -121,8 +121,13 @@ describe("architecture diff analyzer", () => {
       nodes: [
         {
           kind: "block",
-          blockType: "building-block",
-          attributes: { id: "service", title: "Service", implements: "", path: "src/service" },
+          blockType: "interface",
+          attributes: {
+            id: "service-api",
+            title: "Service API",
+            provider: "service",
+            path: "src/service",
+          },
           startLine: 1,
           endLine: 1,
           inArc42Fence: true,
@@ -139,7 +144,7 @@ describe("architecture diff analyzer", () => {
     expect(result.affectedRanges).toHaveLength(0);
   });
 
-  test("uses path components rather than textual prefixes", () => {
+  test("building-block path changes do not produce path hints", () => {
     const ast: DocumentAst = {
       filePath: "architecture.arc42.md",
       nodes: [
@@ -147,6 +152,32 @@ describe("architecture diff analyzer", () => {
           kind: "block",
           blockType: "building-block",
           attributes: { id: "service", title: "Service", implements: "", path: "src/service" },
+          startLine: 1,
+          endLine: 1,
+          inArc42Fence: true,
+        },
+      ],
+    };
+    const result = analyzeArchitectureDiff({
+      changes: [change("src/service/index.ts", [[4, 4]])],
+      current: [ast],
+    });
+    expect(result.pathFindings).toHaveLength(0);
+  });
+
+  test("uses path components rather than textual prefixes", () => {
+    const ast: DocumentAst = {
+      filePath: "architecture.arc42.md",
+      nodes: [
+        {
+          kind: "block",
+          blockType: "interface",
+          attributes: {
+            id: "service-api",
+            title: "Service API",
+            provider: "service",
+            path: "src/service",
+          },
           startLine: 1,
           endLine: 1,
           inArc42Fence: true,
@@ -166,8 +197,8 @@ describe("architecture diff analyzer", () => {
       nodes: [
         {
           kind: "block",
-          blockType: "building-block",
-          attributes: { id: "file", title: "File", implements: "", path: "src/Makefile" },
+          blockType: "interface",
+          attributes: { id: "file", title: "File", provider: "bb", path: "src/Makefile" },
           startLine: 1,
           endLine: 1,
           inArc42Fence: true,
@@ -175,15 +206,15 @@ describe("architecture diff analyzer", () => {
         {
           kind: "block",
           blockType: "interface",
-          attributes: { id: "dir", title: "Dir", between: "a,b", path: "src/foo.test" },
+          attributes: { id: "dir", title: "Dir", provider: "bb", path: "src/foo.test" },
           startLine: 2,
           endLine: 2,
           inArc42Fence: true,
         },
         {
           kind: "block",
-          blockType: "building-block",
-          attributes: { id: "missing", title: "Missing", implements: "", path: "src/missing" },
+          blockType: "interface",
+          attributes: { id: "missing", title: "Missing", provider: "bb", path: "src/missing" },
           startLine: 3,
           endLine: 3,
           inArc42Fence: true,
