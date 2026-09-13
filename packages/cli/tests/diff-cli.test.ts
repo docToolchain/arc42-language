@@ -48,6 +48,10 @@ function runDiff(root: string, args: string[] = [], env?: Record<string, string>
   );
 }
 
+function architectureWithCoverage(prose: string, title: string, path: string): string {
+  return `# Architecture\n\n## Service\n\n${prose}\n\n\`\`\`arc42\n:::building-block\nid: service\ntitle: ${title}\npath: ${path}\n:::\n\`\`\`\n`;
+}
+
 describe("CLI architecture diff acceptance guidance", () => {
   test("advertises ARC42_CONSISTENT for a failing consistency diff", () => {
     const root = repository();
@@ -107,4 +111,59 @@ describe("CLI architecture diff acceptance guidance", () => {
 
 afterEach(() => {
   for (const dir of createdDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+describe("CLI diff coverage degradation hints", () => {
+  function repoWithCoverage(): { root: string; base: string } {
+    const root = mkdtempSync(join(process.env.TMPDIR ?? "/tmp", "arc42-cli-coverage-"));
+    createdDirs.push(root);
+    git(root, "init", "-q");
+    git(root, "config", "user.email", "test@example.com");
+    git(root, "config", "user.name", "arc42 test");
+    // Initial state: architecture covers src/, and src/ exists
+    writeFileSync(
+      join(root, "architecture.arc42.md"),
+      architectureWithCoverage("Initial prose", "Service", "src"),
+    );
+    const { mkdirSync } = require("node:fs") as typeof import("node:fs");
+    mkdirSync(join(root, "src"), { recursive: true });
+    writeFileSync(join(root, "src/index.ts"), "export const value = 1;\n");
+    git(root, "add", ".");
+    git(root, "commit", "-qm", "initial");
+    const base = git(root, "rev-parse", "HEAD").trim();
+    return { root, base };
+  }
+
+  test("reports new-building-block-hint for a newly added uncovered directory", () => {
+    const { root, base } = repoWithCoverage();
+    // Add a new lib/ directory not covered by any architecture element and commit
+    const { mkdirSync } = require("node:fs") as typeof import("node:fs");
+    mkdirSync(join(root, "lib"), { recursive: true });
+    writeFileSync(join(root, "lib/helper.ts"), "export const help = true;\n");
+    git(root, "add", ".");
+    git(root, "commit", "-qm", "add lib");
+
+    // Diff HEAD against the base (initial) commit to see what changed
+    const result = runDiff(root, [base]);
+
+    expect(result.stdout).toContain("hint lib");
+    expect(result.stdout).toContain("building block");
+  });
+
+  test("new-building-block-hint is accepted with ARC42_CONSISTENT token", () => {
+    const { root, base } = repoWithCoverage();
+    // Add a new lib/ directory not covered by any architecture element and commit
+    const { mkdirSync } = require("node:fs") as typeof import("node:fs");
+    mkdirSync(join(root, "lib"), { recursive: true });
+    writeFileSync(join(root, "lib/helper.ts"), "export const help = true;\n");
+    git(root, "add", ".");
+    git(root, "commit", "-qm", "add lib");
+
+    // Diff HEAD against the base (initial) commit; accept with the base commit SHA
+    const result = runDiff(root, [base, "--strict"], { ARC42_CONSISTENT: base });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("hint lib");
+    expect(result.stdout).toContain("These changes were accepted as intentional");
+  });
 });

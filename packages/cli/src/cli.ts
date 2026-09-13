@@ -27,6 +27,7 @@ import {
   analyzeArchitectureDiff,
   ELEMENT_KIND_ORDER,
   computeCoverage,
+  loadWorkspaceFromDocuments,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
 import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
@@ -187,13 +188,22 @@ async function runDiff(dir: string, args: string[]) {
 
   try {
     const diff = collectGitDiff(dir, positionals[0], Boolean(values.staged || values.cached));
+    const currentElements = loadWorkspaceFromDocuments(diff.currentDocuments).elements;
+    const baseElements = loadWorkspaceFromDocuments(diff.baseDocuments).elements;
     const result = analyzeArchitectureDiff({
       changes: diff.changes,
       current: diff.currentDocuments,
       base: diff.baseDocuments,
-      knownPaths: diff.knownPaths,
+      currentKnownPaths: diff.currentKnownPaths,
+      baseKnownPaths: diff.baseKnownPaths,
+      currentElements,
+      baseElements,
     });
-    const findings = [...result.consistencyFindings, ...result.pathFindings].sort(
+    const findings = [
+      ...result.consistencyFindings,
+      ...result.pathFindings,
+      ...result.coverageFindings,
+    ].sort(
       (a, b) =>
         Number(b.severity === "warning") - Number(a.severity === "warning") ||
         a.file.localeCompare(b.file) ||
@@ -205,8 +215,11 @@ async function runDiff(dir: string, args: string[]) {
     const remainingFindings = accepted ? [] : findings;
     // Emit consistency findings (warnings) as-is — they already have file:line context.
     // Group path hints by file so multiple elements on the same file appear on one line.
-    const consistencyFindings = findings.filter((f) => f.kind !== "implementation-path");
+    const consistencyFindings = findings.filter(
+      (f) => f.kind !== "implementation-path" && f.kind !== "new-building-block-hint",
+    );
     const pathHints = findings.filter((f) => f.kind === "implementation-path");
+    const coverageHints = result.coverageFindings;
 
     for (const finding of consistencyFindings) {
       console.log(`${finding.severity} ${finding.file}:${finding.line}  ${finding.message}`);
@@ -225,6 +238,14 @@ async function runDiff(dir: string, args: string[]) {
         `hint ${file}  review architecture element${ids.length === 1 ? "" : "s"} ${elements}`,
       );
     }
+
+    // Emit coverage hints — each uncovered path on its own line
+    for (const hint of coverageHints) {
+      console.log(
+        `hint ${hint.file}  not covered by any building block — consider adding a building-block element`,
+      );
+    }
+
     if (accepted) {
       console.log("info These changes were accepted as intentional");
     }

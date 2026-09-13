@@ -1,4 +1,6 @@
 import type { BlockNode, DocumentAst, HeadingNode, ProseNode } from "./ast.ts";
+import type { Element } from "./model/types.ts";
+import { computeCoverage } from "./coverage.ts";
 
 export interface LineRange {
   start: number;
@@ -12,7 +14,11 @@ export interface FileChange {
 }
 
 export interface DiffFinding {
-  kind: "block-without-prose-change" | "prose-without-block-change" | "implementation-path";
+  kind:
+    | "block-without-prose-change"
+    | "prose-without-block-change"
+    | "implementation-path"
+    | "new-building-block-hint";
   severity: "warning" | "hint";
   file: string;
   line: number;
@@ -23,6 +29,7 @@ export interface DiffFinding {
 export interface DiffResult {
   consistencyFindings: DiffFinding[];
   pathFindings: DiffFinding[];
+  coverageFindings: DiffFinding[];
   affectedRanges: FileChange[];
   affectedFiles: string[];
   hasBlockingFindings: boolean;
@@ -32,7 +39,12 @@ export interface AnalyzeDiffOptions {
   changes: FileChange[];
   current: DocumentAst[];
   base?: DocumentAst[];
-  knownPaths?: Set<string>;
+  /** Tracked paths for the current (HEAD / working tree) snapshot. */
+  currentKnownPaths?: Set<string>;
+  /** Tracked paths for the base commit snapshot. */
+  baseKnownPaths?: Set<string>;
+  currentElements?: Element[];
+  baseElements?: Element[];
 }
 
 interface Section {
@@ -251,6 +263,30 @@ function consistencyFindingsForDocument(document: DocumentAst, change: FileChang
   return findings;
 }
 
+function coverageDiffFindings(options: AnalyzeDiffOptions): DiffFinding[] {
+  if (
+    !options.currentElements ||
+    !options.currentKnownPaths ||
+    options.currentKnownPaths.size === 0
+  )
+    return [];
+  const currentCoverage = computeCoverage(options.currentElements, [...options.currentKnownPaths]);
+  const baseCoverage =
+    options.baseElements && options.baseKnownPaths && options.baseKnownPaths.size > 0
+      ? computeCoverage(options.baseElements, [...options.baseKnownPaths])
+      : { uncovered: [] as string[] };
+  const newlyUncovered = currentCoverage.uncovered.filter(
+    (p) => !baseCoverage.uncovered.includes(p),
+  );
+  return newlyUncovered.sort().map((path) => ({
+    kind: "new-building-block-hint" as const,
+    severity: "hint" as const,
+    file: path,
+    line: 0,
+    message: `'${path}' is not covered by any building block — consider adding a building-block element.`,
+  }));
+}
+
 export function analyzeArchitectureDiff(options: AnalyzeDiffOptions): DiffResult {
   const consistency: DiffFinding[] = [];
   const currentByFile = new Map(options.current.map((document) => [document.filePath, document]));
@@ -278,10 +314,14 @@ export function analyzeArchitectureDiff(options: AnalyzeDiffOptions): DiffResult
   uniqueConsistency.sort(
     (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.kind.localeCompare(b.kind),
   );
+  const unionKnownPaths =
+    options.currentKnownPaths || options.baseKnownPaths
+      ? new Set([...(options.currentKnownPaths ?? []), ...(options.baseKnownPaths ?? [])])
+      : undefined;
   const paths = pathFindings(
     options.changes,
     [...options.current, ...(options.base ?? [])],
-    options.knownPaths,
+    unionKnownPaths,
   );
   paths.sort(
     (a, b) =>
@@ -342,6 +382,7 @@ export function analyzeArchitectureDiff(options: AnalyzeDiffOptions): DiffResult
   return {
     consistencyFindings: uniqueConsistency,
     pathFindings: paths,
+    coverageFindings: coverageDiffFindings(options),
     affectedRanges: relevantChanges,
     affectedFiles: [...affectedFiles].sort(),
     hasBlockingFindings: uniqueConsistency.length > 0,

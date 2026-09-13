@@ -12,7 +12,10 @@ export interface GitArchitectureDiff {
   changes: FileChange[];
   currentDocuments: DocumentAst[];
   baseDocuments: DocumentAst[];
-  knownPaths: Set<string>;
+  /** Current (HEAD / working tree) tracked file paths. */
+  currentKnownPaths: Set<string>;
+  /** Base commit tracked file paths. */
+  baseKnownPaths: Set<string>;
   patch: string;
 }
 
@@ -196,7 +199,8 @@ export function collectGitDiff(
     const content = gitContents(resolvedRoot, reference ? base : staged ? base : ":", filePath);
     if (content !== undefined) baseDocuments.set(filePath, content);
   }
-  const knownPaths = new Set([...stagedFiles(resolvedRoot), ...baseFiles(resolvedRoot, base)]);
+  const currentKnownPaths = new Set(stagedFiles(resolvedRoot));
+  const baseKnownPaths = new Set(baseFiles(resolvedRoot, base));
   return {
     root: resolvedRoot,
     base,
@@ -204,7 +208,8 @@ export function collectGitDiff(
     changes,
     currentDocuments: parseDocuments(currentDocuments),
     baseDocuments: parseDocuments(baseDocuments),
-    knownPaths,
+    currentKnownPaths,
+    baseKnownPaths,
     patch,
   };
 }

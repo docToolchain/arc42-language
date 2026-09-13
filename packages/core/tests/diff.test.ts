@@ -1,6 +1,19 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { DocumentAst } from "../src/ast.ts";
 import { analyzeArchitectureDiff, type FileChange } from "../src/diff.ts";
+import type { Element } from "../src/model/types.ts";
+
+function bb(id: string, path?: string): Element {
+  return {
+    kind: "building-block",
+    id,
+    title: id,
+    implements: [],
+    requires: [],
+    loc: { file: "architecture.arc42.md", line: 1 },
+    ...(path !== undefined ? { path } : {}),
+  } as Element;
+}
 
 const change = (
   filePath: string,
@@ -228,7 +241,7 @@ describe("architecture diff analyzer", () => {
         change("src/missing/file.ts", [[6, 6]]),
       ],
       current: [ast],
-      knownPaths: new Set(["src/Makefile", "src/foo.test/index.ts"]),
+      currentKnownPaths: new Set(["src/Makefile", "src/foo.test/index.ts"]),
     });
     expect(result.pathFindings.map((finding) => finding.elementId)).toEqual(["dir", "file"]);
   });
@@ -246,9 +259,121 @@ describe("architecture diff analyzer", () => {
     const withoutPaths = analyzeArchitectureDiff(options);
     const withPaths = analyzeArchitectureDiff({
       ...options,
-      knownPaths: new Set(["src/service.ts"]),
+      currentKnownPaths: new Set(["src/service.ts"]),
     });
     expect(withPaths.consistencyFindings).toEqual(withoutPaths.consistencyFindings);
     expect(withPaths.pathFindings).toEqual(withoutPaths.pathFindings);
+  });
+
+  describe("coverage findings (new-building-block-hint)", () => {
+    const noChanges: FileChange[] = [];
+
+    test("returns empty coverageFindings when no currentElements provided", () => {
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentKnownPaths: new Set(["src/foo.ts"]),
+      });
+      expect(result.coverageFindings).toHaveLength(0);
+    });
+
+    test("returns empty coverageFindings when no currentKnownPaths provided", () => {
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentElements: [bb("service", "src")],
+      });
+      expect(result.coverageFindings).toHaveLength(0);
+    });
+
+    test("returns empty coverageFindings when currentKnownPaths is empty", () => {
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentElements: [bb("service", "src")],
+        currentKnownPaths: new Set(),
+      });
+      expect(result.coverageFindings).toHaveLength(0);
+    });
+
+    test("reports new-building-block-hint for path uncovered in current but not in base", () => {
+      // base: element covers both src/app and src/lib
+      // current: element only covers src/app → src/lib is newly uncovered
+      const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentKnownPaths: trackedPaths,
+        baseKnownPaths: trackedPaths,
+        currentElements: [bb("app", "src/app")],
+        baseElements: [bb("app", "src/app"), bb("lib", "src/lib")],
+      });
+      expect(result.coverageFindings).toHaveLength(1);
+      expect(result.coverageFindings[0]?.kind).toBe("new-building-block-hint");
+      expect(result.coverageFindings[0]?.severity).toBe("hint");
+      expect(result.coverageFindings[0]?.file).toBe("src/lib");
+      expect(result.coverageFindings[0]?.line).toBe(0);
+      expect(result.coverageFindings[0]?.message).toContain("src/lib");
+      expect(result.coverageFindings[0]?.message).toContain("building block");
+    });
+
+    test("does not report new-building-block-hint for path uncovered in both base and current", () => {
+      // src/lib is uncovered in both snapshots — not newly uncovered
+      const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentKnownPaths: trackedPaths,
+        baseKnownPaths: trackedPaths,
+        currentElements: [bb("app", "src/app")],
+        baseElements: [bb("app", "src/app")],
+      });
+      expect(result.coverageFindings).toHaveLength(0);
+    });
+
+    test("reports all uncovered paths as new-building-block-hints when no baseElements provided", () => {
+      // No base → any currently uncovered path is treated as newly uncovered
+      const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentKnownPaths: trackedPaths,
+        currentElements: [bb("app", "src/app")],
+        // baseElements deliberately omitted
+      });
+      expect(result.coverageFindings).toHaveLength(1);
+      expect(result.coverageFindings[0]?.file).toBe("src/lib");
+    });
+
+    test("coverage findings are sorted alphabetically by file", () => {
+      // One element establishes a domain (src/), the other two sub-dirs are uncovered
+      const trackedPaths = new Set([
+        "src/zebra/index.ts",
+        "src/alpha/index.ts",
+        "src/middle/index.ts",
+      ]);
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentKnownPaths: trackedPaths,
+        currentElements: [bb("zebra", "src/zebra")], // alpha and middle are uncovered (no base)
+      });
+      const files = result.coverageFindings.map((f) => f.file);
+      expect(files.length).toBeGreaterThan(0);
+      expect(files).toEqual([...files].sort());
+    });
+
+    test("hasBlockingFindings is not affected by coverage findings", () => {
+      // src/app is covered, src/lib is not — establishes a domain so uncovered paths appear
+      const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
+      const result = analyzeArchitectureDiff({
+        changes: noChanges,
+        current: [],
+        currentKnownPaths: trackedPaths,
+        currentElements: [bb("app", "src/app")], // src/lib is newly uncovered (no base)
+      });
+      expect(result.coverageFindings.length).toBeGreaterThan(0);
+      expect(result.hasBlockingFindings).toBe(false);
+    });
   });
 });
