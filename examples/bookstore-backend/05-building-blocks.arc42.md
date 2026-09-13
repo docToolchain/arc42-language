@@ -137,7 +137,7 @@ requires: if-order-db, if-order-catalog, if-order-queue
 :::
 ```
 
-### Order Service → Payment Processor
+### Payment Processor Contract
 
 The Order Service payment contract covers authorization and asynchronous payment lifecycle events.
 
@@ -145,7 +145,7 @@ The Order Service payment contract covers authorization and asynchronous payment
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
 :::interface
 id: if-order-payment
-title: Order Service → Payment Processor
+title: Payment Processor Contract
 provider: bb-order-service
 protocol: HTTPS / REST (Stripe API v2)
 :::
@@ -217,7 +217,7 @@ requires: if-notify-queue
 :::
 ```
 
-### Notification Service → Email Delivery
+### Email Delivery Contract
 
 The Notification Service provides the contract for transactional email delivery.
 
@@ -225,13 +225,13 @@ The Notification Service provides the contract for transactional email delivery.
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
 :::interface
 id: if-notify-email
-title: Notification Service → Email Delivery
+title: Email Delivery Contract
 provider: bb-notification-service
 protocol: HTTPS / AWS SES API
 :::
 ```
 
-### Notification Service → SMS Gateway
+### SMS Delivery Contract
 
 The Notification Service provides the contract for transactional SMS delivery.
 
@@ -239,7 +239,7 @@ The Notification Service provides the contract for transactional SMS delivery.
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
 :::interface
 id: if-notify-sms
-title: Notification Service → SMS Gateway
+title: SMS Delivery Contract
 provider: bb-notification-service
 protocol: HTTPS / AWS SNS API
 :::
