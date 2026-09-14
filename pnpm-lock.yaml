@@ -70,9 +70,6 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
-      '@arc42/mermaid':
-        specifier: workspace:*
-        version: link:../mermaid
       '@arc42/workspace-fs':
         specifier: workspace:*
         version: link:../workspace-fs
