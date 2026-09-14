@@ -6,6 +6,7 @@ import {
   loadWorkspaceFromDocuments,
   parseArchitectureDocument,
   validateDocumentsAsync,
+  warmMermaid,
 } from "@arc42/core";
 import type {
   DocumentAst,
@@ -100,6 +101,7 @@ export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
 }
 
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {
+  warmMermaid();
   const documents = await readWorkspaceDocuments(dir);
   const repositoryRoot = resolve(root ?? (await findRepositoryRoot(dir)));
   let trackedPaths: string[];
