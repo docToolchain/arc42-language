@@ -41,6 +41,10 @@ export const w004BlockWithoutProse: Rule = {
           // Markdown paragraph boundaries and must not count as introductions.
           hasProseAfterLastHeading = true;
         } else if (node.kind === "block") {
+          // Skip error sentinel blocks emitted by the parser for unclosed blocks
+          if (node.blockType === "__parse_error__") {
+            continue;
+          }
           if (!hasProseAfterLastHeading) {
             diagnostics.push({
               code: "W004",

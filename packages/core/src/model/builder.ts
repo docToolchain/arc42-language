@@ -203,11 +203,20 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
       pendingProse = [];
 
       if (!Object.hasOwn(ELEMENT_SCHEMAS, blockType)) {
-        parseErrors.push({
-          message: `Unknown block type '${blockType}'`,
-          file,
-          line: startLine,
-        });
+        // __parse_error__ is a sentinel emitted by the parser for unclosed blocks
+        if (blockType === "__parse_error__") {
+          parseErrors.push({
+            message: attributes["message"] ?? `Unclosed block at line ${startLine}`,
+            file,
+            line: Number(attributes["startLine"] ?? startLine),
+          });
+        } else {
+          parseErrors.push({
+            message: `Unknown block type '${blockType}'`,
+            file,
+            line: startLine,
+          });
+        }
         continue;
       }
 
