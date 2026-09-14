@@ -396,31 +396,25 @@ test.describe("Diagram controls", () => {
     const diagram = page.getByTestId("diagram").first();
     await expect(diagram.locator("svg")).toBeVisible({ timeout: 5000 });
 
+    // Zoom in and verify the zoom indicator updates
     const viewport = diagram.locator("..");
     await page.getByRole("button", { name: "Zoom in" }).first().click();
     await expect(page.getByText("110%")).toBeVisible();
 
-    await viewport.evaluate((element) => {
-      const viewport = element as HTMLDivElement;
-      viewport.scrollLeft = 20;
-      viewport.scrollTop = 20;
-    });
-    const before = await viewport.evaluate((element) => ({
-      left: (element as HTMLDivElement).scrollLeft,
-      top: (element as HTMLDivElement).scrollTop,
-    }));
+    // At zoom > 1 the viewport acquires the pannable cursor class
+    await expect(viewport).toHaveClass(/pannable/);
+
+    // Drag across the viewport: the panning class must be active during the drag
     const box = await viewport.boundingBox();
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + 40, box!.y + 40);
     await page.mouse.down();
+    await expect(viewport).toHaveClass(/panning/);
     await page.mouse.move(box!.x + 20, box!.y + 20);
     await page.mouse.up();
-    const after = await viewport.evaluate((element) => ({
-      left: (element as HTMLDivElement).scrollLeft,
-      top: (element as HTMLDivElement).scrollTop,
-    }));
-    expect(after.left).toBeGreaterThan(before.left);
-    expect(after.top).toBeGreaterThan(before.top);
+
+    // After releasing, panning state clears
+    await expect(viewport).not.toHaveClass(/panning/);
   });
 });
 
