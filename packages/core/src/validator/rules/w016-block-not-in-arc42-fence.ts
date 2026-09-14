@@ -33,6 +33,7 @@ export const w016BlockNotInArc42Fence: Rule = {
     for (const doc of workspace.documents) {
       for (const node of doc.nodes) {
         if (node.kind !== "block") continue;
+        if (node.blockType === "__parse_error__") continue; // error sentinel — not a real block
         if (node.inArc42Fence) continue; // correctly wrapped
 
         diagnostics.push({

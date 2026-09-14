@@ -412,7 +412,20 @@ export function parseMarkdown(filePath: string, content: string): DocumentAst {
     nodes.push({ kind: "prose", text: line, line: lineNo });
   }
 
-  // Unclosed block: silently ignored (validator will catch missing required attrs)
+  // Unclosed block at end of file → emit a sentinel so E005/parse-error fires
+  if (openBlock !== null) {
+    nodes.push({
+      kind: "block",
+      blockType: "__parse_error__",
+      attributes: {
+        message: `Unclosed block ':::${openBlock.blockType}' opened at line ${openBlock.startLine} — missing closing ':::'`,
+        startLine: String(openBlock.startLine),
+      },
+      startLine: openBlock.startLine,
+      endLine: lines.length,
+      inArc42Fence,
+    });
+  }
 
   // Process any pending diagram at EOF (diagram block was closed but no fence followed)
   if (pendingDiagram) {
