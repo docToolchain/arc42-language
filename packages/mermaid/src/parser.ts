@@ -121,3 +121,12 @@ export const mermaidSyntaxParser: MermaidSyntaxParser = {
 export function parseMermaid(request: MermaidParseRequest): Promise<MermaidParseResult> {
   return mermaidSyntaxParser.parse(request);
 }
+
+/**
+ * Eagerly kicks off the mermaid dynamic import so it runs concurrently with
+ * workspace file I/O instead of waiting until the first diagram is encountered.
+ * Fire-and-forget: errors are handled by getMermaid()'s own retry logic.
+ */
+export function warmMermaid(): void {
+  void getMermaid();
+}

@@ -6,4 +6,4 @@ export type {
   MermaidParseSuccess,
   MermaidSyntaxParser,
 } from "./model.ts";
-export { mermaidSyntaxParser, parseMermaid } from "./parser.ts";
+export { mermaidSyntaxParser, parseMermaid, warmMermaid } from "./parser.ts";
