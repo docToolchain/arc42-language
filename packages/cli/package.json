@@ -52,7 +52,6 @@
   },
   "devDependencies": {
     "@arc42/core": "workspace:*",
-    "@arc42/mermaid": "workspace:*",
     "@arc42/workspace-fs": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",
