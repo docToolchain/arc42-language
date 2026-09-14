@@ -32,6 +32,7 @@ import {
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
 import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
+import { warmMermaid } from "@arc42/mermaid";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText } from "./guide.ts";
 import { filename } from "./chapters.ts";
@@ -284,6 +285,7 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
   const strict = values["strict"] as boolean;
 
   try {
+    warmMermaid();
     const result = await validateWorkspace(dir, root);
 
     if (format === "json") {
