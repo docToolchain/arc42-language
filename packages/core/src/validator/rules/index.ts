@@ -71,6 +71,7 @@ import { h019BuildingBlockDiagramParentNotSubgraph } from "./h019-building-block
 import { h020DuplicateInterfacePath } from "./h020-duplicate-interface-path.ts";
 import { h021UncoveredSourcePath } from "./h021-uncovered-source-path.ts";
 import { h022BuildingBlockNoActorPath } from "./h022-building-block-no-actor-path.ts";
+import { w029UnknownAttribute } from "./w029-unknown-attribute.ts";
 
 export const builtinRules: readonly Rule[] = [
   // Errors — structural / broken references
@@ -119,6 +120,7 @@ export const builtinRules: readonly Rule[] = [
   w026BuildingBlockParentSubchapter, // Chapter 5
   w027InterfaceProviderSubchapter, // Chapter 5
   w028ContextDiagramInternalBuildingBlock, // Chapter 3
+  w029UnknownAttribute, // All chapters (parse-time unknown attribute detection)
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9

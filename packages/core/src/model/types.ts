@@ -220,6 +220,12 @@ export interface ParseError {
   line: number;
 }
 
+export interface ParseWarning {
+  message: string;
+  file: string;
+  line: number;
+}
+
 export interface IgnoreDirective {
   ruleCode: string;
   reason?: string;
@@ -232,6 +238,8 @@ export interface IgnoreDirective {
 export interface Workspace {
   elements: Element[];
   parseErrors: ParseError[];
+  /** Warnings emitted during parsing — block still parsed successfully (e.g. unknown attributes). */
+  parseWarnings?: ParseWarning[];
   /** Raw parsed documents — used by structure-aware validation rules (W004, W005) */
   documents: DocumentAst[];
   diagrams: DiagramArtifact[];

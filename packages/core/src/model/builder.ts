@@ -1,6 +1,14 @@
 import type { DocumentAst } from "../ast.ts";
-import type { Workspace, Element, ParseError, IgnoreDirective, DiagramArtifact } from "./types.ts";
+import type {
+  Workspace,
+  Element,
+  ParseError,
+  ParseWarning,
+  IgnoreDirective,
+  DiagramArtifact,
+} from "./types.ts";
 import { ELEMENT_SCHEMAS, DIAGRAM_SCHEMAS } from "./schemas.ts";
+import { z } from "zod";
 import type { BlockType } from "../ast.ts";
 
 /**
@@ -68,6 +76,7 @@ function zodErrorToMessage(
 export function buildWorkspace(documents: DocumentAst[]): Workspace {
   const elements: Element[] = [];
   const parseErrors: ParseError[] = [];
+  const parseWarnings: ParseWarning[] = [];
   const diagrams: DiagramArtifact[] = [];
   const ignoreDirectives: IgnoreDirective[] = [];
 
@@ -246,11 +255,25 @@ export function buildWorkspace(documents: DocumentAst[]): Workspace {
         continue;
       }
 
+      // Warn about unknown attributes (keys not in the schema shape).
+      // The block is still accepted; only a warning is emitted so the author
+      // can spot typos like `sevrity` without losing the element entirely.
+      const knownKeys = new Set(Object.keys((schema as z.ZodObject<z.ZodRawShape>)._zod.def.shape));
+      for (const key of Object.keys(attributes)) {
+        if (!knownKeys.has(key)) {
+          parseWarnings.push({
+            message: `Unknown attribute '${key}' on ${blockType}`,
+            file,
+            line: startLine,
+          });
+        }
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = result.data as any;
       elements.push({ ...data, kind: blockType, loc } as Element);
     }
   }
 
-  return { elements, parseErrors, documents, diagrams, ignoreDirectives };
+  return { elements, parseErrors, parseWarnings, documents, diagrams, ignoreDirectives };
 }

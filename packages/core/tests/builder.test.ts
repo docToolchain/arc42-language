@@ -1,5 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 import { buildWorkspace } from "../src/model/builder.ts";
+import { validate } from "../src/validator/index.ts";
+import { buildIndex } from "../src/resolver/index.ts";
 import type { DocumentAst } from "../src/ast.ts";
 import type { AstNode } from "../src/ast.ts";
 
@@ -316,5 +318,43 @@ describe("buildWorkspace", () => {
     expect(ws.parseErrors).toHaveLength(0);
     expect(ws.elements[0]!.loc.prose).toBe("Prose for A.");
     expect(ws.elements[1]!.loc.prose).toBe("Prose for B.");
+  });
+});
+
+describe("W029 — unknown attribute on block", () => {
+  test("emits W029 warning when a block has an unrecognised attribute", () => {
+    const ws = buildWorkspace([
+      doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high\nproriti: low"),
+    ]);
+    // Block still parses — element is present
+    expect(ws.elements).toHaveLength(1);
+    expect(ws.parseErrors).toHaveLength(0);
+    // Warning is recorded on the workspace
+    expect(ws.parseWarnings).toBeDefined();
+    expect(ws.parseWarnings!.some((w) => w.message.includes("proriti"))).toBe(true);
+
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    const w029 = diags.filter((d) => d.code === "W029");
+    expect(w029).toHaveLength(1);
+    expect(w029[0]!.severity).toBe("warning");
+    expect(w029[0]!.message).toMatch(/Unknown attribute 'proriti' on quality-goal/);
+  });
+
+  test("no W029 when all attributes are known", () => {
+    const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high")]);
+    expect(ws.elements).toHaveLength(1);
+    expect(ws.parseErrors).toHaveLength(0);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.filter((d) => d.code === "W029")).toHaveLength(0);
+  });
+
+  test("emits one W029 per unknown attribute", () => {
+    const ws = buildWorkspace([doc("building-block\nid: bb-1\ntitle: API\nfoo: bar\nbaz: qux")]);
+    expect(ws.elements).toHaveLength(1);
+    const idx = buildIndex(ws);
+    const diags = validate(ws, idx);
+    expect(diags.filter((d) => d.code === "W029")).toHaveLength(2);
   });
 });
