@@ -8,7 +8,7 @@ const COMMANDS = [
   ["diff", "Report architecture-document changes that need review."],
   ["serve", "Serve the workspace in the browser for interactive exploration."],
   ["build", "Build a self-contained static site from a workspace for deployment."],
-  ["init", "Create starter architecture files or install the agent skill."],
+  ["init", "Install the arc42 agent skill."],
 ] as const;
 
 export function rootHelp(): string {
@@ -192,28 +192,15 @@ the bundled skill is unavailable or the destination already exists.
 `;
     }
     if (nestedCommand === "template") {
-      return `arc42 init template — scaffold arc42 chapter templates
-
-Usage:
-  arc42 init template [--dir <path>]
-
-Options:
-  --dir <path>          Destination directory (default: current directory)
-  -h, --help            Show this help
-
-The command copies all bundled chapter templates and skips files that already exist. It
-exits 0 after copying and 1 when templates cannot be loaded.
-`;
+      return undefined;
     }
-    return `arc42 init — create files for a new arc42 workspace
+    return `arc42 init — install the arc42 agent skill
 
 Usage:
   arc42 init skill [--path <destination>]
-  arc42 init template [--dir <path>]
 
 Subcommands:
   skill                 Install the agent skill
-  template              Copy starter architecture templates
 
 Use arc42 init <subcommand> --help for options and defaults.
 `;

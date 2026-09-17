@@ -34,8 +34,10 @@ workspace. The migration is complete only when:
   or overwrite reviewed content.
 
 ## Step 1 — initialize the workspace
-Run \`arc42 init template --dir <workspace>\`. Existing files are skipped, so rerunning is safe.
-Check that the twelve expected \`*.arc42.md\` files exist. If a file already contains authored
+Create the chapter files on demand as you work through each chapter. Before authoring a chapter,
+run \`arc42 guide chapter <number>\` to get the brief and starter template, then create the
+corresponding \`*.arc42.md\` file. Do not create all files upfront.
+Check that each file exists before writing content; if a file already contains authored
 content, preserve it and treat it as input to the inventory.
 
 ## Step 2 — create the evidence file

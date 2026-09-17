@@ -34,7 +34,6 @@ import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText } from "./guide.ts";
-import { filename } from "./chapters.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
@@ -497,12 +496,8 @@ function runInit(args: string[]) {
 
   if (subcommand === "skill") {
     runInitSkill(args.slice(1));
-  } else if (subcommand === "template") {
-    runInitTemplate(args.slice(1));
   } else {
-    console.error(
-      `Usage:\n  arc42 init skill [--path <dest>]\n  arc42 init template [--dir <path>]`,
-    );
+    console.error(`Usage:\n  arc42 init skill [--path <dest>]`);
     process.exit(2);
   }
 }
@@ -532,38 +527,6 @@ function runInitSkill(args: string[]) {
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(src, dest);
   console.log(`Skill installed: ${dest}`);
-  process.exit(0);
-}
-
-function runInitTemplate(args: string[]) {
-  const { values } = parseArgs({
-    args,
-    options: {
-      dir: { type: "string" },
-    },
-  });
-
-  const destDir = (values["dir"] as string | undefined) ?? process.cwd();
-  mkdirSync(destDir, { recursive: true });
-
-  let copied = 0;
-  let skipped = 0;
-
-  for (const chapter of CHAPTERS) {
-    const file = filename(chapter);
-    const dest = join(destDir, file);
-    if (existsSync(dest)) {
-      console.warn(`Skipping (already exists): ${dest}`);
-      skipped++;
-    } else {
-      writeFileSync(dest, chapter.template, "utf8");
-      copied++;
-    }
-  }
-
-  console.log(
-    `Templates copied: ${copied} file(s) to ${destDir}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
-  );
   process.exit(0);
 }
 
