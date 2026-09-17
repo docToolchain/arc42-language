@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { commandHelp, rootHelp } from "../src/help.ts";
 import { CHAPTERS, filename } from "../src/chapters.ts";
@@ -28,18 +26,6 @@ describe("CLI help", () => {
     );
   });
 
-  test("init template generates the canonical files dynamically", () => {
-    const directory = mkdtempSync(join(tmpdir(), "arc42-template-test-"));
-    try {
-      runCli("init", "template", "--dir", directory);
-      const files = readdirSync(directory).sort();
-      expect(files).toEqual(CHAPTERS.map(filename).sort());
-      expect(readFileSync(join(directory, files[0]!), "utf8")).toContain("<!--");
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  });
-
   test("root help lists every command with its purpose", () => {
     const help = rootHelp();
     for (const command of [
@@ -61,7 +47,7 @@ describe("CLI help", () => {
   test("subcommand help explains usage and options", () => {
     expect(commandHelp("validate")).toContain("--format <text|json>");
     expect(commandHelp("diff")).toContain("--staged, --cached");
-    expect(commandHelp("init", "template")).toContain("default: current directory");
+    expect(commandHelp("init", "template")).toBeUndefined();
     expect(commandHelp("guide")).toContain("guide chapter <1-12>");
     expect(commandHelp("guide", "chapter")).toContain("generated starter template");
     expect(commandHelp("guide", "chapter")).not.toContain("chapter focus");
@@ -81,7 +67,7 @@ describe("CLI help", () => {
     expect(runCli("--help")).toContain("Commands:");
     expect(runCli("validate", "--help")).toContain("arc42 validate");
     expect(runCli("--help", "diff")).toContain("working tree versus index");
-    expect(runCli("init", "template", "--help")).toContain("scaffold arc42");
+    expect(runCli("init", "--help")).toContain("arc42 init skill");
     expect(runCli("guide", "chapter", "1", "--help")).toContain("generated starter template");
     expect(runCli("guide", "evidence", "--help")).toContain("evidence document");
     expect(runCli("guide", "migration", "--help")).toContain("complete migration workflow");
