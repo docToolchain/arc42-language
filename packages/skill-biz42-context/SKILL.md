@@ -21,9 +21,9 @@ and in prose, not in either model.
 
 Before writing or revising:
 
-a) chapter 1 — Introduction and Goals
-b) chapter 10 — Quality Requirements
-c) chapter 11 — Risks and Technical Debt
+- chapter 1 — Introduction and Goals
+- chapter 10 — Quality Requirements
+- chapter 11 — Risks and Technical Debt
 
 Skip this for every other chapter. Building blocks, interfaces, deployment, concepts,
 decisions, and the glossary don't need business-model input — they're about how the
