@@ -16,16 +16,16 @@ npx @doctc/arc42 <command>
 
 ## Getting started
 
-Scaffold starter templates into your workspace:
+Install the agent skill (works with Claude Code and ~80 other agents):
 
 ```bash
-arc42 init template --dir ./docs
+npx skills add doctoolchain/arc42-language
 ```
 
-Install the agent skill (for opencode and compatible AI agents):
+Then scaffold the first chapter on demand:
 
 ```bash
-arc42 init skill
+arc42 guide chapter 1
 ```
 
 ## Commands
@@ -65,13 +65,6 @@ arc42 diff --staged
 Exit codes: `0` = no errors, `1` = validation errors or element not found, `2` = usage error.
 Use `arc42 --help` for the command-purpose overview. Help can also precede a command,
 such as `arc42 --help validate`.
-
-## `arc42 init`
-
-```bash
-arc42 init template [--dir <path>]   # copies all 12 chapter templates; skips existing files
-arc42 init skill [--path <dest>]     # writes SKILL.md to .agents/skills/arc42/SKILL.md
-```
 
 ## Validation rules
 

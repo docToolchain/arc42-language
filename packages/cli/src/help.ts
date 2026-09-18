@@ -8,7 +8,6 @@ const COMMANDS = [
   ["diff", "Report architecture-document changes that need review."],
   ["serve", "Serve the workspace in the browser for interactive exploration."],
   ["build", "Build a self-contained static site from a workspace for deployment."],
-  ["init", "Install the arc42 agent skill."],
 ] as const;
 
 export function rootHelp(): string {
@@ -178,36 +177,6 @@ Options:
 The server watches the selected directory recursively and refreshes the browser when
 *.arc42.md files change. It exits 1 when the workspace or web assets cannot be loaded.
 Use --dir or ARC42_DIR to select the workspace.
-`;
-  }
-
-  if (command === "init") {
-    if (nestedCommand === "skill") {
-      return `arc42 init skill — install the arc42 agent skill
-
-Usage:
-  arc42 init skill [--path <destination>]
-
-Options:
-  --path <destination>  Install at this path (default: .agents/skills/arc42/SKILL.md)
-  -h, --help            Show this help
-
-The destination must not already exist. The command exits 0 when installed and 1 when
-the bundled skill is unavailable or the destination already exists.
-`;
-    }
-    if (nestedCommand === "template") {
-      return undefined;
-    }
-    return `arc42 init — install the arc42 agent skill
-
-Usage:
-  arc42 init skill [--path <destination>]
-
-Subcommands:
-  skill                 Install the agent skill
-
-Use arc42 init <subcommand> --help for options and defaults.
 `;
   }
 

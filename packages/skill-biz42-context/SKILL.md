@@ -21,9 +21,9 @@ and in prose, not in either model.
 
 Before writing or revising:
 
-- chapter 1 — Introduction and Goals
-- chapter 10 — Quality Requirements
-- chapter 11 — Risks and Technical Debt
+a) chapter 1 — Introduction and Goals
+b) chapter 10 — Quality Requirements
+c) chapter 11 — Risks and Technical Debt
 
 Skip this for every other chapter. Building blocks, interfaces, deployment, concepts,
 decisions, and the glossary don't need business-model input — they're about how the
@@ -31,18 +31,18 @@ system is built, not why it exists.
 
 ## Step 0 — establish state
 
- a) No biz42 workspace for this organisation at all?
-    → Note it once in chapter 1 prose as an open question ("no business model found;
-      goals below aren't grounded against a stated expectation"). Don't create one
-      yourself. Stop here.
+a) No biz42 workspace for this organisation at all?
+→ Note it once in chapter 1 prose as an open question ("no business model found;
+goals below aren't grounded against a stated expectation"). Don't create one
+yourself. Stop here.
 
- b) biz42 workspace exists, but no product element for this product?
-    → Same note, scoped narrower. Point the human at `biz42 guide chapter 10` if they
-      want to add one — it's their call and their repository. Stop here.
+b) biz42 workspace exists, but no product element for this product?
+→ Same note, scoped narrower. Point the human at `biz42 guide chapter 10` if they
+want to add one — it's their call and their repository. Stop here.
 
- c) A product element exists. Is this arc42 workspace new or already populated?
-    → New workspace — go to Step 1 (full read).
-    → Existing workspace, one element being added or changed — go to Step 1' (targeted read).
+c) A product element exists. Is this arc42 workspace new or already populated?
+→ New workspace — go to Step 1 (full read).
+→ Existing workspace, one element being added or changed — go to Step 1' (targeted read).
 
 ## Step 1 — full read (new workspace)
 

@@ -13,7 +13,8 @@ relying on remembered conventions.
 ## Workflow
 
 1. For an existing repository, start with `arc42 guide migration` and follow its review gates.
-2. For a new workspace, create chapter files on demand as you reach each chapter — run `arc42 guide chapter <number>` first to get the brief and starter template.
+2. For a new workspace, create chapter files on demand as you reach each chapter — run
+   `arc42 guide chapter <number>` first to get the brief and starter template.
 3. Before authoring a chapter, run `arc42 guide chapter <number>` and read that chapter's template.
 4. Inspect the current model with `arc42 get` and use `arc42 explain <type>` when a block is needed.
 5. When authoring or debugging a diagram, run `arc42 explain diagram <type>` to see required fields,
@@ -42,7 +43,6 @@ with validation output.
 ```bash
 arc42 guide migration
 arc42 guide chapter <number>
-arc42 init skill [--path <destination>]
 arc42 get --dir <workspace>
 arc42 explain <type>
 arc42 explain diagram
