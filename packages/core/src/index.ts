@@ -100,6 +100,8 @@ export {
   formatExplainListText,
   formatExplainDiagramText,
   formatExplainDiagramListText,
+  explainIgnore,
+  formatExplainIgnoreText,
   type DiagramType,
 } from "./explain.ts";
 export type {
@@ -107,6 +109,7 @@ export type {
   ExplainSummary,
   ExplainFieldResult,
   ExplainCrossRefResult,
+  ExplainIgnoreResult,
 } from "./explain.ts";
 
 // Coverage — computeCoverage is used by workspace-fs; types are re-exported from renderer/types

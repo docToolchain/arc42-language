@@ -301,3 +301,85 @@ export function formatExplainDiagramListText(summaries: ExplainDiagramSummary[])
   }
   return lines.join("\n");
 }
+
+// ---------------------------------------------------------------------------
+// Ignore directive guidance
+// ---------------------------------------------------------------------------
+
+/** Full guidance for the :::ignore directive. */
+export interface ExplainIgnoreResult {
+  name: string;
+  description: string;
+  syntax: string[];
+  constraints: string[];
+  authoringTips: string[];
+}
+
+const IGNORE_DATA: ExplainIgnoreResult = {
+  name: "ignore directive",
+  description:
+    "The :::ignore directive suppresses a specific warning (W) or hint (H) diagnostic on a " +
+    "given line of an arc42 document. It must appear inside a ```arc42 fence. " +
+    "Outside the fence, :::ignore is treated as prose and has no effect.\n\n" +
+    "Only warnings (W-prefix) and hints (H-prefix) can be suppressed. Errors (E-prefix) are " +
+    "structural — the affected block is excluded from the model and must be fixed, not ignored. " +
+    "Attempting to ignore an error code emits W030 instead.",
+  syntax: [
+    "Single-line form:",
+    "  :::ignore W001 reason on one line :::",
+    "",
+    "Multi-line form:",
+    "  :::ignore W001 reason on first line",
+    "  :::",
+    "",
+    "Both forms must be inside a ```arc42 fence:",
+    "  ```arc42",
+    "  :::ignore H001 decision has no addresses because it is a foundational constraint",
+    "  :::",
+    "  ```",
+  ],
+  constraints: [
+    "Only W (warning) and H (hint) rule codes can be ignored.",
+    "Attempting to ignore an E (error) code emits W030 — errors must be fixed.",
+    "An ignore directive suppresses the next matching diagnostic in the same file at or after the directive line.",
+    "An unused ignore directive emits W019 (stale ignore). Remove it when the underlying issue is resolved.",
+  ],
+  authoringTips: [
+    "Always provide a reason — it documents why the suppression is intentional.",
+    "Record each suppressed hint in architecture-evidence.md with the rule code, element id, and reason.",
+    "Run `arc42 validate` after adding an ignore to confirm the directive is used (no W019).",
+    "Run `arc42 get --type ignore` to list all ignore directives in the workspace.",
+    "If you are suppressing a warning (W), discuss with the team first — warnings usually indicate a real gap.",
+  ],
+};
+
+/** Get full guidance for the :::ignore directive. */
+export function explainIgnore(): ExplainIgnoreResult {
+  return IGNORE_DATA;
+}
+
+/** Format ignore explain output as human-readable text. */
+export function formatExplainIgnoreText(result: ExplainIgnoreResult): string {
+  const lines: string[] = [];
+  lines.push(`Directive: ${result.name}`);
+  lines.push(`\n${result.description}`);
+
+  lines.push("\nSyntax:");
+  for (const line of result.syntax) {
+    lines.push(line ? `  ${line}` : "");
+  }
+
+  lines.push("\nConstraints:");
+  for (const c of result.constraints) {
+    lines.push(`    - ${c}`);
+  }
+
+  if (result.authoringTips.length > 0) {
+    lines.push("\n  Authoring tips:");
+    for (const tip of result.authoringTips) {
+      lines.push(`    - ${tip}`);
+    }
+  }
+
+  return lines.join("\n");
+}

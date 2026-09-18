@@ -6,7 +6,7 @@
  * Lives here (not in renderer/types.ts) because it is not a renderer concern.
  */
 
-import type { Element, DiagramArtifact } from "./model/types.ts";
+import type { Element, DiagramArtifact, IgnoreDirective } from "./model/types.ts";
 import type { DocumentAst } from "./ast.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { CoverageResult } from "./coverage.ts";
@@ -33,4 +33,6 @@ export interface WorkspacePayload {
    * The SPA renders this directly without recomputing.
    */
   coverage?: CoverageResult;
+  /** All ignore directives parsed from the workspace documents */
+  ignoreDirectives: IgnoreDirective[];
 }

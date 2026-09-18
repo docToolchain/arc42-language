@@ -91,6 +91,7 @@ Arguments:
 
 Options:
   --type <block-type>   Filter workspace results by block type
+                        Use --type ignore to list all ignore directives
   --format <format>     Output format: text, json, or markdown (default: text)
   -h, --help            Show this help
 ${blockTypes ? `\nBlock types:\n  ${blockTypes.join(", ")}\n` : ""}
@@ -119,9 +120,13 @@ The command exits 0 after listing the rules and 2 for invalid command options.
 
 Usage:
   arc42 explain [<block-type>] [options]
+  arc42 explain diagram [<type>] [options]
+  arc42 explain ignore [options]
 
 Arguments:
   <block-type>          Explain one block type; omit it to list all block types
+  diagram               Explain diagram types instead of block types
+  ignore                Explain the :::ignore directive syntax and constraints
 
 Options:
   --format <text|json>  Output the explanation as text or JSON (default: text)

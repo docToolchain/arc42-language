@@ -88,6 +88,7 @@ export function loadWorkspaceFromDocuments(documents: DocumentAst[]): WorkspaceP
     edges: index.edges,
     diagrams: workspace.diagrams,
     documents: workspace.documents,
+    ignoreDirectives: workspace.ignoreDirectives ?? [],
   };
 }
 
