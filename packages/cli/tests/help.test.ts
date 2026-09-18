@@ -28,16 +28,7 @@ describe("CLI help", () => {
 
   test("root help lists every command with its purpose", () => {
     const help = rootHelp();
-    for (const command of [
-      "validate",
-      "get",
-      "rules",
-      "explain",
-      "guide",
-      "diff",
-      "serve",
-      "init",
-    ]) {
+    for (const command of ["validate", "get", "rules", "explain", "guide", "diff", "serve"]) {
       expect(help).toContain(command);
     }
     expect(help).toContain("Check architecture documents for consistency");
@@ -47,7 +38,7 @@ describe("CLI help", () => {
   test("subcommand help explains usage and options", () => {
     expect(commandHelp("validate")).toContain("--format <text|json>");
     expect(commandHelp("diff")).toContain("--staged, --cached");
-    expect(commandHelp("init", "template")).toBeUndefined();
+    expect(commandHelp("init")).toBeUndefined();
     expect(commandHelp("guide")).toContain("guide chapter <1-12>");
     expect(commandHelp("guide", "chapter")).toContain("generated starter template");
     expect(commandHelp("guide", "chapter")).not.toContain("chapter focus");
@@ -67,7 +58,6 @@ describe("CLI help", () => {
     expect(runCli("--help")).toContain("Commands:");
     expect(runCli("validate", "--help")).toContain("arc42 validate");
     expect(runCli("--help", "diff")).toContain("working tree versus index");
-    expect(runCli("init", "--help")).toContain("arc42 init skill");
     expect(runCli("guide", "chapter", "1", "--help")).toContain("generated starter template");
     expect(runCli("guide", "evidence", "--help")).toContain("evidence document");
     expect(runCli("guide", "migration", "--help")).toContain("complete migration workflow");

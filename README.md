@@ -63,7 +63,7 @@ path: packages/catalog-service
 
 ````
 
-The block types cover the main arc42 sections. See the starter templates for ready-to-use files — scaffold them with `arc42 init template`. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.
+The block types cover the main arc42 sections. See the starter templates surfaced by `arc42 guide chapter <n>` for ready-to-use files, one chapter at a time. See `examples/bookstore-backend/` for a complete, valid workspace with realistic prose.
 
 ### The CLI
 
@@ -72,14 +72,10 @@ The block types cover the main arc42 sections. See the starter templates for rea
 npm install -g @doctc/arc42
 
 # Or run without installing
-npx @doctc/arc42 init template --dir ./docs
 npx @doctc/arc42 validate --dir ./docs
 
-# Scaffold starter templates into your workspace
-arc42 init template --dir ./docs
-
-# Install the arc42 agent skill (for opencode and compatible agents)
-arc42 init skill
+# Install the arc42 agent skill (works with Claude Code and ~80 other agents)
+npx skills add doctoolchain/arc42-language
 
 # Discover commands and their purpose
 arc42 --help
@@ -139,10 +135,6 @@ Run `arc42 --help` for a command-purpose overview and `arc42 <command> --help` f
 command-specific usage. Help is also accepted before the command, for example
 `arc42 --help validate`.
 
-`arc42 init skill` writes the agent skill to `.agents/skills/arc42/SKILL.md` by default.
-Use `--path <dest>` to override the destination.
-`arc42 init template` copies all 12 chapter templates; existing files are skipped.
-
 ### Validation rules
 
 The validator enforces built-in rules across four categories. Run `arc42 rules` to see each rule with its rationale. The short summary:
@@ -153,7 +145,7 @@ The validator enforces built-in rules across four categories. Run `arc42 rules` 
 
 ### AI agent use
 
-Run `arc42 init skill` in the project root. The skill is written to `.agents/skills/arc42/SKILL.md` by default (use `--path` to override). It orients the agent to the format and instructs it to keep the arc42 files in sync with every architectural change.
+Run `npx skills add doctoolchain/arc42-language` in the project root. It installs the bundled SKILL.md for whichever agent runtime you're using and orients the agent to the format, instructing it to keep the arc42 files in sync with every architectural change.
 
 ---
 
