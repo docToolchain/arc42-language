@@ -6,9 +6,11 @@ allowed-tools: Bash(arc42:*)
 
 # arc42 Language
 
-Use this skill as the navigation entry point for arc42 architecture work. The chapter templates and
-the CLI guide contain the authoring rules and chapter-specific guidance; consult them instead of
-relying on remembered conventions.
+The arc42 cli helps you to create and maintain machine-friendly, human readable architecture documents
+The chapter templates and the CLI guide contain the authoring rules and chapter-specific guidance;
+consult them instead of relying on remembered conventions.
+Always keep interaction with the human developer high: Architecture is all about decisions and tradeoffs
+so be sure to always align.
 
 ## Workflow
 
