@@ -6,16 +6,17 @@ allowed-tools: Bash(arc42:*), Bash(biz42:*)
 
 # arc42 ↔ biz42 context
 
-Use this skill whenever a biz42 business model exists for the product this arc42
-workspace documents. It tells you what to read and when — it is not a schema and not
-a validated link.
+biz42 is a notation convention for businesses, grounded in ISO 9001.
+When a project is part of a biz42 modeled organization, this gives you substantial
+context when shaping an architecture.
 
-biz42 elements (capability, risk, expectation, signal, objective, …) are
+There is no reliable 1:1 mapping between arc42 and bis42 elements, two, so don't invent one.
+Don't add `biz42:` fields to arc42 blocks. Don't ask the biz42 side to add `arc42:` fields either.
+The connection lives in your understanding and in prose, not in either model.
+
+_CAUTION: biz42 elements (capability, risk, expectation, signal, objective, …) are
 organisation-scoped: they can describe the whole business, not just this one product.
-This arc42 workspace is product-scoped. There is no reliable 1:1 mapping between the
-two, so don't invent one. Don't add `biz42:` fields to arc42 blocks. Don't ask the
-biz42 side to add `arc42:` fields either. The connection lives in your understanding
-and in prose, not in either model.
+This arc42 workspace is product-scoped._
 
 ## When to consult biz42
 
@@ -29,20 +30,12 @@ Skip this for every other chapter. Building blocks, interfaces, deployment, conc
 decisions, and the glossary don't need business-model input — they're about how the
 system is built, not why it exists.
 
-## Step 0 — establish state
+## Step 0 — orient product in business
 
-a) No biz42 workspace for this organisation at all?
-→ Note it once in chapter 1 prose as an open question ("no business model found;
-goals below aren't grounded against a stated expectation"). Don't create one
-yourself. Stop here.
-
-b) biz42 workspace exists, but no product element for this product?
-→ Same note, scoped narrower. Point the human at `biz42 guide chapter 10` if they
-want to add one — it's their call and their repository. Stop here.
-
-c) A product element exists. Is this arc42 workspace new or already populated?
-→ New workspace — go to Step 1 (full read).
-→ Existing workspace, one element being added or changed — go to Step 1' (targeted read).
+It's crucial to understand the scope of the product you are architecting and how it plays
+a role in contributing to the organizational objectives. =>
+If you find a biz42 structure, directly read the products and services document.
+Else, ask the user or propose to do a biz42 modelling in advance.
 
 ## Step 1 — full read (new workspace)
 
@@ -72,7 +65,9 @@ Most single-element edits touch none of this. That's the common case, not a gap.
 ## Step 2 — let it inform, don't transcribe
 
 An expectation becomes input to a quality-goal, reworded at architecture altitude —
-not copied verbatim. A capability becomes context for which building-blocks matter —
+not copied verbatim. A product may also not fulfil all expectations, but contribute
+only to a couple of them.
+A capability becomes context for which building-blocks matter —
 not a building-block itself. Most of what you read will produce nothing in the arc42
 doc, and that's expected, not a shortfall.
 
