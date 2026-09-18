@@ -227,3 +227,41 @@ sequenceDiagram
 `if-mermaid-syntax` is exercised during `arc42 validate` whenever a diagram block is present.
 `if-site-verdicts` is exercised only at site build time — no runtime network calls are involved.
 `if-site-docs-output` represents the build artifact produced by `arc42 build` and co-deployed under `/docs/` alongside the project site.
+
+## Agent reads biz42 context skill
+
+When the product this architecture documents is part of a business modeled with biz42, the AI agent
+discovers the biz42 context skill at session start and reads it to understand how to consult
+business-model context when authoring chapters 1, 10, or 11. No biz42 CLI is invoked and no
+data crosses a system boundary — the skill is a Markdown file read directly from disk.
+
+```arc42
+:::runtime-scenario
+id: scenario-biz42-skill-load
+title: Agent reads biz42 context skill
+trigger: Agent session starts and a biz42 business model is in scope
+involves: bb-skill-biz42-context
+:::
+```
+
+```arc42
+:::diagram
+id: biz42-skill-load-sequence
+scenario: scenario-biz42-skill-load
+notation: mermaid-sequence
+aliases: bb_skill_biz42=bb-skill-biz42-context
+:::
+```
+
+```mermaid
+sequenceDiagram
+    actor actor_agent as AI Agent
+    participant bb_skill_biz42 as biz42 Context Skill
+
+    actor_agent->>bb_skill_biz42: Load SKILL.md at session start
+    bb_skill_biz42-->>actor_agent: Guidance on reading biz42 context (chapters 1, 10, 11)
+```
+
+The skill is a static Markdown file installed in the agent's skills directory. Loading it produces
+no side effects and involves no network calls, CLI invocations, or biz42 tool interactions. The
+skill tells the agent _how_ to read biz42 context — it does not perform that reading itself.

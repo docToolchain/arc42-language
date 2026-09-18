@@ -21,6 +21,7 @@ graph TD
     bb-core["Core Library"]
     bb-workspace-fs["Filesystem Workspace Adapter"]
     bb-skill["Skill"]
+    bb-skill-biz42-context["biz42 Context Skill"]
     bb-web-renderer["Web Renderer"]
     bb-workspace["Documentation Workspace"]
 
@@ -473,6 +474,39 @@ title: Skill Guide Contract
 provider: bb-skill
 protocol: SKILL.md loaded at agent startup
 path: packages/skill/SKILL.md
+:::
+```
+
+## biz42 Context Skill
+
+A single `SKILL.md` file that guides AI agents on how to read biz42 business-model context
+(capabilities, expectations, products) when authoring or revising arc42 chapters 1, 10, and 11.
+Not code — it establishes how business-model evidence informs architecture goals, quality
+requirements, and risks without creating a field-level coupling between the two DSLs.
+Installed by copying to `~/.opencode/skills/biz42-context/SKILL.md`.
+
+```arc42
+:::building-block
+id: bb-skill-biz42-context
+title: biz42 Context Skill
+technology: Markdown
+implements: concept-prose-first
+path: packages/skill-biz42-context
+:::
+```
+
+### biz42 Context Skill Guide Contract
+
+The agent loads the installed skill to obtain guidance on consulting biz42 context before
+writing arc42 chapters 1, 10, or 11.
+
+```arc42
+:::interface
+id: if-agent-biz42-skill
+title: biz42 Context Skill Guide Contract
+provider: bb-skill-biz42-context
+protocol: SKILL.md loaded at agent startup
+path: packages/skill-biz42-context/SKILL.md
 :::
 ```
 

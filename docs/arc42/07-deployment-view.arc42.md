@@ -65,17 +65,19 @@ architecture-beta
 
 ## Agent Skill
 
-The skill is a single `SKILL.md` file (and its companion templates) installed by file copy into
-the AI agent's skills directory, typically `~/.opencode/skills/arc42-language/`. The agent reads
-it at session start. No build step or runtime environment is required; Markdown is the only
-technology.
+The skill directory hosts two `SKILL.md` files installed by file copy into the AI agent's
+skills directory, typically `~/.opencode/skills/`. The arc42-language skill orients agents
+to the authoring convention and CLI workflow. The biz42 context skill guides agents on
+reading biz42 business-model context when the product belongs to a biz42-modeled
+organization. The agent reads both at session start. No build step or runtime environment
+is required; Markdown is the only technology.
 
 ```arc42
 :::deployment-node
 id: node-skill
 title: Agent Skill Directory
 type: device
-hosts: bb-skill
+hosts: bb-skill, bb-skill-biz42-context
 :::
 ```
 

@@ -23,6 +23,7 @@ graph TD
     subgraph system["System"]
         bb-cli["CLI"]
         bb-skill["Skill"]
+        bb-skill-biz42-context["biz42 Context Skill"]
         bb-web-renderer["Web Renderer"]
         bb-workspace["Documentation Workspace"]
         bb-site["Project Site"]
@@ -33,6 +34,7 @@ graph TD
     actor-agent -->|"if-cli"| bb-cli
     actor-agent -->|"if-workspace-access"| bb-workspace
     actor-agent -->|"if-agent-skill"| bb-skill
+    actor-agent -->|"if-agent-biz42-skill"| bb-skill-biz42-context
     actor-ci -->|"if-cli"| bb-cli
     actor-reader -->|"if-reader-web"| bb-web-renderer
     actor-visitor -->|"if-site-web"| bb-site
@@ -65,9 +67,11 @@ requires: if-cli, if-workspace-access, if-reader-web
 An LLM-based coding assistant (e.g. Kiro, GitHub Copilot, Claude) that reads and writes
 `.arc42.md` files as part of its development workflow. Loaded with the arc42-language
 SKILL.md, it uses the CLI to validate its output and discover existing elements before
-making changes. The agent is a first-class author — the DSL is deliberately simple enough
-that agents can produce valid files without handholding. Access to the workspace uses the
-same file-based contract as the architect.
+making changes. When the product is part of a biz42-modeled business, the agent also loads
+the biz42 context skill to understand how business-model context informs chapters 1, 10,
+and 11. The agent is a first-class author — the DSL is deliberately simple enough that
+agents can produce valid files without handholding. Access to the workspace uses the same
+file-based contract as the architect.
 
 ```arc42
 :::actor
@@ -75,7 +79,7 @@ id: actor-agent
 title: AI Agent
 type: system
 description: LLM-based coding assistant operating via the arc42-language skill
-requires: if-cli, if-agent-skill, if-workspace-access
+requires: if-cli, if-agent-skill, if-agent-biz42-skill, if-workspace-access
 :::
 ```
 
