@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
 import {
-  copyFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -143,8 +142,6 @@ async function main() {
     runRules(commandArgs);
   } else if (command === "explain") {
     runExplain(commandArgs);
-  } else if (command === "init") {
-    runInit(commandArgs);
   } else if (command === "serve") {
     await runServe(dir, commandArgs);
   } else if (command === "build") {
@@ -531,49 +528,6 @@ function runExplain(args: string[]) {
       console.log(formatExplainListText(summaries));
     }
   }
-  process.exit(0);
-}
-
-// ---------------------------------------------------------------------------
-// init
-// ---------------------------------------------------------------------------
-
-function runInit(args: string[]) {
-  const subcommand = args[0];
-
-  if (subcommand === "skill") {
-    runInitSkill(args.slice(1));
-  } else {
-    console.error(`Usage:\n  arc42 init skill [--path <dest>]`);
-    process.exit(2);
-  }
-}
-
-function runInitSkill(args: string[]) {
-  const { values } = parseArgs({
-    args,
-    options: {
-      path: { type: "string" },
-    },
-  });
-
-  const dest =
-    (values["path"] as string | undefined) ?? join(process.cwd(), ".agents/skills/arc42/SKILL.md");
-  const src = join(__dirname, "skill/SKILL.md");
-
-  if (!existsSync(src)) {
-    console.error(`Bundled skill file not found at ${src}`);
-    process.exit(1);
-  }
-
-  if (existsSync(dest)) {
-    console.error(`File already exists: ${dest}\nUse --path to specify a different destination.`);
-    process.exit(1);
-  }
-
-  mkdirSync(dirname(dest), { recursive: true });
-  copyFileSync(src, dest);
-  console.log(`Skill installed: ${dest}`);
   process.exit(0);
 }
 
