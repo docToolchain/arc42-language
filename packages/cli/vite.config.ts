@@ -19,6 +19,13 @@ export default defineConfig({
         to: "dist/skill",
         flatten: true,
       },
+      // Separate, self-contained skill: consult biz42 while authoring arc42.
+      // Packaged into its own dist folder, mirroring packages/skill above.
+      {
+        from: "../../packages/skill-biz42-context/SKILL.md",
+        to: "dist/skill-biz42-context",
+        flatten: true,
+      },
       // Copy SPA assets from packages/web/dist/ into dist/web/.
       // The glob matches individual files; flatten: false preserves the
       // assets/ subdirectory alongside index.html.
