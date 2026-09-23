@@ -191,6 +191,9 @@ importers:
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@latest
         version: '@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3)'
+      vite-plugin-singlefile:
+        specifier: 2.3.3
+        version: 2.3.3(@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3))
       vite-plus:
         specifier: 'catalog:'
         version: 0.1.24(@types/node@24.13.3)(@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3))(typescript@5.9.3)
@@ -3232,6 +3235,16 @@ packages:
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
+  vite-plugin-singlefile@2.3.3:
+    resolution: {integrity: sha512-XVnGH0QzbOa8fxRSsHdCarVN1BSBXNi7uLMQYlrGRN5apdHkk62XQWRJhVever0lnfuyBkwn+kvVChdm/OoOUg==}
+    engines: {node: '>18.0.0'}
+    peerDependencies:
+      rollup: ^4.59.0
+      vite: ^5.4.21 || ^6.0.0 || ^7.0.0 || ^8.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
   vite-plus@0.1.24:
     resolution: {integrity: sha512-b3fr6WtCiEhetjuzW/4KcEMOAMuZxoxZATWaXKmPzOLf1upG+pzKJOFZTb94D6wiPBlwcjxoaUtF7C3uAN+VjQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -6062,6 +6075,11 @@ snapshots:
     dependencies:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
+
+  vite-plugin-singlefile@2.3.3(@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3)):
+    dependencies:
+      micromatch: 4.0.8
+      vite: '@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3)'
 
   vite-plus@0.1.24(@types/node@24.13.3)(@voidzero-dev/vite-plus-core@0.3.0(@types/node@24.13.3)(typescript@5.9.3))(typescript@5.9.3):
     dependencies:

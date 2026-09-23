@@ -34,9 +34,10 @@
   },
   "scripts": {
     "build:web": "pnpm --filter @arc42/web build",
+    "build:web:single": "pnpm --filter @arc42/web build:single",
     "check:templates": "node --conditions=development --experimental-strip-types --no-warnings ../../scripts/check-starter-templates.ts",
     "prebuild": "pnpm run check:templates && pnpm --filter @arc42/workspace-fs build",
-    "build": "pnpm build:web && vp pack",
+    "build": "pnpm build:web && pnpm build:web:single && vp pack",
     "dev": "vp pack --watch",
     "test": "vp test",
     "test:e2e": "pnpm --filter @arc42/web test:e2e",
