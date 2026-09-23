@@ -240,6 +240,27 @@ graph TD
       const diags = validate(ws, buildIndex(ws));
       expect(diags.some((d) => d.code === "H015")).toBe(false);
     });
+
+    test("H015 does not fire when block is covered via diagram aliases", () => {
+      // bb-api and bb-db are in the model; diagram uses alias safe ids (underscore).
+      // The aliases field maps bb_api=bb-api, bb_db=bb-db — H015 must resolve these.
+      const content = `${MINIMAL_BLOCKS}
+:::diagram
+id: bb-view
+view: building-block
+notation: mermaid
+aliases: bb_api=bb-api, bb_db=bb-db
+:::
+\`\`\`mermaid
+graph TD
+    bb_api["API"]
+    bb_db["Database"]
+    bb_api --> bb_db
+\`\`\``;
+      const ws = workspaceFromChapter("05-building-blocks.arc42.md", content);
+      const diags = validate(ws, buildIndex(ws));
+      expect(diags.some((d) => d.code === "H015")).toBe(false);
+    });
   });
 
   describe("validator rule H016 (missing interfaces)", () => {

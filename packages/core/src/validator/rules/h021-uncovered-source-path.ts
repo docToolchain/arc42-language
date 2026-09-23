@@ -8,7 +8,7 @@ export const h021UncoveredSourcePath: Rule = {
     docs: {
       description: "A source path is not claimed by any building-block or interface.",
       rationale:
-        "This path shares a parent directory with other paths that are claimed by the architecture model. Sibling paths in the same directory were deliberately modeled, making this gap visible. It likely represents a component or subsystem that was forgotten or intentionally excluded from the model scope.",
+        "This path shares a parent directory with other paths that are claimed by the architecture model. Sibling paths in the same directory were deliberately modeled, making this gap visible. It likely represents a component or subsystem that was forgotten or intentionally excluded from the model scope. To suppress for a specific path, add it to a .arc42ignore file in the repository root.",
       arc42Chapter: 5,
       recommended: true,
     },
@@ -17,15 +17,15 @@ export const h021UncoveredSourcePath: Rule = {
     if (!context?.coverage) return [];
 
     const diagnostics: Diagnostic[] = [];
+    const ignored = context.coverageIgnore ?? new Set<string>();
 
     for (const uncoveredPath of context.coverage.uncovered) {
-      // Find a plausible file to attach the diagnostic to — use the first document
-      // in the workspace that lives under a related source path.
-      // Since this is a structural issue with no owning element, we use a synthetic location.
+      if (ignored.has(uncoveredPath)) continue;
+
       diagnostics.push({
         code: "H021",
         severity: "hint",
-        message: `Source path '${uncoveredPath}' is not claimed by any building-block or interface — add a building-block or interface with 'path: ${uncoveredPath}' if it belongs to the system scope`,
+        message: `Source path '${uncoveredPath}' is not claimed by any building-block or interface — add a building-block or interface with 'path: ${uncoveredPath}' if it belongs to the system scope, or add '${uncoveredPath}' to .arc42ignore to suppress this hint`,
         file: uncoveredPath,
         line: 1,
       });

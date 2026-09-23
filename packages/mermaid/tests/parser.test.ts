@@ -41,6 +41,37 @@ describe("parseMermaid", () => {
     expect(result).toMatchObject({ ok: true, notation: "flowchart", diagramType: "flowchart-v2" });
   });
 
+  it("parses flowchart with unquoted pipe-label edge in Node (DOMPurify fallback)", async () => {
+    // Regression test: Mermaid 11.17.2 calls DOMPurify for unquoted |label| edges
+    // in Node environments. withoutBrowserText must strip them before the structural retry.
+    const result = await parseMermaid({
+      notation: "flowchart",
+      source: `graph TD
+  a["A"]
+  b["B"]
+  a -->|reads capability nodes| b`,
+    });
+    expect(result).toMatchObject({ ok: true, notation: "flowchart", diagramType: "flowchart-v2" });
+  });
+
+  it("parses flowchart with subgraph containing special chars and unquoted edge labels", async () => {
+    // Regression test: the combination of a subgraph with a quoted title (en-dash),
+    // multiple nodes, and unquoted pipe labels triggers a three-level DOMPurify fallback.
+    // This is the exact pattern used in arc42 building-block diagrams.
+    const result = await parseMermaid({
+      notation: "flowchart",
+      source: `graph TD
+  subgraph sys["edugo \u2014 single deployable unit"]
+    bb_cap["Capability Map"]
+    bb_data["Data Layer"]
+    bb_cicd["CI/CD Pipeline"]
+  end
+  bb_cap -->|reads capability nodes| bb_data
+  bb_cicd -->|validates schema| bb_data`,
+    });
+    expect(result).toMatchObject({ ok: true, notation: "flowchart", diagramType: "flowchart-v2" });
+  });
+
   it("normalizes malformed source into a failure result", async () => {
     const result = await parseMermaid({
       notation: "architecture",
