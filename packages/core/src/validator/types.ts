@@ -28,6 +28,11 @@ export interface ValidationContext {
   pathEvidence?: PathEvidence;
   /** Pre-computed coverage result for structural coverage rules */
   coverage?: CoverageResult;
+  /**
+   * Paths explicitly excluded from coverage scope via .arc42ignore.
+   * H021 will not fire for any path that matches an entry in this set.
+   */
+  coverageIgnore?: Set<string>;
 }
 
 /** Which arc42 chapter this rule primarily relates to.

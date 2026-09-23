@@ -5,7 +5,7 @@ import { validate } from "../src/validator/index.ts";
 import { parseMarkdown } from "../src/parser/markdown-parser.ts";
 import type { CoverageResult } from "../src/coverage.ts";
 
-function makeContext(uncovered: string[]): { coverage: CoverageResult } {
+function makeContext(uncovered: string[], ignored?: Set<string>) {
   return {
     coverage: {
       covered: [],
@@ -13,7 +13,8 @@ function makeContext(uncovered: string[]): { coverage: CoverageResult } {
       totalFiles: uncovered.length,
       coveredFileCount: 0,
       uncoveredFileCount: uncovered.length,
-    },
+    } satisfies CoverageResult,
+    ...(ignored && { coverageIgnore: ignored }),
   };
 }
 
@@ -42,6 +43,14 @@ describe("H021 — uncovered source paths", () => {
     expect(diags[1]?.message).toContain("packages/site");
   });
 
+  test("hint message suggests adding path to .arc42ignore", () => {
+    const { workspace, index } = workspaceFor("# Building Blocks\n");
+    const diags = validate(workspace, index, makeContext(["scripts"])).filter(
+      (d) => d.code === "H021",
+    );
+    expect(diags[0]?.message).toContain(".arc42ignore");
+  });
+
   test("diagnostic file is the uncovered path itself (no owning element)", () => {
     const { workspace, index } = workspaceFor("# Building Blocks\n");
     const diags = validate(workspace, index, makeContext(["packages/mermaid"])).filter(
@@ -49,6 +58,19 @@ describe("H021 — uncovered source paths", () => {
     );
     expect(diags[0]?.file).toBe("packages/mermaid");
     expect(diags[0]?.line).toBe(1);
+  });
+
+  test("suppresses paths listed in coverageIgnore", () => {
+    const { workspace, index } = workspaceFor("# Building Blocks\n");
+    const ignore = new Set(["packages/mermaid", ".gitignore"]);
+    const diags = validate(
+      workspace,
+      index,
+      makeContext(["packages/mermaid", ".gitignore", "packages/site"], ignore),
+    ).filter((d) => d.code === "H021");
+    // Only packages/site should fire — the other two are ignored
+    expect(diags).toHaveLength(1);
+    expect(diags[0]?.message).toContain("packages/site");
   });
 
   test("no hint when context is absent (rule opts out gracefully)", () => {
