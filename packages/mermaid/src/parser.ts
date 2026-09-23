@@ -45,11 +45,20 @@ function hasExpectedHeader(source: string, notation: MermaidParseRequest["notati
  */
 function withoutBrowserText(source: string, notation: MermaidParseRequest["notation"]): string {
   if (notation === "flowchart") {
-    return source
-      .replace(/^(\s*subgraph\s+\S+)\s*\["[^"\n]*"\]/gmu, "$1")
-      .replace(/\(\["[^"\n]*"\]\)/gu, "")
-      .replace(/\["[^"\n]*"\]/gu, "")
-      .replace(/\|"[^"\n]*"\|/gu, "");
+    return (
+      source
+        .replace(/^(\s*subgraph\s+\S+)\s*\["[^"\n]*"\]/gmu, "$1")
+        .replace(/\(\["[^"\n]*"\]\)/gu, "")
+        .replace(/\["[^"\n]*"\]/gu, "")
+        // Strip quoted pipe labels |"text"|
+        .replace(/\|"[^"\n]*"\|/gu, "")
+        // WHY: Mermaid 11.17.2 also calls DOMPurify when sanitizing unquoted
+        // edge labels (|text without quotes|) in Node environments. The original
+        // code only stripped quoted labels; this extends the fallback to also
+        // strip unquoted pipe labels so the structural graph grammar can still
+        // be validated.
+        .replace(/\|[^|\n"]+\|/gu, "")
+    );
   }
 
   if (notation === "sequence") {

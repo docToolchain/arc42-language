@@ -114,4 +114,5 @@ export type {
 
 // Coverage — computeCoverage is used by workspace-fs; types are re-exported from renderer/types
 export { computeCoverage } from "./coverage.ts";
+export { parseArc42Ignore } from "./validator/arc42-ignore.ts";
 export { warmMermaid } from "@arc42/mermaid";

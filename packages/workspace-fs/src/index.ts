@@ -5,6 +5,7 @@ import {
   getElementsFromDocuments,
   loadWorkspaceFromDocuments,
   parseArchitectureDocument,
+  parseArc42Ignore,
   validateDocumentsAsync,
   warmMermaid,
 } from "@arc42/core";
@@ -110,12 +111,23 @@ export async function validateWorkspace(dir: string, root?: string): Promise<Val
   } catch {
     trackedPaths = await collectPaths(dir, repositoryRoot);
   }
+
+  // Load .arc42ignore from repository root (if it exists)
+  let coverageIgnore: Set<string> | undefined;
+  try {
+    const ignoreContent = await readFile(resolve(repositoryRoot, ".arc42ignore"), "utf-8");
+    coverageIgnore = parseArc42Ignore(ignoreContent);
+  } catch {
+    // No .arc42ignore — all uncovered paths will be reported
+  }
+
   // Build workspace once and reuse elements for coverage computation
   const payload = loadWorkspaceFromDocuments(documents);
   const coverage = computeCoverage(payload.elements, trackedPaths);
   return validateDocumentsAsync(documents, {
     pathEvidence: { root: repositoryRoot, knownPaths: trackedPaths },
     coverage,
+    coverageIgnore,
   });
 }
 
