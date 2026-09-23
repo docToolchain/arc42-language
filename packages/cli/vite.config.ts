@@ -27,6 +27,11 @@ export default defineConfig({
         to: "dist/web/assets",
         flatten: true,
       },
+      {
+        from: "../../packages/web/dist-single/index.html",
+        to: "dist/web-single",
+        flatten: true,
+      },
     ],
   },
   lint: {
