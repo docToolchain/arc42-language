@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import type { DocumentAst } from "../src/ast.ts";
-import { analyzeArchitectureDiff, type FileChange } from "../src/diff.ts";
+import { lintArchitectureDiff, type FileChange } from "../src/diff.ts";
 import type { Element } from "../src/model/types.ts";
 
 function bb(id: string, path?: string): Element {
@@ -52,7 +52,7 @@ function document(
   };
 }
 
-describe("architecture diff analyzer", () => {
+describe("architecture diff lint", () => {
   test("reports a block-only change and ignores an unrelated section", () => {
     const ast = document([
       { kind: "heading", line: 1, text: "Service" },
@@ -61,7 +61,7 @@ describe("architecture diff analyzer", () => {
       { kind: "heading", line: 5, text: "Other" },
       { kind: "prose", line: 6 },
     ]);
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change(ast.filePath, [[3, 3]])],
       current: [ast],
     });
@@ -76,7 +76,7 @@ describe("architecture diff analyzer", () => {
       { kind: "prose", line: 2 },
       { kind: "block", line: 3 },
     ]);
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change(ast.filePath, [[2, 3]])],
       current: [ast],
     });
@@ -89,7 +89,7 @@ describe("architecture diff analyzer", () => {
       { kind: "prose", line: 2 },
       { kind: "block", line: 3 },
     ]);
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change(ast.filePath, [[2, 2]])],
       current: [ast],
     });
@@ -102,7 +102,7 @@ describe("architecture diff analyzer", () => {
       { kind: "prose", line: 2 },
       { kind: "block", line: 3 },
     ]);
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change(oldAst.filePath, [[2, 1]], [[2, 3]])],
       current: [],
       base: [oldAst],
@@ -120,7 +120,7 @@ describe("architecture diff analyzer", () => {
       { kind: "heading", line: 1 },
       { kind: "prose", line: 2 },
     ]);
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change(oldAst.filePath, [[3, 2]], [[3, 3]])],
       current: [currentAst],
       base: [oldAst],
@@ -147,7 +147,7 @@ describe("architecture diff analyzer", () => {
         },
       ],
     };
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change("src/service/index.ts", [[4, 4]])],
       current: [ast],
     });
@@ -171,7 +171,7 @@ describe("architecture diff analyzer", () => {
         },
       ],
     };
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change("src/service/index.ts", [[4, 4]])],
       current: [ast],
     });
@@ -197,7 +197,7 @@ describe("architecture diff analyzer", () => {
         },
       ],
     };
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [change("src/services.ts", [[4, 4]])],
       current: [ast],
     });
@@ -234,7 +234,7 @@ describe("architecture diff analyzer", () => {
         },
       ],
     };
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: [
         change("src/Makefile", [[4, 4]]),
         change("src/foo.test/index.ts", [[5, 5]]),
@@ -256,8 +256,8 @@ describe("architecture diff analyzer", () => {
       changes: [change(ast.filePath, [[2, 2]])],
       current: [ast],
     };
-    const withoutPaths = analyzeArchitectureDiff(options);
-    const withPaths = analyzeArchitectureDiff({
+    const withoutPaths = lintArchitectureDiff(options);
+    const withPaths = lintArchitectureDiff({
       ...options,
       currentKnownPaths: new Set(["src/service.ts"]),
     });
@@ -269,7 +269,7 @@ describe("architecture diff analyzer", () => {
     const noChanges: FileChange[] = [];
 
     test("returns empty coverageFindings when no currentElements provided", () => {
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentKnownPaths: new Set(["src/foo.ts"]),
@@ -278,7 +278,7 @@ describe("architecture diff analyzer", () => {
     });
 
     test("returns empty coverageFindings when no currentKnownPaths provided", () => {
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentElements: [bb("service", "src")],
@@ -287,7 +287,7 @@ describe("architecture diff analyzer", () => {
     });
 
     test("returns empty coverageFindings when currentKnownPaths is empty", () => {
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentElements: [bb("service", "src")],
@@ -300,7 +300,7 @@ describe("architecture diff analyzer", () => {
       // base: element covers both src/app and src/lib
       // current: element only covers src/app → src/lib is newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentKnownPaths: trackedPaths,
@@ -320,7 +320,7 @@ describe("architecture diff analyzer", () => {
     test("does not report new-building-block-hint for path uncovered in both base and current", () => {
       // src/lib is uncovered in both snapshots — not newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentKnownPaths: trackedPaths,
@@ -334,7 +334,7 @@ describe("architecture diff analyzer", () => {
     test("reports all uncovered paths as new-building-block-hints when no baseElements provided", () => {
       // No base → any currently uncovered path is treated as newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentKnownPaths: trackedPaths,
@@ -352,7 +352,7 @@ describe("architecture diff analyzer", () => {
         "src/alpha/index.ts",
         "src/middle/index.ts",
       ]);
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentKnownPaths: trackedPaths,
@@ -366,7 +366,7 @@ describe("architecture diff analyzer", () => {
     test("hasBlockingFindings is not affected by coverage findings", () => {
       // src/app is covered, src/lib is not — establishes a domain so uncovered paths appear
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
-      const result = analyzeArchitectureDiff({
+      const result = lintArchitectureDiff({
         changes: noChanges,
         current: [],
         currentKnownPaths: trackedPaths,

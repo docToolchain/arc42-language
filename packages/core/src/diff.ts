@@ -35,7 +35,7 @@ export interface DiffResult {
   hasBlockingFindings: boolean;
 }
 
-export interface AnalyzeDiffOptions {
+export interface LintDiffOptions {
   changes: FileChange[];
   current: DocumentAst[];
   base?: DocumentAst[];
@@ -263,7 +263,7 @@ function consistencyFindingsForDocument(document: DocumentAst, change: FileChang
   return findings;
 }
 
-function coverageDiffFindings(options: AnalyzeDiffOptions): DiffFinding[] {
+function coverageDiffFindings(options: LintDiffOptions): DiffFinding[] {
   if (
     !options.currentElements ||
     !options.currentKnownPaths ||
@@ -287,7 +287,7 @@ function coverageDiffFindings(options: AnalyzeDiffOptions): DiffFinding[] {
   }));
 }
 
-export function analyzeArchitectureDiff(options: AnalyzeDiffOptions): DiffResult {
+export function lintArchitectureDiff(options: LintDiffOptions): DiffResult {
   const consistency: DiffFinding[] = [];
   const currentByFile = new Map(options.current.map((document) => [document.filePath, document]));
   const baseByFile = new Map(options.base?.map((document) => [document.filePath, document]) ?? []);

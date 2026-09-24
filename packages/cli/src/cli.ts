@@ -25,7 +25,7 @@ import {
   formatExplainDiagramListText,
   explainIgnore,
   formatExplainIgnoreText,
-  analyzeArchitectureDiff,
+  lintArchitectureDiff,
   ELEMENT_KIND_ORDER,
   computeCoverage,
   loadWorkspaceFromDocuments,
@@ -188,7 +188,7 @@ async function runDiff(dir: string, args: string[]) {
     const diff = collectGitDiff(dir, positionals[0], Boolean(values.staged || values.cached));
     const currentElements = loadWorkspaceFromDocuments(diff.currentDocuments).elements;
     const baseElements = loadWorkspaceFromDocuments(diff.baseDocuments).elements;
-    const result = analyzeArchitectureDiff({
+    const result = lintArchitectureDiff({
       changes: diff.changes,
       current: diff.currentDocuments,
       base: diff.baseDocuments,
