@@ -1,0 +1,81 @@
+= Architecture Constraints
+
+== GDPR Data Residency
+
+All personally identifiable information — user profiles, card content, audit logs — must be
+stored and processed within the European Union. This limits which cloud regions and third-party
+SaaS integrations are permissible. Any caching layer or message queue must also reside in EU
+data centres.
+
+[source,arc42]
+----
+:::constraint
+id: con-gdpr-residency
+title: GDPR EU Data Residency
+category: organizational
+source: GDPR Art. 44 / Legal review 2025-01-15
+:::
+----
+
+== OAuth2 and JWT for Authentication
+
+All user-facing authentication must use OAuth2 with JWT tokens. Session-based authentication
+with server-side state is prohibited to ensure the system can scale horizontally without a
+shared session store.
+
+[source,arc42]
+----
+:::constraint
+id: con-oauth2-jwt
+title: OAuth2 and JWT Authentication
+category: technical
+source: Security standards baseline v2.0 / Architecture board decision 2025-02-01
+:::
+----
+
+== On-Premise Deployability
+
+The system must be deployable on customer-operated infrastructure (on-premise) without
+requiring a public cloud provider. This constrains the use of managed cloud services and
+requires all infrastructure dependencies to be expressible as Docker containers or
+Kubernetes manifests.
+
+[source,arc42]
+----
+:::constraint
+id: con-onpremise
+title: On-Premise Deployability
+category: technical
+source: Enterprise customer contract clause 4.2
+:::
+----
+
+== TypeScript Across Frontend and Backend
+
+All application code — frontend and backend — must be written in TypeScript. This is a
+team-level convention established to reduce context-switching, share type definitions
+across the boundary, and enforce a single linting rule set.
+
+[source,arc42]
+----
+:::constraint
+id: con-typescript
+title: TypeScript Across Frontend and Backend
+category: convention
+:::
+----
+
+== REST over Internal Service Boundaries
+
+Internal service-to-service communication must use synchronous HTTP/REST for request-response
+interactions and asynchronous messaging via RabbitMQ for event-driven flows. gRPC and other
+binary protocols are not permitted without an explicit architecture board waiver.
+
+[source,arc42]
+----
+:::constraint
+id: con-rest-internal
+title: REST and RabbitMQ for Internal Communication
+category: convention
+:::
+----

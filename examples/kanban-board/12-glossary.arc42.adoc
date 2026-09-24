@@ -1,0 +1,125 @@
+= Glossary
+
+== Kanban Board
+
+A Kanban board is the top-level organisational unit in the system. It contains an ordered
+set of columns and serves as the visual workspace for a team's work items. A single tenant
+may have multiple boards for different teams or projects.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-board
+title: Kanban Board
+definition: A visual workspace containing an ordered set of columns and cards, owned by a tenant and used by a team to manage and track work items.
+:::
+----
+
+== Column
+
+A column represents a stage in a workflow (e.g. "To Do", "In Progress", "Done"). Columns
+are ordered within a board and contain zero or more cards. Teams customise column names and
+order to match their process.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-column
+title: Column
+definition: An ordered workflow stage within a Kanban board, containing zero or more cards.
+:::
+----
+
+== Card
+
+A card is the atomic unit of work on a Kanban board. It represents a task, story, or
+work item and can be moved between columns. Cards carry a title, description, assignee,
+and labels. The term "ticket" is sometimes used synonymously in the team; the canonical
+term in this codebase is "card".
+
+[source,arc42]
+----
+:::glossary-term
+id: term-card
+title: Card
+definition: An atomic work item on a Kanban board, identified by a unique ID and moveable between columns by authorised team members.
+:::
+----
+
+== Tenant
+
+A tenant is an isolated organisational unit — typically a company or a department — that
+owns its own boards, users, and configuration. Multi-tenancy ensures that tenant data is
+logically separated at every layer of the system. The term "organisation" is used in the
+UI; the canonical technical term is "tenant".
+
+[source,arc42]
+----
+:::glossary-term
+id: term-tenant
+title: Tenant
+definition: An isolated organisational unit owning its own boards, users, and configuration. All data is partitioned by tenantId to prevent cross-tenant access.
+:::
+----
+
+== Event Store
+
+The event store is the append-only PostgreSQL table in which the Board Service persists
+every mutation to board state as an immutable event record. The current state of any board
+is reconstructed by replaying its event stream from the event store.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-event-store
+title: Event Store
+definition: An append-only persistence log in which every board mutation is recorded as an immutable event. The source of truth for all board state.
+:::
+----
+
+== JWT
+
+A JSON Web Token (JWT) is a compact, URL-safe means of representing claims as a JSON
+object encoded in a signed token. In this system, JWTs are issued by the Auth Service,
+carry the user's identity and role claims, and are validated by the API Gateway on every
+inbound request.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-jwt
+title: JWT (JSON Web Token)
+definition: A signed, self-contained token carrying user identity and role claims, used for stateless authentication across all services.
+:::
+----
+
+== Read Model
+
+A read model is a denormalised, query-optimised projection of board state derived from the
+event store and cached in Redis. It is rebuilt on cache miss by replaying the event stream.
+The read model is eventually consistent with the event store — cache TTL is 60 seconds by
+default.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-read-model
+title: Read Model
+definition: A denormalised, Redis-cached projection of board state derived from the event store, optimised for fast read queries.
+:::
+----
+
+== Multi-tenancy
+
+Multi-tenancy is the architecture property by which a single deployment of the system
+serves multiple isolated tenants. Isolation is enforced by including `tenantId` in every
+database query, cache key, and JWT claim. No data is shared across tenant boundaries.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-multi-tenancy
+title: Multi-tenancy
+definition: The architecture property by which one system deployment serves multiple isolated organisations, with strict data partitioning enforced by tenantId at every layer.
+:::
+----

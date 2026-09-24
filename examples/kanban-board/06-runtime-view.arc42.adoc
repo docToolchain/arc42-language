@@ -1,0 +1,71 @@
+= Runtime View
+
+== Move Card
+
+A team member drags a card from one column to another in the browser. This is the core
+interaction of the Kanban Board: the Frontend optimistically updates the UI, then the API
+Gateway validates the JWT, forwards the move request to the Board Service, which appends a
+CardMoved event to the PostgreSQL event store, invalidates the Redis cache, and publishes
+a card-moved event to RabbitMQ. The Notification Service then delivers a Slack notification.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: scenario-move-card
+title: Move Card
+trigger: Team member drags a card to a different column
+involves: bb-frontend, bb-api-gateway, bb-board-service, bb-postgres, bb-redis, bb-rabbitmq, bb-notification-service
+:::
+----
+
+== User Login
+
+A team member opens the application for the first time or after their session expires. The
+Frontend redirects the browser to the Identity Provider's login page. After successful
+authentication the IdP posts an authorisation code to the API Gateway's OAuth2 callback.
+The API Gateway exchanges the code for a JWT via the Auth Service and returns it to the
+Frontend, which stores it for subsequent requests.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: scenario-user-login
+title: User Login via OAuth2
+trigger: Team member accesses the application without a valid session
+involves: bb-frontend, bb-api-gateway, bb-auth-service
+:::
+----
+
+== Load Board
+
+A team member opens a board. The Frontend requests the board state via the API Gateway.
+The API Gateway validates the JWT and the tenant scope, then forwards to the Board Service.
+The Board Service checks the Redis cache first; on a cache miss it reconstructs the
+read-model from the PostgreSQL event store and warms the cache before responding.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: scenario-load-board
+title: Load Board
+trigger: Team member navigates to a board
+involves: bb-frontend, bb-api-gateway, bb-board-service, bb-postgres, bb-redis
+:::
+----
+
+== Send Card Notification
+
+After a card-moved or card-updated event lands on RabbitMQ, the Notification Service
+consumes it, resolves the relevant watchers, and delivers a formatted Slack notification
+via the incoming webhook. If Slack is unreachable the Notification Service retries with
+exponential back-off. Board operations are not affected by notification failures.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: scenario-send-notification
+title: Send Card Notification
+trigger: RabbitMQ delivers a card event to the Notification Service queue
+involves: bb-notification-service, bb-rabbitmq
+:::
+----
