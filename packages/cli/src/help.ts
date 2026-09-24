@@ -140,10 +140,12 @@ invalid command option.
     return `arc42 diff — report architecture changes
 
 Usage:
-  arc42 [--dir <path>] diff [<reference>] [options]
+  arc42 [--dir <path>] diff [<reference> | <base>..<head> | <base>...<head>] [options]
 
 Arguments:
   <reference>           Git revision used as the comparison base
+  <base>..<head>        Compare two commits
+  <base>...<head>       Compare <head> with the merge base of both (the changes of a branch)
 
 Options:
   --staged, --cached    Compare the index with HEAD, or with <reference>
@@ -151,7 +153,9 @@ Options:
   -h, --help            Show this help
 
 Without a flag, the command compares the working tree with the index. With <reference>,
-it compares the working tree with that revision. Consistency findings exit 1; set
+it compares the working tree with that revision. A commit range cannot be combined with
+--staged. Architecture changes are compared semantically: reformatted blocks and reflowed
+prose are not changes. Consistency findings exit 1; set
 ARC42_CONSISTENT to the displayed base commit after reviewing them. Advisory path hints do not
 fail the command unless --strict is supplied. Git, parsing, and other operational errors exit 1.
 
@@ -160,6 +164,7 @@ Examples:
   arc42 diff main                    # working tree versus main
   arc42 diff --staged                # index versus HEAD
   arc42 diff --cached origin/main    # index versus origin/main
+  arc42 diff origin/main...HEAD      # changes of the current branch, as in a pull request
 `;
   }
 

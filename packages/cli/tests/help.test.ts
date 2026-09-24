@@ -38,6 +38,7 @@ describe("CLI help", () => {
   test("subcommand help explains usage and options", () => {
     expect(commandHelp("validate")).toContain("--format <text|json>");
     expect(commandHelp("diff")).toContain("--staged, --cached");
+    expect(commandHelp("diff")).toContain("<base>...<head>");
     expect(commandHelp("init")).toBeUndefined();
     expect(commandHelp("guide")).toContain("guide chapter <1-12>");
     expect(commandHelp("guide", "chapter")).toContain("generated starter template");
