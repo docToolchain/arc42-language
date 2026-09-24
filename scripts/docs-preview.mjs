@@ -62,6 +62,9 @@ run(
 run(
   `node "${cliMjs}" --dir examples/bookstore-backend build --out "${join(outDir, "arc42-language", "bookstore")}" --base /arc42-language/bookstore/`,
 );
+run(
+  `node "${cliMjs}" --dir examples/kanban-board build --out "${join(outDir, "arc42-language", "kanban-board")}" --base /arc42-language/kanban-board/`,
+);
 
 // ── Serve ──────────────────────────────────────────────────────────────────
 
