@@ -22,6 +22,7 @@ import { e013BuildingBlockDiagramValidation } from "./e013-building-block-diagra
 import { e014ContextDiagramValidation } from "./e014-context-diagram-validation.ts";
 import { e015SelfInterfaceRequirement } from "./e015-self-interface-requirement.ts";
 import { e016ElementWrongChapter } from "./e016-element-wrong-chapter.ts";
+import { e017BlockOutsideSection } from "./e017-block-outside-section.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
@@ -91,6 +92,7 @@ export const builtinRules: readonly Rule[] = [
   e014ContextDiagramValidation, // Chapter 3
   e015SelfInterfaceRequirement, // Chapter 5
   e016ElementWrongChapter, // All numbered chapters
+  e017BlockOutsideSection, // All chapters
 
   // Warnings — inconsistencies
   w001ConceptNotImplemented, // Chapter 8
