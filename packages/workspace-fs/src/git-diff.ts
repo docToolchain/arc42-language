@@ -82,7 +82,7 @@ export function parseDiffPathHeader(line: string): string | undefined {
   return newPath?.startsWith("b/") ? newPath.slice(2) : undefined;
 }
 
-function git(root: string, args: string[]): string {
+export function git(root: string, args: string[]): string {
   try {
     return execFileSync("git", ["-C", root, ...args], { encoding: "utf8" });
   } catch (error) {
@@ -104,7 +104,7 @@ function range(start: number, count: number): LineRange {
   return { start, end: count === 0 ? start - 1 : start + count - 1 };
 }
 
-function parseHunks(patch: string): FileChange[] {
+export function parseHunks(patch: string): FileChange[] {
   const changes = new Map<string, FileChange>();
   let current: FileChange | undefined;
   for (const line of patch.split("\n")) {

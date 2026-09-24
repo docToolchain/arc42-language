@@ -35,6 +35,27 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   changes are adapted.
 - **Every phase ships black-box / e2e tests** (CLI spawned against temp workspaces or
   git repos; Playwright for web phases).
+- **Prose is compared as text, not via line ranges.** `diffWorkspaces(base, head)` compares
+  the whitespace-normalized prose of each section between snapshots, so it needs no git
+  hunks at all (refines the issue plan's `diffWorkspaces(base, head, changes)`). Hunks remain
+  only for the lint layer's implementation-path hints on code files.
+- **Section identity** = file + heading path (+ 1-based occurrence for repeated identical
+  paths). A section holding a block in either snapshot is reported through its elements;
+  only sections without blocks on both sides appear as prose sections. A document preamble
+  (prose before the first heading) is a prose section with an empty heading path.
+- **Element `proseChanged`:** both sides → section key or prose differs; added → no base
+  section with the same key, or its prose differs; removed → symmetric against head. This
+  reproduces the #36 rules (paired deletion accepted, prose left behind reported).
+- **Attribute comparison** ignores `id`/`loc`, trims strings and compares lists as sets.
+  Diagram `source` ignores trailing whitespace per line.
+- **Summary per document**, not per chapter: works for non-numbered files and matches the
+  web sidebar, which lists documents.
+- **Snapshot paths are repository-relative** on both sides (git and `FileChange` use the same
+  convention). `loadWorkspace` keeps absolute paths; the web only uses file names.
+- **Known paths are per snapshot side** (commit → `ls-tree`, index/working tree → `ls-files`).
+  The old `collectGitDiff` used the HEAD tree as base paths even when the base is the index.
+- **Commit ranges:** `a..b` compares two commits, `a...b` uses the merge base (PR view).
+  A range with `--staged` is an error.
 - **Commits:** Conventional Commits with `## Intent`, `## Key decisions`,
   `## Side effects` body (see `.agents/skills/commit/SKILL.md`).
 
@@ -45,6 +66,10 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - W015 (missing chapter heading) is only a warning, only checks numbered files and
   only checks the first heading's title — it never catches content *before* the first
   heading. Hence the separate E017.
+- Block element `loc.line` is the `:::` line inside the fence, not the fence line.
+- The prose renderer stores a prose run's HTML on the run's *first* node (often blank);
+  the other nodes get `""`.
+- `execFileSync` rejections surface git's own `fatal:` message in the thrown error.
 - `affectedRanges` / `affectedFiles` in `DiffResult` are only consumed by tests.
 - `pnpm run check` on a fresh checkout reports 4 type errors in `MetaModelView.tsx`
   until `pnpm run build` has run: the `@arc42/core` `.` export has no `types`
@@ -64,7 +89,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 ## Plan
 ### Tasks
 - [x] Phase 0: E017 validation error for blocks outside any heading.
-- [ ] Phase 1: `loadDiffSnapshots(dir, spec)` + `diffWorkspaces(base, head, changes)` alongside existing code.
+- [x] Phase 1: `loadDiffSnapshots(dir, spec)` + `diffWorkspaces(base, head)` alongside existing code.
 - [ ] Phase 2: rename to `lintArchitectureDiff`, rebuild on phase 1, remove line-range logic and old `collectGitDiff` parsing path.
 - [ ] Phase 3: `arc42 diff --format json`.
 - [ ] Phase 4: `serve --diff` / `build --diff`, Changes view, inline mode.
@@ -78,6 +103,21 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Black-box `cli/tests/validate-structure-cli.test.ts`; verified the tests fail without the rule.
 - [x] `validate:source`: docs/arc42 and examples unaffected; no existing test changed.
 - Decision: applies to `block` nodes only — diagrams are keyed by id and need no section.
+
+### Phase 1 — snapshots + semantic diff
+- [x] `core/src/workspace-diff.ts`: `diffWorkspaces` + types, exported from `@arc42/core` and `@arc42/core/types`.
+- [x] `workspace-fs/src/diff-snapshots.ts`: `loadDiffSnapshots(dir, { reference, staged })`.
+- [x] `workspace-fs/src/workspace-parse.ts`: shared notation detection + parsing, now also used by
+      `loadWorkspace`, `validateWorkspace`, `readWorkspaceDocuments` (one parse path for every side).
+- [x] Invalid snapshots throw: duplicate element/diagram ids, blocks outside a heading, unknown refs,
+      unreadable blobs, mixed notation, range + staged.
+- [x] Unit tests `core/tests/workspace-diff.test.ts` (18).
+- [x] Black-box tests `workspace-fs/tests/diff-snapshots.test.ts` (11): real temp git repos, public API
+      only — every scope (default, staged, ref, `a..b`, `a...b`), AsciiDoc on both sides, workspace
+      filtering, deleted files, failures. The CLI is not wired yet, so the library boundary is the
+      black box for this phase.
+- Deferred to phase 2: update `bb-diff` / `if-workspace-diff` in `docs/arc42` once the diff module
+  layout settles (the CLI does not use the new code yet, so the docs are still accurate).
 
 ## Commit
 ### Tasks

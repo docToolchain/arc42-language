@@ -5,7 +5,6 @@ import {
   getElementsFromDocuments,
   loadWorkspaceFromDocuments,
   parseArchitectureDocument,
-  parseArchitectureDocumentAsync,
   parseArc42Ignore,
   validateDocumentsAsync,
   warmMermaid,
@@ -21,9 +20,13 @@ import type {
 } from "@arc42/core";
 import { gitLsFiles } from "./git-diff.ts";
 import { createAdapterForNotation } from "./notation/index.ts";
+import { detectNotation, parseWorkspaceFiles } from "./workspace-parse.ts";
+import type { SourceFile } from "./workspace-parse.ts";
 
 export { collectGitDiff, changedHunkFiles, parseDiffPathHeader, gitLsFiles } from "./git-diff.ts";
 export type { GitArchitectureDiff } from "./git-diff.ts";
+export { loadDiffSnapshots } from "./diff-snapshots.ts";
+export type { DiffSnapshots, DiffSpec, Snapshot } from "./diff-snapshots.ts";
 
 export {
   MarkdownNotationAdapter,
@@ -66,28 +69,17 @@ async function discoverFilesWithNotation(dir: string): Promise<DiscoverResult> {
 
   await walk(resolve(dir));
 
-  if (mdFiles.length > 0 && adocFiles.length > 0) {
-    throw new Error(
-      `Mixed notation workspace: found both .arc42.md (${mdFiles.length}) and .arc42.adoc (${adocFiles.length}) files in ${dir}. Use a single notation throughout the workspace.`,
-    );
-  }
+  const notation = detectNotation([...mdFiles, ...adocFiles], dir);
+  return { files: notation === "asciidoc" ? adocFiles : mdFiles, notation };
+}
 
-  if (adocFiles.length > 0) {
-    return { files: adocFiles, notation: "asciidoc" };
-  }
-  return { files: mdFiles, notation: "markdown" };
+function readSourceFiles(files: string[]): Promise<SourceFile[]> {
+  return Promise.all(files.map(async (path) => ({ path, content: await readFile(path, "utf8") })));
 }
 
 export async function readWorkspaceDocuments(dir: string): Promise<DocumentAst[]> {
   const { files, notation } = await discoverFilesWithNotation(dir);
-  const adapter = createAdapterForNotation(notation);
-  const parser = adapter.createParser();
-  const proseRenderer = adapter.createProseRenderer();
-  return Promise.all(
-    files.map(async (file) =>
-      parseArchitectureDocumentAsync(file, await readFile(file, "utf8"), parser, proseRenderer),
-    ),
-  );
+  return parseWorkspaceFiles(await readSourceFiles(files), notation);
 }
 
 async function collectPaths(dir: string, root: string): Promise<string[]> {
@@ -134,14 +126,7 @@ export async function pathEvidence(
 
 export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
   const { files, notation } = await discoverFilesWithNotation(dir);
-  const adapter = createAdapterForNotation(notation);
-  const parser = adapter.createParser();
-  const proseRenderer = adapter.createProseRenderer();
-  const documents = await Promise.all(
-    files.map(async (file) =>
-      parseArchitectureDocumentAsync(file, await readFile(file, "utf8"), parser, proseRenderer),
-    ),
-  );
+  const documents = await parseWorkspaceFiles(await readSourceFiles(files), notation);
   const repositoryRoot = await findRepositoryRoot(dir);
   let trackedPaths: string[];
   try {
@@ -157,14 +142,7 @@ export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {
   warmMermaid();
   const { files, notation } = await discoverFilesWithNotation(dir);
-  const adapter = createAdapterForNotation(notation);
-  const parser = adapter.createParser();
-  const proseRenderer = adapter.createProseRenderer();
-  const documents = await Promise.all(
-    files.map(async (file) =>
-      parseArchitectureDocumentAsync(file, await readFile(file, "utf8"), parser, proseRenderer),
-    ),
-  );
+  const documents = await parseWorkspaceFiles(await readSourceFiles(files), notation);
   const repositoryRoot = resolve(root ?? (await findRepositoryRoot(dir)));
   let trackedPaths: string[];
   try {
@@ -189,7 +167,7 @@ export async function validateWorkspace(dir: string, root?: string): Promise<Val
     pathEvidence: { root: repositoryRoot, knownPaths: trackedPaths },
     coverage,
     coverageIgnore,
-    fenceDescription: adapter.fenceDescription,
+    fenceDescription: createAdapterForNotation(notation).fenceDescription,
   });
 }
 
