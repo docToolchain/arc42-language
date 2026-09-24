@@ -1,6 +1,8 @@
-import type { BlockNode, DocumentAst, HeadingNode, ProseNode } from "./ast.ts";
 import type { Element } from "./model/types.ts";
 import { computeCoverage } from "./coverage.ts";
+import type { WorkspacePayload } from "./workspace.ts";
+import { diffWorkspaces } from "./workspace-diff.ts";
+import type { ArchitectureDiff, ElementChange } from "./workspace-diff.ts";
 
 export interface LineRange {
   start: number;
@@ -27,153 +29,55 @@ export interface DiffFinding {
 }
 
 export interface DiffResult {
+  /** The semantic diff the consistency findings are derived from. */
+  architecture: ArchitectureDiff;
   consistencyFindings: DiffFinding[];
   pathFindings: DiffFinding[];
   coverageFindings: DiffFinding[];
-  affectedRanges: FileChange[];
-  affectedFiles: string[];
   hasBlockingFindings: boolean;
 }
 
 export interface LintDiffOptions {
+  /** Changed line ranges of all changed repository files (code and documents). */
   changes: FileChange[];
-  current: DocumentAst[];
-  base?: DocumentAst[];
-  /** Tracked paths for the current (HEAD / working tree) snapshot. */
-  currentKnownPaths?: Set<string>;
-  /** Tracked paths for the base commit snapshot. */
+  base: WorkspacePayload;
+  head: WorkspacePayload;
+  /** Tracked paths for the base snapshot. */
   baseKnownPaths?: Set<string>;
-  currentElements?: Element[];
-  baseElements?: Element[];
+  /** Tracked paths for the head snapshot. */
+  headKnownPaths?: Set<string>;
 }
 
-interface Section {
-  key: string;
-  heading?: HeadingNode;
-  endLine: number;
-  prose: ProseNode[];
-  blocks: BlockNode[];
-}
-
-function contains(range: LineRange, start: number, end: number): boolean {
-  // A zero-line insertion is represented by start > end. Treat it as a point
-  // between lines so insertions immediately before/after a node are visible.
-  if (range.end < range.start) return range.start >= start && range.start <= end + 1;
-  return range.start <= end && range.end >= start;
-}
-
-function changed(ranges: LineRange[], start: number, end = start): boolean {
-  return ranges.some((range) => contains(range, start, end));
-}
-
-function sections(document: DocumentAst): Section[] {
-  const headings = document.nodes.filter((node): node is HeadingNode => node.kind === "heading");
-  const startLine = (node: DocumentAst["nodes"][number]): number =>
-    node.kind === "block" ||
-    node.kind === "diagram" ||
-    node.kind === "bare-mermaid" ||
-    node.kind === "ignore"
-      ? node.startLine
-      : node.line;
-  return headings.map((heading, index) => {
-    const nextHeading = headings[index + 1];
-    const sectionNodes = document.nodes.filter(
-      (node) =>
-        node.kind !== "heading" &&
-        node.kind !== "diagram" &&
-        node.kind !== "bare-mermaid" &&
-        node.kind !== "ignore" &&
-        startLine(node) >= heading.line &&
-        (!nextHeading || startLine(node) < nextHeading.line),
-    );
+function consistencyFinding(change: ElementChange): DiffFinding | undefined {
+  if (change.status === "unchanged") {
     return {
-      key: `${document.filePath}:${heading.line}`,
-      heading,
-      endLine: nextHeading ? nextHeading.line - 1 : Number.MAX_SAFE_INTEGER,
-      prose: sectionNodes.filter((node): node is ProseNode => node.kind === "prose"),
-      blocks: sectionNodes.filter((node): node is BlockNode => node.kind === "block"),
+      kind: "prose-without-block-change",
+      severity: "warning",
+      file: change.head!.file,
+      line: change.head!.line,
+      elementId: change.id,
+      message: `Section prose changed without changing block '${change.id}'.`,
     };
-  });
-}
-
-function sectionForBlock(document: DocumentAst, block: BlockNode): Section {
-  const all = sections(document);
-  return (
-    all.find(
-      (section) =>
-        section.heading &&
-        section.heading.line <= block.startLine &&
-        block.startLine <= section.endLine,
-    ) ?? {
-      key: `${document.filePath}:0`,
-      endLine: Number.MAX_SAFE_INTEGER,
-      prose: document.nodes.filter((node): node is ProseNode => node.kind === "prose"),
-      blocks: [block],
-    }
-  );
-}
-
-function changedBlock(block: BlockNode, ranges: LineRange[]): boolean {
-  return changed(ranges, block.startLine, block.endLine);
-}
-
-function changedSectionProse(section: Section, ranges: LineRange[]): boolean {
-  if (section.heading && changed(ranges, section.heading.line)) return true;
-  return section.prose.some((node) => changed(ranges, node.line));
-}
-
-function consistencyFindingsForDeletedBlocks(
-  document: DocumentAst,
-  change: FileChange,
-  currentKeys: Set<string>,
-): DiffFinding[] {
-  const findings: DiffFinding[] = [];
-  for (const block of document.nodes.filter((node): node is BlockNode => node.kind === "block")) {
-    const key = `${block.blockType}:${block.attributes.id ?? block.startLine}`;
-    if (currentKeys.has(key) || !changedBlock(block, change.oldRanges)) continue;
-    const section = sectionForBlock(document, block);
-    if (!changedSectionProse(section, change.oldRanges)) {
-      findings.push({
-        kind: "block-without-prose-change",
-        severity: "warning",
-        file: document.filePath,
-        line: block.startLine,
-        elementId: block.attributes.id,
-        message: `Block '${block.attributes.id ?? block.blockType}' was deleted without deleting its section prose.`,
-      });
-    }
   }
-  return findings;
-}
-
-function consistencyFindingsForDeletedProse(
-  oldDocument: DocumentAst,
-  currentDocument: DocumentAst,
-  change: FileChange,
-): DiffFinding[] {
-  const findings: DiffFinding[] = [];
-  const oldBlocks = oldDocument.nodes.filter((node): node is BlockNode => node.kind === "block");
-  const currentBlocks = currentDocument.nodes.filter(
-    (node): node is BlockNode => node.kind === "block",
-  );
-  for (const block of currentBlocks) {
-    const oldBlock = oldBlocks.find(
-      (candidate) =>
-        candidate.blockType === block.blockType && candidate.attributes.id === block.attributes.id,
-    );
-    if (!oldBlock || changedBlock(block, change.newRanges)) continue;
-    if (changedSectionProse(sectionForBlock(oldDocument, oldBlock), change.oldRanges)) {
-      findings.push({
-        kind: "prose-without-block-change",
-        severity: "warning",
-        file: currentDocument.filePath,
-        line: block.startLine,
-        elementId: block.attributes.id,
-        message: `Section prose changed without changing block '${block.attributes.id ?? block.blockType}'.`,
-      });
-    }
+  if (change.proseChanged) return undefined;
+  if (change.status === "removed") {
+    return {
+      kind: "block-without-prose-change",
+      severity: "warning",
+      file: change.base!.file,
+      line: change.base!.line,
+      elementId: change.id,
+      message: `Block '${change.id}' was deleted without deleting its section prose.`,
+    };
   }
-  return findings;
+  return {
+    kind: "block-without-prose-change",
+    severity: "warning",
+    file: change.head!.file,
+    line: change.head!.line,
+    elementId: change.id,
+    message: `Block '${change.id}' changed without changing its section prose.`,
+  };
 }
 
 function pathParts(value: string): string[] | undefined {
@@ -199,85 +103,44 @@ function pathMatches(modeled: string, changedPath: string, knownPaths?: Set<stri
 
 function pathFindings(
   changes: FileChange[],
-  documents: DocumentAst[],
+  elements: Element[],
   knownPaths?: Set<string>,
 ): DiffFinding[] {
   const result: DiffFinding[] = [];
   const seen = new Set<string>();
-  for (const document of documents) {
-    for (const node of document.nodes) {
-      if (node.kind !== "block" || node.blockType !== "interface") continue;
-      const path = node.attributes.path;
-      const id = node.attributes.id ?? node.blockType;
-      if (!path) continue;
-      for (const change of changes) {
-        if (!pathMatches(path, change.filePath, knownPaths)) continue;
-        const key = `${id}:${change.filePath}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        result.push({
-          kind: "implementation-path",
-          severity: "hint",
-          file: change.filePath,
-          line: change.newRanges[0]?.start ?? 1,
-          elementId: id,
-          message: `${change.filePath} changed; review architecture element '${id}' (${path}).`,
-        });
-      }
-    }
-  }
-  return result;
-}
-
-function consistencyFindingsForDocument(document: DocumentAst, change: FileChange): DiffFinding[] {
-  const findings: DiffFinding[] = [];
-  const currentSections = sections(document);
-  const currentBlocks = document.nodes.filter((node): node is BlockNode => node.kind === "block");
-  for (const block of currentBlocks) {
-    const section = sectionForBlock(document, block);
-    const blockChanged = changedBlock(block, change.newRanges);
-    const proseChanged = changedSectionProse(section, change.newRanges);
-    if (blockChanged && !proseChanged) {
-      findings.push({
-        kind: "block-without-prose-change",
-        severity: "warning",
-        file: document.filePath,
-        line: block.startLine,
-        elementId: block.attributes.id,
-        message: `Block '${block.attributes.id ?? block.blockType}' changed without changing its section prose.`,
-      });
-    } else if (!blockChanged && proseChanged) {
-      findings.push({
-        kind: "prose-without-block-change",
-        severity: "warning",
-        file: document.filePath,
-        line: block.startLine,
-        elementId: block.attributes.id,
-        message: `Section prose changed without changing block '${block.attributes.id ?? block.blockType}'.`,
+  for (const element of elements) {
+    if (element.kind !== "interface" || element.path === undefined) continue;
+    for (const change of changes) {
+      if (!pathMatches(element.path, change.filePath, knownPaths)) continue;
+      const key = `${element.id}:${change.filePath}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push({
+        kind: "implementation-path",
+        severity: "hint",
+        file: change.filePath,
+        line: change.newRanges[0]?.start ?? 1,
+        elementId: element.id,
+        message: `${change.filePath} changed; review architecture element '${element.id}' (${element.path}).`,
       });
     }
   }
-  // A section with prose but no current block is not paired. This also keeps
-  // documents containing only prose outside the consistency contract.
-  void currentSections;
-  return findings;
+  return result.sort(
+    (a, b) =>
+      a.file.localeCompare(b.file) ||
+      a.line - b.line ||
+      (a.elementId ?? "").localeCompare(b.elementId ?? ""),
+  );
 }
 
 function coverageDiffFindings(options: LintDiffOptions): DiffFinding[] {
-  if (
-    !options.currentElements ||
-    !options.currentKnownPaths ||
-    options.currentKnownPaths.size === 0
-  )
-    return [];
-  const currentCoverage = computeCoverage(options.currentElements, [...options.currentKnownPaths]);
+  if (!options.headKnownPaths || options.headKnownPaths.size === 0) return [];
+  const headCoverage = computeCoverage(options.head.elements, [...options.headKnownPaths]);
   const baseCoverage =
-    options.baseElements && options.baseKnownPaths && options.baseKnownPaths.size > 0
-      ? computeCoverage(options.baseElements, [...options.baseKnownPaths])
+    options.baseKnownPaths && options.baseKnownPaths.size > 0
+      ? computeCoverage(options.base.elements, [...options.baseKnownPaths])
       : { uncovered: [] as string[] };
-  const newlyUncovered = currentCoverage.uncovered.filter(
-    (p) => !baseCoverage.uncovered.includes(p),
-  );
+  const newlyUncovered = headCoverage.uncovered.filter((p) => !baseCoverage.uncovered.includes(p));
   return newlyUncovered.sort().map((path) => ({
     kind: "new-building-block-hint" as const,
     severity: "hint" as const,
@@ -287,104 +150,32 @@ function coverageDiffFindings(options: LintDiffOptions): DiffFinding[] {
   }));
 }
 
+/**
+ * Lint a change to the architecture: derive consistency findings (block and
+ * prose changed together) from the semantic diff of both snapshots, and
+ * advisory hints for changed implementation paths and newly uncovered code.
+ */
 export function lintArchitectureDiff(options: LintDiffOptions): DiffResult {
-  const consistency: DiffFinding[] = [];
-  const currentByFile = new Map(options.current.map((document) => [document.filePath, document]));
-  const baseByFile = new Map(options.base?.map((document) => [document.filePath, document]) ?? []);
-  for (const change of options.changes) {
-    const document = currentByFile.get(change.filePath);
-    if (document) consistency.push(...consistencyFindingsForDocument(document, change));
-    const oldDocument = baseByFile.get(change.filePath);
-    if (oldDocument) {
-      const currentKeys = new Set(
-        document?.nodes
-          .filter((node): node is BlockNode => node.kind === "block")
-          .map((block) => `${block.blockType}:${block.attributes.id ?? block.startLine}`) ?? [],
-      );
-      consistency.push(...consistencyFindingsForDeletedBlocks(oldDocument, change, currentKeys));
-      if (document)
-        consistency.push(...consistencyFindingsForDeletedProse(oldDocument, document, change));
-    }
-  }
-  const uniqueConsistency = [
-    ...new Map(
-      consistency.map((finding) => [`${finding.kind}:${finding.file}:${finding.line}`, finding]),
-    ).values(),
-  ];
-  uniqueConsistency.sort(
-    (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.kind.localeCompare(b.kind),
-  );
-  const unionKnownPaths =
-    options.currentKnownPaths || options.baseKnownPaths
-      ? new Set([...(options.currentKnownPaths ?? []), ...(options.baseKnownPaths ?? [])])
+  const architecture = diffWorkspaces(options.base, options.head);
+  const consistency = architecture.elements
+    .map(consistencyFinding)
+    .filter((finding): finding is DiffFinding => finding !== undefined)
+    .sort(
+      (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.kind.localeCompare(b.kind),
+    );
+  const knownPaths =
+    options.headKnownPaths || options.baseKnownPaths
+      ? new Set([...(options.headKnownPaths ?? []), ...(options.baseKnownPaths ?? [])])
       : undefined;
-  const paths = pathFindings(
-    options.changes,
-    [...options.current, ...(options.base ?? [])],
-    unionKnownPaths,
-  );
-  paths.sort(
-    (a, b) =>
-      a.file.localeCompare(b.file) ||
-      a.line - b.line ||
-      (a.elementId ?? "").localeCompare(b.elementId ?? ""),
-  );
-  const affectedFiles = new Set<string>(paths.map((finding) => finding.file));
-  const relevantChanges: FileChange[] = [];
-  for (const change of options.changes) {
-    const current = currentByFile.get(change.filePath);
-    const old = baseByFile.get(change.filePath);
-    const affected = [current, old].some((document) => {
-      if (!document) return false;
-      return document.nodes
-        .filter((node): node is BlockNode => node.kind === "block")
-        .some(
-          (block) =>
-            changedBlock(block, change.newRanges) ||
-            changedBlock(block, change.oldRanges) ||
-            changedSectionProse(sectionForBlock(document, block), change.newRanges) ||
-            changedSectionProse(sectionForBlock(document, block), change.oldRanges),
-        );
-    });
-    if (affected) affectedFiles.add(change.filePath);
-    const relevantNewRanges = change.newRanges.filter((range) => {
-      return [current, old].some((document) => {
-        if (!document) return false;
-        return document.nodes
-          .filter((node): node is BlockNode => node.kind === "block")
-          .some(
-            (block) =>
-              contains(range, block.startLine, block.endLine) ||
-              changedSectionProse(sectionForBlock(document, block), [range]),
-          );
-      });
-    });
-    const relevantOldRanges = change.oldRanges.filter((range) => {
-      return [current, old].some((document) => {
-        if (!document) return false;
-        return document.nodes
-          .filter((node): node is BlockNode => node.kind === "block")
-          .some(
-            (block) =>
-              contains(range, block.startLine, block.endLine) ||
-              changedSectionProse(sectionForBlock(document, block), [range]),
-          );
-      });
-    });
-    if (relevantNewRanges.length > 0 || relevantOldRanges.length > 0) {
-      relevantChanges.push({
-        ...change,
-        newRanges: relevantNewRanges,
-        oldRanges: relevantOldRanges,
-      });
-    }
-  }
   return {
-    consistencyFindings: uniqueConsistency,
-    pathFindings: paths,
+    architecture,
+    consistencyFindings: consistency,
+    pathFindings: pathFindings(
+      options.changes,
+      [...options.head.elements, ...options.base.elements],
+      knownPaths,
+    ),
     coverageFindings: coverageDiffFindings(options),
-    affectedRanges: relevantChanges,
-    affectedFiles: [...affectedFiles].sort(),
-    hasBlockingFindings: uniqueConsistency.length > 0,
+    hasBlockingFindings: consistency.length > 0,
   };
 }
