@@ -9,6 +9,8 @@ interface SidebarProps {
   activeDocIndex: number;
   onSelectDoc: (index: number) => void;
   onSelectHeading: (headingSlug: string) => void;
+  onSelectMetaModel: () => void;
+  showMetaModel: boolean;
   viewMode: "human" | "agent";
   onToggleViewMode: () => void;
   theme: "dark" | "light";
@@ -22,6 +24,8 @@ export function Sidebar({
   activeDocIndex,
   onSelectDoc,
   onSelectHeading,
+  onSelectMetaModel,
+  showMetaModel,
   viewMode,
   onToggleViewMode,
   theme,
@@ -140,6 +144,18 @@ export function Sidebar({
           );
         })}
       </ul>
+
+      <div className={styles.footer}>
+        <button
+          className={[styles.docBtn, showMetaModel ? styles.docBtnActive : ""]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={onSelectMetaModel}
+          aria-pressed={showMetaModel}
+        >
+          <span className={styles.docLabel}>Meta-model</span>
+        </button>
+      </div>
     </nav>
   );
 }
