@@ -325,3 +325,25 @@ date: 2026-09-24
 addresses: qg-cli-usability, qg-agent-writability, qg-verifiability
 :::
 ```
+
+## Semantic Diff Instead of Line Ranges
+
+The first `arc42 diff` mapped git hunks to line ranges: a block counted as changed when a hunk
+touched its lines, and its prose counted as changed when a hunk touched its section. That flagged
+formatting-only edits, misattributed sections appended after a block, and could not say what
+actually changed. The diff now compares the parsed base and head models — elements by id,
+relations by source, type and target, prose by the normalized text of its section — and the
+consistency lint is derived from that comparison. The same result feeds change visualization.
+Renamed ids and headings are deliberately a removal plus an addition, and snapshots that cannot be
+interpreted unambiguously (duplicate ids, blocks outside a heading) are rejected rather than
+guessed at.
+
+```arc42
+:::decision
+id: dec-semantic-diff
+title: Compare architecture models instead of changed lines for arc42 diff
+status: accepted
+date: 2026-09-24
+addresses: qg-verifiability, qg-readability, con-prose-first-authoring
+:::
+```
