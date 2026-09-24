@@ -9,12 +9,12 @@ export {
   processArchitectureAsync,
   validateDocumentsAsync,
 } from "./arc42.ts";
-export { analyzeArchitectureDiff } from "./diff.ts";
+export { lintArchitectureDiff } from "./diff.ts";
 export { diffWorkspaces } from "./workspace-diff.ts";
 
 export type { ValidateResult, GetDocumentsOptions } from "./arc42.ts";
 export type { PathEvidence, ValidationContext } from "./validator/types.ts";
-export type { AnalyzeDiffOptions, DiffFinding, DiffResult, FileChange, LineRange } from "./diff.ts";
+export type { LintDiffOptions, DiffFinding, DiffResult, FileChange, LineRange } from "./diff.ts";
 export type {
   ArchitectureDiff,
   AttributeChange,
