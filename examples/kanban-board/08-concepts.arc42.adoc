@@ -1,0 +1,116 @@
+= Cross-cutting Concepts
+
+== Authentication and Authorisation
+
+Every request entering the system must carry a valid JWT issued by the Auth Service. The
+API Gateway validates the JWT signature and expiry on every inbound call before forwarding
+it downstream. Downstream services trust the API Gateway and do not re-validate tokens.
+Authorisation is role-based: roles (viewer, editor, admin) are embedded as claims in the JWT.
+
+[source,arc42]
+----
+:::concept
+id: concept-auth
+title: JWT-based Authentication and Authorisation
+category: security
+:::
+----
+
+== Structured Logging
+
+Every service emits structured JSON log entries to stdout. Each entry includes the fields:
+`traceId`, `service`, `tenantId`, `level`, `message`, `durationMs`, and `timestamp`. The
+`traceId` is propagated via the `X-Trace-Id` HTTP header and included in every outbound
+call and log entry, enabling distributed tracing without a dedicated tracing agent.
+
+[source,arc42]
+----
+:::concept
+id: concept-logging
+title: Structured JSON Logging
+category: observability
+:::
+----
+
+== Multi-tenancy
+
+All application data is partitioned by `tenantId`. Every database table includes a
+`tenant_id` column, and every query filters by `tenantId` derived from the JWT claim.
+The API Gateway injects the `tenantId` into every forwarded request header. Services must
+never return or mutate data across tenant boundaries.
+
+[source,arc42]
+----
+:::concept
+id: concept-multi-tenancy
+title: Multi-tenancy by Tenant Isolation
+category: security
+:::
+----
+
+== Event Sourcing
+
+The Board Service persists all state changes as immutable events in the PostgreSQL event
+store instead of updating mutable rows. The current board state is derived by replaying
+the event stream. This provides a complete audit trail and enables temporal queries
+(point-in-time board state) without a separate audit log system.
+
+[source,arc42]
+----
+:::concept
+id: concept-event-sourcing
+title: Event Sourcing for Board State
+category: persistence
+:::
+----
+
+== Caching Strategy
+
+Board read-models are cached in Redis with a configurable TTL (default: 60 seconds). The
+Board Service invalidates the cache entry for the affected board on every write. The API
+Gateway uses Redis for per-tenant rate-limiting counters with a rolling 1-minute window.
+Cache entries must never cross tenant boundaries — cache keys always include `tenantId`.
+
+[source,arc42]
+----
+:::concept
+id: concept-caching
+title: Redis Cache for Read-models and Rate Limiting
+category: performance
+:::
+----
+
+== Asynchronous Notifications
+
+Side-effects that do not need to complete before returning a response to the user are
+published as messages to a RabbitMQ exchange. The Notification Service consumes these
+messages and delivers them via Slack webhook. This decouples latency-sensitive board
+operations from slow third-party delivery APIs and makes the notification pipeline
+independently scalable and retriable. Board operations succeed even when the Notification
+Service is unavailable.
+
+[source,arc42]
+----
+:::concept
+id: concept-async-notifications
+title: Asynchronous Notification via Message Queue
+category: messaging
+:::
+----
+
+== Health and Readiness Endpoints
+
+Every service exposes a `/health` endpoint (liveness) and a `/ready` endpoint (readiness).
+The liveness endpoint returns HTTP 200 when the process is alive. The readiness endpoint
+additionally checks all required dependencies (database, cache, message broker) and returns
+HTTP 503 if any are unavailable. Kubernetes liveness and readiness probes, and on-premise
+monitoring agents, rely on these endpoints exclusively for automated health assessment.
+
+[source,arc42]
+----
+:::concept
+id: concept-health-endpoints
+title: Health and Readiness Endpoints
+category: operability
+:::
+----

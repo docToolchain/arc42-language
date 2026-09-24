@@ -1,0 +1,46 @@
+= Solution Strategy
+
+The Kanban Board system is decomposed into independently deployable microservices, each owning
+its own data store and communicating via REST for synchronous calls and RabbitMQ for async event
+flows. This decomposition allows each service to be scaled, deployed, and maintained
+independently, supporting both cloud and on-premise targets.
+
+[source,arc42]
+----
+:::solution-strategy
+id: strategy-kanban
+title: Microservice decomposition with event-driven notifications
+addresses: qg-performance, qg-security, qg-reliability, qg-data-privacy, qg-maintainability
+:::
+----
+
+== System Decomposition
+
+The system is split into four application services — Frontend, API Gateway, Board Service,
+Auth Service, and Notification Service — plus three infrastructure services (PostgreSQL,
+Redis, RabbitMQ). The API Gateway is the single external entry point; it authenticates every
+request using JWT validation before forwarding it to the appropriate downstream service.
+No downstream service is reachable from the public internet directly.
+
+The Board Service owns all board, column, and card state using event sourcing on PostgreSQL.
+This makes the audit trail first-class and supports replaying state for debugging and
+migration without a separate audit log system.
+
+== Technology and Communication Approach
+
+Synchronous interactions (UI requests, API calls) use HTTP/REST over internal Kubernetes
+service DNS. Asynchronous flows (card-updated events triggering notifications) use RabbitMQ
+topic exchanges, which decouple producers from consumers and allow the Notification Service
+to be unavailable without blocking board operations.
+
+The React 19 frontend communicates exclusively with the API Gateway. The API Gateway holds
+the OAuth2 callback endpoint and validates JWT tokens on every request, delegating to the
+Auth Service only for token issuance. Redis caches board read-models to reduce PostgreSQL
+load under peak concurrent access.
+
+== Operational Approach
+
+All services are packaged as OCI-compliant container images and orchestrated via Kubernetes.
+Persistent data stores run in the EU region to satisfy the GDPR data residency constraint.
+Horizontal pod autoscaling is configured for the API Gateway and Board Service to handle
+traffic spikes without manual intervention.

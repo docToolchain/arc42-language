@@ -1,0 +1,202 @@
+= Quality Requirements
+
+== 10.1 Quality Goals
+
+=== Performance
+
+Under normal and peak load, the Kanban Board must remain responsive. Sluggish board loads
+directly affect team productivity and are a contractual threshold for enterprise customers.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-performance
+title: Performance
+priority: high
+scenario: qs-perf-board-load
+:::
+----
+
+=== Security
+
+The system handles multi-tenant team data and must prevent unauthorised access, cross-tenant
+data leakage, and token forgery. GDPR compliance depends on security being consistently
+enforced at every layer.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-security
+title: Security
+priority: high
+scenario: qs-sec-invalid-token
+:::
+----
+
+=== Reliability
+
+Board operations must remain available during partial infrastructure failures. Teams depend
+on the board during active sprints; downtime translates directly to blocked work.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-reliability
+title: Reliability
+priority: high
+scenario: qs-rel-pod-failure
+:::
+----
+
+=== Data Privacy
+
+All personally identifiable information must remain in the EU and be accessible only to
+authorised users within the correct tenant. This directly supports GDPR compliance.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-data-privacy
+title: Data Privacy and GDPR Compliance
+priority: high
+scenario: qs-privacy-residency
+:::
+----
+
+=== Maintainability
+
+The system must be easy to extend, test, and operate by a small team. Each service must be
+independently deployable without requiring coordinated releases across the whole system.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-maintainability
+title: Maintainability
+priority: medium
+scenario: qs-maint-independent-deploy
+:::
+----
+
+== 10.2 Quality Scenarios
+
+=== Performance — Board Load Response Time
+
+Under normal operating conditions a team member opening a board must receive the full board
+state within the agreed latency threshold, served from the Redis cache when available.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-perf-board-load
+title: Board Load Response Time
+quality: qg-performance
+stimulus: Team member opens a board with up to 200 cards
+response: Board state is returned from cache or event store without error
+metric: p95 response time stays below 300ms under 500 concurrent users
+:::
+----
+
+=== Performance — Card Move Latency
+
+Moving a card must feel instantaneous from the user's perspective. The frontend applies an
+optimistic UI update immediately; the round-trip server confirmation must arrive before a
+human-perceptible delay.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-perf-card-move
+title: Card Move End-to-End Latency
+quality: qg-performance
+stimulus: Team member moves a card to a different column
+response: Card-moved event is persisted and cache is invalidated
+metric: p95 server-side processing time stays below 100ms
+:::
+----
+
+=== Security — Unauthorised Access Rejection
+
+An attacker with an expired or tampered JWT must not be able to read or modify any board
+data. The API Gateway must reject the request before it reaches any downstream service.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-sec-invalid-token
+title: Unauthorised Access Rejection
+quality: qg-security
+stimulus: Request arrives with an expired or tampered JWT
+response: API Gateway rejects the request with HTTP 401
+metric: 100% of invalid token requests are rejected before reaching downstream services
+:::
+----
+
+=== Security — Cross-tenant Isolation
+
+A user from tenant A must never be able to read or write data belonging to tenant B,
+even if they hold a valid JWT for their own tenant.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-sec-tenant-isolation
+title: Cross-tenant Data Isolation
+quality: qg-security
+stimulus: Authenticated user requests a board belonging to a different tenant
+response: System returns HTTP 403 without exposing any tenant-B data
+metric: 0 cross-tenant data leaks in automated security regression suite
+:::
+----
+
+=== Reliability — Board Service Pod Failure
+
+A single Board Service pod failure must not result in user-visible downtime. Kubernetes
+must reschedule the pod and the load balancer must drain traffic from the failing instance.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-rel-pod-failure
+title: Board Service Pod Failure Recovery
+quality: qg-reliability
+stimulus: One of three Board Service pods becomes unresponsive
+response: Kubernetes removes the pod from the load balancer and reschedules it
+metric: No failed requests visible to users; recovery completes within 30 seconds
+:::
+----
+
+=== Data Privacy — PII Residency Audit
+
+An auditor must be able to confirm that no personally identifiable information is stored
+outside the EU. All database nodes and cache instances must be provably located in EU
+data centres.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-privacy-residency
+title: PII EU Residency Audit
+quality: qg-data-privacy
+stimulus: External auditor requests evidence of GDPR data residency compliance
+response: Operations team produces deployment manifests showing all stateful nodes are in EU regions
+metric: 100% of nodes hosting PII are in EU data centres; confirmed by annual audit
+:::
+----
+
+=== Maintainability — Independent Service Deployment
+
+Any single service must be deployable independently without requiring a coordinated release
+of other services. API contracts must be backward-compatible across one major version.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-maint-independent-deploy
+title: Independent Service Deployment
+quality: qg-maintainability
+stimulus: Team deploys a new version of the Board Service
+response: Deployment completes without restarting other services or modifying shared configuration
+metric: Zero other services restarted; end-to-end smoke tests pass within 5 minutes
+:::
+----

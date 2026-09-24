@@ -1,0 +1,122 @@
+= Deployment View
+
+The Kanban Board is deployed on Kubernetes. Two environments exist: production (EU region,
+customer-facing) and staging (mirrors production topology for pre-release validation). Both
+environments satisfy the GDPR EU data residency constraint. An on-premise deployment uses
+the same Kubernetes manifests on customer-operated infrastructure.
+
+== Production Environment
+
+The production environment runs in an EU cloud region on a Kubernetes cluster. All services
+are deployed as Kubernetes pods behind internal service DNS. The API Gateway is the only
+component exposed via an Ingress. PostgreSQL and Redis run as StatefulSets with persistent
+volumes in the same EU region.
+
+[source,arc42]
+----
+:::deployment-node
+id: env-production
+title: Production
+type: environment
+hosts: bb-frontend, bb-api-gateway, bb-board-service, bb-auth-service, bb-notification-service, bb-postgres, bb-redis, bb-rabbitmq
+:::
+----
+
+== EU Kubernetes Cluster
+
+The Kubernetes cluster hosts all application workloads and stateful infrastructure. It runs
+in an EU data centre to satisfy the GDPR residency constraint. Horizontal pod autoscaling
+is active for the API Gateway and Board Service pods.
+
+[source,arc42]
+----
+:::deployment-node
+id: node-k8s-cluster
+title: EU Kubernetes Cluster
+type: cloud-region
+parent: env-production
+hosts: bb-api-gateway, bb-board-service, bb-auth-service, bb-notification-service, bb-frontend
+:::
+----
+
+== PostgreSQL StatefulSet
+
+PostgreSQL runs as a Kubernetes StatefulSet with a persistent volume backed by EU-region
+block storage. Only the Board Service may connect to this node.
+
+[source,arc42]
+----
+:::deployment-node
+id: node-postgres
+title: PostgreSQL StatefulSet
+type: server
+parent: env-production
+hosts: bb-postgres
+:::
+----
+
+== Redis StatefulSet
+
+Redis runs as a Kubernetes StatefulSet. It stores board read-models and API Gateway
+rate-limiting counters. Data is not persisted beyond a single pod restart cycle — Redis
+is cache-only in this deployment.
+
+[source,arc42]
+----
+:::deployment-node
+id: node-redis
+title: Redis StatefulSet
+type: server
+parent: env-production
+hosts: bb-redis
+:::
+----
+
+== RabbitMQ StatefulSet
+
+RabbitMQ runs as a Kubernetes StatefulSet with durable queues. Messages are persisted to
+disk so card events survive a RabbitMQ restart without loss.
+
+[source,arc42]
+----
+:::deployment-node
+id: node-rabbitmq
+title: RabbitMQ StatefulSet
+type: server
+parent: env-production
+hosts: bb-rabbitmq
+:::
+----
+
+== Staging Environment
+
+Staging mirrors the production topology using smaller instance sizes and a separate
+namespace. It is used for pre-release integration testing and load testing. Data in staging
+is synthetic and not subject to GDPR constraints.
+
+[source,arc42]
+----
+:::deployment-node
+id: env-staging
+title: Staging
+type: environment
+hosts: bb-frontend, bb-api-gateway, bb-board-service, bb-auth-service, bb-notification-service, bb-postgres, bb-redis, bb-rabbitmq
+:::
+----
+
+== On-Premise Environment
+
+For enterprise customers who cannot use a cloud provider, the system is deployable on
+customer-operated Kubernetes clusters using the same Helm charts as production. The customer
+is responsible for infrastructure provisioning and data backup. All GDPR obligations
+regarding data residency transfer to the customer under the contract.
+
+[source,arc42]
+----
+:::deployment-node
+id: env-onpremise
+title: On-Premise
+type: environment
+hosts: bb-frontend, bb-api-gateway, bb-board-service, bb-auth-service, bb-notification-service, bb-postgres, bb-redis, bb-rabbitmq
+:::
+----

@@ -1,0 +1,96 @@
+= Risks and Technical Debt
+
+== Single PostgreSQL Instance as Bottleneck
+
+The Board Service relies on a single PostgreSQL primary for all event appends. Under extreme
+write load (many concurrent card operations across large tenants) the database may become a
+bottleneck. No read replicas are provisioned in the initial deployment.
+
+[source,arc42]
+----
+:::risk
+id: risk-postgres-bottleneck
+title: Single PostgreSQL Instance as Write Bottleneck
+severity: high
+mitigation: Add a PostgreSQL read replica for read-model reconstruction. Evaluate event store sharding by tenantId if write throughput exceeds 500 events/second in production.
+:::
+----
+
+== No Automated Performance Regression Gate
+
+The performance quality goals have no automated gate in CI. Performance regressions can be
+introduced without detection until a production incident occurs or a customer reports slow
+board loads.
+
+[source,arc42]
+----
+:::risk
+id: risk-no-perf-tests
+title: No Automated Performance Regression Gate
+severity: high
+mitigation: Add a k6 load test suite as a nightly CI job with p95 threshold assertions aligned to the quality scenarios in chapter 10.
+:::
+----
+
+== Slack Webhook as External Hard Dependency
+
+The Notification Service sends notifications synchronously to Slack's incoming webhook API.
+If Slack's API changes its contract or introduces authentication changes, the Notification
+Service will fail silently until the issue is diagnosed and fixed.
+
+[source,arc42]
+----
+:::risk
+id: risk-slack-dependency
+title: Slack Webhook Contract Instability
+severity: medium
+mitigation: Monitor Slack API changelog. Abstract the webhook call behind a notification adapter interface to allow swapping providers without changing domain logic.
+:::
+----
+
+== Event Store Migration Complexity
+
+The event sourcing schema in PostgreSQL has no schema versioning or event upcasting
+mechanism. Any change to event payload shapes requires manual migration scripts and may
+break event replay for historical data.
+
+[source,arc42]
+----
+:::risk
+id: risk-event-migration
+title: Event Store Migration Complexity
+severity: medium
+mitigation: Define an event versioning policy before the first production release. Implement an upcaster registry so old event versions can be transparently translated on replay.
+:::
+----
+
+== Redis Cache Cross-tenant Pollution
+
+If a cache key is accidentally constructed without the `tenantId` prefix, data from one
+tenant could be served to another. This would be a security incident, not just a data
+correctness issue.
+
+[source,arc42]
+----
+:::risk
+id: risk-cache-pollution
+title: Redis Cache Cross-tenant Key Pollution
+severity: high
+mitigation: Centralise all cache key construction in a single CacheKeyFactory class. Add an automated test that asserts every cache key includes the tenantId segment.
+:::
+----
+
+== Limited Observability in Initial Release
+
+The initial release ships structured logging but no distributed tracing and no alerting on
+error rates or latency percentiles. Incidents will require manual log inspection to diagnose.
+
+[source,arc42]
+----
+:::risk
+id: risk-limited-observability
+title: Limited Observability at Initial Release
+severity: medium
+mitigation: Integrate OpenTelemetry tracing in the second sprint after initial release. Configure alerting on p95 latency and 5xx error rate before the first enterprise customer goes live.
+:::
+----

@@ -1,0 +1,312 @@
+= Building Blocks
+
+== Frontend
+
+The Frontend is a single-page application built with React 19 and TypeScript. It provides
+the visual Kanban board interface: board/column/card management, drag-and-drop interactions,
+and real-time updates. All backend communication is routed through the API Gateway — the
+Frontend never contacts downstream services directly. Team members and administrators access
+the system exclusively through the Frontend web application.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-frontend
+title: Frontend
+technology: React 19 / TypeScript / Vite
+implements: concept-auth, concept-logging
+requires: if-board-api, if-auth-callback
+:::
+----
+
+=== Web UI Interface
+
+The Frontend serves the Kanban board single-page application to browsers. Team members and
+administrators use this interface as their only entry point into the system.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-web-ui
+title: Web UI
+provider: bb-frontend
+protocol: HTTPS
+:::
+----
+
+== API Gateway
+
+The API Gateway is the single external entry point for all client traffic. It validates JWT
+tokens on every inbound request, applies rate limiting per tenant, and routes requests to the
+appropriate downstream service. It handles the OAuth2 callback from the Identity Provider
+and delegates token issuance to the Auth Service.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-api-gateway
+title: API Gateway
+technology: Node.js / Express / TypeScript
+implements: concept-auth, concept-logging, concept-multi-tenancy, concept-health-endpoints
+requires: if-auth-api, if-board-commands, if-board-queries, if-cache
+:::
+----
+
+=== Board API Interface
+
+External clients and the Frontend use this interface to perform all board, column, and card
+operations. The API Gateway owns and exposes this contract; it validates the JWT before
+forwarding to the Board Service.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-board-api
+title: Board API
+provider: bb-api-gateway
+protocol: HTTPS/REST
+:::
+----
+
+=== Auth Callback Interface
+
+The Identity Provider redirects the user's browser to this endpoint after successful
+OAuth2 authentication. The API Gateway exchanges the authorisation code for tokens via the
+Auth Service and issues the session JWT.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-auth-callback
+title: Auth Callback
+provider: bb-api-gateway
+protocol: HTTPS/REST (OAuth2 redirect)
+:::
+----
+
+== Auth Service
+
+The Auth Service handles user authentication, token issuance, and token validation. It
+integrates with the external Identity Provider via OAuth2/OIDC and issues signed JWT tokens
+on successful authentication. It does not store session state — all state is encoded in
+the JWT.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-auth-service
+title: Auth Service
+technology: Node.js / Express / TypeScript
+implements: concept-auth, concept-logging, concept-health-endpoints
+:::
+----
+
+=== Auth Service API
+
+The API Gateway calls this interface to exchange OAuth2 authorisation codes for JWT tokens
+and to validate token signatures. No other building block calls the Auth Service directly.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-auth-api
+title: Auth Service API
+provider: bb-auth-service
+protocol: HTTP/REST
+:::
+----
+
+== Board Service
+
+The Board Service owns all board, column, and card domain state. It persists every mutation
+as an event in the PostgreSQL event store (event sourcing), publishes card-updated events to
+RabbitMQ via the Board Events interface, and exposes REST APIs for the API Gateway. It
+maintains a Redis-cached read-model for fast board queries.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-board-service
+title: Board Service
+technology: Node.js / Express / TypeScript / PostgreSQL
+implements: concept-event-sourcing, concept-logging, concept-multi-tenancy, concept-caching, concept-health-endpoints
+requires: if-board-db, if-cache, if-board-events
+:::
+----
+
+=== Board Command Interface
+
+The API Gateway forwards authenticated write operations (create board, add card, move card)
+to this interface. Each command results in one or more domain events written to the event
+store.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-board-commands
+title: Board Command Interface
+provider: bb-board-service
+protocol: HTTP/REST
+:::
+----
+
+=== Board Query Interface
+
+The API Gateway forwards board read requests to this interface. Responses are served from
+the Redis read-model to achieve sub-300ms response times without touching PostgreSQL on
+cache hits.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-board-queries
+title: Board Query Interface
+provider: bb-board-service
+protocol: HTTP/REST
+:::
+----
+
+== RabbitMQ
+
+RabbitMQ is the message broker that decouples the Board Service from the Notification
+Service. The Board Service publishes card events to a topic exchange; the Notification
+Service subscribes to those events for delivery. RabbitMQ owns the exchange contract.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-rabbitmq
+title: RabbitMQ
+technology: RabbitMQ 3.13
+implements: concept-async-notifications
+:::
+----
+
+=== Board Events Interface
+
+The Board Service publishes card-created, card-updated, and card-moved events to this
+RabbitMQ topic exchange. The Notification Service subscribes to these events to trigger
+outbound notifications to affected team members.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-board-events
+title: Board Events
+provider: bb-rabbitmq
+protocol: AMQP / RabbitMQ topic exchange
+:::
+----
+
+== Notification Service
+
+The Notification Service is a stateless consumer that listens for domain events on RabbitMQ
+and delivers notifications to users via Slack webhook. Failures in notification delivery do
+not block or affect board operations.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-notification-service
+title: Notification Service
+technology: Node.js / TypeScript
+implements: concept-logging, concept-async-notifications, concept-health-endpoints
+requires: if-board-events
+:::
+----
+
+=== Slack Webhook Interface
+
+The Notification Service posts JSON payloads to Slack's incoming webhook URL. This is an
+outbound interface: the Notification Service is the caller and Slack's API is the receiver.
+It is modelled here because the Notification Service owns the integration contract.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-slack-webhook
+title: Slack Webhook
+provider: bb-notification-service
+protocol: HTTPS / Slack Incoming Webhook
+:::
+----
+
+== PostgreSQL
+
+PostgreSQL is the primary persistence store for the Board Service. It holds the event stream
+that forms the audit trail and source of truth for all board state. Schemas are managed by
+versioned migrations.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-postgres
+title: PostgreSQL
+technology: PostgreSQL 16
+implements: concept-event-sourcing
+:::
+----
+
+=== Board Database Interface
+
+The Board Service reads and appends events through this interface. No other building block
+accesses PostgreSQL directly.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-board-db
+title: Board Database
+provider: bb-postgres
+protocol: PostgreSQL wire protocol
+:::
+----
+
+== Redis
+
+Redis is the distributed cache used by the Board Service to store board read-models and by
+the API Gateway for per-tenant rate-limiting counters. Cache keys always include the
+`tenantId` to prevent cross-tenant data access.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::building-block
+id: bb-redis
+title: Redis
+technology: Redis 7
+implements: concept-caching
+:::
+----
+
+=== Cache Interface
+
+The Board Service and API Gateway read and write board read-model entries and rate-limiting
+counters through this interface.
+
+[source,arc42]
+----
+:::ignore H014 demo-only workspace — no implementation paths available :::
+:::interface
+id: if-cache
+title: Cache
+provider: bb-redis
+protocol: Redis protocol (RESP)
+:::
+----

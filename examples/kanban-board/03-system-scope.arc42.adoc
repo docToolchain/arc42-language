@@ -1,0 +1,73 @@
+= System Scope and Context
+
+The Kanban Board system sits at the centre of team collaboration. It exposes a web UI to team
+members and administrators, publishes events to external notification channels, and delegates
+identity federation to a corporate identity provider.
+
+== Team Member
+
+A team member is an authenticated user who creates, moves, and updates cards on Kanban boards.
+Team members interact exclusively through the browser-based frontend. They receive notifications
+via Slack when cards they are watching are updated.
+
+[source,arc42]
+----
+:::actor
+id: actor-team-member
+title: Team Member
+type: person
+description: Authenticated user who manages cards and boards via the web UI
+requires: if-web-ui
+:::
+----
+
+== Administrator
+
+An administrator belongs to a tenant organisation and manages boards, columns, user accounts,
+and tenant-level settings. Administrators use the same web UI as team members but with elevated
+permissions.
+
+[source,arc42]
+----
+:::actor
+id: actor-admin
+title: Administrator
+type: person
+description: Tenant administrator managing boards, users, and settings
+requires: if-web-ui
+:::
+----
+
+== Identity Provider
+
+An external corporate or cloud identity provider (e.g. Okta, Azure AD) that authenticates users
+via OAuth2 / OpenID Connect. The system delegates initial authentication to this provider and
+validates the resulting JWT tokens internally.
+
+[source,arc42]
+----
+:::actor
+id: actor-idp
+title: Identity Provider
+type: system
+description: External OAuth2/OIDC provider supplying identity tokens
+requires: if-auth-callback
+:::
+----
+
+== Slack
+
+Slack is an external messaging platform. The Notification service delivers card-update
+notifications to team channels via Slack's incoming webhook API. The system has no dependency
+on Slack for its core functionality — notifications are best-effort.
+
+[source,arc42]
+----
+:::actor
+id: actor-slack
+title: Slack
+type: system
+description: External messaging platform receiving outbound webhook notifications
+requires: if-slack-webhook
+:::
+----

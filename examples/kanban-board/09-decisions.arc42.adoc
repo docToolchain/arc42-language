@@ -1,0 +1,161 @@
+= Architecture Decisions
+
+== Microservice Decomposition over Monolith
+
+The team evaluated a modular monolith and a microservice architecture. The monolith would
+have been simpler to operate initially but would not have supported independent deployments
+or the on-premise packaging requirement (where customers may deploy only a subset of
+services). Microservices were chosen to satisfy the maintainability and reliability goals.
+
+[source,arc42]
+----
+:::decision
+id: dec-microservices
+title: Microservice Decomposition over Monolith
+status: accepted
+date: 2025-02-10
+addresses: qg-maintainability, qg-reliability, con-onpremise
+:::
+----
+
+== Event Sourcing for Board State
+
+The team considered standard CRUD persistence (update-in-place) and event sourcing for the
+Board Service. CRUD is simpler but loses the mutation history that audit requirements demand.
+Event sourcing was chosen because it provides a built-in audit trail, supports point-in-time
+replay, and aligns with the GDPR right-of-access requirement without a separate audit log.
+
+[source,arc42]
+----
+:::decision
+id: dec-event-sourcing
+title: Event Sourcing for Board State Persistence
+status: accepted
+date: 2025-02-15
+addresses: qg-data-privacy, qg-maintainability, con-gdpr-residency, risk-event-migration
+:::
+----
+
+== JWT Stateless Authentication
+
+The team evaluated server-side session storage and stateless JWT tokens. Server-side
+sessions require a shared session store that becomes a single point of failure and complicates
+horizontal scaling. Stateless JWTs were chosen to allow the API Gateway to scale horizontally
+without coordinating session state, satisfying both the performance and security goals.
+
+[source,arc42]
+----
+:::decision
+id: dec-jwt-auth
+title: Stateless JWT Authentication
+status: accepted
+date: 2025-02-20
+addresses: qg-security, qg-performance, con-oauth2-jwt
+:::
+----
+
+== Redis for Read-model Caching
+
+The team evaluated serving board read-models directly from PostgreSQL event replay on every
+request. Under concurrent load this would saturate the database. Redis was chosen as an
+explicit caching layer to offload read traffic and provide sub-300ms board load times under
+the performance quality scenario.
+
+[source,arc42]
+----
+:::decision
+id: dec-redis-cache
+title: Redis for Board Read-model Caching
+status: accepted
+date: 2025-03-01
+addresses: qg-performance, risk-postgres-bottleneck, risk-cache-pollution
+:::
+----
+
+== RabbitMQ for Asynchronous Notification Delivery
+
+Direct HTTP calls from the Board Service to the Notification Service would couple their
+availability. If Slack is unavailable the Board Service would block or fail. RabbitMQ was
+chosen to decouple these services: the Board Service publishes events without waiting for
+delivery, and the Notification Service retries independently.
+
+[source,arc42]
+----
+:::decision
+id: dec-rabbitmq-async
+title: RabbitMQ for Decoupled Notification Delivery
+status: accepted
+date: 2025-03-05
+addresses: qg-reliability, risk-slack-dependency
+:::
+----
+
+== TypeScript Across Frontend and Backend
+
+The team evaluated using Go or Java for the backend services. TypeScript was chosen for all
+services to enable shared type definitions between the API Gateway contract and the Frontend,
+reduce context-switching for full-stack developers, and enforce a single lint and formatting
+rule set. This is also a team convention constraint.
+
+[source,arc42]
+----
+:::decision
+id: dec-typescript
+title: TypeScript for All Application Code
+status: accepted
+date: 2025-01-20
+addresses: qg-maintainability, con-typescript
+:::
+----
+
+== REST and RabbitMQ as Internal Communication Standards
+
+The team standardised on HTTP/REST for synchronous service-to-service calls and RabbitMQ
+for asynchronous event flows. gRPC and other binary protocols require additional tooling
+and steeper onboarding for a TypeScript-first team. The REST + AMQP combination provides
+sufficient performance while keeping the communication model simple and observable.
+
+[source,arc42]
+----
+:::decision
+id: dec-rest-internal
+title: REST and RabbitMQ as Internal Communication Standards
+status: accepted
+date: 2025-02-05
+addresses: qg-maintainability, con-rest-internal
+:::
+----
+
+== CI Performance Gate with k6
+
+The absence of an automated performance regression gate means regressions reach production
+undetected. A nightly k6 load test suite with p95 threshold assertions will close this gap
+and make the performance quality goal continuously verifiable.
+
+[source,arc42]
+----
+:::decision
+id: dec-k6-perf-gate
+title: Nightly k6 Performance Regression Gate
+status: accepted
+date: 2025-04-01
+addresses: qg-performance, risk-no-perf-tests
+:::
+----
+
+== OpenTelemetry for Distributed Tracing
+
+Structured logging alone is insufficient for diagnosing distributed failures across multiple
+services. OpenTelemetry tracing with a Jaeger or Tempo backend will be integrated in the
+sprint after initial release, providing span-level visibility across all service boundaries.
+
+[source,arc42]
+----
+:::decision
+id: dec-opentelemetry
+title: OpenTelemetry for Distributed Tracing
+status: accepted
+date: 2025-04-10
+addresses: qg-reliability, risk-limited-observability
+:::
+----

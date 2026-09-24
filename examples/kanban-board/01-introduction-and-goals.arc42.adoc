@@ -1,0 +1,61 @@
+= Introduction and Goals
+
+[NOTE]
+====
+This is a demo workspace for the arc42 CLI. All content is fictional and intended to illustrate
+the arc42 DSL and AsciiDoc authoring conventions. No real system or organisation is represented.
+====
+
+== 1.1 Requirements Overview
+
+The Kanban Board is a multi-tenant team collaboration tool that enables software development
+teams to manage work using visual boards, columns, and cards. Each tenant (organisation) has
+isolated data and can configure their own boards independently.
+
+Key functional requirements:
+
+* Teams can create and manage boards with customisable columns (e.g. To Do, In Progress, Done).
+* Cards represent work items and can be moved between columns via drag-and-drop.
+* Multiple team members can collaborate on boards in real time.
+* Notifications are sent to relevant team members when cards are updated or moved.
+* Administrators manage tenant settings, user accounts, and access control.
+* The system supports both cloud-hosted and on-premise deployments.
+
+== 1.2 Quality Goals
+
+The highest-priority quality goals that drive the architecture are performance, security, and
+reliability. See xref:10-quality-requirements.arc42.adoc[] for the complete quality catalog
+with measurable scenarios.
+
+== 1.3 Stakeholders
+
+The following stakeholders have a direct interest in the architecture and its documentation.
+
+[cols="2,2,4"]
+|===
+| Role | Contact | Expectations
+
+| Product Owner
+| product@example.com
+| Functional coverage of Kanban workflows; clear scope boundaries
+
+| Lead Developer
+| dev-lead@example.com
+| Clear component boundaries; up-to-date decision records; easy onboarding
+
+| Security Officer
+| security@example.com
+| Documented auth and encryption decisions; GDPR compliance evidence
+
+| Operations Team
+| ops@example.com
+| Deployment topology documented; runbook pointers; SLA traceability
+
+| Enterprise Customer (Admin)
+| —
+| Stable API contracts; on-premise deployment option; data residency guarantees
+
+| End User (Team Member)
+| —
+| Fast, reliable UI; real-time collaboration; predictable notifications
+|===
