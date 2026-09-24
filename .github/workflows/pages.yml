@@ -50,6 +50,7 @@ jobs:
           cp -r packages/site/dist/. site/
           node packages/cli/dist/cli.mjs --dir docs/arc42 build --out site/docs --base /arc42-language/docs/
           node packages/cli/dist/cli.mjs --dir examples/bookstore-backend build --out site/bookstore --base /arc42-language/bookstore/
+          node packages/cli/dist/cli.mjs --dir examples/kanban-board build --out site/kanban-board --base /arc42-language/kanban-board/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
