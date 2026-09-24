@@ -28,11 +28,15 @@ import {
   lintArchitectureDiff,
   ELEMENT_KIND_ORDER,
   computeCoverage,
-  loadWorkspaceFromDocuments,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
 import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
-import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
+import {
+  getElements,
+  loadDiffSnapshots,
+  loadWorkspace,
+  validateWorkspace,
+} from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
@@ -185,17 +189,16 @@ async function runDiff(dir: string, args: string[]) {
   }
 
   try {
-    const diff = collectGitDiff(dir, positionals[0], Boolean(values.staged || values.cached));
-    const currentElements = loadWorkspaceFromDocuments(diff.currentDocuments).elements;
-    const baseElements = loadWorkspaceFromDocuments(diff.baseDocuments).elements;
+    const snapshots = await loadDiffSnapshots(dir, {
+      reference: positionals[0],
+      staged: Boolean(values.staged || values.cached),
+    });
     const result = lintArchitectureDiff({
-      changes: diff.changes,
-      current: diff.currentDocuments,
-      base: diff.baseDocuments,
-      currentKnownPaths: diff.currentKnownPaths,
-      baseKnownPaths: diff.baseKnownPaths,
-      currentElements,
-      baseElements,
+      changes: snapshots.changes,
+      base: snapshots.base.payload,
+      head: snapshots.head.payload,
+      baseKnownPaths: snapshots.base.knownPaths,
+      headKnownPaths: snapshots.head.knownPaths,
     });
     const findings = [
       ...result.consistencyFindings,
@@ -209,7 +212,8 @@ async function runDiff(dir: string, args: string[]) {
         a.kind.localeCompare(b.kind),
     );
     const accepted =
-      diff.acceptanceBase !== undefined && process.env["ARC42_CONSISTENT"] === diff.acceptanceBase;
+      snapshots.acceptanceBase !== undefined &&
+      process.env["ARC42_CONSISTENT"] === snapshots.acceptanceBase;
     const remainingFindings = accepted ? [] : findings;
     // Emit consistency findings (warnings) as-is — they already have file:line context.
     // Group path hints by file so multiple elements on the same file appear on one line.
@@ -249,7 +253,7 @@ async function runDiff(dir: string, args: string[]) {
     }
     if (remainingFindings.length > 0) {
       console.error(
-        `To accept these findings, set ARC42_CONSISTENT=${diff.base} and rerun the command.`,
+        `To accept these findings, set ARC42_CONSISTENT=${snapshots.baseCommit} and rerun the command.`,
       );
     }
     const hasStrictFindings =

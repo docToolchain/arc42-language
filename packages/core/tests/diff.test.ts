@@ -1,18 +1,50 @@
 import { describe, expect, test } from "vite-plus/test";
-import type { DocumentAst } from "../src/ast.ts";
+import { loadWorkspaceFromDocuments } from "../src/arc42.ts";
 import { lintArchitectureDiff, type FileChange } from "../src/diff.ts";
-import type { Element } from "../src/model/types.ts";
+import { parseMarkdown } from "../src/parser/markdown-parser.ts";
+import type { WorkspacePayload } from "../src/workspace.ts";
 
-function bb(id: string, path?: string): Element {
-  return {
-    kind: "building-block",
-    id,
-    title: id,
-    implements: [],
-    requires: [],
-    loc: { file: "architecture.arc42.md", line: 1 },
-    ...(path !== undefined ? { path } : {}),
-  } as Element;
+const FILE = "architecture.arc42.md";
+
+function workspace(content?: string): WorkspacePayload {
+  return loadWorkspaceFromDocuments(content === undefined ? [] : [parseMarkdown(FILE, content)]);
+}
+
+function block(type: string, attributes: Record<string, string>): string {
+  const lines = Object.entries(attributes).map(([key, value]) => `${key}: ${value}`);
+  return ["```arc42", `:::${type}`, ...lines, ":::", "```"].join("\n");
+}
+
+function section(heading: string, prose: string, blockText = ""): string {
+  return `## ${heading}\n\n${prose}\n\n${blockText}\n`;
+}
+
+function architecture(...sections: string[]): string {
+  return `# Architecture\n\n${sections.join("\n")}`;
+}
+
+function service(prose = "Narrative", title = "Service"): string {
+  return section("Service", prose, block("building-block", { id: "service", title }));
+}
+
+function interfaces(...entries: Array<[id: string, path: string]>): string {
+  return architecture(
+    ...entries.map(([id, path]) =>
+      section(
+        id,
+        `The ${id} interface.`,
+        block("interface", { id, title: id, provider: "bb", path }),
+      ),
+    ),
+  );
+}
+
+function buildingBlocks(...entries: Array<[id: string, path: string]>): string {
+  return architecture(
+    ...entries.map(([id, path]) =>
+      section(id, `The ${id} block.`, block("building-block", { id, title: id, path })),
+    ),
+  );
 }
 
 const change = (
@@ -25,45 +57,14 @@ const change = (
   newRanges: newRanges.map(([start, end]) => ({ start, end })),
 });
 
-function document(
-  content: Array<{
-    kind: "heading" | "prose" | "block";
-    line: number;
-    endLine?: number;
-    text?: string;
-  }>,
-): DocumentAst {
-  return {
-    filePath: "architecture.arc42.md",
-    nodes: content.map((node) =>
-      node.kind === "heading"
-        ? { kind: "heading", level: 2, text: node.text ?? "Section", line: node.line }
-        : node.kind === "prose"
-          ? { kind: "prose", text: node.text ?? "Narrative", line: node.line }
-          : {
-              kind: "block",
-              blockType: "building-block",
-              attributes: { id: "service", title: "Service", implements: "" },
-              startLine: node.line,
-              endLine: node.endLine ?? node.line,
-              inArc42Fence: true,
-            },
-    ),
-  };
-}
-
 describe("architecture diff lint", () => {
   test("reports a block-only change and ignores an unrelated section", () => {
-    const ast = document([
-      { kind: "heading", line: 1, text: "Service" },
-      { kind: "prose", line: 2 },
-      { kind: "block", line: 3 },
-      { kind: "heading", line: 5, text: "Other" },
-      { kind: "prose", line: 6 },
-    ]);
     const result = lintArchitectureDiff({
-      changes: [change(ast.filePath, [[3, 3]])],
-      current: [ast],
+      changes: [change(FILE, [[8, 8]])],
+      base: workspace(architecture(service(), section("Other", "Narrative"))),
+      head: workspace(
+        architecture(service("Narrative", "Order Service"), section("Other", "Narrative")),
+      ),
     });
     expect(result.consistencyFindings).toHaveLength(1);
     expect(result.consistencyFindings[0]?.kind).toBe("block-without-prose-change");
@@ -71,195 +72,100 @@ describe("architecture diff lint", () => {
   });
 
   test("accepts a prose and block change in the same section", () => {
-    const ast = document([
-      { kind: "heading", line: 1 },
-      { kind: "prose", line: 2 },
-      { kind: "block", line: 3 },
-    ]);
     const result = lintArchitectureDiff({
-      changes: [change(ast.filePath, [[2, 3]])],
-      current: [ast],
+      changes: [change(FILE, [[5, 8]])],
+      base: workspace(architecture(service())),
+      head: workspace(architecture(service("Updated narrative", "Order Service"))),
     });
     expect(result.consistencyFindings).toHaveLength(0);
   });
 
   test("reports prose-only changes", () => {
-    const ast = document([
-      { kind: "heading", line: 1 },
-      { kind: "prose", line: 2 },
-      { kind: "block", line: 3 },
-    ]);
     const result = lintArchitectureDiff({
-      changes: [change(ast.filePath, [[2, 2]])],
-      current: [ast],
+      changes: [change(FILE, [[5, 5]])],
+      base: workspace(architecture(service())),
+      head: workspace(architecture(service("Updated narrative"))),
     });
     expect(result.consistencyFindings[0]?.kind).toBe("prose-without-block-change");
   });
 
   test("accepts deletion of a block together with its prose", () => {
-    const oldAst = document([
-      { kind: "heading", line: 1 },
-      { kind: "prose", line: 2 },
-      { kind: "block", line: 3 },
-    ]);
     const result = lintArchitectureDiff({
-      changes: [change(oldAst.filePath, [[2, 1]], [[2, 3]])],
-      current: [],
-      base: [oldAst],
+      changes: [change(FILE, [[0, -1]], [[1, 11]])],
+      base: workspace(architecture(service())),
+      head: workspace(),
     });
     expect(result.consistencyFindings).toHaveLength(0);
   });
 
   test("reports deletion of a block when its prose remains", () => {
-    const oldAst = document([
-      { kind: "heading", line: 1 },
-      { kind: "prose", line: 2 },
-      { kind: "block", line: 3 },
-    ]);
-    const currentAst = document([
-      { kind: "heading", line: 1 },
-      { kind: "prose", line: 2 },
-    ]);
     const result = lintArchitectureDiff({
-      changes: [change(oldAst.filePath, [[3, 2]], [[3, 3]])],
-      current: [currentAst],
-      base: [oldAst],
+      changes: [change(FILE, [[7, 6]], [[7, 11]])],
+      base: workspace(architecture(service())),
+      head: workspace(architecture(section("Service", "Narrative"))),
     });
     expect(result.consistencyFindings[0]?.kind).toBe("block-without-prose-change");
   });
 
   test("reports path impact as a non-blocking hint", () => {
-    const ast: DocumentAst = {
-      filePath: "architecture.arc42.md",
-      nodes: [
-        {
-          kind: "block",
-          blockType: "interface",
-          attributes: {
-            id: "service-api",
-            title: "Service API",
-            provider: "service",
-            path: "src/service",
-          },
-          startLine: 1,
-          endLine: 1,
-          inArc42Fence: true,
-        },
-      ],
-    };
+    const docs = workspace(interfaces(["service-api", "src/service"]));
     const result = lintArchitectureDiff({
       changes: [change("src/service/index.ts", [[4, 4]])],
-      current: [ast],
+      base: docs,
+      head: docs,
     });
     expect(result.pathFindings).toHaveLength(1);
     expect(result.pathFindings[0]?.severity).toBe("hint");
     expect(result.hasBlockingFindings).toBe(false);
-    expect(result.affectedRanges).toHaveLength(0);
   });
 
   test("building-block path changes do not produce path hints", () => {
-    const ast: DocumentAst = {
-      filePath: "architecture.arc42.md",
-      nodes: [
-        {
-          kind: "block",
-          blockType: "building-block",
-          attributes: { id: "service", title: "Service", implements: "", path: "src/service" },
-          startLine: 1,
-          endLine: 1,
-          inArc42Fence: true,
-        },
-      ],
-    };
+    const docs = workspace(buildingBlocks(["service", "src/service"]));
     const result = lintArchitectureDiff({
       changes: [change("src/service/index.ts", [[4, 4]])],
-      current: [ast],
+      base: docs,
+      head: docs,
     });
     expect(result.pathFindings).toHaveLength(0);
   });
 
   test("uses path components rather than textual prefixes", () => {
-    const ast: DocumentAst = {
-      filePath: "architecture.arc42.md",
-      nodes: [
-        {
-          kind: "block",
-          blockType: "interface",
-          attributes: {
-            id: "service-api",
-            title: "Service API",
-            provider: "service",
-            path: "src/service",
-          },
-          startLine: 1,
-          endLine: 1,
-          inArc42Fence: true,
-        },
-      ],
-    };
+    const docs = workspace(interfaces(["service-api", "src/service"]));
     const result = lintArchitectureDiff({
       changes: [change("src/services.ts", [[4, 4]])],
-      current: [ast],
+      base: docs,
+      head: docs,
     });
     expect(result.pathFindings).toHaveLength(0);
   });
 
   test("uses Git tree paths to distinguish files, directories, and unresolved paths", () => {
-    const ast: DocumentAst = {
-      filePath: "architecture.arc42.md",
-      nodes: [
-        {
-          kind: "block",
-          blockType: "interface",
-          attributes: { id: "file", title: "File", provider: "bb", path: "src/Makefile" },
-          startLine: 1,
-          endLine: 1,
-          inArc42Fence: true,
-        },
-        {
-          kind: "block",
-          blockType: "interface",
-          attributes: { id: "dir", title: "Dir", provider: "bb", path: "src/foo.test" },
-          startLine: 2,
-          endLine: 2,
-          inArc42Fence: true,
-        },
-        {
-          kind: "block",
-          blockType: "interface",
-          attributes: { id: "missing", title: "Missing", provider: "bb", path: "src/missing" },
-          startLine: 3,
-          endLine: 3,
-          inArc42Fence: true,
-        },
-      ],
-    };
+    const docs = workspace(
+      interfaces(["file", "src/Makefile"], ["dir", "src/foo.test"], ["missing", "src/missing"]),
+    );
     const result = lintArchitectureDiff({
       changes: [
         change("src/Makefile", [[4, 4]]),
         change("src/foo.test/index.ts", [[5, 5]]),
         change("src/missing/file.ts", [[6, 6]]),
       ],
-      current: [ast],
-      currentKnownPaths: new Set(["src/Makefile", "src/foo.test/index.ts"]),
+      base: docs,
+      head: docs,
+      headKnownPaths: new Set(["src/Makefile", "src/foo.test/index.ts"]),
     });
     expect(result.pathFindings.map((finding) => finding.elementId)).toEqual(["dir", "file"]);
   });
 
   test("keeps consistency findings independent from supplied path evidence", () => {
-    const ast = document([
-      { kind: "heading", line: 1 },
-      { kind: "prose", line: 2, text: "Updated prose" },
-      { kind: "block", line: 3 },
-    ]);
     const options = {
-      changes: [change(ast.filePath, [[2, 2]])],
-      current: [ast],
+      changes: [change(FILE, [[5, 5]])],
+      base: workspace(architecture(service())),
+      head: workspace(architecture(service("Updated prose"))),
     };
     const withoutPaths = lintArchitectureDiff(options);
     const withPaths = lintArchitectureDiff({
       ...options,
-      currentKnownPaths: new Set(["src/service.ts"]),
+      headKnownPaths: new Set(["src/service.ts"]),
     });
     expect(withPaths.consistencyFindings).toEqual(withoutPaths.consistencyFindings);
     expect(withPaths.pathFindings).toEqual(withoutPaths.pathFindings);
@@ -268,45 +174,45 @@ describe("architecture diff lint", () => {
   describe("coverage findings (new-building-block-hint)", () => {
     const noChanges: FileChange[] = [];
 
-    test("returns empty coverageFindings when no currentElements provided", () => {
+    test("returns empty coverageFindings when the head has no elements", () => {
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentKnownPaths: new Set(["src/foo.ts"]),
+        base: workspace(),
+        head: workspace(),
+        headKnownPaths: new Set(["src/foo.ts"]),
       });
       expect(result.coverageFindings).toHaveLength(0);
     });
 
-    test("returns empty coverageFindings when no currentKnownPaths provided", () => {
+    test("returns empty coverageFindings when no headKnownPaths provided", () => {
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentElements: [bb("service", "src")],
+        base: workspace(),
+        head: workspace(buildingBlocks(["service", "src"])),
       });
       expect(result.coverageFindings).toHaveLength(0);
     });
 
-    test("returns empty coverageFindings when currentKnownPaths is empty", () => {
+    test("returns empty coverageFindings when headKnownPaths is empty", () => {
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentElements: [bb("service", "src")],
-        currentKnownPaths: new Set(),
+        base: workspace(),
+        head: workspace(buildingBlocks(["service", "src"])),
+        headKnownPaths: new Set(),
       });
       expect(result.coverageFindings).toHaveLength(0);
     });
 
-    test("reports new-building-block-hint for path uncovered in current but not in base", () => {
-      // base: element covers both src/app and src/lib
-      // current: element only covers src/app → src/lib is newly uncovered
+    test("reports new-building-block-hint for path uncovered in head but not in base", () => {
+      // base: elements cover both src/app and src/lib
+      // head: element only covers src/app → src/lib is newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentKnownPaths: trackedPaths,
+        base: workspace(buildingBlocks(["app", "src/app"], ["lib", "src/lib"])),
+        head: workspace(buildingBlocks(["app", "src/app"])),
+        headKnownPaths: trackedPaths,
         baseKnownPaths: trackedPaths,
-        currentElements: [bb("app", "src/app")],
-        baseElements: [bb("app", "src/app"), bb("lib", "src/lib")],
       });
       expect(result.coverageFindings).toHaveLength(1);
       expect(result.coverageFindings[0]?.kind).toBe("new-building-block-hint");
@@ -317,29 +223,28 @@ describe("architecture diff lint", () => {
       expect(result.coverageFindings[0]?.message).toContain("building block");
     });
 
-    test("does not report new-building-block-hint for path uncovered in both base and current", () => {
+    test("does not report new-building-block-hint for path uncovered in both base and head", () => {
       // src/lib is uncovered in both snapshots — not newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
+      const docs = workspace(buildingBlocks(["app", "src/app"]));
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentKnownPaths: trackedPaths,
+        base: docs,
+        head: docs,
+        headKnownPaths: trackedPaths,
         baseKnownPaths: trackedPaths,
-        currentElements: [bb("app", "src/app")],
-        baseElements: [bb("app", "src/app")],
       });
       expect(result.coverageFindings).toHaveLength(0);
     });
 
-    test("reports all uncovered paths as new-building-block-hints when no baseElements provided", () => {
-      // No base → any currently uncovered path is treated as newly uncovered
+    test("reports all uncovered paths as new-building-block-hints when the base has no elements", () => {
+      // Empty base → any currently uncovered path is treated as newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentKnownPaths: trackedPaths,
-        currentElements: [bb("app", "src/app")],
-        // baseElements deliberately omitted
+        base: workspace(),
+        head: workspace(buildingBlocks(["app", "src/app"])),
+        headKnownPaths: trackedPaths,
       });
       expect(result.coverageFindings).toHaveLength(1);
       expect(result.coverageFindings[0]?.file).toBe("src/lib");
@@ -354,9 +259,9 @@ describe("architecture diff lint", () => {
       ]);
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentKnownPaths: trackedPaths,
-        currentElements: [bb("zebra", "src/zebra")], // alpha and middle are uncovered (no base)
+        base: workspace(),
+        head: workspace(buildingBlocks(["zebra", "src/zebra"])), // alpha and middle are uncovered
+        headKnownPaths: trackedPaths,
       });
       const files = result.coverageFindings.map((f) => f.file);
       expect(files.length).toBeGreaterThan(0);
@@ -368,9 +273,9 @@ describe("architecture diff lint", () => {
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const result = lintArchitectureDiff({
         changes: noChanges,
-        current: [],
-        currentKnownPaths: trackedPaths,
-        currentElements: [bb("app", "src/app")], // src/lib is newly uncovered (no base)
+        base: workspace(),
+        head: workspace(buildingBlocks(["app", "src/app"])), // src/lib is newly uncovered
+        headKnownPaths: trackedPaths,
       });
       expect(result.coverageFindings.length).toBeGreaterThan(0);
       expect(result.hasBlockingFindings).toBe(false);
