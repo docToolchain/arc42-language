@@ -170,3 +170,73 @@ describe("arc42 diff — commit ranges", () => {
     expect(result.status).toBe(1);
   });
 });
+
+describe("arc42 diff --format json", () => {
+  test("reports findings and the semantic change set", () => {
+    const root = repository(MD, markdown(SERVICE));
+    const head = git(root, "rev-parse", "HEAD").trim();
+    writeFileSync(
+      join(root, MD),
+      `${markdown(SERVICE.replace("Node", "Go"))}\n## Notes\n\nNew prose-only section.\n`,
+    );
+    const result = runDiff(root, "--format", "json");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toBe("");
+    const output = JSON.parse(result.stdout);
+    expect(output).toMatchObject({
+      version: 1,
+      base: { label: "index", commit: head },
+      head: { label: "working tree" },
+      acceptanceBase: head,
+      accepted: false,
+      hasBlockingFindings: true,
+      findings: [{ kind: "block-without-prose-change", elementId: "service", line: 8 }],
+    });
+    expect(output.architecture.elements).toMatchObject([
+      {
+        id: "service",
+        status: "modified",
+        proseChanged: false,
+        attributes: [{ name: "technology", before: "Node", after: "Go" }],
+      },
+    ]);
+    expect(output.architecture.proseSections).toMatchObject([
+      { status: "added", section: { headingPath: ["Architecture", "Notes"] } },
+    ]);
+    expect(output.architecture.documents).toEqual([
+      { file: MD, added: 1, modified: 1, removed: 0 },
+    ]);
+  });
+
+  test("keeps findings but exits 0 once accepted", () => {
+    const root = repository(MD, markdown(SERVICE));
+    const head = git(root, "rev-parse", "HEAD").trim();
+    writeFileSync(join(root, MD), markdown(SERVICE.replace("Node", "Go")));
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--experimental-strip-types",
+        "--no-warnings",
+        "--conditions=development",
+        cliPath,
+        "--dir",
+        root,
+        "diff",
+        "--format",
+        "json",
+      ],
+      { encoding: "utf8", env: { ...process.env, ARC42_CONSISTENT: head } },
+    );
+    const output = JSON.parse(result.stdout);
+    expect(output.accepted).toBe(true);
+    expect(output.findings).toHaveLength(1);
+    expect(result.status).toBe(0);
+  });
+
+  test("rejects an unknown format", () => {
+    const root = repository(MD, markdown(SERVICE));
+    const result = runDiff(root, "--format", "xml");
+    expect(result.stderr).toContain("unknown format 'xml'");
+    expect(result.status).toBe(2);
+  });
+});
