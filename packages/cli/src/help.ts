@@ -150,6 +150,7 @@ Arguments:
 Options:
   --staged, --cached    Compare the index with HEAD, or with <reference>
   --strict              Also exit 1 when hint findings are found
+  --format <text|json>  Output format (default: text). json adds the semantic change set
   -h, --help            Show this help
 
 Without a flag, the command compares the working tree with the index. With <reference>,
@@ -165,6 +166,7 @@ Examples:
   arc42 diff --staged                # index versus HEAD
   arc42 diff --cached origin/main    # index versus origin/main
   arc42 diff origin/main...HEAD      # changes of the current branch, as in a pull request
+  arc42 diff main...HEAD --format json  # findings and changed elements for tooling and agents
 `;
   }
 

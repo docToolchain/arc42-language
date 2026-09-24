@@ -102,6 +102,9 @@ arc42 diff --cached origin/main
 # Review the changes of the current branch, as in a pull request
 arc42 diff origin/main...HEAD
 
+# Machine-readable findings plus the semantic change set (elements, relations, diagrams, prose)
+arc42 diff origin/main...HEAD --format json
+
 # Show all diff modes, options, and pre-commit guidance
 arc42 diff --help
 

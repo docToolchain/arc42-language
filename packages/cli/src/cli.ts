@@ -181,10 +181,16 @@ async function runDiff(dir: string, args: string[]) {
       staged: { type: "boolean" },
       cached: { type: "boolean" },
       strict: { type: "boolean", default: false },
+      format: { type: "string", default: "text" },
     },
   });
   if (positionals.length > 1) {
     console.error("Usage: arc42 diff [<reference> | <base>..<head> | <base>...<head>]");
+    process.exit(2);
+  }
+  const format = values.format;
+  if (format !== "text" && format !== "json") {
+    console.error(`arc42 diff: unknown format '${format}'. Use text or json.`);
     process.exit(2);
   }
 
@@ -215,6 +221,31 @@ async function runDiff(dir: string, args: string[]) {
       snapshots.acceptanceBase !== undefined &&
       process.env["ARC42_CONSISTENT"] === snapshots.acceptanceBase;
     const remainingFindings = accepted ? [] : findings;
+    const hasStrictFindings =
+      Boolean(values.strict) && remainingFindings.some((finding) => finding.severity === "hint");
+    const exitCode =
+      (remainingFindings.length > 0 && result.hasBlockingFindings) || hasStrictFindings ? 1 : 0;
+
+    if (format === "json") {
+      console.log(
+        JSON.stringify(
+          {
+            version: 1,
+            base: { label: snapshots.base.label, commit: snapshots.baseCommit },
+            head: { label: snapshots.head.label },
+            acceptanceBase: snapshots.acceptanceBase ?? null,
+            accepted,
+            hasBlockingFindings: result.hasBlockingFindings,
+            findings,
+            architecture: result.architecture,
+          },
+          null,
+          2,
+        ),
+      );
+      process.exit(exitCode);
+    }
+
     // Emit consistency findings (warnings) as-is — they already have file:line context.
     // Group path hints by file so multiple elements on the same file appear on one line.
     const consistencyFindings = findings.filter(
@@ -256,11 +287,7 @@ async function runDiff(dir: string, args: string[]) {
         `To accept these findings, set ARC42_CONSISTENT=${snapshots.baseCommit} and rerun the command.`,
       );
     }
-    const hasStrictFindings =
-      Boolean(values.strict) && remainingFindings.some((finding) => finding.severity === "hint");
-    process.exit(
-      (remainingFindings.length > 0 && result.hasBlockingFindings) || hasStrictFindings ? 1 : 0,
-    );
+    process.exit(exitCode);
   } catch (err) {
     console.error(`Error: ${String(err)}`);
     process.exit(1);
