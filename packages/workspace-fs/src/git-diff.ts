@@ -1,23 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
 
-import { parseArchitectureDocument } from "@arc42/core";
-import type { DocumentAst, FileChange, LineRange } from "@arc42/core";
-
-export interface GitArchitectureDiff {
-  root: string;
-  base: string;
-  acceptanceBase?: string;
-  changes: FileChange[];
-  currentDocuments: DocumentAst[];
-  baseDocuments: DocumentAst[];
-  /** Current (HEAD / working tree) tracked file paths. */
-  currentKnownPaths: Set<string>;
-  /** Base commit tracked file paths. */
-  baseKnownPaths: Set<string>;
-  patch: string;
-}
+import type { FileChange, LineRange } from "@arc42/core";
 
 function unquoteGitPath(value: string): string {
   if (!value.startsWith('"') || !value.endsWith('"')) return value;
@@ -91,15 +74,6 @@ export function git(root: string, args: string[]): string {
   }
 }
 
-function indexMatchesHead(root: string): boolean {
-  try {
-    execFileSync("git", ["-C", root, "diff", "--cached", "--quiet"]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function range(start: number, count: number): LineRange {
   return { start, end: count === 0 ? start - 1 : start + count - 1 };
 }
@@ -130,90 +104,4 @@ export function parseHunks(patch: string): FileChange[] {
  */
 export function gitLsFiles(root: string): string[] {
   return git(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
-}
-
-function stagedFiles(root: string): string[] {
-  return gitLsFiles(root);
-}
-
-function baseFiles(root: string, base: string): string[] {
-  return git(root, ["ls-tree", "-r", "-z", "--name-only", base]).split("\0").filter(Boolean);
-}
-
-function gitContents(root: string, spec: string, filePath: string): string | undefined {
-  try {
-    return git(root, ["show", spec === ":" ? `:${filePath}` : `${spec}:${filePath}`]);
-  } catch {
-    return undefined;
-  }
-}
-
-function parseDocuments(documents: Map<string, string>): DocumentAst[] {
-  return [...documents.entries()].map(([filePath, content]) =>
-    parseArchitectureDocument(filePath, content),
-  );
-}
-
-export function collectGitDiff(
-  root: string,
-  reference?: string,
-  staged = false,
-): GitArchitectureDiff {
-  const resolvedRoot = git(root, ["rev-parse", "--show-toplevel"]).trim();
-  const workspaceRelative = relative(resolvedRoot, realpathSync(resolve(root)));
-  const inWorkspace = (filePath: string) =>
-    workspaceRelative === "" ||
-    filePath === workspaceRelative ||
-    filePath.startsWith(`${workspaceRelative}/`);
-  const base = git(resolvedRoot, ["rev-parse", reference ?? "HEAD"]).trim();
-  const acceptanceBase = reference || staged || indexMatchesHead(resolvedRoot) ? base : undefined;
-  const patchArgs = ["diff", ...(staged ? ["--cached"] : []), "--unified=0", "--no-renames"];
-  if (reference) patchArgs.push(reference);
-  patchArgs.push("--");
-  const patch = git(resolvedRoot, patchArgs);
-  const changes = parseHunks(patch);
-  const currentDocuments = new Map<string, string>();
-  const currentPaths = stagedFiles(resolvedRoot);
-  for (const filePath of currentPaths.filter(
-    (file) => (file.endsWith(".arc42.md") || file.endsWith(".arc42.adoc")) && inWorkspace(file),
-  )) {
-    let content: string | undefined;
-    try {
-      content = staged
-        ? gitContents(resolvedRoot, ":", filePath)
-        : readFileSync(join(resolvedRoot, filePath), "utf8");
-    } catch {
-      content = undefined;
-    }
-    if (content !== undefined) currentDocuments.set(filePath, content);
-  }
-  const baseDocuments = new Map<string, string>();
-  const basePaths = reference
-    ? baseFiles(resolvedRoot, base)
-    : staged
-      ? baseFiles(resolvedRoot, base)
-      : currentPaths;
-  for (const filePath of basePaths.filter(
-    (file) => (file.endsWith(".arc42.md") || file.endsWith(".arc42.adoc")) && inWorkspace(file),
-  )) {
-    const content = gitContents(resolvedRoot, reference ? base : staged ? base : ":", filePath);
-    if (content !== undefined) baseDocuments.set(filePath, content);
-  }
-  const currentKnownPaths = new Set(stagedFiles(resolvedRoot));
-  const baseKnownPaths = new Set(baseFiles(resolvedRoot, base));
-  return {
-    root: resolvedRoot,
-    base,
-    acceptanceBase,
-    changes,
-    currentDocuments: parseDocuments(currentDocuments),
-    baseDocuments: parseDocuments(baseDocuments),
-    currentKnownPaths,
-    baseKnownPaths,
-    patch,
-  };
-}
-
-export function changedHunkFiles(changes: FileChange[]): Set<string> {
-  return new Set(changes.map((change) => change.filePath));
 }

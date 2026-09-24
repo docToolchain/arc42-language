@@ -23,8 +23,7 @@ import { createAdapterForNotation } from "./notation/index.ts";
 import { detectNotation, parseWorkspaceFiles } from "./workspace-parse.ts";
 import type { SourceFile } from "./workspace-parse.ts";
 
-export { collectGitDiff, changedHunkFiles, parseDiffPathHeader, gitLsFiles } from "./git-diff.ts";
-export type { GitArchitectureDiff } from "./git-diff.ts";
+export { parseDiffPathHeader, gitLsFiles } from "./git-diff.ts";
 export { loadDiffSnapshots } from "./diff-snapshots.ts";
 export type { DiffSnapshots, DiffSpec, Snapshot } from "./diff-snapshots.ts";
 
@@ -180,5 +179,5 @@ export async function getElements(opts: {
 }
 
 // Keep a re-export of the sync parseArchitectureDocument for consumers that
-// call it directly (git-diff, tests) and don't need a renderer.
+// call it directly and don't need a renderer.
 export { parseArchitectureDocument };
