@@ -74,7 +74,7 @@ Options:
   --strict              Also exit 1 when hints are found
   -h, --help            Show this help
 
-The command reads *.arc42.md files from the workspace, validates the model, and exits 0
+The command reads *.arc42.md or *.arc42.adoc files from the workspace, validates the model, and exits 0
 when it is valid. It exits 1 when errors are found and 2 for invalid command options.
 `;
   }
@@ -175,7 +175,7 @@ Options:
   -h, --help            Show this help
 
 The server watches the selected directory recursively and refreshes the browser when
-*.arc42.md files change. It exits 1 when the workspace or web assets cannot be loaded.
+*.arc42.md or *.arc42.adoc files change. It exits 1 when the workspace or web assets cannot be loaded.
 Use --dir or ARC42_DIR to select the workspace.
 `;
   }

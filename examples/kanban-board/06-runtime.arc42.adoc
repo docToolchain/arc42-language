@@ -1,0 +1,115 @@
+= Runtime View
+
+This chapter describes the dynamic behavior of the system, including key scenarios and interactions.
+
+== Create New Board
+
+This scenario describes the flow when a user creates a new kanban board.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-board-create
+title: Create New Board
+trigger: User clicks "Create Board" button
+involves: bb-web-frontend, bb-admin-frontend, bb-api-gateway, bb-board-service, bb-postgres-db, bb-cache
+:::
+----
+
+== Move Card Between Columns
+
+This scenario describes the flow when a user moves a card between columns.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-card-move
+title: Move Card Between Columns
+trigger: User releases dragged card over target column
+involves: bb-web-frontend, bb-api-gateway, bb-board-service, bb-postgres-db
+:::
+----
+
+== Authenticate User
+
+This scenario describes the flow when a user authenticates via OAuth2.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-authenticate
+title: Authenticate User
+trigger: User logs in with external provider
+involves: bb-web-frontend, bb-api-gateway, bb-auth-service, bb-auth-db
+:::
+----
+
+== Send Notification
+
+This scenario describes the flow when a board update triggers a Slack notification.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-send-notification
+title: Send Notification
+trigger: Card is moved or created
+involves: bb-board-service, bb-api-gateway, bb-notification-service, bb-message-queue
+:::
+----
+
+== Admin Frontend Access
+
+This scenario describes the flow when a system administrator accesses the admin frontend.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-admin-access
+title: Admin Frontend Access
+trigger: Administrator logs in to admin panel
+involves: bb-admin-frontend, bb-api-gateway, bb-board-service
+:::
+----
+
+== Cache Data Retrieval
+
+This scenario describes the flow when frequently accessed data is served from cache.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-cache-retrieval
+title: Cache Data Retrieval
+trigger: Board data is requested
+involves: bb-board-service, bb-cache
+:::
+----
+
+== Admin Frontend API Access
+
+This scenario describes the flow when the admin frontend accesses the API gateway.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-admin-api-access
+title: Admin Frontend API Access
+trigger: Administrator views system metrics
+involves: bb-admin-frontend, bb-api-gateway, bb-board-service
+:::
+----
+
+== Direct Database Access
+
+This scenario describes the flow when backend services directly access the PostgreSQL database.
+
+[source,arc42]
+----
+:::runtime-scenario
+id: rs-db-access
+title: Direct Database Access
+trigger: Board data is persisted
+involves: bb-board-service, bb-notification-service, bb-postgres-db
+:::
+----

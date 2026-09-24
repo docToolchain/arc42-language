@@ -3,6 +3,7 @@ export {
   validateDocuments,
   getElementsFromDocuments,
   parseArchitectureDocument,
+  parseArchitectureDocumentAsync,
   loadWorkspaceFromDocuments,
   processArchitecture,
   processArchitectureAsync,
@@ -116,3 +117,13 @@ export type {
 export { computeCoverage } from "./coverage.ts";
 export { parseArc42Ignore } from "./validator/arc42-ignore.ts";
 export { warmMermaid } from "@arc42/mermaid";
+
+// Notation interfaces — browser-safe, no Node.js imports
+export type { Notation, NotationAdapter } from "./notation/types.ts";
+export type { ProseRenderer } from "./notation/prose-renderer.ts";
+export { renderProseNodes } from "./notation/prose-renderer.ts";
+
+// Parser classes — safe for all consumers (no Node.js imports)
+export type { Parser } from "./parser/markdown-parser.ts";
+export { MarkdownParser } from "./parser/markdown-parser.ts";
+export { AsciidocParser } from "./parser/asciidoc-parser.ts";

@@ -1,5 +1,9 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": { "types": ["node"] },
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["es2023"],
+    "types": ["node"]
+  },
   "include": ["src"]
 }

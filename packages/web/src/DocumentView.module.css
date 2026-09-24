@@ -78,3 +78,79 @@
 .proseBlock tr:nth-child(even) td {
   background: color-mix(in srgb, var(--border) 20%, transparent);
 }
+
+/* AsciiDoc admonition blocks (note, tip, warning, caution, important).
+ * Asciidoctor emits raw class names — use :global() so CSS Modules does not mangle them. */
+.proseBlock :global(.admonitionblock) {
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  margin: 0.75em 0;
+  font-size: 0.9rem;
+}
+
+.proseBlock :global(.admonitionblock) table {
+  border: none;
+  background: transparent;
+  width: 100%;
+  margin: 0;
+}
+
+.proseBlock :global(.admonitionblock) td {
+  border: none;
+  padding: 0;
+  vertical-align: top;
+}
+
+.proseBlock :global(.admonitionblock) :global(.icon) {
+  width: 5em;
+  padding-right: 0.75em;
+  font-weight: 700;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.proseBlock :global(.admonitionblock.note) {
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
+  border-left: 3px solid #3b82f6;
+}
+
+.proseBlock :global(.admonitionblock.note) :global(.icon) {
+  color: #3b82f6;
+}
+
+.proseBlock :global(.admonitionblock.tip) {
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  border-left: 3px solid #22c55e;
+}
+
+.proseBlock :global(.admonitionblock.tip) :global(.icon) {
+  color: #22c55e;
+}
+
+.proseBlock :global(.admonitionblock.warning) {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  border-left: 3px solid #f59e0b;
+}
+
+.proseBlock :global(.admonitionblock.warning) :global(.icon) {
+  color: #f59e0b;
+}
+
+.proseBlock :global(.admonitionblock.caution) {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  border-left: 3px solid #ef4444;
+}
+
+.proseBlock :global(.admonitionblock.caution) :global(.icon) {
+  color: #ef4444;
+}
+
+.proseBlock :global(.admonitionblock.important) {
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
+  border-left: 3px solid #8b5cf6;
+}
+
+.proseBlock :global(.admonitionblock.important) :global(.icon) {
+  color: #8b5cf6;
+}

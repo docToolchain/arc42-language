@@ -18,11 +18,13 @@ source: package.json engines field
 :::
 ```
 
-## No Runtime Dependencies
+## No Runtime Dependencies in Core and CLI
 
 The core library and CLI must not require third-party packages at runtime. Dependencies used to
 build and test the TypeScript packages remain development tooling rather than production runtime
-inputs.
+inputs. Third-party runtime dependencies in other packages — such as `asciidoctor` in
+`workspace-fs` — must be explicitly accepted as tracked technical debt (see `dec-zod-runtime-debt`
+for the established pattern).
 
 ```arc42
 :::constraint
@@ -33,15 +35,33 @@ source: Architecture decision dec-runtime-builtins
 :::
 ```
 
-## Markdown DSL Convention
+## Browser Bundle Safety
 
-Architecture elements are authored as Markdown sections containing prose followed by one typed
-`:::block`. The parser and structural rules depend on one heading and one block per element.
+Packages imported by the web SPA (`@arc42/web`) must not transitively pull in Node.js-only
+dependencies. Heavy server-side dependencies such as `asciidoctor` must remain confined to
+`@arc42/workspace-fs` and never appear in any import path reachable from the browser bundle.
+Vite tree-shaking cannot remove a module that is statically imported — the package boundary is
+the only safe isolation mechanism.
 
 ```arc42
 :::constraint
-id: con-markdown-authoring
-title: Architecture elements must follow the prose-first Markdown DSL convention
+id: con-browser-bundle-safety
+title: Web SPA must not bundle Node.js-only dependencies
+category: technical
+source: Architecture decision dec-asciidoc-in-workspace-fs
+:::
+```
+
+## Prose-first DSL Convention
+
+Architecture elements are authored as sections containing prose followed by one typed
+`:::block`. The parser and structural rules depend on one heading and one block per element.
+This convention applies regardless of the notation format used (Markdown or AsciiDoc).
+
+```arc42
+:::constraint
+id: con-prose-first-authoring
+title: Architecture elements must follow the prose-first DSL convention
 category: convention
 source: packages/skill/SKILL.md and validation rules W004/W005
 :::

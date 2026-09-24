@@ -6,7 +6,7 @@ export function basename(path: string): string {
 /** Extract the arc42 chapter number from a numbered chapter filename. */
 export function chapterNumberFromFile(path: string): number | null {
   const file = basename(path);
-  if (!file.endsWith(".arc42.md")) return null;
+  if (!file.endsWith(".arc42.md") && !file.endsWith(".arc42.adoc")) return null;
 
   const match = /^(\d{2})-/.exec(file);
   if (!match) return null;

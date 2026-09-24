@@ -1,0 +1,77 @@
+= Deployment View
+
+This chapter describes the physical deployment of the system across infrastructure.
+
+== Production Environment
+
+The Production Environment hosts all system components.
+
+[source,arc42]
+----
+:::deployment-node
+id: dn-production
+title: Production Environment
+type: environment
+hosts: bb-web-frontend, bb-admin-frontend, bb-api-gateway, bb-board-service, bb-auth-service, bb-notification-service
+:::
+----
+
+== Web Frontend Server
+
+The Web Frontend Server hosts the web and admin frontend applications.
+
+[source,arc42]
+----
+:::deployment-node
+id: dn-web-frontend
+title: Web Frontend Server
+type: server
+hosts: bb-web-frontend, bb-admin-frontend
+parent: dn-production
+:::
+----
+
+== Backend Server
+
+The Backend Server hosts all backend microservices.
+
+[source,arc42]
+----
+:::deployment-node
+id: dn-backend
+title: Backend Server
+type: server
+hosts: bb-api-gateway, bb-board-service, bb-auth-service, bb-notification-service
+parent: dn-production
+:::
+----
+
+== Database Server
+
+The Database Server hosts all data storage components.
+
+[source,arc42]
+----
+:::deployment-node
+id: dn-database
+title: Database Server
+type: server
+hosts: bb-postgres-db, bb-auth-db, bb-cache
+parent: dn-production
+:::
+----
+
+== Message Queue Service
+
+The Message Queue Service handles async event processing.
+
+[source,arc42]
+----
+:::deployment-node
+id: dn-message-queue
+title: Message Queue Service
+type: cloud-region
+hosts: bb-message-queue
+parent: dn-production
+:::
+----

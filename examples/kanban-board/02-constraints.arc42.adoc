@@ -1,0 +1,60 @@
+= Architecture Constraints
+
+This chapter lists the constraints that shape the architecture. These are non-negotiable requirements that must be respected.
+
+== Technology Stack
+
+The technology stack defines the core technologies used for implementation.
+
+[source,arc42]
+----
+:::constraint
+id: con-technology-stack
+title: Technology Stack
+category: technical
+:::
+----
+
+== Data Privacy
+
+All user data must be handled according to strict data privacy requirements.
+
+[source,arc42]
+----
+:::constraint
+id: con-data-privacy
+title: Data Privacy
+category: technical
+:::
+----
+
+== Authentication
+
+All system access requires proper authentication.
+
+[source,arc42]
+----
+:::constraint
+id: con-auth
+title: Authentication
+category: technical
+:::
+----
+
+== Release Cadence
+
+The system follows a regular release schedule with hotfix capability.
+
+[source,arc42]
+----
+:::constraint
+id: con-release-cadence
+title: Release Cadence
+category: organizational
+:::
+----
+
+The frontend must use React 19 with TypeScript. The backend must use Node.js 22+ with Express.
+PostgreSQL 16 is the required database. All user data must be encrypted at rest and in transit and
+must not leave the EU region. All API endpoints require JWT-based authentication with OAuth2 support.
+New features must be deployed every two weeks; hotfixes can be deployed ad-hoc.

@@ -1,0 +1,344 @@
+= Building Block View
+
+This chapter describes the static decomposition of the system into building blocks and their interfaces.
+
+// Implementation paths are intentionally omitted — this is a demo workspace, not a real application.
+[source,arc42]
+----
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+:::ignore H014 demo workspace — implementation paths not applicable :::
+----
+
+== Web Frontend
+
+The Web Frontend provides the main user interface for board users to manage their kanban boards.
+
+[source,arc42]
+----
+:::building-block
+id: bb-web-frontend
+title: Web Frontend
+technology: React 19 + TypeScript
+implements: concept-routing, concept-state-management, concept-accessibility
+requires: if-api-gateway, if-auth-callback
+:::
+----
+
+=== Web Frontend UI
+
+The main user interface delivered via HTTPS.
+
+[source,arc42]
+----
+:::interface
+id: if-frontend-web
+title: Web Frontend UI
+provider: bb-web-frontend
+protocol: HTTPS
+:::
+----
+
+== Admin Frontend
+
+The Admin Frontend provides the administrative user interface for system configuration.
+
+[source,arc42]
+----
+:::building-block
+id: bb-admin-frontend
+title: Admin Frontend
+technology: React 19 + TypeScript
+implements: concept-routing, concept-state-management
+requires: if-api-gateway
+:::
+----
+
+=== Admin Frontend UI
+
+The administrative user interface delivered via HTTPS.
+
+[source,arc42]
+----
+:::interface
+id: if-frontend-admin
+title: Admin Frontend UI
+provider: bb-admin-frontend
+protocol: HTTPS
+:::
+----
+
+== API Gateway
+
+The API Gateway serves as the single entry point for all external traffic and handles authentication, rate limiting, and logging.
+
+[source,arc42]
+----
+:::building-block
+id: bb-api-gateway
+title: API Gateway
+technology: Node.js / Express
+implements: concept-authentication, concept-rate-limiting, concept-logging, concept-error-handling
+requires: if-board-service, if-auth-service, if-notification-service
+:::
+----
+
+=== Main API Endpoint
+
+The main REST endpoint exposed to clients.
+
+[source,arc42]
+----
+:::interface
+id: if-api-gateway
+title: Main API Endpoint
+provider: bb-api-gateway
+protocol: HTTPS / REST + JSON
+:::
+----
+
+== Board Service
+
+The Board Service manages board operations including creation, reading, updating, and deleting boards and cards.
+
+[source,arc42]
+----
+:::building-block
+id: bb-board-service
+title: Board Service
+technology: Node.js / Express
+implements: concept-data-ownership, concept-event-sourcing, concept-logging
+requires: if-postgres-db, if-cache
+:::
+----
+
+=== Board Service API
+
+The internal API for board and card operations.
+
+[source,arc42]
+----
+:::interface
+id: if-board-service
+title: Board Service API
+provider: bb-board-service
+protocol: HTTP/JSON (internal)
+:::
+----
+
+== Authentication Service
+
+The Authentication Service manages user authentication and OAuth2 callbacks.
+
+[source,arc42]
+----
+:::building-block
+id: bb-auth-service
+title: Authentication Service
+technology: Node.js / Express
+implements: concept-data-ownership, concept-logging
+requires: if-auth-db
+:::
+----
+
+=== Authentication Service API
+
+The internal API for authentication operations.
+
+[source,arc42]
+----
+:::interface
+id: if-auth-service
+title: Authentication Service API
+provider: bb-auth-service
+protocol: HTTP/JSON
+:::
+----
+
+=== OAuth2 Callback Endpoint
+
+The HTTPS redirect endpoint for OAuth2 authentication callbacks.
+
+[source,arc42]
+----
+:::interface
+id: if-auth-callback
+title: OAuth2 Callback Endpoint
+provider: bb-auth-service
+protocol: HTTPS / Redirect
+:::
+----
+
+== Auth Database
+
+The Auth Database provides persistent storage for authentication data.
+
+[source,arc42]
+----
+:::building-block
+id: bb-auth-db
+title: Auth Database
+technology: PostgreSQL 16
+implements: concept-data-persistence
+:::
+----
+
+=== Auth Database
+
+The database connection for authentication data storage.
+
+[source,arc42]
+----
+:::interface
+id: if-auth-db
+title: Auth Database
+provider: bb-auth-db
+protocol: PostgreSQL wire protocol
+:::
+----
+
+== Notification Service
+
+The Notification Service handles sending notifications via Slack webhooks.
+
+[source,arc42]
+----
+:::building-block
+id: bb-notification-service
+title: Notification Service
+technology: Node.js / Express
+implements: concept-logging, concept-message-queue
+requires: if-postgres-db, if-message-queue
+:::
+----
+
+=== Notification Service API
+
+The internal API for notification operations.
+
+[source,arc42]
+----
+:::interface
+id: if-notification-service
+title: Notification Service API
+provider: bb-notification-service
+protocol: HTTP/JSON (internal)
+:::
+----
+
+=== Slack Webhook
+
+The HTTPS endpoint for sending notifications to Slack.
+
+[source,arc42]
+----
+:::interface
+id: if-slack-webhook
+title: Slack Webhook
+provider: bb-notification-service
+protocol: HTTPS / POST
+:::
+----
+
+== PostgreSQL Database
+
+The PostgreSQL database provides persistent storage for board data.
+
+[source,arc42]
+----
+:::building-block
+id: bb-postgres-db
+title: PostgreSQL Database
+technology: PostgreSQL 16
+implements: concept-data-persistence
+:::
+----
+
+=== PostgreSQL Connection
+
+The connection interface for PostgreSQL database access.
+
+[source,arc42]
+----
+:::interface
+id: if-postgres-db
+title: PostgreSQL Connection
+provider: bb-postgres-db
+protocol: PostgreSQL wire protocol
+:::
+----
+
+== Redis Cache
+
+The Redis Cache reduces read latency for frequently accessed data.
+
+[source,arc42]
+----
+:::building-block
+id: bb-cache
+title: Redis Cache
+technology: Redis 7
+implements: concept-caching
+:::
+----
+
+=== Redis Cache Connection
+
+The connection interface for Redis cache access.
+
+[source,arc42]
+----
+:::interface
+id: if-cache
+title: Redis Cache Connection
+provider: bb-cache
+protocol: Redis protocol
+:::
+----
+
+== Message Queue
+
+The Message Queue service handles async event processing between services.
+
+[source,arc42]
+----
+:::building-block
+id: bb-message-queue
+title: Message Queue
+technology: RabbitMQ
+implements: concept-message-queue
+:::
+----
+
+=== Message Queue
+
+The interface for the message queue service.
+
+[source,arc42]
+----
+:::interface
+id: if-message-queue
+title: Message Queue
+provider: bb-message-queue
+protocol: AMQP
+:::
+----

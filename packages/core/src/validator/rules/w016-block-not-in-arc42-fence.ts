@@ -1,17 +1,15 @@
-import type { Rule, Diagnostic } from "../types.ts";
+import type { Rule, Diagnostic, ValidationContext } from "../types.ts";
 import type { Workspace } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
 
 /**
- * W016 — A :::block is not wrapped in a ```arc42 ``` fence.
+ * W016 — A :::block is not wrapped in a DSL fence.
  *
  * The canonical authoring convention is to wrap every :::block inside a
- * ```arc42 ... ``` fenced code block so that standard Markdown renderers
- * (GitHub, VS Code, editors) display it as a styled, bordered code block
- * instead of rendering the ::: lines as raw text.
- *
- * Diagram metadata follows the same rule as every other block: it must be
- * inside the arc42 fence before the parser can turn it into a diagram.
+ * notation fence so that standard Markdown/AsciiDoc renderers display it
+ * as a styled, bordered code block instead of rendering the ::: lines as
+ * raw text. In Markdown this is ```arc42 ... ```; in AsciiDoc it is
+ * [source,arc42] followed by ---- ... ----.
  */
 export const w016BlockNotInArc42Fence: Rule = {
   meta: {
@@ -20,14 +18,15 @@ export const w016BlockNotInArc42Fence: Rule = {
     type: "suggestion",
     docs: {
       description:
-        "Block is not wrapped in a ```arc42 fence — wrap :::blocks with ```arc42 / ``` for proper Markdown rendering",
+        "Block is not wrapped in a notation fence — wrap :::blocks with the notation-appropriate fence for proper rendering",
       rationale:
-        "Standard Markdown renderers do not understand the :::type syntax and render the delimiter lines as raw text. Wrapping a :::block in ```arc42 ... ``` causes renderers to display it as a styled, bordered code block, making the document readable in GitHub, VS Code, and AI tools without changing the DSL or the parser output. Diagram metadata must also be inside the ```arc42 fence so the parser can distinguish it from prose.",
+        "Standard Markdown renderers do not understand the :::type syntax and render the delimiter lines as raw text. Wrapping a :::block in the notation fence causes renderers to display it as a styled, bordered code block, making the document readable in GitHub, VS Code, and AI tools without changing the DSL or the parser output. Diagram metadata must also be inside the fence so the parser can distinguish it from prose.",
       arc42Chapter: 0,
       recommended: true,
     },
   },
-  check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
+  check(workspace: Workspace, _index: ReferenceIndex, context?: ValidationContext): Diagnostic[] {
+    const fenceDescription = context?.fenceDescription ?? "```arc42 fence";
     const diagnostics: Diagnostic[] = [];
 
     for (const doc of workspace.documents) {
@@ -39,7 +38,7 @@ export const w016BlockNotInArc42Fence: Rule = {
         diagnostics.push({
           code: "W016",
           severity: "warning",
-          message: `Block '${node.attributes["id"] ?? node.blockType}' is not wrapped in a \`\`\`arc42 fence — wrap with \`\`\`arc42 / \`\`\` for proper Markdown rendering`,
+          message: `Block '${node.attributes["id"] ?? node.blockType}' is not wrapped in a ${fenceDescription} — wrap it for proper rendering`,
           file: doc.filePath,
           line: node.startLine,
         });

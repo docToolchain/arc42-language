@@ -1,0 +1,68 @@
+= Glossary
+
+This chapter defines key terms used throughout the architecture documentation.
+
+== Board
+
+A visual workspace that displays tasks as cards organized in columns. Each board belongs to a team and has a custom column structure.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-board
+title: Board
+definition: A visual workspace that displays tasks as cards organized in columns. Each board belongs to a team and has a custom column structure.
+:::
+----
+
+== Card
+
+A unit of work represented as a draggable item on a board. Cards contain task details including title, description, assignees, due date, and custom fields.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-card
+title: Card
+definition: A unit of work represented as a draggable item on a board. Cards contain task details including title, description, assignees, due date, and custom fields.
+:::
+----
+
+== Column
+
+A vertical lane on a board that represents a stage in the workflow (e.g., To Do, In Progress, Done). Columns define the Kanban workflow.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-column
+title: Column
+definition: A vertical lane on a board that represents a stage in the workflow (e.g., To Do, In Progress, Done). Columns define the Kanban workflow.
+:::
+----
+
+== Sprint
+
+A time-boxed period (typically 1-4 weeks) during which a set of tasks must be completed. Sprints help teams plan and track progress.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-sprint
+title: Sprint
+definition: A time-boxed period (typically 1-4 weeks) during which a set of tasks must be completed. Sprints help teams plan and track progress.
+:::
+----
+
+== Backlog
+
+A prioritized list of tasks that are not yet assigned to a sprint. The backlog serves as the project's pipeline of upcoming work.
+
+[source,arc42]
+----
+:::glossary-term
+id: term-backlog
+title: Backlog
+definition: A prioritized list of tasks that are not yet assigned to a sprint. The backlog serves as the project's pipeline of upcoming work.
+:::
+----

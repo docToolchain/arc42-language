@@ -33,6 +33,12 @@ export interface ValidationContext {
    * H021 will not fire for any path that matches an entry in this set.
    */
   coverageIgnore?: Set<string>;
+  /**
+   * Human-readable description of the DSL fence syntax for the active notation.
+   * Used by W016 to emit a notation-appropriate message.
+   * Defaults to "```arc42 fence" when omitted.
+   */
+  fenceDescription?: string;
 }
 
 /** Which arc42 chapter this rule primarily relates to.

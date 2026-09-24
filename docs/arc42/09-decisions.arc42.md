@@ -185,7 +185,7 @@ id: dec-prose-first
 title: Enforce prose-first authoring convention with W004 and W005 rules
 status: accepted
 date: 2026-08-17
-addresses: qg-readability, qg-verifiability, con-markdown-authoring
+addresses: qg-readability, qg-verifiability, con-prose-first-authoring
 :::
 ```
 
@@ -228,5 +228,100 @@ title: Maintain neutral starter templates for supported arc42 chapters
 status: accepted
 date: 2026-08-18
 addresses: qg-agent-writability, qg-readability, risk-template-drift
+:::
+```
+
+## NotationAdapter to Encapsulate Notation-specific Behavior
+
+As AsciiDoc support was added alongside Markdown, the codebase required changes in ~10 places
+that assumed Markdown — file extension checks, parser selection, fence descriptions in validator
+messages, chapter filename generation, and prose rendering. Rather than scattering `if notation
+=== "asciidoc"` branches throughout the codebase, all notation-specific behavior is encapsulated
+behind a `NotationAdapter` interface. The adapter is selected once at workspace discovery time
+and flows through the processing pipeline as a single object. This makes adding a third notation
+a matter of implementing two interfaces and registering one adapter.
+
+```arc42
+:::decision
+id: dec-notation-adapter
+title: Encapsulate all notation-specific behavior behind NotationAdapter interface
+status: accepted
+date: 2026-09-24
+addresses: qg-extensibility, qg-agent-writability
+:::
+```
+
+## ProseRenderer as Post-parse Step Populating renderedHtml
+
+The web SPA previously called `marked.parse()` at render time on every `ProseNode.text`. Adding
+AsciiDoc required a symmetric approach: `asciidoctor.convert()` for AsciiDoc prose. Rather than
+branching in the SPA (which would require Asciidoctor.js in the browser bundle), a `ProseRenderer`
+interface runs as a post-parse step on the server side and populates `ProseNode.renderedHtml`.
+`ProseNode.text` always retains raw source — non-rendering consumers (diff, builder, validators)
+are unaffected. The SPA uses `renderedHtml` directly, with no notation logic and no `marked` dependency.
+
+```arc42
+:::decision
+id: dec-prose-renderer
+title: ProseRenderer post-parse step populates ProseNode.renderedHtml; text stays raw source
+status: accepted
+date: 2026-09-24
+addresses: qg-extensibility, qg-readability, con-browser-bundle-safety
+:::
+```
+
+## AsciiDoc Implementations Confined to workspace-fs
+
+The `asciidoctor` npm package (~1.5 MB) is required for AsciiDoc prose rendering but must not
+enter the browser bundle. `@arc42/core` is browser-safe (zero `node:` imports) and must remain so.
+The `AsciidocProseRenderer` and `AsciidocNotationAdapter` therefore live in `@arc42/workspace-fs`,
+which is Node.js-only. Core exports only the interfaces and Markdown implementations. A separate
+`@arc42/workspace-asciidoc` package was considered but rejected: the CLI and server both depend
+on `workspace-fs` already, and a new package would add indirection without a clear consumer benefit.
+
+```arc42
+:::decision
+id: dec-asciidoc-in-workspace-fs
+title: AsciiDoc adapter and asciidoctor dependency confined to workspace-fs
+status: accepted
+date: 2026-09-24
+addresses: qg-extensibility, con-browser-bundle-safety
+:::
+```
+
+## @arc42/core/types Subpath Export Replaces Hand-maintained Web Mirror
+
+The web SPA previously maintained `web/src/types.ts` as a hand-written mirror of the types in
+`@arc42/core`. This caused drift risk and double-maintenance on every type change. `@arc42/core`
+has zero `node:` imports and is browser-safe, but its barrel export (`@arc42/core`) mixes runtime
+functions with type exports. A dedicated `./types` subpath export (`core/src/types-export.ts`)
+contains only `export type` re-exports — an explicit browser-safe contract. The web imports
+from `@arc42/core/types`; `web/src/types.ts` is deleted.
+
+```arc42
+:::decision
+id: dec-core-types-subpath
+title: @arc42/core/types subpath export as browser-safe type contract; eliminates web mirror
+status: accepted
+date: 2026-09-24
+addresses: qg-extensibility, qg-agent-writability, con-browser-bundle-safety
+:::
+```
+
+## Extension-based Notation Detection; Mixed Workspace is an Error
+
+The notation used by a workspace is inferred from the file extensions found during `discoverFiles()`:
+all `.arc42.md` → Markdown; all `.arc42.adoc` → AsciiDoc; mixed → error with a clear message.
+No config file is needed. This keeps authoring zero-config and surfaces accidental mixing early.
+The detected notation flows as a `NotationAdapter` through the pipeline and as a `notation` string
+on `WorkspacePayload` for the SPA.
+
+```arc42
+:::decision
+id: dec-notation-detection
+title: Notation inferred from file extensions at discovery; mixed workspace is an error
+status: accepted
+date: 2026-09-24
+addresses: qg-cli-usability, qg-agent-writability, qg-verifiability
 :::
 ```

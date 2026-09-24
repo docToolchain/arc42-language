@@ -1,8 +1,46 @@
-import { CHAPTERS, chapter } from "./chapters.ts";
+import { chapter as chapterFromDef, CHAPTERS } from "./chapters.ts";
 
-export { CHAPTERS };
+export type Notation = "markdown" | "asciidoc";
 
-export function guideText(subcommand = "migration", argument?: string): string {
+function fileExtension(notation: Notation): string {
+  return notation === "asciidoc" ? ".arc42.adoc" : ".arc42.md";
+}
+
+function chapterFilename(number: number, slug: string, notation: Notation): string {
+  return `${String(number).padStart(2, "0")}-${slug}${fileExtension(notation)}`;
+}
+
+/**
+ * Convert a Markdown starter template to an AsciiDoc equivalent.
+ * Transforms:
+ *   - `# Title` (h1) → `= Title`
+ *   - ```arc42 ... ``` → [source,arc42]\n----\n...\n----
+ *   - <!-- ... --> comment blocks → //// ... //// block comments
+ */
+function templateToAsciidoc(md: string): string {
+  // Replace h1 heading
+  let result = md.replace(/^# (.+)$/m, "= $1");
+
+  // Replace ```arc42 ... ``` code fences (may span multiple lines)
+  result = result.replace(/^```arc42\n([\s\S]*?)^```$/gm, "[source,arc42]\n----\n$1----");
+
+  // Replace HTML block comments <!-- ... --> with AsciiDoc block comments //// ... ////
+  result = result.replace(/^<!--\n([\s\S]*?)^-->/gm, (_, body: string) => {
+    return "////\n" + body + "////";
+  });
+
+  return result;
+}
+
+export function guideText(
+  subcommand = "migration",
+  argument?: string,
+  _assetDir = process.cwd(),
+  notation: Notation = "markdown",
+): string {
+  const ext = fileExtension(notation);
+  const isAdoc = notation === "asciidoc";
+
   if (subcommand === "migration") {
     return `# arc42 migration guide
 
@@ -12,8 +50,18 @@ existing repository's documentation and source code. Delegate chapter authoring 
 subagents, maintain the evidence file, and own the review gates. Never invent architectural facts,
 silently resolve contradictions, or automatically repair validation findings.
 
+## Notation: ${isAdoc ? "AsciiDoc" : "Markdown"}
+${
+  isAdoc
+    ? `This migration uses **AsciiDoc** notation. All chapter files use the \`.arc42.adoc\` extension.
+DSL blocks use \`[source,arc42]\` + \`----\` fences instead of \`\`\`arc42\`\`\` fences.
+Headings use \`= Title\` (h1), \`== Section\` (h2), \`=== Sub\` (h3) syntax.`
+    : `This migration uses **Markdown** notation. All chapter files use the \`.arc42.md\` extension.
+DSL blocks use \`\`\`arc42\`\`\` fences.`
+}
+
 ## Objective and completion criteria
-Produce twelve \`*.arc42.md\` chapter files and \`architecture-evidence.md\` in the selected
+Produce twelve \`*${ext}\` chapter files and \`architecture-evidence.md\` in the selected
 workspace. The migration is complete only when:
 - every chapter has been considered and its important facts have evidence or an explicit \`OPEN:\` item;
 - a human has reviewed the evidence, assumptions, contradictions, and chapter summaries; and
@@ -27,17 +75,15 @@ workspace. The migration is complete only when:
 4. Do not begin authoring until you have read this guide and understand the human-review gate.
 
 ## Artifacts and state
-- \`<workspace>/*.arc42.md\`: the twelve typed chapter files.
+- \`<workspace>/*${ext}\`: the twelve typed chapter files.
 - \`<workspace>/architecture-evidence.md\`: the separate traceability file; it is not an arc42 chapter.
 - The evidence file's \`OPEN:\` entries are the hand-off list for human decisions.
 - If interrupted, inspect these artifacts and resume at the earliest incomplete step; do not restart
   or overwrite reviewed content.
 
 ## Step 1 — initialize the workspace
-Create the chapter files on demand as you work through each chapter. Before authoring a chapter,
-run \`arc42 guide chapter <number>\` to get the brief and starter template, then create the
-corresponding \`*.arc42.md\` file. Do not create all files upfront.
-Check that each file exists before writing content; if a file already contains authored
+${isAdoc ? `Create the twelve \`*${ext}\` chapter files manually or by copying an existing workspace. There is no AsciiDoc init template yet; use \`arc42 guide chapter <N> --notation asciidoc\` to get the starter template for each chapter.` : `Run \`arc42 init template --dir <workspace>\`. Existing files are skipped, so rerunning is safe.`}
+Check that the twelve expected \`*${ext}\` files exist. If a file already contains authored
 content, preserve it and treat it as input to the inventory.
 
 ## Step 2 — create the evidence file
@@ -54,14 +100,14 @@ and confidence in the evidence file. Mark a source as examined-but-not-relevant 
 notes; do not manufacture architecture facts from absence.
 
 ## Step 4 — delegate wave 1
-Run \`arc42 guide chapter 1\`, \`arc42 guide chapter 2\`, and \`arc42 guide chapter 5\` and give
+Run \`arc42 guide chapter 1${isAdoc ? " --notation asciidoc" : ""}\`, \`arc42 guide chapter 2${isAdoc ? " --notation asciidoc" : ""}\`, and \`arc42 guide chapter 5${isAdoc ? " --notation asciidoc" : ""}\` and give
 each brief, the relevant evidence, and repository access to a qualified subagent. Ask each subagent
 to return: the complete chapter content, new evidence rows, and \`OPEN:\` items. Wait for all three
 before delegating dependent chapters, and review their IDs for consistency.
 
 ## Step 5 — delegate dependent chapters
 After wave 1 is available, delegate chapters 3, 4, 6, 7, 8, 9, 10, and 11. Chapter 12 may run
-independently. For every subagent, provide \`arc42 guide chapter <number>\`, the current evidence,
+independently. For every subagent, provide \`arc42 guide chapter <number>${isAdoc ? " --notation asciidoc" : ""}\`, the current evidence,
 and the current referenced IDs. Require it to inspect before writing, use \`arc42 explain <type>\`
 for block syntax, and return content, evidence rows, and open questions. If a subagent fails, record
 the failure and resume that chapter; do not skip it or invent its result.
@@ -78,7 +124,7 @@ Only after all chapter work and human review, run \`arc42 validate --dir <worksp
 error, warning, and hint to the human. Do not run an automatic repair loop or change content merely
 to make validation pass without a documented architectural decision.
 
-Request chapter-specific instructions with \`arc42 guide chapter <number>\`; request the evidence
+Request chapter-specific instructions with \`arc42 guide chapter <number>${isAdoc ? " --notation asciidoc" : ""}\`; request the evidence
 format with \`arc42 guide evidence\`.`;
   }
 
@@ -86,7 +132,7 @@ format with \`arc42 guide evidence\`.`;
     return `# arc42 migration evidence
 
 ## Purpose
-Maintain this document separately from all \`*.arc42.md\` chapters. It traces facts and important
+Maintain this document separately from all \`*${ext}\` chapters. It traces facts and important
 relationships back to repository evidence and gives the coordinator a review list. It is not parsed
 by the arc42 validator. Suggested location: \`<workspace>/architecture-evidence.md\`.
 
@@ -109,10 +155,14 @@ all medium/low-confidence and \`OPEN:\` rows to a human before final validation.
   }
 
   if (subcommand === "chapter") {
-    const item = chapter(Number(argument));
+    const item = chapterFromDef(Number(argument));
     if (!item) throw new Error("Chapter must be a number from 1 to 12.");
-    const template = item.template;
+    const template = isAdoc ? templateToAsciidoc(item.template) : item.template;
+    const chapterFile = chapterFilename(item.number, item.slug, notation);
     return `# Chapter ${item.number}: ${item.title}
+
+## Notation: ${isAdoc ? "AsciiDoc" : "Markdown"}
+${isAdoc ? `Write this chapter as \`${chapterFile}\`. Use AsciiDoc heading syntax (\`= Title\`, \`== Section\`, etc.) and wrap DSL blocks with \`[source,arc42]\` + \`----\` fences.` : `Write this chapter as \`${chapterFile}\`. Use Markdown heading syntax (\`# Title\`, \`## Section\`, etc.) and wrap DSL blocks with \`\`\`arc42\`\`\` fences.`}
 
 ## Dependencies
 ${item.dependencies}
@@ -130,8 +180,15 @@ all unresolved items to the coordinator.
 5. Confirm that every cross-reference target exists, or report it as an \`OPEN:\` dependency.
 
 ## Authoring rules
-- Use one \`##\` section per element: heading, prose explaining intent, then one fenced \`arc42\` block.
-- Keep every \`:::block\` inside a \`\`\`arc42\`\`\` fence. Do not put two blocks under one heading.
+${
+  isAdoc
+    ? `- Use one \`==\` section per element: heading, prose explaining intent, then one DSL block.
+- Wrap every \`:::block\` inside a \`[source,arc42]\` + \`----\` fence. Do not put two blocks under one heading.
+- Headings: \`= Title\` (document title / h1), \`== Section\` (h2), \`=== Sub-section\` (h3).
+- Do NOT use Markdown \`# headings\` or \`\`\`arc42\`\`\` fences — these are not valid in AsciiDoc files.`
+    : `- Use one \`##\` section per element: heading, prose explaining intent, then one fenced \`arc42\` block.
+- Keep every \`:::block\` inside a \`\`\`arc42\`\`\` fence. Do not put two blocks under one heading.`
+}
 - Do not invent IDs or field values. Omit unsupported values and record \`OPEN: <question>\` instead.
 - Cite every derived fact in \`architecture-evidence.md\`, including important relationships.
 - Preserve existing authored content unless the coordinator or human explicitly approves a change.
@@ -145,7 +202,7 @@ validation only after all chapters and the human review gate are complete.
 ${item.commands.map((command) => `- \`${command}\``).join("\n")}
 
 ## Starter template
-\`\`\`markdown
+\`\`\`${isAdoc ? "asciidoc" : "markdown"}
 ${template.trimEnd()}
 \`\`\`
 `;
@@ -153,3 +210,5 @@ ${template.trimEnd()}
 
   throw new Error("Unknown guide topic. Use migration, chapter <1-12>, or evidence.");
 }
+
+export { CHAPTERS };

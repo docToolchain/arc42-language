@@ -1,0 +1,119 @@
+= Quality Requirements
+
+This chapter defines the quality goals for the Kanban Board application.
+
+== Fast Response Times
+
+The system must respond quickly to user interactions to ensure a smooth user experience.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-performance
+title: Fast Response Times
+priority: high
+:::
+----
+
+=== Quality Scenario: Fast Response Times
+
+The quality scenario ensures page load times remain under 2 seconds even with large datasets.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-performance-1
+title: Page Load Under 2 Seconds
+quality: qg-performance
+stimulus: User navigates to a board page
+response: Page loads within 2 seconds even with 1000 cards
+metric: 95th percentile response time < 2000ms
+:::
+----
+
+== High Availability
+
+The system must be available for users during their working hours with minimal downtime.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-availability
+title: High Availability
+priority: high
+:::
+----
+
+=== Quality Scenario: High Availability
+
+The quality scenario ensures automatic failover within 5 minutes for database failures.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-availability-1
+title: Service Recovery Within 5 Minutes
+quality: qg-availability
+stimulus: Database primary node fails
+response: Automatic failover to replica completes within 5 minutes
+metric: Recovery time objective (RTO) < 300s
+:::
+----
+
+== Extensibility
+
+The system must be designed to support adding new features and integrating with external services.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-extensibility
+title: Extensibility
+priority: high
+:::
+----
+
+=== Quality Scenario: Extensibility
+
+The quality scenario ensures new services can be added with minimal implementation effort.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-extensibility-1
+title: Add New Service Without Code Changes
+quality: qg-extensibility
+stimulus: Requirement to add a new notification channel
+response: New service can be added with configuration-only changes
+metric: Implementation effort < 1 person-day
+:::
+----
+
+== Intuitive User Experience
+
+The system must provide an intuitive interface that requires minimal training for new users.
+
+[source,arc42]
+----
+:::quality-goal
+id: qg-usability
+title: Intuitive User Experience
+priority: high
+:::
+----
+
+=== Quality Scenario: Intuitive User Experience
+
+The quality scenario ensures new users can create boards without documentation.
+
+[source,arc42]
+----
+:::quality-scenario
+id: qs-usability-1
+title: First-time User Can Create Board in 5 Minutes
+quality: qg-usability
+stimulus: New user accesses the system for the first time
+response: User can create a board and add cards without documentation
+metric: Task completion rate > 90% within 5 minutes
+:::
+----

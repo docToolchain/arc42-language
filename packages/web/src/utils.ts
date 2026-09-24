@@ -1,9 +1,13 @@
-/** Return the filename portion of a path, without extension if arc42.md */
+/** Return the filename portion of a path, without extension if arc42.md or arc42.adoc */
 export function basename(filePath: string): string {
   const parts = filePath.replace(/\\/g, "/").split("/");
   const name = parts[parts.length - 1] ?? filePath;
-  // Strip .arc42.md or just .md for display
-  return name.replace(/\.arc42\.md$/, "").replace(/\.md$/, "");
+  // Strip .arc42.md, .arc42.adoc, or just .md/.adoc for display
+  return name
+    .replace(/\.arc42\.adoc$/, "")
+    .replace(/\.arc42\.md$/, "")
+    .replace(/\.adoc$/, "")
+    .replace(/\.md$/, "");
 }
 
 /** Return the bare filename (last path segment, with extension) */

@@ -93,7 +93,8 @@ export function AstNodeRenderer({
 
     case "prose": {
       // Plain prose — used only when node wasn't merged into a prose-run.
-      return <ProseBlock text={node.text} />;
+      const proseNode = node as import("./types").ProseNode;
+      return <ProseBlock html={proseNode.renderedHtml} text={proseNode.text} />;
     }
 
     case "prose-run": {
@@ -101,6 +102,7 @@ export function AstNodeRenderer({
       return (
         <ProseRun
           text={runNode.text}
+          renderedHtml={runNode.renderedHtml}
           block={runNode.block}
           ignores={runNode.ignores}
           viewMode={viewMode}
@@ -204,6 +206,7 @@ export function AstNodeRenderer({
 
 interface ProseRunProps {
   text: string;
+  renderedHtml?: string;
   block: BlockNode | null;
   ignores: IgnoreNode[];
   viewMode: "human" | "agent";
@@ -216,6 +219,7 @@ interface ProseRunProps {
 
 function ProseRun({
   text,
+  renderedHtml,
   block,
   ignores,
   viewMode,
@@ -260,7 +264,7 @@ function ProseRun({
   if (!hasBlock || viewMode === "agent") {
     return (
       <div className={styles.proseRun}>
-        {text && <ProseBlock text={text} />}
+        {text && <ProseBlock html={renderedHtml} text={text} />}
         {hasBlock && viewMode === "agent" && (
           <AgentBlock
             source={[...ignores.map(reconstructIgnoreSource), reconstructBlockSource(block!)].join(
@@ -311,7 +315,7 @@ function ProseRun({
       />
       <div className={styles.content}>
         <div data-testid="prose-view" className={styles.proseView}>
-          {text && <ProseBlock text={text} />}
+          {text && <ProseBlock html={renderedHtml} text={text} />}
         </div>
       </div>
     </div>
@@ -321,18 +325,25 @@ function ProseRun({
 // ─── Prose renderer ──────────────────────────────────────────────────────────
 
 interface ProseBlockProps {
+  /** Pre-rendered HTML from the server-side ProseRenderer. Takes precedence when present. */
+  html?: string;
+  /** Raw source text — used as fallback when html is absent (legacy payloads). */
   text: string;
 }
 
-function ProseBlock({ text }: ProseBlockProps) {
-  const html = useMemo(() => {
+function ProseBlock({ html, text }: ProseBlockProps) {
+  const resolvedHtml = useMemo(() => {
+    if (html !== undefined) return html;
+    // Fallback: render Markdown client-side for legacy payloads (no ProseRenderer)
     try {
       return marked.parse(text, { async: false }) as string;
     } catch {
       return `<p>${text}</p>`;
     }
-  }, [text]);
-  return <div className={docStyles.proseBlock} dangerouslySetInnerHTML={{ __html: html }} />;
+  }, [html, text]);
+  return (
+    <div className={docStyles.proseBlock} dangerouslySetInnerHTML={{ __html: resolvedHtml }} />
+  );
 }
 
 // ─── Source reconstruction helpers ───────────────────────────────────────────
