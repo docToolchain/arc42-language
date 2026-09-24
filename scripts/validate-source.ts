@@ -3,7 +3,22 @@ import { fileURLToPath } from "node:url";
 import { validateWorkspace } from "@arc42/workspace-fs";
 
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const targets = ["docs/arc42", "examples/bookstore-backend"];
+
+interface Target {
+  path: string;
+  strict: boolean;
+}
+
+/**
+ * docs/arc42 is the project's own architecture — validated with --strict so
+ * any hint or warning blocks the push and keeps the docs clean.
+ * Example workspaces are reference material; only errors block.
+ */
+const targets: Target[] = [
+  { path: "docs/arc42", strict: true },
+  { path: "examples/bookstore-backend", strict: false },
+  { path: "examples/kanban-board", strict: false },
+];
 
 function formatDiagnostic(
   file: string,
@@ -18,9 +33,10 @@ function formatDiagnostic(
 
 let failed = false;
 
-for (const target of targets) {
+for (const { path: target, strict } of targets) {
   const directory = resolve(repositoryRoot, target);
-  console.log(`Validating ${target} from TypeScript source...`);
+  const label = strict ? `${target} (--strict)` : target;
+  console.log(`Validating ${label} from TypeScript source...`);
 
   try {
     const result = await validateWorkspace(directory);
@@ -45,7 +61,8 @@ for (const target of targets) {
     const hints = result.diagnostics.filter((diagnostic) => diagnostic.severity === "hint").length;
     console.log(`${errors} errors, ${warnings} warnings, ${hints} hints`);
 
-    if (!result.valid) failed = true;
+    const hasHints = hints > 0 || warnings > 0;
+    if (!result.valid || (strict && hasHints)) failed = true;
   } catch (error) {
     console.error(`Failed to validate ${target}: ${String(error)}`);
     failed = true;

@@ -8,6 +8,7 @@ while a parent and its direct children appear only in that parent's adjacent dri
 ```arc42
 :::ignore H015 bb-renderer is a CLI-internal implementation detail; its containment in bb-cli via parent is sufficient — it does not need to appear in the overview diagram :::
 :::ignore H015 bb-prose-renderer is a core-internal implementation detail; its containment in bb-core via parent is sufficient — it does not need to appear in the overview diagram :::
+:::ignore H015 bb-notation-adapter is a core-internal implementation detail; its containment in bb-core via parent is sufficient — it does not need to appear in the overview diagram :::
 :::diagram
 id: diag-building-blocks
 view: building-block
