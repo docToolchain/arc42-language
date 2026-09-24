@@ -175,7 +175,7 @@ export function collectGitDiff(
   const currentDocuments = new Map<string, string>();
   const currentPaths = stagedFiles(resolvedRoot);
   for (const filePath of currentPaths.filter(
-    (file) => file.endsWith(".arc42.md") && inWorkspace(file),
+    (file) => (file.endsWith(".arc42.md") || file.endsWith(".arc42.adoc")) && inWorkspace(file),
   )) {
     let content: string | undefined;
     try {
@@ -194,7 +194,7 @@ export function collectGitDiff(
       ? baseFiles(resolvedRoot, base)
       : currentPaths;
   for (const filePath of basePaths.filter(
-    (file) => file.endsWith(".arc42.md") && inWorkspace(file),
+    (file) => (file.endsWith(".arc42.md") || file.endsWith(".arc42.adoc")) && inWorkspace(file),
   )) {
     const content = gitContents(resolvedRoot, reference ? base : staged ? base : ":", filePath);
     if (content !== undefined) baseDocuments.set(filePath, content);

@@ -8,6 +8,9 @@ import type { Element } from "./model/types.ts";
 import type { ReferenceIndex } from "./resolver/types.ts";
 import type { DocumentAst } from "./ast.ts";
 import type { Workspace } from "./model/types.ts";
+import type { Parser } from "./parser/markdown-parser.ts";
+import type { ProseRenderer } from "./notation/prose-renderer.ts";
+import { renderProseNodes } from "./notation/prose-renderer.ts";
 import type {
   GetQuery,
   GetResult,
@@ -30,6 +33,21 @@ export interface GetDocumentsOptions {
 
 export function parseArchitectureDocument(filePath: string, content: string): DocumentAst {
   return new MarkdownParser().parse(filePath, content);
+}
+
+/**
+ * Parse an architecture document with an optional custom parser and prose renderer.
+ * Returns a Promise because the prose renderer may be asynchronous (e.g. AsciidocProseRenderer).
+ * Use this in async pipeline contexts (workspace-fs); use parseArchitectureDocument for sync contexts.
+ */
+export async function parseArchitectureDocumentAsync(
+  filePath: string,
+  content: string,
+  parser: Parser,
+  proseRenderer?: ProseRenderer,
+): Promise<DocumentAst> {
+  const doc = parser.parse(filePath, content);
+  return proseRenderer ? renderProseNodes(doc, proseRenderer) : doc;
 }
 
 /** Build the workspace from documents and index reference relationships */

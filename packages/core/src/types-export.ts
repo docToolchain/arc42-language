@@ -1,9 +1,10 @@
-// Browser-side type re-exports from @arc42/core/types, extended with web-only virtual types.
-// No hand-maintained mirrors — all shared types come directly from the core package.
+// Browser-safe type-only subpath export for @arc42/core.
+// Import from "@arc42/core/types" in browser/SPA contexts.
+// Contains ONLY export type re-exports — no runtime functions, no Node.js imports.
 
 export type {
   // AST types
-  AstNode as CoreAstNode,
+  AstNode,
   DocumentAst,
   HeadingNode,
   ProseNode,
@@ -18,6 +19,9 @@ export type {
   ContextDiagramNode,
   BareMermaidNode,
   IgnoreNode,
+} from "./ast.ts";
+
+export type {
   // Model types
   Element,
   QualityGoal,
@@ -44,29 +48,23 @@ export type {
   ParseError,
   IgnoreDirective,
   SourceLocation,
+} from "./model/types.ts";
+
+export type {
   // Edge / reference types
   Edge,
   ReferenceIndex,
+} from "./resolver/types.ts";
+
+export type {
   // Workspace payload
   WorkspacePayload,
   CoverageResult,
   CoveredPath,
+} from "./workspace.ts";
+
+export type {
   // Notation
   Notation,
-} from "@arc42/core/types";
-
-/** Virtual node type created by DocumentView grouping — never from the server */
-export interface ProseRunNode {
-  kind: "prose-run";
-  text: string;
-  /** Pre-rendered HTML from ProseRenderer post-parse step; undefined for legacy payloads */
-  renderedHtml?: string;
-  block: import("@arc42/core/types").BlockNode | null;
-  ignores: import("@arc42/core/types").IgnoreNode[];
-}
-
-/**
- * Extended AstNode union that adds ProseRunNode (web-only grouping virtual node).
- * Use this in place of the core AstNode type in all SPA components.
- */
-export type AstNode = import("@arc42/core/types").AstNode | ProseRunNode;
+  NotationAdapter,
+} from "./notation/types.ts";

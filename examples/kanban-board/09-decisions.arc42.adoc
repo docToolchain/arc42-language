@@ -1,0 +1,138 @@
+= Architecture Decisions
+
+This chapter records the architectural decisions made during the project.
+
+== RESTful API Design
+
+The API follows REST principles with JSON data exchange for better interoperability and caching.
+
+[source,arc42]
+----
+:::decision
+id: dec-api-architecture
+title: RESTful API Design
+status: accepted
+date: 2024-01-15
+addresses: qg-performance, qg-extensibility, con-technology-stack
+:::
+----
+
+== PostgreSQL as Primary Database
+
+PostgreSQL provides reliable ACID compliance and JSON support for flexible data modeling.
+
+[source,arc42]
+----
+:::decision
+id: dec-database-selection
+title: PostgreSQL as Primary Database
+status: accepted
+date: 2024-01-16
+addresses: qg-performance, qg-availability, con-data-privacy
+:::
+----
+
+== JWT-Based Authentication
+
+JWT tokens provide stateless authentication that works well with microservices and scaling.
+
+[source,arc42]
+----
+:::decision
+id: dec-authentication
+title: JWT-Based Authentication
+status: accepted
+date: 2024-01-17
+addresses: qg-availability, con-auth, risk-security
+:::
+----
+
+== React 19 with TypeScript
+
+React 19 with TypeScript ensures type safety, maintainability, and a modern development experience.
+
+[source,arc42]
+----
+:::decision
+id: dec-frontend-framework
+title: React 19 with TypeScript
+status: accepted
+date: 2024-01-18
+addresses: qg-usability, qg-extensibility, con-technology-stack
+:::
+----
+
+== OAuth2 for External Authentication
+
+OAuth2 provides secure delegated authentication with the authentication provider.
+
+[source,arc42]
+----
+:::decision
+id: dec-oauth2
+title: OAuth2 for External Authentication
+status: accepted
+date: 2024-01-19
+addresses: con-auth, risk-security
+:::
+----
+
+== Redis Caching for Performance
+
+Redis caching reduces database load and improves response times for frequently accessed data.
+
+[source,arc42]
+----
+:::decision
+id: dec-caching
+title: Redis Caching for Performance
+status: accepted
+date: 2024-01-20
+addresses: qg-performance, risk-scalability
+:::
+----
+
+== Message Queue for Async Processing
+
+A message queue enables decoupled communication and resilient event processing.
+
+[source,arc42]
+----
+:::decision
+id: dec-message-queue
+title: Message Queue for Async Processing
+status: accepted
+date: 2024-01-21
+addresses: qg-availability, qg-extensibility, qg-usability, risk-async-consistency, con-release-cadence
+:::
+----
+
+== API Gateway Pattern
+
+An API gateway provides a single entry point and handles cross-cutting concerns.
+
+[source,arc42]
+----
+:::decision
+id: dec-api-gateway
+title: API Gateway Pattern
+status: accepted
+date: 2024-01-22
+addresses: qg-performance, qg-availability, qg-extensibility, qg-usability
+:::
+----
+
+== Caching Strategy
+
+A multi-layer caching strategy improves response times and reduces database load.
+
+[source,arc42]
+----
+:::decision
+id: dec-caching-strategy
+title: Caching Strategy
+status: accepted
+date: 2024-01-23
+addresses: qg-performance, qg-usability
+:::
+----

@@ -13,6 +13,16 @@
       "development": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
+    "./types": {
+      "types": "./src/types-export.ts",
+      "development": "./src/types-export.ts",
+      "default": "./dist/types-export.mjs"
+    },
+    "./parser": {
+      "types": "./src/parser/index.ts",
+      "development": "./src/parser/index.ts",
+      "default": "./dist/parser/index.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

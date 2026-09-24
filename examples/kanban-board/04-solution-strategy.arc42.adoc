@@ -1,0 +1,17 @@
+= Solution Strategy
+
+This chapter summarises the key strategic decisions and architectural approaches taken for the Kanban Board application.
+
+[source,arc42]
+----
+:::solution-strategy
+id: strategy-microservices
+title: Microservices with API Gateway
+addresses: qg-performance, qg-availability, qg-extensibility, qg-usability
+:::
+----
+
+The system follows a microservices architecture with a React frontend, an API Gateway, and dedicated
+backend services for boards, authentication, and notifications. All services communicate via HTTP/JSON.
+Persistent state lives in PostgreSQL. A Redis cache reduces read latency for frequently accessed data.
+OAuth2 with JWT tokens handles authentication across all service boundaries.

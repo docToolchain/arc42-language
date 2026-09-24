@@ -38,24 +38,38 @@ interface DocumentViewProps {
  *      expands/collapses the element card below.
  */
 type RenderGroup =
-  | { kind: "prose-run"; text: string; block: BlockNode | null; ignores: IgnoreNode[] }
+  | {
+      kind: "prose-run";
+      text: string;
+      renderedHtml?: string;
+      block: BlockNode | null;
+      ignores: IgnoreNode[];
+    }
   | { kind: "other"; node: AstNode };
 
 export function groupNodes(nodes: AstNode[]): RenderGroup[] {
   const groups: RenderGroup[] = [];
   let proseLines: string[] = [];
+  let proseRendered: string[] = [];
   let pendingIgnores: IgnoreNode[] = [];
   let i = 0;
 
   function flushProse(attachedBlock: BlockNode | null, ignores = pendingIgnores) {
     if (proseLines.length === 0 && !attachedBlock) return;
+    // Use pre-rendered HTML when all prose nodes in this run were server-rendered
+    const renderedHtml =
+      proseRendered.length === proseLines.length && proseRendered.length > 0
+        ? proseRendered.join("")
+        : undefined;
     groups.push({
       kind: "prose-run",
       text: proseLines.join("\n"),
+      renderedHtml,
       block: attachedBlock,
       ignores,
     });
     proseLines = [];
+    proseRendered = [];
     if (attachedBlock) pendingIgnores = [];
   }
 
@@ -63,7 +77,11 @@ export function groupNodes(nodes: AstNode[]): RenderGroup[] {
     const node = nodes[i]!;
 
     if (node.kind === "prose") {
-      proseLines.push((node as ProseNode).text);
+      const proseNode = node as ProseNode;
+      proseLines.push(proseNode.text);
+      if (proseNode.renderedHtml !== undefined) {
+        proseRendered.push(proseNode.renderedHtml);
+      }
       i++;
 
       // Ignore directives between prose and its block belong to that card.
@@ -175,6 +193,7 @@ export function DocumentView({
               {
                 kind: "prose-run",
                 text: group.text,
+                renderedHtml: group.renderedHtml,
                 block: group.block,
                 ignores: group.ignores,
               } as AstNode

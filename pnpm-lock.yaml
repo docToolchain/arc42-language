@@ -21,6 +21,12 @@ catalogs:
     '@types/node':
       specifier: ^24.13.3
       version: 24.13.3
+    asciidoctor:
+      specifier: ^4.1.0
+      version: 4.1.0
+    marked:
+      specifier: ^14.1.4
+      version: 14.1.4
     semantic-release:
       specifier: 25.0.9
       version: 25.0.9
@@ -203,6 +209,12 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
+      asciidoctor:
+        specifier: 'catalog:'
+        version: 4.1.0
+      marked:
+        specifier: 'catalog:'
+        version: 14.1.4
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -230,6 +242,15 @@ packages:
 
   '@antfu/install-pkg@2.0.1':
     resolution: {integrity: sha512-iCKVQcIC0e3oDxEfs3SHQGW+ovhBMZmS1TE+bTk50rVyMCBmCfClv7Qi3HQKlumYwvjb/iIMeWCW2i67q6kFfQ==}
+
+  '@asciidoctor/core@4.1.0':
+    resolution: {integrity: sha512-3PpZu3m0V2lT2jljqsH0LJukaMdm8cpv0tuTMijiiwTBSUrVlEd8NBwzH5iyGlS3yPI6i3ZaaNL6enXelOVpRg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      highlight.js: ^11.0.0
+    peerDependenciesMeta:
+      highlight.js:
+        optional: true
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -1702,6 +1723,11 @@ packages:
 
   array-ify@1.0.0:
     resolution: {integrity: sha512-c5AMf34bKdvPhQ7tBGhqkgKNUzMr4WUs+WDtC2ZUGOUncbxKMTvqxYctiseW3+L4bA8ec+GcZ6/A/FW4m8ukng==}
+
+  asciidoctor@4.1.0:
+    resolution: {integrity: sha512-6mRDn+vV3a0sT85+gcNqyPmXiwuzx9mGW//P5Y2WsOcWNUmVR0JtRgJFmjkdKKSlJDfE6AI7b0QXeHt6TpQkUQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -3396,6 +3422,8 @@ snapshots:
       package-manager-detector: 1.8.0
       tinyexec: 1.3.0
 
+  '@asciidoctor/core@4.1.0': {}
+
   '@babel/code-frame@7.29.7':
     dependencies:
       '@babel/helper-validator-identifier': 7.29.7
@@ -4556,6 +4584,12 @@ snapshots:
   argv-formatter@1.0.0: {}
 
   array-ify@1.0.0: {}
+
+  asciidoctor@4.1.0:
+    dependencies:
+      '@asciidoctor/core': 4.1.0
+    transitivePeerDependencies:
+      - highlight.js
 
   assertion-error@2.0.1: {}
 

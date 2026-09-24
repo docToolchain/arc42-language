@@ -26,6 +26,8 @@ export interface ProseNode {
   kind: "prose";
   text: string;
   line: number;
+  /** HTML fragment populated by ProseRenderer post-parse step. Undefined until rendered. */
+  renderedHtml?: string;
 }
 
 export interface BlockNode {

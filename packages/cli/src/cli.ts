@@ -34,7 +34,7 @@ import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
 import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import { collectGitDiff, getElements, loadWorkspace, validateWorkspace } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
-import { CHAPTERS, guideText } from "./guide.ts";
+import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
 
 // Directory of the running CLI file — used to locate bundled assets
@@ -536,16 +536,21 @@ function runExplain(args: string[]) {
 // ---------------------------------------------------------------------------
 
 function runGuide(args: string[]) {
-  const { positionals } = parseArgs({
+  const { positionals, values } = parseArgs({
     args,
-    options: {},
+    options: {
+      notation: { type: "string", default: "markdown" },
+    },
     allowPositionals: true,
   });
 
   const subcommand = positionals[0] ?? "migration";
   const argument = positionals[1];
+  const notationValue = values["notation"] as string;
+  const notation: Notation =
+    notationValue === "asciidoc" || notationValue === "markdown" ? notationValue : "markdown";
   try {
-    console.log(guideText(subcommand, argument));
+    console.log(guideText(subcommand, argument, __dirname, notation));
     process.exit(0);
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
@@ -620,7 +625,7 @@ async function runServe(dir: string, args: string[]) {
   try {
     watcher = watch(dir, { recursive: true }, (_event, filename) => {
       const changed = filename?.toString() ?? "";
-      if (changed && !changed.endsWith(".arc42.md")) return;
+      if (changed && !changed.endsWith(".arc42.md") && !changed.endsWith(".arc42.adoc")) return;
       if (reloadTimer) clearTimeout(reloadTimer);
       reloadTimer = setTimeout(reloadWorkspace, 100);
     });

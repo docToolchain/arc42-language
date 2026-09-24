@@ -31,3 +31,4 @@ dist-ssr
 
 # AI agent worktrees
 .claude/worktrees/
+packages/web/dist-single

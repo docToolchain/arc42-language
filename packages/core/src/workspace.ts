@@ -10,6 +10,7 @@ import type { Element, DiagramArtifact, IgnoreDirective } from "./model/types.ts
 import type { DocumentAst } from "./ast.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { CoverageResult } from "./coverage.ts";
+import type { Notation } from "./notation/types.ts";
 
 export type { CoverageResult, CoveredPath } from "./coverage.ts";
 
@@ -35,4 +36,10 @@ export interface WorkspacePayload {
   coverage?: CoverageResult;
   /** All ignore directives parsed from the workspace documents */
   ignoreDirectives: IgnoreDirective[];
+  /**
+   * Notation used by all documents in this workspace.
+   * Populated by loadWorkspace() in @arc42/workspace-fs.
+   * Optional because loadWorkspaceFromDocuments (pure, no filesystem) does not populate it.
+   */
+  notation?: Notation;
 }

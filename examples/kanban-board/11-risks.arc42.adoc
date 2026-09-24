@@ -1,0 +1,45 @@
+= Risks and Technical Debt
+
+This chapter identifies current risks and technical debts that may impact the project.
+
+== Eventual Consistency Challenges
+
+Eventual consistency may cause temporary data inconsistencies during high-load periods.
+
+[source,arc42]
+----
+:::risk
+id: risk-async-consistency
+title: Eventual Consistency Challenges
+severity: medium
+mitigation: Implement optimistic UI updates with rollback mechanisms. Show clear loading states and provide manual refresh options.
+:::
+----
+
+== Database Scalability
+
+Database performance may degrade as data volume grows without proper scaling.
+
+[source,arc42]
+----
+:::risk
+id: risk-scalability
+title: Database Scalability
+severity: high
+mitigation: Implement database read replicas for heavy read operations. Consider sharding user data by tenant. Evaluate PostgreSQL scaling options.
+:::
+----
+
+== OAuth Token Leakage
+
+OAuth tokens could be exposed through misconfiguration or security vulnerabilities.
+
+[source,arc42]
+----
+:::risk
+id: risk-security
+title: OAuth Token Leakage
+severity: high
+mitigation: Implement strict Content Security Policy (CSP). Use HttpOnly cookies where possible. Regular security audits and penetration testing.
+:::
+----

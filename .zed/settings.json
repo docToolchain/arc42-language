@@ -1,0 +1,18 @@
+{
+  "lsp": {
+    "arc42-language-server": {
+      "binary": {
+        "path": "node",
+        "arguments": ["$ZED_WORKTREE_ROOT/packages/server/dist/server.mjs"]
+      }
+    }
+  },
+  "file_types": {
+    "arc42": ["*.arc42.md"]
+  },
+  "languages": {
+    "Markdown": {
+      "language_servers": ["arc42-language-server"]
+    }
+  }
+}

@@ -7,6 +7,7 @@ while a parent and its direct children appear only in that parent's adjacent dri
 
 ```arc42
 :::ignore H015 bb-renderer is a CLI-internal implementation detail; its containment in bb-cli via parent is sufficient — it does not need to appear in the overview diagram :::
+:::ignore H015 bb-prose-renderer is a core-internal implementation detail; its containment in bb-core via parent is sufficient — it does not need to appear in the overview diagram :::
 :::diagram
 id: diag-building-blocks
 view: building-block
@@ -109,17 +110,19 @@ path: packages/core/src/index.ts
 
 ---
 
-### Markdown Parser
+### Notation Parser
 
-Reads acquired `.arc42.md` document content line by line and produces a `DocumentAst` — a sequence of heading,
-prose, and block nodes with line numbers. Deliberately dumb: it emits all block types including
-unknown ones. The meta-model builder rejects what it does not understand. This keeps the parser
-stable as the block type set evolves.
+Reads acquired `.arc42.md` or `.arc42.adoc` document content line by line and produces a
+`DocumentAst` — a sequence of heading, prose, and block nodes with line numbers. Deliberately
+dumb: it emits all block types including unknown ones. The meta-model builder rejects what it
+does not understand. This keeps the parser stable as the block type set evolves. Two concrete
+implementations — `MarkdownParser` and `AsciidocParser` — satisfy the same `Parser` interface;
+the implementation is selected by the `NotationAdapter` at workspace load time.
 
 ```arc42
 :::building-block
 id: bb-parser
-title: Markdown Parser
+title: Notation Parser
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
@@ -138,6 +141,49 @@ title: Parser Output Contract
 provider: bb-parser
 protocol: In-process TypeScript function call
 path: packages/core/src/ast.ts
+:::
+```
+
+### Notation Adapter
+
+Encapsulates all notation-specific behavior behind a single interface: file extension matching,
+parser selection, prose renderer selection, fence description (for validator messages), and
+chapter filename generation. Two concrete implementations — `MarkdownNotationAdapter` and
+`AsciidocNotationAdapter` — are selected once at workspace discovery time and flow through
+the entire processing pipeline. The Markdown implementation lives in `@arc42/core`; the AsciiDoc
+implementation lives in `@arc42/workspace-fs` to keep the `asciidoctor` dependency out of
+browser-reachable code.
+
+```arc42
+:::ignore W002 bb-notation-adapter is a new internal building block — interfaces will be added once the implementation path exists :::
+:::ignore W012 bb-notation-adapter is an internal core concern — deployment mapping not applicable at this abstraction level :::
+:::ignore H014 bb-notation-adapter path will be set once packages/core/src/notation is created :::
+:::building-block
+id: bb-notation-adapter
+title: Notation Adapter
+technology: TypeScript
+parent: bb-core
+implements: concept-pipeline
+:::
+```
+
+### Prose Renderer
+
+Runs as a post-parse step and populates the rendered HTML representation of prose in each
+`DocumentAst`. Two implementations: `MarkdownProseRenderer` (lives in `@arc42/core`) and
+`AsciidocProseRenderer` (lives in `@arc42/workspace-fs`). The raw source text is always
+preserved — non-rendering consumers (diff, builder, validators) use it and are unaffected.
+
+```arc42
+:::ignore W002 bb-prose-renderer is a new internal building block — interfaces will be added once the implementation path exists :::
+:::ignore W012 bb-prose-renderer is an internal core concern — deployment mapping not applicable at this abstraction level :::
+:::ignore H014 bb-prose-renderer path will be set once packages/core/src/notation is created :::
+:::building-block
+id: bb-prose-renderer
+title: Prose Renderer
+technology: TypeScript
+parent: bb-core
+implements: concept-pipeline
 :::
 ```
 
@@ -296,12 +342,14 @@ path: packages/mermaid/src/index.ts
 ## Filesystem Workspace Adapter
 
 Provides the filesystem-backed workspace boundary used by the CLI. It discovers architecture
-documents, reads their contents, establishes repository-root context, and performs validations that
-depend on filesystem paths. Other acquisition mechanisms, such as web resources, can provide their
-own adapters without expanding the responsibilities of the architecture-processing core. File
-watching and workspace-directory selection remain CLI responsibilities. No separate child
-building blocks are modeled here because discovery, loading, and path evidence form one cohesive
-adapter boundary at this architectural level.
+documents (`.arc42.md` or `.arc42.adoc`), detects the workspace notation from file extensions,
+errors on mixed-notation workspaces, reads file contents, establishes repository-root context,
+and performs validations that depend on filesystem paths. Also owns the AsciiDoc-specific
+`NotationAdapter` and `ProseRenderer` implementations (`AsciidocNotationAdapter`,
+`AsciidocProseRenderer`) so the `asciidoctor` runtime dependency never enters browser-reachable
+packages. Other acquisition mechanisms can provide their own adapters without expanding the
+responsibilities of the architecture-processing core. File watching and workspace-directory
+selection remain CLI responsibilities.
 
 ```arc42
 :::building-block
@@ -441,7 +489,7 @@ id: if-web-cli-api
 title: CLI Workspace API
 provider: bb-cli
 protocol: HTTP JSON (serve) or static JSON file (export)
-path: packages/web/src/types.ts
+path: packages/core/src/workspace.ts
 :::
 ```
 
@@ -517,8 +565,9 @@ Reads workspace data from the core library via an HTTP API (when served by the C
 baked-in JSON file (when published as a static site). Presents prose and DSL blocks together:
 prose is shown as formatted text; arc42 element blocks are revealed by clicking a coloured
 stripe; Mermaid diagrams are rendered inline. An Agent view toggle shows raw DSL fences for
-tooling consumers. Designed to work equally as a `localhost` server and as a GitHub Pages
-static deployment.
+tooling consumers. Imports shared types from `@arc42/core/types` — a dedicated browser-safe
+subpath export that eliminates the need for a hand-maintained local type mirror. Designed to
+work equally as a `localhost` server and as a GitHub Pages static deployment.
 
 ```arc42
 :::building-block
@@ -580,15 +629,17 @@ path: packages/web/package.json
 
 ## arc42 Documentation Workspace
 
-The set of `.arc42.md` files that make up a project's architecture documentation.
+The set of `.arc42.md` or `.arc42.adoc` files that make up a project's architecture documentation.
 Written by architects and AI agents, read by architects, workspace adapters, and CI pipelines.
 They are the input to the toolchain and the primary human-readable output it produces and maintains.
+All files in a workspace must use the same notation — mixing `.arc42.md` and `.arc42.adoc` is
+an error detected at discovery time.
 
 ```arc42
 :::building-block
 id: bb-workspace
 title: arc42 Documentation Workspace
-technology: Markdown (.arc42.md files)
+technology: Markdown (.arc42.md) or AsciiDoc (.arc42.adoc) files
 implements: concept-prose-first, concept-pipeline
 path: docs/arc42
 :::
@@ -612,7 +663,7 @@ path: docs/arc42
 
 ### Documentation Workspace Contract
 
-The filesystem workspace adapter reads `.arc42.md` files from the selected documentation workspace
+The filesystem workspace adapter reads `.arc42.md` or `.arc42.adoc` files from the selected documentation workspace
 and supplies their contents and filesystem context to the core processing pipeline.
 
 ```arc42

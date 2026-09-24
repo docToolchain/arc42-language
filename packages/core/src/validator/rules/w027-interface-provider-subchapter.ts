@@ -11,7 +11,6 @@ interface Section {
 
 interface DocumentSections {
   file: string;
-  hasBuildingBlocks: boolean;
   headings: HeadingNode[];
   interfaces: Map<string, Section>;
   buildingBlocks: Map<string, Section>;
@@ -21,9 +20,8 @@ interface DocumentSections {
  * W027 — Interfaces are documented in the section of their provider.
  *
  * Interfaces remain first-class elements, but their Markdown placement should
- * make provider ownership visible to readers. The rule is deliberately scoped
- * to building-block documents so context-view interface descriptions can stay
- * with their actors and external interactions.
+ * make provider ownership visible to readers. E016 separately enforces that
+ * interface definitions are assigned to chapter 5.
  */
 export const w027InterfaceProviderSubchapter: Rule = {
   meta: {
@@ -46,7 +44,6 @@ export const w027InterfaceProviderSubchapter: Rule = {
 
     for (const document of workspace.documents) {
       let currentHeading: HeadingNode | undefined;
-      let hasBuildingBlocks = false;
       const headings: HeadingNode[] = [];
       const interfaces = new Map<string, Section>();
       const buildingBlocks = new Map<string, Section>();
@@ -64,7 +61,6 @@ export const w027InterfaceProviderSubchapter: Rule = {
         if (!id) continue;
         const section = { file: document.filePath, order, heading: currentHeading };
         if (node.blockType === "building-block") {
-          hasBuildingBlocks = true;
           buildingBlocks.set(id, section);
           sectionsByBuildingBlock.set(id, section);
         } else if (node.blockType === "interface") {
@@ -75,23 +71,19 @@ export const w027InterfaceProviderSubchapter: Rule = {
 
       documents.push({
         file: document.filePath,
-        hasBuildingBlocks,
         headings,
         interfaces,
         buildingBlocks,
       });
     }
 
-    const buildingBlockDocuments = new Set(
-      documents.filter((document) => document.hasBuildingBlocks).map((document) => document.file),
-    );
     const diagnostics: Diagnostic[] = [];
 
     for (const element of workspace.elements) {
       if (element.kind !== "interface") continue;
       const iface = element as Interface;
       const interfaceSection = sectionsByInterface.get(iface.id);
-      if (!interfaceSection || !buildingBlockDocuments.has(interfaceSection.file)) continue;
+      if (!interfaceSection) continue;
 
       const provider = index.byId.get(iface.provider);
       if (provider?.kind !== "building-block") continue;
