@@ -3,6 +3,7 @@ import type { WorkspacePayload, Element } from "./types";
 import { Sidebar } from "./Sidebar";
 import { DocumentView } from "./DocumentView";
 import { CoverageView } from "./CoverageView";
+import { MetaModelView } from "./MetaModelView";
 import { filename } from "./utils";
 import { useTheme } from "./useTheme";
 import styles from "./App.module.css";
@@ -124,6 +125,32 @@ export function App({ payload }: AppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggle: toggleTheme } = useTheme();
 
+  // Meta-model overlay — toggled via #meta-model hash
+  const [showMetaModel, setShowMetaModel] = useState(() => window.location.hash === "#meta-model");
+
+  useEffect(() => {
+    function onHashChange() {
+      setShowMetaModel(window.location.hash === "#meta-model");
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  function selectMetaModel() {
+    window.location.hash = "meta-model";
+    setSidebarOpen(false);
+  }
+
+  function navigateToChapter(chapter: number) {
+    const doc = payload.documents.find((d) =>
+      filename(d.filePath).startsWith(String(chapter).padStart(2, "0")),
+    );
+    if (doc) {
+      const idx = payload.documents.indexOf(doc);
+      navigateToDoc(idx);
+    }
+  }
+
   const elementsMap = useMemo(() => {
     const map = new Map<string, Element>();
     for (const el of payload.elements) {
@@ -170,6 +197,8 @@ export function App({ payload }: AppProps) {
         activeDocIndex={activeDocIndex}
         onSelectDoc={navigateToDoc}
         onSelectHeading={navigateToHeading}
+        onSelectMetaModel={selectMetaModel}
+        showMetaModel={showMetaModel}
         viewMode={viewMode}
         onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
         theme={theme}
@@ -178,18 +207,24 @@ export function App({ payload }: AppProps) {
         onClose={() => setSidebarOpen(false)}
       />
       <main className={styles.main}>
-        <DocumentView
-          documents={payload.documents}
-          viewMode={viewMode}
-          elementsMap={elementsMap}
-          elementDocMap={elementDocMap}
-          edges={payload.edges}
-          activeDocIndex={activeDocIndex}
-          targetElementId={targetElementId}
-          onTargetConsumed={clearTargetElementId}
-        />
-        {isChapter05 && payload.coverage && (
-          <CoverageView coverage={payload.coverage} elementDocMap={elementDocMap} />
+        {showMetaModel ? (
+          <MetaModelView onNavigateToChapter={navigateToChapter} />
+        ) : (
+          <>
+            <DocumentView
+              documents={payload.documents}
+              viewMode={viewMode}
+              elementsMap={elementsMap}
+              elementDocMap={elementDocMap}
+              edges={payload.edges}
+              activeDocIndex={activeDocIndex}
+              targetElementId={targetElementId}
+              onTargetConsumed={clearTargetElementId}
+            />
+            {isChapter05 && payload.coverage && (
+              <CoverageView coverage={payload.coverage} elementDocMap={elementDocMap} />
+            )}
+          </>
         )}
       </main>
     </div>
