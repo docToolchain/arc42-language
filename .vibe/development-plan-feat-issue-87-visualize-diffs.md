@@ -56,6 +56,12 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   The old `collectGitDiff` used the HEAD tree as base paths even when the base is the index.
 - **Commit ranges:** `a..b` compares two commits, `a...b` uses the merge base (PR view).
   A range with `--staged` is an error.
+- **One PR, logically sound commits** (user decision): each commit builds, passes all
+  checks and tests, and does one thing (rename / engine switch / dead-code removal / feature /
+  docs).
+- **Lint API:** `lintArchitectureDiff({ changes, base, head, baseKnownPaths, headKnownPaths })`
+  returns `DiffResult` with the `architecture` diff attached, so CLI JSON and web get findings
+  and changes from one call. Path hints read interface *elements*, not raw AST blocks.
 - **Commits:** Conventional Commits with `## Intent`, `## Key decisions`,
   `## Side effects` body (see `.agents/skills/commit/SKILL.md`).
 
@@ -70,6 +76,13 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - The prose renderer stores a prose run's HTML on the run's *first* node (often blank);
   the other nodes get `""`.
 - `execFileSync` rejections surface git's own `fatal:` message in the thrown error.
+- Old-engine errors surfaced by replaying `docs/arc42` history (HEAD~15, HEAD~40): sections
+  appended after a block were counted as that block's prose (two false
+  `prose-without-block-change`), and a deleted neighbouring subsection masked a real
+  `block-without-prose-change` (bb-validator). These are the *only* output differences.
+- A section holding both a block and a diagram attaches diagram-describing prose to the block
+  (e.g. `bb-core` + core drill-down diagram). Changing that prose alone is reported; accept with
+  `ARC42_CONSISTENT` when the model is intentionally unchanged.
 - `affectedRanges` / `affectedFiles` in `DiffResult` are only consumed by tests.
 - `pnpm run check` on a fresh checkout reports 4 type errors in `MetaModelView.tsx`
   until `pnpm run build` has run: the `@arc42/core` `.` export has no `types`
@@ -90,7 +103,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 ### Tasks
 - [x] Phase 0: E017 validation error for blocks outside any heading.
 - [x] Phase 1: `loadDiffSnapshots(dir, spec)` + `diffWorkspaces(base, head)` alongside existing code.
-- [ ] Phase 2: rename to `lintArchitectureDiff`, rebuild on phase 1, remove line-range logic and old `collectGitDiff` parsing path.
+- [x] Phase 2: rename to `lintArchitectureDiff`, rebuild on phase 1, remove line-range logic and old `collectGitDiff` parsing path.
 - [ ] Phase 3: `arc42 diff --format json`.
 - [ ] Phase 4: `serve --diff` / `build --diff`, Changes view, inline mode.
 - [ ] Phase 5: side-by-side mode, graph highlighting, example GitHub Action.
@@ -118,6 +131,18 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       black box for this phase.
 - Deferred to phase 2: update `bb-diff` / `if-workspace-diff` in `docs/arc42` once the diff module
   layout settles (the CLI does not use the new code yet, so the docs are still accurate).
+
+### Phase 2 — lint on the semantic diff
+- [x] e4fe1d7 `refactor(core)!`: pure rename to `lintArchitectureDiff` / `LintDiffOptions`.
+- [x] 925ed84 `refactor(core,cli)!`: lint derived from `ElementChange`; CLI uses `loadDiffSnapshots`.
+      `diff-cli.test.ts` unchanged and green; `diff.test.ts` assertions unchanged (fixtures are parsed
+      workspaces now; one `affectedRanges` assertion removed with the field). New black-box
+      `diff-semantic-cli.test.ts`; three of its cases fail on the old engine (verified).
+- [x] e3db264 `refactor(workspace-fs)!`: removed `collectGitDiff`, `GitArchitectureDiff`,
+      `changedHunkFiles`; `git-diff.test.ts` keeps the path-header test only.
+- [x] 6044e9f `feat(cli)`: `a..b` / `a...b` in `arc42 diff`, help + README, black-box range tests.
+- [x] 80d5594 `docs(arc42)`: `bb-diff` → "Diff Lint", new `bb-semantic-diff` + `if-semantic-diff`,
+      `if-workspace-diff` → `diff-snapshots.ts`, runtime scenario, deployment hosts, `dec-semantic-diff`.
 
 ## Commit
 ### Tasks
