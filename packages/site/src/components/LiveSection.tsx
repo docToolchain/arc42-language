@@ -6,7 +6,7 @@ export function LiveSection() {
           See it live
         </h2>
         <p className="live__sub">
-          Two real workspaces, built with <code>arc42 build</code> and deployed here.
+          Three real workspaces, built with <code>arc42 build</code> and deployed here.
         </p>
         <div className="live__grid">
           <a href="./docs/" className="live-card" aria-label="View architecture docs workspace">
@@ -34,6 +34,23 @@ export function LiveSection() {
             <p className="live-card__desc">
               A complete e-commerce backend documented with arc42. A realistic reference for new
               workspaces.
+            </p>
+            <span className="live-card__arrow" aria-hidden="true">
+              Open →
+            </span>
+          </a>
+          <a
+            href="./kanban-board/"
+            className="live-card"
+            aria-label="View kanban-board AsciiDoc example workspace"
+          >
+            <div className="live-card__icon" aria-hidden="true">
+              <KanbanIcon />
+            </div>
+            <h3 className="live-card__title">Kanban Board (AsciiDoc)</h3>
+            <p className="live-card__desc">
+              The same arc42 DSL written in AsciiDoc notation. Demonstrates multi-service
+              architecture with event sourcing and GDPR constraints.
             </p>
             <span className="live-card__arrow" aria-hidden="true">
               Open →
@@ -80,6 +97,26 @@ function LayersIcon() {
       <polygon points="12 2 2 7 12 12 22 7 12 2" />
       <polyline points="2 17 12 22 22 17" />
       <polyline points="2 12 12 17 22 12" />
+    </svg>
+  );
+}
+
+function KanbanIcon() {
+  return (
+    <svg
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M9 3v10" />
+      <path d="M15 3v6" />
     </svg>
   );
 }
