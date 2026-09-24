@@ -61,8 +61,8 @@ path: packages/core
 
 The Core Library is decomposed into one parent and its direct logical children. The children are
 all internal responsibilities of the same package and are therefore not peer packages in the
-overview. Architecture Diff is deliberately shown here, alongside the processing pipeline, but
-not in the package-level diagram.
+overview. Diff Lint and Semantic Diff are deliberately shown here, alongside the processing
+pipeline, but not in the package-level diagram.
 
 ```arc42
 :::diagram
@@ -79,7 +79,8 @@ graph TD
         bb-builder["Builder"]
         bb-resolver["Resolver"]
         bb-validator["Validator"]
-        bb-diff["Architecture Diff"]
+        bb-diff["Diff Lint"]
+        bb-semantic-diff["Semantic Diff"]
         bb-mermaid["Mermaid Syntax"]
     end
     bb-workspace-fs["Filesystem Workspace Adapter"]
@@ -89,6 +90,7 @@ graph TD
     bb-validator -->|"if-reference-index"| bb-resolver
     bb-validator -->|"if-workspace-paths"| bb-workspace-fs
     bb-diff -->|"if-workspace-diff"| bb-workspace-fs
+    bb-diff -->|"if-semantic-diff"| bb-semantic-diff
     bb-core -->|"if-core-diff"| bb-diff
     bb-validator -->|"if-mermaid-syntax"| bb-mermaid
 ```
@@ -274,38 +276,75 @@ path: packages/core/src/validator
 :::
 ```
 
-### Architecture Diff
+### Diff Lint
 
-Compares current and base architecture documents with a set of changed file ranges. It reports
-inconsistencies between prose and architecture blocks and can produce implementation-path hints
-when a workspace supplies known source paths. The analysis itself is source-independent and does
-not access the filesystem; path knowledge is supplied by the relevant workspace adapter.
+Lints a change to the architecture. It derives consistency findings — a block changed without
+its section prose, or prose changed without its block — from the Semantic Diff of the base and
+head snapshots, and produces advisory hints for changed implementation paths and newly
+uncovered code when a workspace supplies changed files and known source paths. The lint itself
+is source-independent and does not access the filesystem; snapshots and path knowledge are
+supplied by the relevant workspace adapter.
 
 ```arc42
 :::building-block
 id: bb-diff
-title: Architecture Diff
+title: Diff Lint
 technology: TypeScript
 parent: bb-core
-requires: if-workspace-diff
+requires: if-workspace-diff, if-semantic-diff
 path: packages/core/src/diff.ts
 :::
 ```
 
-#### Architecture Diff Contract
+#### Diff Lint Contract
 
-The Core Library exposes Architecture Diff as an internal capability of the package. The CLI
-reaches that capability through the opaque Core Library boundary; it does not depend directly on
-the child building block.
+The Core Library exposes Diff Lint as an internal capability of the package. The CLI reaches that
+capability through the opaque Core Library boundary; it does not depend directly on the child
+building block.
 
 ```arc42
 :::ignore H020 if-cli-core and if-core-diff share packages/core/src/index.ts as the entry point but represent distinct contracts: if-cli-core is the full Core Library API surface for the CLI, if-core-diff exposes only the diff capability :::
 :::interface
 id: if-core-diff
-title: Architecture Diff Contract
+title: Diff Lint Contract
 provider: bb-diff
 protocol: In-process TypeScript function call
 path: packages/core/src/index.ts
+:::
+```
+
+### Semantic Diff
+
+Compares two workspace models instead of lines. Elements and diagrams are matched by id,
+relations by source, type and target, and prose by the whitespace-normalized text of its
+section; prose in a block's section is attached to that block's element. Reformatting therefore
+produces no change, and a renamed id or heading is a removal plus an addition. The comparison
+refuses snapshots it cannot interpret unambiguously — duplicate ids or blocks outside any
+heading — instead of guessing.
+
+```arc42
+:::building-block
+id: bb-semantic-diff
+title: Semantic Diff
+technology: TypeScript
+parent: bb-core
+path: packages/core/src/workspace-diff.ts
+:::
+```
+
+#### Semantic Diff Contract
+
+`diffWorkspaces(base, head)` returns the element, relation, diagram and prose-section changes of
+two workspace payloads, with change counts per document. Diff Lint consumes it for consistency
+findings; the same result is the basis for visualizing architecture changes.
+
+```arc42
+:::interface
+id: if-semantic-diff
+title: Semantic Diff Contract
+provider: bb-semantic-diff
+protocol: In-process TypeScript function call
+path: packages/core/src/workspace-diff.ts
 :::
 ```
 
@@ -397,9 +436,10 @@ path: packages/workspace-fs/src/index.ts
 
 ### Workspace Diff Contract
 
-The filesystem workspace adapter acquires the git diff — base and current documents, changed
-file hunks, and known paths — and passes them to the Architecture Diff building block for
-analysis. This is a filesystem concern; the diff analysis itself is pure and source-independent.
+The filesystem workspace adapter loads the two snapshots of a change from git — working tree,
+index or commits, including commit ranges — as full workspace payloads parsed with the
+workspace's notation, together with the changed file hunks and each side's known paths. Diff
+Lint consumes them. This is a filesystem concern; the diff itself is pure and source-independent.
 
 ```arc42
 :::interface
@@ -407,7 +447,7 @@ id: if-workspace-diff
 title: Workspace Diff Contract
 provider: bb-workspace-fs
 protocol: In-process TypeScript function call
-path: packages/workspace-fs/src/git-diff.ts
+path: packages/workspace-fs/src/diff-snapshots.ts
 :::
 ```
 

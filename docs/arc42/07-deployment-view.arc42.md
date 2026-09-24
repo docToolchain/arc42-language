@@ -28,8 +28,8 @@ architecture-beta
 
 ## npm-distributed Toolchain Packages
 
-The CLI, pure core library, filesystem workspace adapter, and web renderer are distributed as
-cooperating npm packages. The web renderer's compiled static assets are served directly by the CLI.
+The CLI, pure core library (including its diff lint and semantic diff), filesystem workspace
+adapter, and web renderer are distributed as cooperating npm packages. The web renderer's compiled static assets are served directly by the CLI.
 There is no separate deploy step — the packages are consumed directly from the npm registry.
 
 ```arc42
@@ -37,7 +37,7 @@ There is no separate deploy step — the packages are consumed directly from the
 id: node-npm-package
 title: npm-distributed Toolchain Packages
 type: server
-hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-diff, bb-mermaid, bb-workspace-fs, bb-web-renderer
+hosts: bb-cli, bb-core, bb-parser, bb-builder, bb-resolver, bb-validator, bb-renderer, bb-diff, bb-semantic-diff, bb-mermaid, bb-workspace-fs, bb-web-renderer
 :::
 ```
 

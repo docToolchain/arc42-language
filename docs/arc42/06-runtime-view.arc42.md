@@ -5,13 +5,15 @@
 This representative Runtime View scenario describes how an architect reads and edits the
 architecture workspace with agent assistance. Validation is intentionally shown as an implicit
 quality gate at commit or merge time, rather than as a manual step in the architect's workflow.
+The diff check loads the base and head snapshots of the change and lints the semantic difference
+between the two models, not the changed lines.
 
 ```arc42
 :::runtime-scenario
 id: scenario-agent-architecture-evolution
 title: Agent-driven architecture evolution
 trigger: An architect asks an agent for an improvement
-involves: bb-skill, bb-workspace, bb-cli, bb-core, bb-workspace-fs, bb-diff
+involves: bb-skill, bb-workspace, bb-cli, bb-core, bb-workspace-fs, bb-diff, bb-semantic-diff
 :::
 ```
 
@@ -20,7 +22,7 @@ involves: bb-skill, bb-workspace, bb-cli, bb-core, bb-workspace-fs, bb-diff
 id: agent-architecture-evolution-sequence
 scenario: scenario-agent-architecture-evolution
 notation: mermaid-sequence
-aliases: bb_skill=bb-skill, bb_workspace=bb-workspace, bb_cli=bb-cli, bb_core=bb-core, bb_workspace_fs=bb-workspace-fs, bb_diff=bb-diff
+aliases: bb_skill=bb-skill, bb_workspace=bb-workspace, bb_cli=bb-cli, bb_core=bb-core, bb_workspace_fs=bb-workspace-fs, bb_diff=bb-diff, bb_semantic_diff=bb-semantic-diff
 :::
 ```
 
@@ -34,7 +36,8 @@ sequenceDiagram
     participant bb_cli as CLI
     participant bb_workspace_fs as Filesystem Workspace Adapter
     participant bb_core as Core Library
-    participant bb_diff as Architecture Diff
+    participant bb_diff as Diff Lint
+    participant bb_semantic_diff as Semantic Diff
 
     actor_architect->>actor_agent: Ask for an improvement
     actor_agent->>bb_workspace: Read architecture documentation
@@ -53,9 +56,11 @@ sequenceDiagram
     bb_core-->>bb_cli: Return validation diagnostics
     bb_cli-->>actor_ci: Return status and diagnostics
     actor_ci->>bb_cli: Compare changed architecture
-    bb_cli->>bb_workspace_fs: Acquire Git diff and path evidence
-    bb_workspace_fs-->>bb_cli: Base/current documents and changes
-    bb_cli->>bb_diff: Analyze architecture diff
+    bb_cli->>bb_workspace_fs: Load base and head snapshots from Git
+    bb_workspace_fs-->>bb_cli: Base/head workspace models, changes and path evidence
+    bb_cli->>bb_diff: Lint architecture diff
+    bb_diff->>bb_semantic_diff: Compare base and head models
+    bb_semantic_diff-->>bb_diff: Element, relation, diagram and prose changes
     bb_diff-->>bb_cli: Consistency and path findings
     actor_ci-->>actor_agent: Report validation failure when inconsistent
     actor_agent->>actor_architect: Ask for correction when needed
