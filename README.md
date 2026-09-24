@@ -99,6 +99,9 @@ arc42 diff --staged
 # The --cached alias and reference form match Git as well
 arc42 diff --cached origin/main
 
+# Review the changes of the current branch, as in a pull request
+arc42 diff origin/main...HEAD
+
 # Show all diff modes, options, and pre-commit guidance
 arc42 diff --help
 

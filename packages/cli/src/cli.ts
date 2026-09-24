@@ -184,7 +184,7 @@ async function runDiff(dir: string, args: string[]) {
     },
   });
   if (positionals.length > 1) {
-    console.error("Usage: arc42 diff [<reference>]");
+    console.error("Usage: arc42 diff [<reference> | <base>..<head> | <base>...<head>]");
     process.exit(2);
   }
 

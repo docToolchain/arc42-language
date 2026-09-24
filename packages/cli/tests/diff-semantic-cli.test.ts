@@ -107,3 +107,66 @@ describe("arc42 diff — semantic comparison", () => {
     expect(result.status).toBe(1);
   });
 });
+
+describe("arc42 diff — commit ranges", () => {
+  function commitAll(root: string, message: string): string {
+    git(root, "add", "-A");
+    git(root, "commit", "-qm", message);
+    return git(root, "rev-parse", "HEAD").trim();
+  }
+
+  test("lints the changes between two commits and accepts them with the base commit", () => {
+    const root = repository(MD, markdown(SERVICE));
+    const base = git(root, "rev-parse", "HEAD").trim();
+    writeFileSync(join(root, MD), markdown(SERVICE.replace("Node", "Go")));
+    commitAll(root, "switch to go");
+
+    const result = runDiff(root, `${base}..HEAD`);
+    expect(result.stdout).toContain(`warning ${MD}:8  Block 'service' changed`);
+    expect(result.stderr).toContain(`ARC42_CONSISTENT=${base}`);
+    expect(result.status).toBe(1);
+
+    const accepted = spawnSync(
+      process.execPath,
+      [
+        "--experimental-strip-types",
+        "--no-warnings",
+        "--conditions=development",
+        cliPath,
+        "--dir",
+        root,
+        "diff",
+        `${base}..HEAD`,
+      ],
+      { encoding: "utf8", env: { ...process.env, ARC42_CONSISTENT: base } },
+    );
+    expect(accepted.stdout).toContain("info These changes were accepted as intentional");
+    expect(accepted.status).toBe(0);
+  });
+
+  test("a symmetric range only reports the changes of the branch", () => {
+    const root = repository(MD, markdown(SERVICE));
+    const main = git(root, "rev-parse", "--abbrev-ref", "HEAD").trim();
+    git(root, "checkout", "-qb", "feature");
+    writeFileSync(join(root, "service.ts"), "export const service = true;\n");
+    commitAll(root, "feature: code only");
+    git(root, "checkout", "-q", main);
+    writeFileSync(join(root, MD), markdown(SERVICE, "Main-only prose change."));
+    commitAll(root, "main: prose only");
+
+    const branchOnly = runDiff(root, `${main}...feature`);
+    expect(branchOnly.stdout).toBe("");
+    expect(branchOnly.status).toBe(0);
+
+    const twoDot = runDiff(root, `${main}..feature`);
+    expect(twoDot.stdout).toContain("Section prose changed without changing block 'service'.");
+    expect(twoDot.status).toBe(1);
+  });
+
+  test("rejects a range combined with --staged", () => {
+    const root = repository(MD, markdown(SERVICE));
+    const result = runDiff(root, "HEAD..HEAD", "--staged");
+    expect(result.stderr).toContain("cannot be combined with --staged");
+    expect(result.status).toBe(1);
+  });
+});
