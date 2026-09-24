@@ -57,6 +57,20 @@ export type {
 } from "./resolver/types.ts";
 
 export type {
+  // Semantic workspace diff
+  ArchitectureDiff,
+  AttributeChange,
+  ChangeStatus,
+  DiagramChange,
+  DocumentChangeSummary,
+  EdgeChange,
+  ElementChange,
+  Location,
+  ProseSectionChange,
+  SectionRef,
+} from "./workspace-diff.ts";
+
+export type {
   // Workspace payload
   WorkspacePayload,
   CoverageResult,
