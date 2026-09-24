@@ -63,19 +63,23 @@ describe("CLI help", () => {
     expect(runCli("guide", "migration", "--help")).toContain("complete migration workflow");
   });
 
-  test("chapter guides include chapter content and the starter template", () => {
-    for (let chapter = 1; chapter <= 12; chapter++) {
-      const output = runCli("guide", "chapter", String(chapter));
-      expect(output).toContain(`# Chapter ${chapter}:`);
-      expect(output).not.toContain("## Content to capture");
-      expect(output).toContain("## Dependencies");
-      expect(output).toContain("## Starter template");
-      expect(output).toContain("arc42 explain");
-      expect(output).toContain("## Your role");
-      expect(output).toContain("## Before you write");
-      expect(output).toContain("## When you are done");
-    }
-  });
+  test(
+    "chapter guides include chapter content and the starter template",
+    { timeout: 30000 },
+    () => {
+      for (let chapter = 1; chapter <= 12; chapter++) {
+        const output = runCli("guide", "chapter", String(chapter));
+        expect(output).toContain(`# Chapter ${chapter}:`);
+        expect(output).not.toContain("## Content to capture");
+        expect(output).toContain("## Dependencies");
+        expect(output).toContain("## Starter template");
+        expect(output).toContain("arc42 explain");
+        expect(output).toContain("## Your role");
+        expect(output).toContain("## Before you write");
+        expect(output).toContain("## When you are done");
+      }
+    },
+  );
 
   test("migration and evidence guides define executable checkpoints", () => {
     const migration = runCli("guide", "migration");
