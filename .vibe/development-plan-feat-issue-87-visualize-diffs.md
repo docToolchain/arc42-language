@@ -104,7 +104,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Phase 0: E017 validation error for blocks outside any heading.
 - [x] Phase 1: `loadDiffSnapshots(dir, spec)` + `diffWorkspaces(base, head)` alongside existing code.
 - [x] Phase 2: rename to `lintArchitectureDiff`, rebuild on phase 1, remove line-range logic and old `collectGitDiff` parsing path.
-- [ ] Phase 3: `arc42 diff --format json`.
+- [x] Phase 3: `arc42 diff --format json`.
 - [ ] Phase 4: `serve --diff` / `build --diff`, Changes view, inline mode.
 - [ ] Phase 5: side-by-side mode, graph highlighting, example GitHub Action.
 - [ ] Phase 6: timeline (`arc42 history`, web Timeline view).
@@ -144,7 +144,14 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] 80d5594 `docs(arc42)`: `bb-diff` → "Diff Lint", new `bb-semantic-diff` + `if-semantic-diff`,
       `if-workspace-diff` → `diff-snapshots.ts`, runtime scenario, deployment hosts, `dec-semantic-diff`.
 
+### Phase 3 — JSON output (2bf3353)
+- [x] `{ version: 1, base: { label, commit }, head: { label }, acceptanceBase, accepted,
+      hasBlockingFindings, findings, architecture }`; same exit codes as text mode.
+- [x] Unknown `--format` values exit 2 (validate silently falls back to text; not changed here).
+- [x] Black-box tests: change set + findings, acceptance, unknown format.
+
 ## Commit
 ### Tasks
 - [ ] Keep docs/arc42 (dogfood) aligned when CLI/core responsibilities change (phases 1–4).
-- [ ] README / CLI help for new flags (`--format json`, `serve --diff`, `build --diff`).
+- [x] README / CLI help for `a..b`, `a...b`, `--format json`.
+- [ ] README / CLI help for `serve --diff`, `build --diff`.
