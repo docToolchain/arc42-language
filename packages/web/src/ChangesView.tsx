@@ -20,6 +20,10 @@ interface ChangesViewProps {
   /** Set when the difference could not be computed (serve --diff reload failure). */
   error: string | null;
   viewMode: "human" | "agent";
+  /** Heading of the view (default "Changes"). */
+  title?: string;
+  /** Shown below the heading, e.g. commit metadata. */
+  meta?: React.ReactNode;
 }
 
 /** Shorten a commit id to 8 characters; labels such as "working tree" pass through. */
@@ -28,12 +32,13 @@ export function snapshotLabel(label: string): string {
 }
 
 /** Renders one visualized architecture difference, grouped by document. */
-export function ChangesView({ diff, error, viewMode }: ChangesViewProps) {
+export function ChangesView({ diff, error, viewMode, title = "Changes", meta }: ChangesViewProps) {
   return (
     <article className={styles.changes} data-testid="changes-view">
       <h1 className={[docStyles.heading, docStyles.heading1, docStyles.chapterTitle].join(" ")}>
-        Changes
+        {title}
       </h1>
+      {meta}
       {diff && (
         <p className={styles.range} data-testid="changes-range">
           <code>{snapshotLabel(diff.base.label)}</code>

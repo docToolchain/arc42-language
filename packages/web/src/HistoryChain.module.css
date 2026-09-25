@@ -1,0 +1,152 @@
+.note {
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.note p {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.chain {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+  position: relative;
+}
+
+/* The string the pearls are threaded on */
+.chain::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: calc(1rem + 7px);
+  width: 2px;
+  background: var(--border);
+}
+
+.pearl {
+  position: relative;
+}
+
+.pearlButton {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pearlButton:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* A 16px slot keeps every bead centred on the string */
+.bead {
+  flex: none;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.1rem;
+}
+
+.bead::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.semantic::after {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--bg-sidebar);
+}
+
+.empty::after {
+  width: 8px;
+  height: 8px;
+  background: var(--c-ch0);
+  box-shadow: 0 0 0 3px var(--bg-sidebar);
+}
+
+.pending::after {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--c-ch0);
+  background: var(--bg-sidebar);
+}
+
+.error::after {
+  width: 14px;
+  height: 14px;
+  background: var(--diff-removed);
+  box-shadow: 0 0 0 3px var(--bg-sidebar);
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.subject {
+  font-size: 0.85rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.tag {
+  font-family: var(--font-sans);
+}
+
+.errorTag {
+  font-family: var(--font-sans);
+  color: var(--diff-removed);
+  font-weight: 600;
+}
+
+.message {
+  margin: 0 0.75rem 0.5rem calc(1rem + 16px + 0.6rem);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.message > :first-child {
+  margin-top: 0;
+}
+
+.message > :last-child {
+  margin-bottom: 0;
+}

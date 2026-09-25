@@ -16,8 +16,16 @@ interface SidebarProps {
   changes?: {
     active: boolean;
     onSelect: () => void;
-    /** Changed documents by file path. */
+    /** Changed documents by file name. */
     documents: Map<string, DiffDocument>;
+  };
+  /** Present when an architecture history is available (serve, build --with-history). */
+  history?: {
+    active: boolean;
+    onSelect: () => void;
+    onSelectDocuments: () => void;
+    /** The pearl chain, shown instead of the documents while active. */
+    panel: React.ReactNode;
   };
   viewMode: "human" | "agent";
   onToggleViewMode: () => void;
@@ -35,6 +43,7 @@ export function Sidebar({
   onSelectMetaModel,
   showMetaModel,
   changes,
+  history,
   viewMode,
   onToggleViewMode,
   theme,
@@ -88,7 +97,34 @@ export function Sidebar({
         </button>
       </div>
 
-      {changes && (
+      {history && (
+        <div className={styles.tabs} role="tablist" aria-label="Sidebar view">
+          <button
+            type="button"
+            role="tab"
+            data-testid="sidebar-tab-documents"
+            aria-selected={!history.active}
+            className={[styles.tab, !history.active ? styles.tabActive : ""].join(" ")}
+            onClick={history.onSelectDocuments}
+          >
+            Documents
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-testid="sidebar-tab-history"
+            aria-selected={history.active}
+            className={[styles.tab, history.active ? styles.tabActive : ""].join(" ")}
+            onClick={history.onSelect}
+          >
+            History
+          </button>
+        </div>
+      )}
+
+      {history?.active && history.panel}
+
+      {!history?.active && changes && (
         <a
           data-testid="sidebar-changes-link"
           href="#changes"
@@ -106,77 +142,81 @@ export function Sidebar({
         </a>
       )}
 
-      <ul className={styles.docs} role="list">
-        {documents.map((doc, i) => {
-          const isActive = i === activeDocIndex && !changes?.active;
-          const docChanges = changes?.documents.get(doc.filePath);
-          return (
-            <li key={doc.filePath} className={styles.doc}>
-              <a
-                data-testid="sidebar-doc-link"
-                aria-current={isActive ? "page" : undefined}
-                href={`#${filename(doc.filePath)}`}
-                className={[styles.docBtn, isActive ? styles.docBtnActive : ""]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onSelectDoc(i);
-                }}
-              >
-                <span className={styles.docLabel}>{chapterLabel(doc)}</span>
-                {docChanges && (
-                  <span data-testid="doc-change-badge">
-                    <ChangeCounts {...docChanges} />
-                  </span>
-                )}
-              </a>
+      {!history?.active && (
+        <ul className={styles.docs} role="list">
+          {documents.map((doc, i) => {
+            const isActive = i === activeDocIndex && !changes?.active;
+            const docChanges = changes?.documents.get(filename(doc.filePath));
+            return (
+              <li key={doc.filePath} className={styles.doc}>
+                <a
+                  data-testid="sidebar-doc-link"
+                  aria-current={isActive ? "page" : undefined}
+                  href={`#${filename(doc.filePath)}`}
+                  className={[styles.docBtn, isActive ? styles.docBtnActive : ""]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectDoc(i);
+                  }}
+                >
+                  <span className={styles.docLabel}>{chapterLabel(doc)}</span>
+                  {docChanges && (
+                    <span data-testid="doc-change-badge">
+                      <ChangeCounts {...docChanges} />
+                    </span>
+                  )}
+                </a>
 
-              {isActive && activeDoc && (
-                <ul className={styles.headings} role="list">
-                  {getDocHeadings(activeDoc)
-                    .filter((h) => h.level > 1)
-                    .map((h, j) => {
-                      const slug = headingAnchor(h.text);
-                      const headingKinds = blockKindsByHeading.get(slug) ?? [];
-                      return (
-                        <li
-                          key={j}
-                          className={styles.heading}
-                          style={{ paddingLeft: `${(h.level - 2) * 12}px` }}
-                        >
-                          <a
-                            data-testid="sidebar-heading-link"
-                            href={`#${filename(doc.filePath)}:${slug}`}
-                            className={styles.headingLink}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onSelectHeading(slug);
-                            }}
+                {isActive && activeDoc && (
+                  <ul className={styles.headings} role="list">
+                    {getDocHeadings(activeDoc)
+                      .filter((h) => h.level > 1)
+                      .map((h, j) => {
+                        const slug = headingAnchor(h.text);
+                        const headingKinds = blockKindsByHeading.get(slug) ?? [];
+                        return (
+                          <li
+                            key={j}
+                            className={styles.heading}
+                            style={{ paddingLeft: `${(h.level - 2) * 12}px` }}
                           >
-                            <span className={styles.headingText}>{h.text}</span>
-                            {headingKinds.length > 0 && (
-                              <span className={styles.headingDots} aria-hidden="true">
-                                {headingKinds.map((kind: string) => (
-                                  <span
-                                    key={kind}
-                                    className={styles.blockDot}
-                                    style={{ backgroundColor: KIND_COLOR[kind] ?? "var(--c-ch0)" }}
-                                    title={kind}
-                                  />
-                                ))}
-                              </span>
-                            )}
-                          </a>
-                        </li>
-                      );
-                    })}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                            <a
+                              data-testid="sidebar-heading-link"
+                              href={`#${filename(doc.filePath)}:${slug}`}
+                              className={styles.headingLink}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onSelectHeading(slug);
+                              }}
+                            >
+                              <span className={styles.headingText}>{h.text}</span>
+                              {headingKinds.length > 0 && (
+                                <span className={styles.headingDots} aria-hidden="true">
+                                  {headingKinds.map((kind: string) => (
+                                    <span
+                                      key={kind}
+                                      className={styles.blockDot}
+                                      style={{
+                                        backgroundColor: KIND_COLOR[kind] ?? "var(--c-ch0)",
+                                      }}
+                                      title={kind}
+                                    />
+                                  ))}
+                                </span>
+                              )}
+                            </a>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <div className={styles.footer}>
         <button

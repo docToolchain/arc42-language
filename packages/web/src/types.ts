@@ -60,6 +60,9 @@ export type {
   DiffPayload,
   DiffSegment,
   SectionContent,
+  // Architecture history
+  HistoryEntry,
+  HistoryPearl,
 } from "@arc42/core/types";
 
 /** Virtual node type created by DocumentView grouping — never from the server */
