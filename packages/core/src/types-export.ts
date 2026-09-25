@@ -71,6 +71,14 @@ export type {
 } from "./workspace-diff.ts";
 
 export type {
+  // Render-ready diff view
+  DiffDocument,
+  DiffSegment,
+  DiffView,
+  SectionContent,
+} from "./diff-view.ts";
+
+export type {
   // Workspace payload
   WorkspacePayload,
   CoverageResult,
