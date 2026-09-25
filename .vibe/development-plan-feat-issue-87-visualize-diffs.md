@@ -191,7 +191,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Phase 5: history JSONL (index + chunks) for serve and build `--with-history`, pearl chain
       sidebar view, commit message, working-tree pearl.
 - [x] Phase 6: `build --single-file` (with and without `--with-history`).
-- [ ] Phase 7: side-by-side mode, graph highlighting, example GitHub Action for PR previews.
+- [~] Phase 7: skipped after review — the inline, word-level diff with the Changes / Current / Previous switch covers the need for a side-by-side mode; graph highlighting is not pursued. The PR architecture review Action shipped with phase 6.
 
 ## Code
 ### Phase 0 — E017 (540e96c)
