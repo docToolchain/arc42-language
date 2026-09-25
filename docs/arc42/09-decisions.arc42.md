@@ -347,3 +347,22 @@ date: 2026-09-24
 addresses: qg-verifiability, qg-readability, con-prose-first-authoring
 :::
 ```
+
+## Symmetric Serve and Build with a JSON Lines History
+
+Visualizing architecture changes must work the same on a developer's machine and on a static
+host. `serve` and `build` therefore share one data layout: `--diff` embeds or serves a single
+difference, and the architecture history is a small pearl index plus chunks of self-contained
+changes (rendered sections, elements, findings) in JSON Lines. The server computes chunks lazily
+for the pearls in view; `build --with-history` writes the same files ahead of time. A commit that
+cannot be diffed carries its error on its own pearl instead of failing the whole history.
+
+```arc42
+:::decision
+id: dec-symmetric-history
+title: Share one JSON Lines history layout between serve (lazy) and build (precomputed)
+status: accepted
+date: 2026-09-25
+addresses: qg-readability, qg-cli-usability
+:::
+```

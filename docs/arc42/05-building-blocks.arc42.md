@@ -608,7 +608,10 @@ prose is shown as formatted text; arc42 element blocks are revealed by clicking 
 stripe; Mermaid diagrams are rendered inline. An Agent view toggle shows raw DSL fences for
 tooling consumers. When a difference is supplied (`serve --diff`, `build --diff`), a Changes
 view lists the changed sections of both snapshots grouped by document — rendered like the
-documentation itself, with the attribute changes of each element and the lint findings. Imports
+documentation itself, with the attribute changes of each element and the lint findings. Inside a
+Git repository the sidebar also offers the architecture history as a chain of pearls — one per
+commit that touched the architecture documents — whose changes load lazily as they scroll into
+view and render in the same Changes view. Imports
 shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
 the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
 and as a GitHub Pages static deployment.
@@ -643,7 +646,10 @@ path: packages/web/src/App.tsx
 The CLI hosts the web renderer as a local HTTP server. On `arc42 serve`, it builds the workspace
 payload via the core library, exposes it at `/api/workspace`, and serves the web renderer's static
 assets. With `--diff`, it also exposes the visualized difference at `/api/diff` (404 without
-`--diff`, 500 with the error when the difference cannot be computed).
+`--diff`, 500 with the error when the difference cannot be computed). The architecture history is
+served as JSON Lines under `/api/history/` — `index.jsonl` with the pearls and `chunk-<n>.jsonl`
+with their changes, computed on request — in the same layout that `arc42 build --with-history`
+writes to `history/` (422 with the reason outside a Git repository).
 
 ```arc42
 :::ignore H020 if-cli and if-cli-web share packages/cli/src/cli.ts as the entry point but represent distinct contracts: if-cli is the command-line interface for all actors, if-cli-web is the HTTP hosting contract specifically for the Web Renderer :::
@@ -651,7 +657,7 @@ assets. With `--diff`, it also exposes the visualized difference at `/api/diff` 
 id: if-cli-web
 title: Web Renderer Hosting Contract
 provider: bb-web-renderer
-protocol: HTTP (localhost) — static assets + JSON API (/api/workspace, /api/diff)
+protocol: HTTP (localhost) — static assets + JSON API (/api/workspace, /api/diff) + JSON Lines (/api/history/)
 path: packages/cli/src/cli.ts
 :::
 ```
