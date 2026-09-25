@@ -28,6 +28,11 @@
   --c-ch12: #6366f1;
   --c-interface: #ec4899;
 
+  /* Architecture diff status */
+  --diff-added: #16a34a;
+  --diff-modified: #d97706;
+  --diff-removed: #dc2626;
+
   --sidebar-w: 260px;
   --radius: 6px;
 }

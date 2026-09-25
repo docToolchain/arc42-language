@@ -1,0 +1,274 @@
+.changes {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.range {
+  margin: -0.75rem 0 0;
+  color: var(--text-muted);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.error {
+  border: 1px solid var(--diff-removed);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--diff-removed) 8%, transparent);
+}
+
+.error pre {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.empty {
+  color: var(--text-muted);
+}
+
+/* ─── Findings ─────────────────────────────────────────────────────────────── */
+
+.findings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.findings li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius);
+  border-left: 3px solid var(--c-ch0);
+  background: var(--bg-card);
+  font-size: 0.9rem;
+}
+
+.findings li.warning {
+  border-left-color: var(--diff-modified);
+}
+
+.severity {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.location {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* ─── Documents and segments ───────────────────────────────────────────────── */
+
+.document {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.documentHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+}
+
+.documentTitle {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.documentTitle a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.documentTitle a:hover {
+  text-decoration: underline;
+}
+
+.counts {
+  display: inline-flex;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.countAdded {
+  color: var(--diff-added);
+}
+
+.countModified {
+  color: var(--diff-modified);
+}
+
+.countRemoved {
+  color: var(--diff-removed);
+}
+
+.segment {
+  --status-color: var(--c-ch0);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--status-color);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.added {
+  --status-color: var(--diff-added);
+}
+
+.modified {
+  --status-color: var(--diff-modified);
+}
+
+.removed {
+  --status-color: var(--diff-removed);
+}
+
+.segmentHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.status,
+.chip {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--status-color);
+  background: color-mix(in srgb, var(--status-color) 14%, transparent);
+}
+
+.chip {
+  --status-color: var(--c-ch0);
+}
+
+.chip.added {
+  --status-color: var(--diff-added);
+}
+
+.chip.modified {
+  --status-color: var(--diff-modified);
+}
+
+.chip.removed {
+  --status-color: var(--diff-removed);
+}
+
+.path {
+  overflow-wrap: anywhere;
+}
+
+.changeList {
+  list-style: none;
+  margin: 0.6rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.changeList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.kind,
+.note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.attributesWrap {
+  flex-basis: 100%;
+}
+
+.attributes {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
+}
+
+.attributes th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 0.15rem 0.75rem 0.15rem 0;
+  vertical-align: top;
+}
+
+.attributes td {
+  padding: 0.15rem 0.5rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.before {
+  text-decoration: line-through;
+  color: var(--diff-removed);
+  background: color-mix(in srgb, var(--diff-removed) 8%, transparent);
+}
+
+.after {
+  color: var(--diff-added);
+  background: color-mix(in srgb, var(--diff-added) 8%, transparent);
+}
+
+.removedContent {
+  border-left: 2px dashed var(--diff-removed);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: color-mix(in srgb, var(--diff-removed) 5%, transparent);
+  padding: 0.25rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.toggleBase {
+  margin-top: 0.5rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.toggleBase:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
