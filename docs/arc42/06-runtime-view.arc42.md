@@ -270,3 +270,59 @@ sequenceDiagram
 The skill is a static Markdown file installed in the agent's skills directory. Loading it produces
 no side effects and involves no network calls, CLI invocations, or biz42 tool interactions. The
 skill tells the agent _how_ to read biz42 context — it does not perform that reading itself.
+
+## Pull request architecture review
+
+When a pull request is opened or updated, a GitHub Actions workflow compares the architecture of
+each workspace with the merge base of the target branch. Workspaces whose architecture changed are
+rendered as one self-contained review page each — every changed section of both versions, the
+attribute changes and the lint findings — published as a workflow artifact. A pull request comment
+(updated in place on every push) summarizes the changes and links the artifact, so a reviewer sees
+the architectural impact at a glance before reading the code diff.
+
+```arc42
+:::runtime-scenario
+id: scenario-pr-architecture-review
+title: Pull request architecture review
+trigger: A pull request is opened or updated
+involves: bb-cli, bb-workspace-fs, bb-diff, bb-semantic-diff, bb-web-renderer
+:::
+```
+
+```arc42
+:::diagram
+id: pr-architecture-review-sequence
+scenario: scenario-pr-architecture-review
+notation: mermaid-sequence
+aliases: bb_cli=bb-cli, bb_workspace_fs=bb-workspace-fs, bb_diff=bb-diff, bb_semantic_diff=bb-semantic-diff, bb_web=bb-web-renderer
+:::
+```
+
+```mermaid
+sequenceDiagram
+    actor actor_ci as GitHub Actions workflow
+    actor actor_reviewer as Reviewer
+    participant bb_cli as CLI
+    participant bb_workspace_fs as Filesystem Workspace Adapter
+    participant bb_diff as Diff Lint
+    participant bb_semantic_diff as Semantic Diff
+    participant bb_web as Web Renderer
+
+    actor_ci->>bb_cli: arc42 diff origin/main...HEAD --format json
+    bb_cli->>bb_workspace_fs: Load merge-base and head snapshots
+    bb_workspace_fs-->>bb_cli: Workspace models and changes
+    bb_cli->>bb_diff: Lint architecture diff
+    bb_diff->>bb_semantic_diff: Compare base and head models
+    bb_semantic_diff-->>bb_diff: Changes
+    bb_diff-->>bb_cli: Findings and changes
+    bb_cli-->>actor_ci: Changed? Counts and findings
+    actor_ci->>bb_cli: arc42 build --diff origin/main...HEAD --single-file
+    bb_cli-->>actor_ci: Self-contained review page (web renderer inlined)
+    actor_ci-->>actor_reviewer: Artifact and pull request comment
+    actor_reviewer->>bb_web: Open the review page
+    bb_web-->>actor_reviewer: Rendered changed sections, both versions
+```
+
+The workflow lives in `.github/workflows/architecture-review.yml`; its logic is
+`scripts/architecture-review.ts`, which can also be run locally. Pull requests from forks receive
+a read-only token, so for them the review appears in the job summary instead of a comment.
