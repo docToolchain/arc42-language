@@ -131,6 +131,8 @@ test.describe("arc42 build --diff", () => {
       ]);
       // The glossary prose contains a literal "</script>"; it must stay inside the JSON.
       expect(JSON.stringify(payload)).toContain("</script>");
+      // String.replace patterns such as "$&" in the data must arrive verbatim.
+      expect(JSON.stringify(payload)).toContain("`$&` patterns");
       expect(html).toContain("\\u003c/script>");
     } finally {
       rmSync(out, { recursive: true, force: true });
