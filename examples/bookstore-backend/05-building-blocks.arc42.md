@@ -40,7 +40,8 @@ graph TD
 
 ## API Gateway
 
-The gateway is the single entry point for all external traffic. It terminates TLS, validates JWT tokens, enforces rate limits, and routes requests to the appropriate downstream service, including personalised book recommendations. No business logic lives here — the gateway is a pure infrastructure component. It rejects unauthenticated requests before they reach any business service (except for public endpoints like catalog search and login).
+The gateway is the single entry point for all external traffic. It terminates TLS,
+validates JWT tokens, enforces rate limits, and routes requests to the appropriate downstream service, including personalised book recommendations. No business logic lives here — the gateway is a pure infrastructure component. It rejects unauthenticated requests before they reach any business service (except for public endpoints like catalog search and login).
 
 The gateway propagates a trace identifier on every request. If the incoming request carries an `X-Trace-Id` header, the gateway preserves it; otherwise, it generates a new one. This trace id flows through all downstream calls and appears in every log entry.
 
