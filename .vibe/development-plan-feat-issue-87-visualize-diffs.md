@@ -277,6 +277,20 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - Not verifiable here: the workflow itself (needs a pull request); `artifact-url` output of
   upload-artifact (available since v4).
 
+### Review feedback on #91 — inline chapters and review summary
+- [x] 3aa4ccc `fix(core)`: architecture documents are not implementation paths (15 → 11 hints on #91).
+- [x] 2e11d97 `docs(vibe)`: decisions (inline chapters, summary, skeletons, #92).
+- [x] c7f6816 `feat(core)`: `FindingGroups` (warnings / untouched / updated / uncovered) in the lint
+      result, `DiffPayload` and `diff --format json`.
+- [x] bf7dc15 + 07ba9f7 `feat(core)`: per-document `outline` (merged base/head order, status, head line
+      range, `empty`); removed sections follow their preceding base section.
+- [x] a3c19a6 `feat(ci)`: grouped pull request comment (warnings + untouched visible, rest collapsed).
+- [x] 529c066 `feat(web)`: `ChapterDiff` (Documents view with `--diff`; history with skeletons),
+      summary with links, sidebar heading dots.
+- Hook pitfall: rendering `ChapterDiff` from inside `DocumentView` after an early return changes the
+  hook count between documents — the choice now happens in a hook-free wrapper.
+- Declined for now: proposal 3 (`git diff --name-only` instead of the full patch) — pending decision.
+
 ## Commit
 ### Tasks
 - [ ] Keep docs/arc42 (dogfood) aligned when CLI/core responsibilities change (phases 1–4).
