@@ -16,7 +16,6 @@ graph TD
     actor-admin(["Store Administrator"])
     actor-payment["Payment Processor"]
     actor-email["Email Delivery Service"]
-    actor-sms["SMS Gateway"]
 
     subgraph system["Bookstore Backend"]
         bb-api-gateway["API Gateway"]
@@ -28,7 +27,6 @@ graph TD
     actor-admin -->|"if-gateway-api"| bb-api-gateway
     actor-payment -->|"if-order-payment"| bb-order-service
     actor-email -->|"if-notify-email"| bb-notification-service
-    actor-sms -->|"if-notify-sms"| bb-notification-service
 ```
 
 Customers browse the catalog, manage their shopping cart, place orders, and review their order history. They interact with the backend indirectly through a web single-page application or a native mobile app. Authentication happens via username/password login, which yields a JWT token for subsequent requests.
@@ -85,16 +83,3 @@ requires: if-notify-email
 :::
 ```
 
-## SMS Gateway (AWS SNS)
-
-An external SMS gateway used for time-sensitive notifications: order dispatch alerts and delivery reminders. Usage is limited to high-value order events to control cost.
-
-```arc42
-:::actor
-id: actor-sms
-title: SMS Gateway
-type: system
-description: AWS SNS for transactional SMS delivery
-requires: if-notify-sms
-:::
-```

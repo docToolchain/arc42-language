@@ -266,20 +266,6 @@ protocol: HTTPS / AWS SES API
 :::
 ```
 
-### SMS Delivery Contract
-
-The Notification Service provides the contract for transactional SMS delivery.
-
-```arc42
-:::ignore H014 This is only a demo for the arc42, code is out of scope:::
-:::interface
-id: if-notify-sms
-title: SMS Delivery Contract
-provider: bb-notification-service
-protocol: HTTPS / AWS SNS API
-:::
-```
-
 ## Message Queue
 
 An SQS-based message queue that decouples the Order Service from the Notification Service. The Order Service publishes domain events (OrderPlaced, OrderShipped, OrderCancelled) to the queue. The Notification Service consumes these events and triggers the appropriate notifications.
@@ -292,7 +278,7 @@ The queue provides at-least-once delivery. The Notification Service handles dupl
 :::building-block
 id: bb-message-queue
 title: Message Queue
-technology: AWS SQS
+technology: AWS SQS FIFO
 implements: concept-logging
 :::
 ```
