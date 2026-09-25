@@ -126,6 +126,12 @@ test.describe("Changes inline in the chapters", () => {
     const glossary = segment(page, "modified: Glossary");
     // A literal "</script>" in the prose is rendered as text.
     await expect(glossary.getByTestId("segment-head")).toContainText("</script>");
+    // Only the appended sentence is marked; the unchanged prose around it stays plain.
+    const head = glossary.getByTestId("segment-head");
+    await expect(head.locator("ins").first()).toContainText("Terms are plain words, never");
+    const inserted = (await head.locator("ins").allTextContents()).join("");
+    expect(inserted).not.toContain("These definitions ensure");
+    await expect(head.locator("del")).toHaveCount(0);
     await glossary.getByTestId("toggle-base").click();
     await expect(glossary.getByTestId("segment-base")).not.toContainText("</script>");
 

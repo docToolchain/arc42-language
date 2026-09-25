@@ -314,6 +314,13 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       across both columns with unchanged runs collapsed to 2 lines of context. A plain LCS in
       `web/src/textDiff.ts` (common prefix/suffix trimmed first) — presentation only, the core
       `AttributeChange` stays whole values.
+- [x] `feat(web)`: prose of a changed section marks only the changed words, in place. The rendered
+      HTML of all prose in the section is tokenized (tags, entities, words, whitespace) and diffed
+      like `htmldiff`: the head markup is kept, added text wraps in `<ins>`, removed text shows in
+      `<del>` where it used to be (whole removed paragraphs keep their markup when balanced).
+      Short unchanged filler between changes (≤ 1 word of ≤ 3 characters) folds into the change so
+      rewrites read as removed-then-added instead of confetti. Presentation only; "Show previous
+      version" still shows the full base.
 
 ## Commit
 ### Tasks

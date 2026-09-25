@@ -276,6 +276,23 @@
   background: color-mix(in srgb, var(--diff-added) 14%, transparent);
 }
 
+/* Changed words in the prose of a changed section (inside rendered Markdown). */
+.proseAdded,
+.proseRemoved {
+  border-radius: 2px;
+  text-decoration: none;
+}
+
+.proseAdded {
+  background: color-mix(in srgb, var(--diff-added) 18%, transparent);
+}
+
+.proseRemoved {
+  text-decoration: line-through;
+  color: var(--diff-removed);
+  background: color-mix(in srgb, var(--diff-removed) 12%, transparent);
+}
+
 /* Multi-line values (diagram sources): a line diff with unchanged runs collapsed. */
 .lineDiff {
   margin: 0;
