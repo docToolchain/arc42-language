@@ -162,6 +162,27 @@ describe("loadDiffSnapshots — single commit", () => {
     ]);
   });
 
+  test("refuses the boundary commit of a shallow clone", async () => {
+    const origin = repository({ [FILE]: markdown("Owns orders.") });
+    write(origin, FILE, markdown("Owns orders.", "Go"));
+    commit(origin, "switch to go");
+    const clone = mkdtempSync(join(tmpdir(), "arc42-diff-snapshots-shallow-"));
+    createdDirs.push(clone);
+    execFileSync("git", ["clone", "-q", "--depth", "1", `file://${origin}`, clone]);
+    await expect(loadDiffSnapshots(clone, { commit: "HEAD" })).rejects.toThrow(
+      /not available in this shallow clone/,
+    );
+  });
+
+  test("handles patches larger than a mebibyte", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    write(root, "data/large.txt", `${"x".repeat(100)}\n`.repeat(30000));
+    const large = commit(root, "large file");
+    const snapshots = await loadDiffSnapshots(root, { commit: large });
+    expect(snapshots.patch.length).toBeGreaterThan(1024 * 1024);
+    expect(snapshots.changes.map((change) => change.filePath)).toEqual(["data/large.txt"]);
+  });
+
   test("rejects a commit combined with a reference", async () => {
     const root = repository({ [FILE]: markdown("Owns orders.") });
     await expect(loadDiffSnapshots(root, { commit: "HEAD", reference: "HEAD" })).rejects.toThrow(

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 import { computeCoverage, loadWorkspaceFromDocuments } from "@arc42/core";
@@ -106,6 +106,13 @@ function emptySource(): SnapshotSource {
   };
 }
 
+/** Boundary commits of a shallow clone: their parents are missing, not absent. */
+function shallowCommits(root: string): Set<string> {
+  const path = resolve(root, git(root, ["rev-parse", "--git-path", "shallow"]).trim());
+  if (!existsSync(path)) return new Set();
+  return new Set(readFileSync(path, "utf8").split("\n").filter(Boolean));
+}
+
 function resolveCommit(root: string, reference: string): string {
   return git(root, ["rev-parse", "--verify", `${reference}^{commit}`]).trim();
 }
@@ -133,6 +140,11 @@ function comparison(root: string, spec: DiffSpec): Comparison {
       throw new Error("A single commit cannot be combined with a reference or --staged");
     }
     const commit = resolveCommit(root, spec.commit);
+    if (shallowCommits(root).has(commit)) {
+      throw new Error(
+        `The parent of ${commit} is not available in this shallow clone — fetch more history (git fetch --unshallow)`,
+      );
+    }
     const parent = git(root, ["rev-list", "--parents", "-n", "1", commit]).trim().split(" ")[1];
     return {
       base: parent ? commitSource(root, parent) : emptySource(),
