@@ -9,7 +9,7 @@
  */
 
 import type { AstNode, HeadingNode } from "./ast.ts";
-import type { DiffFinding } from "./diff.ts";
+import type { DiffFinding, FindingGroups } from "./diff.ts";
 import type { Element } from "./model/types.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { WorkspacePayload } from "./workspace.ts";
@@ -70,6 +70,8 @@ export interface DiffPayload {
   head: { label: string };
   /** Lint findings, warnings first (same order as `arc42 diff`). */
   findings: DiffFinding[];
+  /** The same findings grouped for a reviewer. */
+  groups: FindingGroups;
   view: DiffView;
 }
 

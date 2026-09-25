@@ -41,6 +41,7 @@ export async function loadDiffPayload(dir: string, spec: DiffSpec): Promise<Load
       base: { label: snapshots.base.label, commit: snapshots.baseCommit },
       head: { label: snapshots.head.label },
       findings,
+      groups: result.groups,
       view: buildDiffView(snapshots.base.payload, snapshots.head.payload, result.architecture),
     },
   };
