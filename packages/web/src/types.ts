@@ -59,7 +59,11 @@ export type {
   DiffFinding,
   DiffPayload,
   DiffSegment,
+  ElementCodeChange,
+  FindingGroups,
+  OutlineEntry,
   SectionContent,
+  SectionRef,
   // Architecture history
   HistoryEntry,
   HistoryPearl,

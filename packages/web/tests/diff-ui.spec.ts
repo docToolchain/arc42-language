@@ -19,7 +19,24 @@ function segment(page: Page, name: string) {
   return page.getByRole("region", { name });
 }
 
-test.describe("Changes view", () => {
+const GLOSSARY_FILE = "12-glossary.arc42.md";
+
+function sectionOrder(page: Page) {
+  // Labels of every section of the chapter, in document order.
+  return page
+    .getByTestId("chapter-diff")
+    .locator('[data-testid="diff-segment"], [data-testid="unchanged-section"]')
+    .evaluateAll((sections) =>
+      sections.map(
+        (section) =>
+          section.getAttribute("aria-label") ??
+          section.querySelector("h1, h2, h3, h4")?.textContent ??
+          "",
+      ),
+    );
+}
+
+test.describe("Changes summary", () => {
   test("opens by default and summarizes the difference", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("changes-view")).toBeVisible();
@@ -29,67 +46,94 @@ test.describe("Changes view", () => {
     await expect(changesLink).toContainText("+1");
     await expect(changesLink).toContainText("~2");
     await expect(changesLink).toContainText("−1");
+    // The summary does not render section content; that lives in the chapters.
+    await expect(page.getByTestId("diff-segment")).toHaveCount(0);
   });
 
-  test("lists lint findings", async ({ page }) => {
+  test("lists warnings that link to their element in the chapter", async ({ page }) => {
     await page.goto("/#changes");
-    await expect(page.getByTestId("diff-finding")).toContainText([
+    const warning = page.getByTestId("diff-warnings").getByTestId("diff-finding");
+    await expect(warning).toContainText([
       "Block 'bb-catalog-service' changed without changing its section prose.",
     ]);
+    await warning.getByRole("link").click();
+    await expect(page).toHaveURL(/#05-building-blocks\.arc42\.md:el-bb-catalog-service$/);
+    await expect(page.getByTestId("chapter-diff")).toBeVisible();
+    await expect(page.locator("#el-bb-catalog-service")).toBeVisible();
   });
 
-  test("renders changed segments per document with their status", async ({ page }) => {
+  test("indexes the changed chapters and elements", async ({ page }) => {
     await page.goto("/#changes");
-    const documents = page.getByTestId("diff-document");
+    const documents = page.getByTestId("diff-index-document");
     await expect(documents).toHaveCount(2);
-    await expect(page.getByTestId("diff-document-title")).toHaveText([
-      "Building Blocks",
-      "Glossary",
+    await expect(documents.nth(0).getByTestId("diff-index-item")).toHaveText([
+      "bb-catalog-service",
+      "if-notify-sms",
     ]);
+    await expect(documents.nth(1).getByTestId("diff-index-item")).toHaveText([
+      "§ Glossary",
+      "term-idempotency-key",
+    ]);
+    await documents.nth(1).getByTestId("diff-index-document-link").click();
+    await expect(page).toHaveURL(new RegExp(`#${GLOSSARY_FILE.replaceAll(".", "\\.")}$`));
+    await expect(page.getByTestId("chapter-diff")).toHaveAttribute("data-file", GLOSSARY_FILE);
+  });
+});
 
-    await expect(segment(page, "modified: Catalog Service")).toBeVisible();
-    await expect(segment(page, "removed: SMS Delivery Contract")).toBeVisible();
-    await expect(segment(page, "modified: Glossary")).toBeVisible();
-    await expect(segment(page, "added: Idempotency Key")).toBeVisible();
+test.describe("Changes inline in the chapters", () => {
+  test("renders a changed chapter in full with its changes in place", async ({ page }) => {
+    await page.goto(`/#${BB}`);
+    const chapter = page.getByTestId("chapter-diff");
+    await expect(chapter).toBeVisible();
+    // Unchanged sections are rendered from the document, not as placeholders.
+    await expect(page.getByTestId("section-skeleton")).toHaveCount(0);
+    await expect(chapter).toContainText(
+      "The gateway is the single entry point for all external traffic.",
+    );
+
+    const order = await sectionOrder(page);
+    const at = (label: string) => order.indexOf(label);
+    expect(at("modified: Catalog Service")).toBeGreaterThan(at("API Gateway"));
+    // The removed section appears where it used to be: after the e-mail contract.
+    expect(at("removed: SMS Delivery Contract")).toBe(at("Email Delivery Contract") + 1);
   });
 
-  test("shows attribute changes with old and new values", async ({ page }) => {
-    await page.goto("/#changes");
-    const row = segment(page, "modified: Catalog Service").getByTestId("attribute-change");
-    await expect(row).toHaveCount(1);
+  test("shows attribute changes and the previous version of a modified section", async ({
+    page,
+  }) => {
+    await page.goto(`/#${BB}`);
+    const catalog = segment(page, "modified: Catalog Service");
+    const row = catalog.getByTestId("attribute-change");
     await expect(row.locator("th")).toHaveText("technology");
     await expect(row.locator("td").nth(0)).toHaveText("Node.js / Express");
     await expect(row.locator("td").nth(1)).toHaveText("Go");
+
+    await expect(catalog.getByTestId("segment-base")).toHaveCount(0);
+    await catalog.getByTestId("toggle-base").click();
+    await expect(catalog.getByTestId("toggle-base")).toHaveAttribute("aria-expanded", "true");
+    await expect(catalog.getByTestId("segment-base")).toBeVisible();
   });
 
-  test("renders section content from the matching snapshot", async ({ page }) => {
-    await page.goto("/#changes");
+  test("renders added, removed and modified prose from the matching snapshot", async ({ page }) => {
+    await page.goto(`/#${GLOSSARY_FILE}`);
     await expect(segment(page, "added: Idempotency Key").getByTestId("segment-head")).toContainText(
       "A client-chosen key that makes retried order submissions safe.",
     );
+    const glossary = segment(page, "modified: Glossary");
+    // A literal "</script>" in the prose is rendered as text.
+    await expect(glossary.getByTestId("segment-head")).toContainText("</script>");
+    await glossary.getByTestId("toggle-base").click();
+    await expect(glossary.getByTestId("segment-base")).not.toContainText("</script>");
+
+    await page.goto(`/#${BB}`);
     await expect(
       segment(page, "removed: SMS Delivery Contract").getByTestId("segment-base"),
     ).toContainText(
       "The Notification Service provides the contract for transactional SMS delivery.",
     );
-    // A literal "</script>" in the prose is rendered as text.
-    await expect(segment(page, "modified: Glossary").getByTestId("segment-head")).toContainText(
-      "</script>",
-    );
   });
 
-  test("reveals the previous version of a modified section", async ({ page }) => {
-    await page.goto("/#changes");
-    const glossary = segment(page, "modified: Glossary");
-    await expect(glossary.getByTestId("segment-base")).toHaveCount(0);
-    await glossary.getByTestId("toggle-base").click();
-    await expect(glossary.getByTestId("toggle-base")).toHaveAttribute("aria-expanded", "true");
-    const previous = glossary.getByTestId("segment-base");
-    await expect(previous).toContainText("share the same understanding.");
-    await expect(previous).not.toContainText("</script>");
-  });
-
-  test("marks changed documents in the sidebar and navigates between views", async ({ page }) => {
+  test("marks changed chapters and headings in the sidebar", async ({ page }) => {
     await page.goto("/#changes");
     const building = page.getByTestId("sidebar-doc-link").filter({ hasText: "5. Building Blocks" });
     await expect(building.getByTestId("doc-change-badge")).toHaveText("~1−1");
@@ -97,12 +141,22 @@ test.describe("Changes view", () => {
     await expect(intro.getByTestId("doc-change-badge")).toHaveCount(0);
 
     await building.click();
-    await expect(page).toHaveURL(new RegExp(`#${BB.replaceAll(".", "\\.")}$`));
     await expect(page.getByTestId("changes-view")).toHaveCount(0);
-    await expect(page.locator("article h1")).toHaveText("Building Blocks");
+    const changed = page.getByTestId("sidebar-heading-link").filter({
+      has: page.getByTestId("heading-change"),
+    });
+    await expect(changed).toHaveText(["Catalog Service"]);
+    await expect(changed.getByTestId("heading-change")).toHaveAttribute("data-status", "modified");
 
     await page.getByTestId("sidebar-changes-link").click();
     await expect(page.getByTestId("changes-view")).toBeVisible();
+  });
+
+  test("shows unchanged chapters as usual", async ({ page }) => {
+    await page.goto("/#01-introduction.arc42.md");
+    await expect(page.locator("article h1")).toBeVisible();
+    await expect(page.getByTestId("chapter-diff")).toHaveCount(0);
+    await expect(page.getByTestId("diff-segment")).toHaveCount(0);
   });
 });
 
@@ -112,7 +166,7 @@ test.describe("Changes view — live updates", () => {
     const server = await startDiffServer(root, 3392);
     try {
       await page.goto(`${server.url}/`);
-      await expect(page.getByTestId("diff-segment")).toHaveCount(4);
+      await expect(page.getByTestId("diff-index-item")).toHaveCount(4);
 
       spawnSync("git", ["-C", root, "add", "-A"]);
       await expect(page.getByTestId("changes-empty")).toBeVisible({ timeout: 10000 });
@@ -141,7 +195,8 @@ test.describe("Changes view — static build", () => {
     try {
       await page.goto(`${site.url}/`);
       await expect(page.getByTestId("changes-view")).toBeVisible();
-      await expect(page.getByTestId("diff-segment")).toHaveCount(4);
+      await expect(page.getByTestId("diff-index-item")).toHaveCount(4);
+      await page.getByTestId("diff-index-document-link").nth(1).click();
       await expect(segment(page, "added: Idempotency Key")).toBeVisible();
       // Without --with-history there is no history to switch to.
       await expect(page.getByTestId("sidebar-tab-history")).toHaveCount(0);

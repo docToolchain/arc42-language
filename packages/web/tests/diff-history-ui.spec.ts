@@ -42,7 +42,7 @@ async function expectPearlChain(page: Page) {
 async function expectFeatureCommit(page: Page) {
   await pearl(page, SUBJECTS[2]!).getByRole("button").click();
   await expect(page).toHaveURL(/#history:[0-9a-f]{40}$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(SUBJECTS[2]!);
+  await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(SUBJECTS[2]!);
   await expect(pearl(page, SUBJECTS[2]!).getByTestId("pearl-message").locator("strong")).toHaveText(
     "p95 search latency",
   );
@@ -50,6 +50,17 @@ async function expectFeatureCommit(page: Page) {
     "Block 'bb-catalog-service' changed without changing its section prose.",
   ]);
   await expect(page.getByTestId("diff-segment")).toHaveCount(4);
+  // Without the full documents, unchanged sections are headings with a skeleton.
+  await expect(page.getByTestId("chapter-diff")).toHaveCount(2);
+  expect(await page.getByTestId("section-skeleton").count()).toBeGreaterThan(0);
+  // Summary links lead to the element within the entry.
+  await page
+    .getByTestId("diff-index-item")
+    .filter({ hasText: "bb-catalog-service" })
+    .getByRole("link")
+    .click();
+  await expect(page.locator("#el-bb-catalog-service")).toBeVisible();
+  await expect(page).toHaveURL(/#history:[0-9a-f]{40}$/);
 }
 
 test.describe("History in arc42 serve", () => {
