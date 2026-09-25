@@ -104,7 +104,7 @@ test.describe("Changes inline in the chapters", () => {
     await page.goto(`/#${BB}`);
     const catalog = segment(page, "modified: Catalog Service");
     // The section status reads apart from the status of the elements inside it.
-    await expect(catalog.getByTestId("segment-status")).toHaveText("Section changed");
+    await expect(catalog.getByTestId("segment-status")).toContainText("Section changed");
     await expect(catalog.getByTestId("element-change")).toHaveAttribute("data-status", "modified");
     await expect(catalog.getByTestId("segment-heading-change")).toHaveCount(0);
     const row = catalog.getByTestId("attribute-change");
@@ -112,10 +112,19 @@ test.describe("Changes inline in the chapters", () => {
     await expect(row.locator("td").nth(0)).toHaveText("Node.js / Express");
     await expect(row.locator("td").nth(1)).toHaveText("Go");
 
+    // The marked changes show by default; the switch shows either version on its own.
+    const show = (name: string) =>
+      catalog.getByTestId("version-switch").getByRole("button", { name });
+    await expect(show("Changes")).toHaveAttribute("aria-pressed", "true");
+    await expect(catalog.getByTestId("segment-head")).toHaveAttribute("data-version", "changes");
     await expect(catalog.getByTestId("segment-base")).toHaveCount(0);
-    await catalog.getByTestId("toggle-base").click();
-    await expect(catalog.getByTestId("toggle-base")).toHaveAttribute("aria-expanded", "true");
+    await show("Previous").click();
+    await expect(show("Previous")).toHaveAttribute("aria-pressed", "true");
     await expect(catalog.getByTestId("segment-base")).toBeVisible();
+    await expect(catalog.getByTestId("segment-head")).toHaveCount(0);
+    await show("Current").click();
+    await expect(catalog.getByTestId("segment-head")).toHaveAttribute("data-version", "current");
+    await expect(catalog.getByTestId("segment-base")).toHaveCount(0);
   });
 
   test("renders added, removed and modified prose from the matching snapshot", async ({ page }) => {
@@ -132,7 +141,10 @@ test.describe("Changes inline in the chapters", () => {
     const inserted = (await head.locator("ins").allTextContents()).join("");
     expect(inserted).not.toContain("These definitions ensure");
     await expect(head.locator("del")).toHaveCount(0);
-    await glossary.getByTestId("toggle-base").click();
+    // Without marks, the current version reads as plain prose.
+    await glossary.getByRole("button", { name: "Current" }).click();
+    await expect(head.locator("ins, del")).toHaveCount(0);
+    await glossary.getByRole("button", { name: "Previous" }).click();
     await expect(glossary.getByTestId("segment-base")).not.toContainText("</script>");
 
     await page.goto(`/#${BB}`);
@@ -189,7 +201,7 @@ test.describe("Changes view — renamed sections", () => {
       await expect(segment(page, "removed: Catalog Service")).toHaveCount(0);
       await expect(segment(page, "added: Catalog")).toHaveCount(0);
       // The previous version carries the old heading.
-      await catalog.getByTestId("toggle-base").click();
+      await catalog.getByRole("button", { name: "Previous" }).click();
       await expect(catalog.getByTestId("segment-base").locator("h2")).toHaveText("Catalog Service");
     } finally {
       await server.stop();

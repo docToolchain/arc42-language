@@ -338,21 +338,38 @@
   margin-top: 0.5rem;
 }
 
-.toggleBase {
-  margin-top: 0.5rem;
-  background: none;
+/* Changes / Current / Previous switch of a changed section, at the end of its status bar. */
+.versionSwitch {
+  display: inline-flex;
+  margin-left: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.25rem 0.6rem;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.versionSwitch button {
+  background: none;
+  border: none;
+  padding: 0.1rem 0.6rem;
   color: var(--text-muted);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
-.toggleBase:hover {
+.versionSwitch button + button {
+  border-left: 1px solid var(--border);
+}
+
+.versionSwitch button:hover {
   color: var(--text);
-  border-color: var(--text-muted);
+}
+
+.versionSwitch button[aria-pressed="true"] {
+  color: var(--text);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--status-color) 14%, transparent);
 }
 
 /* ─── Summary groups and index ─────────────────────────────────────────────── */
