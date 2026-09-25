@@ -40,12 +40,20 @@ async function expectPearlChain(page: Page) {
 }
 
 async function expectFeatureCommit(page: Page) {
-  await pearl(page, SUBJECTS[2]!).getByRole("button").click();
+  await pearl(page, SUBJECTS[2]!).getByTestId("pearl-select").click();
   await expect(page).toHaveURL(/#history:[0-9a-f]{40}$/);
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(SUBJECTS[2]!);
-  await expect(pearl(page, SUBJECTS[2]!).getByTestId("pearl-message").locator("strong")).toHaveText(
+  // The pearl opens only the version; its message button adds the commit message.
+  await expect(page.getByTestId("commit-message")).toHaveCount(0);
+  await pearl(page, SUBJECTS[2]!).getByTestId("pearl-message-button").click();
+  await expect(page).toHaveURL(/#history:[0-9a-f]{40}:message$/);
+  await expect(page.getByTestId("commit-message").locator("strong")).toHaveText(
     "p95 search latency",
   );
+  await page.getByTestId("commit-message-toggle").click();
+  await expect(page.getByTestId("commit-message")).toHaveCount(0);
+  // Commits without a message body have no message button.
+  await expect(pearl(page, SUBJECTS[1]!).getByTestId("pearl-message-button")).toHaveCount(0);
   await expect(page.getByTestId("diff-finding")).toContainText([
     "Block 'bb-catalog-service' changed without changing its section prose.",
   ]);
@@ -89,7 +97,7 @@ test.describe("History in arc42 serve", () => {
 
     await expectPearlChain(page);
     await expect(page).toHaveURL(/#history:worktree$/);
-    await expect(pearl(page, SUBJECTS[0]!).getByRole("button")).toHaveAttribute(
+    await expect(pearl(page, SUBJECTS[0]!).getByTestId("pearl-select")).toHaveAttribute(
       "aria-current",
       "true",
     );
@@ -105,7 +113,7 @@ test.describe("History in arc42 serve", () => {
 
   test("says when a commit did not change the model", async ({ page }) => {
     await page.goto(`${server.url}/#history`);
-    await pearl(page, SUBJECTS[1]!).getByRole("button").click();
+    await pearl(page, SUBJECTS[1]!).getByTestId("pearl-select").click();
     await expect(page.getByTestId("changes-empty")).toHaveText("No architecture changes.");
   });
 
@@ -140,7 +148,7 @@ test.describe("History in arc42 serve", () => {
     await page.goto(`${server.url}/#history`);
     const broken = pearl(page, "broken: duplicate id");
     await expect(broken).toHaveAttribute("data-state", "error");
-    await broken.getByRole("button").click();
+    await broken.getByTestId("pearl-select").click();
     await expect(page.getByTestId("diff-error")).toContainText("Duplicate id 'term-jwt'");
     // The rest of the history is unaffected.
     await expect(pearl(page, SUBJECTS[2]!)).toHaveAttribute("data-state", "semantic");

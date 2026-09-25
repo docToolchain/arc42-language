@@ -75,11 +75,12 @@ test.describe("arc42 build --single-file", () => {
       const pearls = page.getByTestId("history-pearl");
       await expect(pearls).toHaveCount(4);
       await expect(pearls.nth(1)).toHaveAttribute("data-state", "empty");
-      await pearls.nth(2).getByRole("button").click();
+      await pearls.nth(2).getByTestId("pearl-select").click();
       await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(
         "feat: switch the catalog to Go",
       );
-      await expect(pearls.nth(2).getByTestId("pearl-message").locator("strong")).toHaveText(
+      await pearls.nth(2).getByTestId("pearl-message-button").click();
+      await expect(page.getByTestId("commit-message").locator("strong")).toHaveText(
         "p95 search latency",
       );
       await expect(page.getByTestId("diff-segment")).toHaveCount(4);

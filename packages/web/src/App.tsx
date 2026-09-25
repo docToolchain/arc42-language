@@ -187,15 +187,19 @@ export function App({
     [diff],
   );
 
-  // History — #history, #history:<commit|worktree>
+  // History — #history, #history:<commit|worktree>[:message]
   const historyKeyFromHash = () =>
     window.location.hash.startsWith("#history")
-      ? window.location.hash.slice("#history:".length) || null
+      ? window.location.hash.slice("#history:".length).replace(/:message$/, "") || null
       : undefined;
+  const messageFromHash = () =>
+    window.location.hash.startsWith("#history:") && window.location.hash.endsWith(":message");
   const [historyKey, setHistoryKey] = useState<string | null | undefined>(historyKeyFromHash);
+  const [historyMessage, setHistoryMessage] = useState<boolean>(messageFromHash);
   useEffect(() => {
     function onHashChange() {
       setHistoryKey(historyKeyFromHash());
+      setHistoryMessage(messageFromHash());
     }
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -212,8 +216,9 @@ export function App({
     }
   }, [showHistory, historyKey, pearls]);
 
-  function selectPearl(key: string) {
-    window.location.hash = `history:${key}`;
+  /** Open a pearl's version; with `message`, its commit message too. */
+  function selectPearl(key: string, message = false) {
+    window.location.hash = `history:${key}${message ? ":message" : ""}`;
   }
 
   const selectedPearl = pearls.find((pearl) => pearlKey(pearl) === historyKey);
@@ -371,6 +376,8 @@ export function App({
             requestChunk={historyData.requestChunk}
             viewMode={viewMode}
             elementDocMap={elementDocMap}
+            messageOpen={historyMessage}
+            onToggleMessage={() => historyKey && selectPearl(historyKey, !historyMessage)}
           />
         ) : showChanges ? (
           <ChangesView
