@@ -23,6 +23,15 @@ cd arc42-language
 npx @doctc/arc42 --dir examples/bookstore-backend serve
 ```
 
+Architecture changes with every commit — `arc42 serve --diff` shows how:
+changes inline in their chapters, only the changed words marked, lint warnings
+linked to their elements, and a history with one pearl per commit.
+
+![arc42 serve --diff demo](demo/diff-demo.gif)
+
+([video](demo/diff-demo.mp4) · [screenshots](demo/diff/) · recorded by
+`pnpm --filter @arc42/web demo:diff`)
+
 ---
 
 A structured language for arc42 software architecture documentation.

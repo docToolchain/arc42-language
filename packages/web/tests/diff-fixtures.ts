@@ -98,6 +98,163 @@ export function createHistoryRepository(): string {
   return root;
 }
 
+const IGNORE = ":::ignore H014 This is only a demo for the arc42, code is out of scope:::";
+
+/**
+ * Create a repository that tells a short architecture story for the diff demo.
+ * The first commit is tagged `v1.0`; on top of it, newest last:
+ * - "feat: add book recommendations" — new service + API, gateway wired, diagram updated
+ * - "perf: move catalog search to Go" — technology change, prose rewrite, new decision
+ * - "style: reflow the API Gateway section" — formatting only (no model change)
+ * - "refactor: rename Response Cache to Read Cache" — heading and title renamed
+ * - uncommitted: the SMS Delivery Contract is removed, and the Message Queue's
+ *   technology changes without a prose update (a lint warning)
+ */
+export function createEvolutionRepository(): string {
+  const root = mkdtempSync(join(tmpdir(), "arc42-demo-evolution-"));
+  cpSync(bookstoreDir, root, { recursive: true });
+  git(root, "init", "-q");
+  git(root, "config", "user.email", "architect@example.com");
+  git(root, "config", "user.name", "Bookstore Architect");
+  commitAll(root, "docs: initial bookstore architecture");
+  git(root, "tag", "v1.0");
+
+  edit(
+    root,
+    BB,
+    "\n## Order Service\n",
+    `
+## Recommendation Service
+
+The Recommendation Service suggests books to readers. It ranks titles by a reader's order history and by what similar readers bought, and reads product details from the Catalog Service so that suggestions never show stale prices.
+
+\`\`\`arc42
+${IGNORE}
+
+:::building-block
+id: bb-recommendation-service
+title: Recommendation Service
+technology: Python / FastAPI
+implements: concept-logging, concept-error-handling
+requires: if-order-catalog
+:::
+\`\`\`
+
+### Recommendation API
+
+The gateway forwards \`/recommendations\` requests to this contract.
+
+\`\`\`arc42
+${IGNORE}
+
+:::interface
+id: if-gateway-recommend
+title: Recommendation API
+provider: bb-recommendation-service
+protocol: HTTP/JSON
+:::
+\`\`\`
+
+## Order Service
+`,
+  );
+  edit(
+    root,
+    BB,
+    "requires: if-gateway-catalog, if-gateway-order, if-gateway-auth",
+    "requires: if-gateway-catalog, if-gateway-order, if-gateway-auth, if-gateway-recommend",
+  );
+  edit(
+    root,
+    BB,
+    "and routes requests to the appropriate downstream service.",
+    "and routes requests to the appropriate downstream service, including personalised book recommendations.",
+  );
+  edit(
+    root,
+    BB,
+    '    bb-order-service["Order Service\\n(Node.js / Express)"]\n',
+    '    bb-order-service["Order Service\\n(Node.js / Express)"]\n    bb-recommendation-service["Recommendation Service\\n(Python / FastAPI)"]\n',
+  );
+  edit(
+    root,
+    BB,
+    '    bb-api-gateway -->|"if-gateway-auth"| bb-auth-service\n',
+    '    bb-api-gateway -->|"if-gateway-auth"| bb-auth-service\n    bb-api-gateway -->|"if-gateway-recommend"| bb-recommendation-service\n    bb-recommendation-service -->|"if-order-catalog"| bb-catalog-service\n',
+  );
+  commitAll(
+    root,
+    "feat: add book recommendations",
+    "Readers asked for **personalised suggestions**. A new Recommendation Service ranks books by order history; the gateway exposes it at `/recommendations`.",
+  );
+
+  edit(
+    root,
+    BB,
+    "id: bb-catalog-service\ntitle: Catalog Service\ntechnology: Node.js / Express",
+    "id: bb-catalog-service\ntitle: Catalog Service\ntechnology: Go",
+  );
+  edit(
+    root,
+    BB,
+    "This caching strategy is critical for meeting the 200ms p95 search latency target.",
+    "Together with the Go runtime, this caching strategy keeps search well within the 200ms p95 latency target.",
+  );
+  edit(
+    root,
+    BB,
+    'bb-catalog-service["Catalog Service\\n(Node.js / Express)"]',
+    'bb-catalog-service["Catalog Service\\n(Go)"]',
+  );
+  writeFileSync(
+    join(root, "09-decisions.arc42.md"),
+    `${readFileSync(join(root, "09-decisions.arc42.md"), "utf8").trimEnd()}
+
+## Go for Catalog Search
+
+Load tests showed the Node.js catalog search at 340ms p95 under peak traffic, well above the 200ms target. A Go implementation of the same endpoints stays below 120ms with a fraction of the memory, and the team already runs Go in other products.
+
+\`\`\`arc42
+:::decision
+id: dec-go-catalog
+title: Implement the Catalog Service in Go
+status: accepted
+date: 2026-09-01
+addresses: qg-performance
+:::
+\`\`\`
+`,
+  );
+  commitAll(
+    root,
+    "perf: move catalog search to Go",
+    "Load tests showed **340 ms p95** for search on Node.js. The Go rewrite meets the 200 ms target.",
+  );
+
+  edit(
+    root,
+    BB,
+    "It terminates TLS, validates JWT tokens, enforces rate limits, and routes",
+    "It terminates TLS,\nvalidates JWT tokens, enforces rate limits, and routes",
+  );
+  commitAll(root, "style: reflow the API Gateway section");
+
+  edit(root, BB, "## Response Cache\n", "## Read Cache\n");
+  edit(root, BB, "id: bb-cache\ntitle: Response Cache", "id: bb-cache\ntitle: Read Cache");
+  edit(root, BB, 'bb-cache["Response Cache\\n(Redis 7)"]', 'bb-cache["Read Cache\\n(Redis 7)"]');
+  commitAll(root, "refactor: rename Response Cache to Read Cache");
+
+  edit(root, BB, /### SMS Delivery Contract\n[\s\S]*?:::\n```\n\n/, "");
+  // Changed without touching the section prose: the lint warns about it.
+  edit(
+    root,
+    BB,
+    "id: bb-message-queue\ntitle: Message Queue\ntechnology: AWS SQS",
+    "id: bb-message-queue\ntitle: Message Queue\ntechnology: AWS SQS FIFO",
+  );
+  return root;
+}
+
 /** Serve a directory of static files, like a static host serving an `arc42 build` output. */
 export async function serveStatic(
   root: string,
