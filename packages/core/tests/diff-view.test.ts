@@ -153,10 +153,10 @@ describe("buildDiffView", () => {
       workspace({ [BB]: buildingBlocks("Go"), [CONCEPTS]: concepts }),
     );
     const outline = view.documents[0]!.outline;
-    expect(outline.map((entry) => [entry.level, entry.title, entry.status])).toEqual([
-      [1, "Building Block View", "unchanged"],
-      [2, "Service", "modified"],
-      [2, "Other", "unchanged"],
+    expect(outline.map((entry) => [entry.level, entry.title, entry.status, entry.empty])).toEqual([
+      [1, "Building Block View", "unchanged", true],
+      [2, "Service", "modified", false],
+      [2, "Other", "unchanged", false],
     ]);
     // Head line ranges slice the head document into its sections.
     expect(outline[1]!.head!.startLine).toBe(3);
