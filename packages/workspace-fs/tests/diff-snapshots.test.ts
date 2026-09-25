@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { diffWorkspaces } from "@arc42/core";
-import { loadDiffSnapshots } from "../src/index.ts";
+import { EMPTY_TREE, loadDiffSnapshots } from "../src/index.ts";
 
 const createdDirs: string[] = [];
 
@@ -130,6 +130,43 @@ describe("loadDiffSnapshots — comparison scopes", () => {
     const threeDotDiff = diffWorkspaces(threeDot.base.payload, threeDot.head.payload);
     expect(threeDotDiff.proseSections).toEqual([]);
     expect(threeDotDiff.elements).toMatchObject([{ id: "service", status: "modified" }]);
+  });
+});
+
+describe("loadDiffSnapshots — single commit", () => {
+  test("compares a commit with its first parent", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    const first = git(root, "rev-parse", "HEAD").trim();
+    write(root, FILE, markdown("Owns orders.", "Go"));
+    const second = commit(root, "switch to go");
+    write(root, FILE, markdown("Owns orders.", "Rust"));
+    commit(root, "switch to rust");
+
+    const snapshots = await loadDiffSnapshots(root, { commit: second });
+    expect(snapshots.base.label).toBe(first);
+    expect(snapshots.head.label).toBe(second);
+    expect(serviceTechnology(snapshots.base.payload)).toBe("Node");
+    expect(serviceTechnology(snapshots.head.payload)).toBe("Go");
+    expect(snapshots.changes.map((change) => change.filePath)).toEqual([FILE]);
+  });
+
+  test("compares a root commit with the empty tree", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    const snapshots = await loadDiffSnapshots(root, { commit: "HEAD" });
+    expect(snapshots.base.label).toBe("empty");
+    expect(snapshots.baseCommit).toBe(EMPTY_TREE);
+    expect(snapshots.acceptanceBase).toBeUndefined();
+    expect(snapshots.base.payload.documents).toEqual([]);
+    expect(diffWorkspaces(snapshots.base.payload, snapshots.head.payload).elements).toMatchObject([
+      { id: "service", status: "added" },
+    ]);
+  });
+
+  test("rejects a commit combined with a reference", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    await expect(loadDiffSnapshots(root, { commit: "HEAD", reference: "HEAD" })).rejects.toThrow(
+      /single commit cannot be combined/,
+    );
   });
 });
 
