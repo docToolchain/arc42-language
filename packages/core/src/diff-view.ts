@@ -55,6 +55,8 @@ export interface OutlineEntry {
   title: string;
   /** "unchanged" sections have no segment. */
   status: ChangeStatus | "unchanged";
+  /** True when the section holds nothing but its heading (lets viewers skip placeholders). */
+  empty: boolean;
   /** Line range of the section in the head document; absent for removed sections. */
   head?: { startLine: number; endLine: number };
 }
@@ -238,6 +240,9 @@ function outlineEntry(
     level: heading?.level ?? 0,
     title: heading?.text.trim() ?? "",
     status,
+    empty: section.nodes.every(
+      (node) => node.kind === "heading" || (node.kind === "prose" && node.text.trim() === ""),
+    ),
     ...(inHead ? { head: { startLine: section.startLine, endLine: section.endLine } } : {}),
   };
 }
