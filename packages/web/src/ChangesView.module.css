@@ -149,15 +149,36 @@
   --status-color: var(--diff-removed);
 }
 
+/* The section status is a bar across the segment, not a chip: chips are element statuses. */
 .segmentHeader {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.6rem;
-  font-size: 0.85rem;
+  gap: 0.25rem 0.75rem;
+  margin: -0.75rem -1rem 0.6rem;
+  padding: 0.3rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--status-color) 25%, transparent);
+  border-radius: 0 var(--radius) 0 0;
+  background: color-mix(in srgb, var(--status-color) 8%, transparent);
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
-.status,
+.sectionStatus {
+  font-weight: 600;
+  color: var(--status-color);
+}
+
+.headingRename del,
+.headingRename ins {
+  padding: 0 0.25rem;
+  border-radius: 3px;
+}
+
+.headingRename ins {
+  text-decoration: none;
+}
+
 .chip {
   display: inline-block;
   padding: 0.05rem 0.45rem;
