@@ -289,7 +289,11 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       summary with links, sidebar heading dots.
 - Hook pitfall: rendering `ChapterDiff` from inside `DocumentView` after an early return changes the
   hook count between documents — the choice now happens in a hook-free wrapper.
-- Declined for now: proposal 3 (`git diff --name-only` instead of the full patch) — pending decision.
+- [x] e885419 `refactor(core,workspace-fs)!`: proposal 3 — `lintArchitectureDiff` takes `changedFiles`
+      from `git diff --name-only -z --no-renames` instead of parsing the full patch (path hints now
+      have line 0; hunk parsing, `FileChange`/`LineRange` removed). The line numbers were never
+      used once consistency moved to the semantic diff; names are cheaper and robust to unusual
+      file names.
 
 ## Commit
 ### Tasks
