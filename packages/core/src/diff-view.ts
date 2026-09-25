@@ -13,7 +13,7 @@ import type { DiffFinding, FindingGroups } from "./diff.ts";
 import type { Element } from "./model/types.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { WorkspacePayload } from "./workspace.ts";
-import { SnapshotIndex, diffWorkspaces } from "./workspace-diff.ts";
+import { SnapshotIndex, diffWorkspaces, sectionKey as sectionKeyOf } from "./workspace-diff.ts";
 import type {
   ArchitectureDiff,
   ChangeStatus,
@@ -46,6 +46,19 @@ export interface DiffSegment {
   prose?: ProseSectionChange;
 }
 
+/** One section of a changed document, in the merged order of base and head. */
+export interface OutlineEntry {
+  section: SectionRef;
+  /** Heading level; 0 for a document preamble. */
+  level: number;
+  /** Heading text; empty for a preamble. */
+  title: string;
+  /** "unchanged" sections have no segment. */
+  status: ChangeStatus | "unchanged";
+  /** Line range of the section in the head document; absent for removed sections. */
+  head?: { startLine: number; endLine: number };
+}
+
 export interface DiffDocument {
   file: string;
   /** H1 text of the head document, or of the base document when it was removed. */
@@ -54,6 +67,11 @@ export interface DiffDocument {
   modified: number;
   removed: number;
   segments: DiffSegment[];
+  /**
+   * Every section of the document in head order; a removed section follows the
+   * base section that preceded it. Positions the segments within the chapter.
+   */
+  outline: OutlineEntry[];
 }
 
 export interface DiffView {
@@ -172,6 +190,7 @@ export function buildDiffView(
       modified: 0,
       removed: 0,
       segments: [],
+      outline: [],
     };
     document.segments.push({
       status: !draft.base ? "added" : !draft.head ? "removed" : "modified",
@@ -197,8 +216,59 @@ export function buildDiffView(
   const position = (segment: DiffSegment) =>
     segment.head?.nodes[0] ? lineOf(segment.head.nodes[0]) : lineOf(segment.base!.nodes[0]!);
   const documents = [...byFile.values()].sort((a, b) => a.file.localeCompare(b.file));
-  for (const document of documents) document.segments.sort((a, b) => position(a) - position(b));
+  for (const document of documents) {
+    document.segments.sort((a, b) => position(a) - position(b));
+    const statuses = new Map<string, ChangeStatus>();
+    for (const segment of document.segments) {
+      statuses.set(sectionKeyOf(segment.section), segment.status);
+    }
+    document.outline = documentOutline(document.file, baseIndex, headIndex, statuses);
+  }
   return { documents, edges: diff.edges };
+}
+
+function outlineEntry(
+  section: Section,
+  status: OutlineEntry["status"],
+  inHead: boolean,
+): OutlineEntry {
+  const heading = section.nodes[0]?.kind === "heading" ? section.nodes[0] : undefined;
+  return {
+    section: section.ref,
+    level: heading?.level ?? 0,
+    title: heading?.text.trim() ?? "",
+    status,
+    ...(inHead ? { head: { startLine: section.startLine, endLine: section.endLine } } : {}),
+  };
+}
+
+/** Merge the section order of base and head; removed sections keep their base position. */
+function documentOutline(
+  file: string,
+  baseIndex: SnapshotIndex,
+  headIndex: SnapshotIndex,
+  statuses: Map<string, ChangeStatus>,
+): OutlineEntry[] {
+  const headSections = headIndex.sectionsByFile.get(file) ?? [];
+  const headKeys = new Set(headSections.map((section) => section.key));
+  // Removed sections, grouped by the last preceding base section that survives in head.
+  const removedAfter = new Map<string | null, Section[]>();
+  let anchor: string | null = null;
+  for (const section of baseIndex.sectionsByFile.get(file) ?? []) {
+    if (headKeys.has(section.key)) {
+      anchor = section.key;
+      continue;
+    }
+    removedAfter.set(anchor, [...(removedAfter.get(anchor) ?? []), section]);
+  }
+  const removed = (key: string | null) =>
+    (removedAfter.get(key) ?? []).map((section) => outlineEntry(section, "removed", false));
+  const outline = removed(null);
+  for (const section of headSections) {
+    outline.push(outlineEntry(section, statuses.get(section.key) ?? "unchanged", true));
+    outline.push(...removed(section.key));
+  }
+  return outline;
 }
 
 function lineOf(node: AstNode): number {

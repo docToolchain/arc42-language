@@ -18,6 +18,7 @@ export type {
   DiffPayload,
   DiffSegment,
   DiffView,
+  OutlineEntry,
   SectionContent,
 } from "./diff-view.ts";
 

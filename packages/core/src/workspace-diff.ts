@@ -107,7 +107,8 @@ function normalizeText(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-function sectionKey(ref: SectionRef): string {
+/** @internal Identity of a section across snapshots. */
+export function sectionKey(ref: SectionRef): string {
   return JSON.stringify([ref.file, ref.headingPath, ref.occurrence]);
 }
 
@@ -175,7 +176,8 @@ function sectionsOf(document: DocumentAst): Section[] {
 /** @internal Shared with the diff view; not part of the public API. */
 export class SnapshotIndex {
   readonly sections = new Map<string, Section>();
-  private readonly sectionsByFile = new Map<string, Section[]>();
+  /** Sections of each document, in document order. */
+  readonly sectionsByFile = new Map<string, Section[]>();
   readonly elements = new Map<string, Element>();
   readonly diagrams = new Map<string, DiagramArtifact>();
 
