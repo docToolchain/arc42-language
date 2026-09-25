@@ -101,6 +101,15 @@ function pathMatches(modeled: string, changedPath: string, knownPaths?: Set<stri
   return expected.every((part, index) => part === actual[index]);
 }
 
+/**
+ * Architecture documents are never implementation files: the semantic diff
+ * reviews them, and an interface whose path covers the documentation (e.g. a
+ * documentation workspace) would otherwise be "reviewed" by every doc edit.
+ */
+function isArchitectureDocument(filePath: string): boolean {
+  return filePath.endsWith(".arc42.md") || filePath.endsWith(".arc42.adoc");
+}
+
 function pathFindings(
   changes: FileChange[],
   elements: Element[],
@@ -108,9 +117,12 @@ function pathFindings(
 ): DiffFinding[] {
   const result: DiffFinding[] = [];
   const seen = new Set<string>();
+  const implementationChanges = changes.filter(
+    (change) => !isArchitectureDocument(change.filePath),
+  );
   for (const element of elements) {
     if (element.kind !== "interface" || element.path === undefined) continue;
-    for (const change of changes) {
+    for (const change of implementationChanges) {
       if (!pathMatches(element.path, change.filePath, knownPaths)) continue;
       const key = `${element.id}:${change.filePath}`;
       if (seen.has(key)) continue;
