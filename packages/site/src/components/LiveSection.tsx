@@ -6,7 +6,7 @@ export function LiveSection() {
           See it live
         </h2>
         <p className="live__sub">
-          Three real workspaces, built with <code>arc42 build</code> and deployed here.
+          Real workspaces, built with <code>arc42 build</code> and deployed here.
         </p>
         <div className="live__grid">
           <a href="./docs/" className="live-card" aria-label="View architecture docs workspace">
@@ -34,6 +34,23 @@ export function LiveSection() {
             <p className="live-card__desc">
               A complete e-commerce backend documented with arc42. A realistic reference for new
               workspaces.
+            </p>
+            <span className="live-card__arrow" aria-hidden="true">
+              Open →
+            </span>
+          </a>
+          <a
+            href="./bookstore-evolution/"
+            className="live-card"
+            aria-label="View the bookstore architecture evolving, as an interactive diff"
+          >
+            <div className="live-card__icon" aria-hidden="true">
+              <EvolutionIcon />
+            </div>
+            <h3 className="live-card__title">Bookstore, Evolving</h3>
+            <p className="live-card__desc">
+              The bookstore one release later: every change since v1.0 in its chapter, a drift
+              warning, and the history of commits. Built with <code>arc42 build --diff</code>.
             </p>
             <span className="live-card__arrow" aria-hidden="true">
               Open →
@@ -117,6 +134,28 @@ function KanbanIcon() {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <path d="M9 3v10" />
       <path d="M15 3v6" />
+    </svg>
+  );
+}
+
+function EvolutionIcon() {
+  return (
+    <svg
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="6" r="2.5" />
+      <circle cx="6" cy="18" r="2.5" />
+      <circle cx="18" cy="12" r="2.5" />
+      <path d="M6 8.5v7" />
+      <path d="M8.3 7.2 15.8 11" />
     </svg>
   );
 }

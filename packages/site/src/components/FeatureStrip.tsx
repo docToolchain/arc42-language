@@ -2,6 +2,7 @@ interface Feature {
   icon: React.ReactNode;
   title: string;
   desc: string;
+  link?: { href: string; label: string };
 }
 
 const FEATURES: Feature[] = [
@@ -19,6 +20,7 @@ const FEATURES: Feature[] = [
     icon: <ShieldIcon />,
     title: "Drift detection",
     desc: "Broken references, stale decisions, orphaned components — caught before merge, not in a review meeting.",
+    link: { href: "./evolution/", label: "See architecture evolution →" },
   },
   {
     icon: <MonitorIcon />,
@@ -39,6 +41,11 @@ export function FeatureStrip() {
               </div>
               <h3 className="feature__title">{f.title}</h3>
               <p className="feature__desc">{f.desc}</p>
+              {f.link && (
+                <a className="feature__link" href={f.link.href}>
+                  {f.link.label}
+                </a>
+              )}
             </div>
           ))}
         </div>

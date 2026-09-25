@@ -1,26 +1,33 @@
 import { useTheme } from "../useTheme";
 
-export function Nav() {
+/**
+ * @param home Relative path from the current page to the landing page
+ *   ("" on the landing page itself, "../" on a subpage).
+ */
+export function Nav({ home = "" }: { home?: string }) {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
 
   return (
     <nav className="nav" aria-label="Main navigation">
       <div className="nav__inner">
-        <a href="#" className="nav__logo" aria-label="arc42-language home">
+        <a href={home || "#"} className="nav__logo" aria-label="arc42-language home">
           arc42
         </a>
         <div className="nav__links">
-          <a href="#getting-started" className="nav__link">
+          <a href={`${home}#getting-started`} className="nav__link">
             Get started
           </a>
-          <a href="#features" className="nav__link">
+          <a href={`${home}#features`} className="nav__link">
             Features
           </a>
-          <a href="#verdicts" className="nav__link">
+          <a href={`${home}#verdicts`} className="nav__link">
             Verdicts
           </a>
-          <a href="#examples" className="nav__link">
+          <a href={`${home}evolution/`} className="nav__link">
+            Evolution
+          </a>
+          <a href={`${home}#examples`} className="nav__link">
             Examples
           </a>
           <a
