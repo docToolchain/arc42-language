@@ -53,14 +53,18 @@ test.describe("architecture review script", () => {
 
     const comment = readFileSync(join(out, "summary.md"), "utf8");
     expect(comment.startsWith("<!-- arc42-architecture-review -->\n")).toBe(true);
-    expect(comment).toContain("| `.` | 1 | 2 | 1 | 1 warning");
+    expect(comment).toContain("| `.` | 1 | 2 | 1 | 1 | 0 | `workspace.html` |");
+    expect(comment).toContain("#### `.`");
     expect(comment).toContain("[Download the rendered architecture review]({{ARTIFACT_URL}})");
     expect(comment).toContain(
       "- `bb-catalog-service` (building-block) — modified — technology: `Node.js / Express` → `Go`",
     );
     expect(comment).toContain("- `if-notify-sms` (interface) — removed");
     expect(comment).toContain(
-      "- warning: Block 'bb-catalog-service' changed without changing its section prose.",
+      "**Warnings**\n\n- Block 'bb-catalog-service' changed without changing its section prose. (`05-building-blocks.arc42.md:80`)",
+    );
+    expect(comment).toContain(
+      "<details><summary>Changed elements, relations, diagrams and sections (",
     );
 
     // The review page is self-contained: open it from disk.

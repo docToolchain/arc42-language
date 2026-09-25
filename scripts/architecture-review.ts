@@ -48,9 +48,20 @@ interface AttributeChange {
   after?: unknown;
 }
 
+interface CodeChange {
+  elementId: string;
+  files: string[];
+}
+
 interface DiffOutput {
   base: { commit: string };
   findings: Finding[];
+  groups: {
+    warnings: Finding[];
+    untouched: CodeChange[];
+    updated: CodeChange[];
+    uncovered: string[];
+  };
   architecture: {
     elements: Array<{ id: string; kind: string; status: string; attributes: AttributeChange[] }>;
     diagrams: Array<{ id: string; status: string }>;
@@ -182,42 +193,76 @@ function describeElements(review: WorkspaceReview): string[] {
   return lines;
 }
 
+function codeChangeLine(change: CodeChange): string {
+  return `- \`${change.elementId}\` — ${change.files.map((file) => `\`${file}\``).join(", ")}`;
+}
+
 function renderSummary(reviews: WorkspaceReview[], base: string): string {
   const changed = reviews.filter((review) => review.changed);
   if (changed.length === 0) {
     return `${MARKER}\n### Architecture review\n\nNo architecture changes compared with \`${base}\`.\n`;
   }
-  const findings = (review: WorkspaceReview) =>
-    [
-      review.warnings > 0 ? `${review.warnings} warning${review.warnings === 1 ? "" : "s"}` : "",
-      review.hints > 0 ? `${review.hints} hint${review.hints === 1 ? "" : "s"}` : "",
-    ]
-      .filter(Boolean)
-      .join(", ") || "—";
   const lines = [
     MARKER,
     "### Architecture review",
     "",
     `This change affects the architecture of **${changed.length}** workspace${changed.length === 1 ? "" : "s"} (compared with \`${base}\`).`,
     "",
-    "| Workspace | Added | Modified | Removed | Findings | Review page |",
-    "|---|---:|---:|---:|---|---|",
+    "| Workspace | Added | Modified | Removed | Warnings | Code changed, architecture untouched | Review page |",
+    "|---|---:|---:|---:|---:|---:|---|",
     ...changed.map(
       (review) =>
-        `| \`${review.workspace}\` | ${review.added} | ${review.modified} | ${review.removed} | ${findings(review)} | \`${review.page}\` |`,
+        `| \`${review.workspace}\` | ${review.added} | ${review.modified} | ${review.removed} | ${review.diff.groups.warnings.length} | ${review.diff.groups.untouched.length} | \`${review.page}\` |`,
     ),
     "",
-    `**[Download the rendered architecture review](${ARTIFACT_PLACEHOLDER})** — unzip and open the review page in a browser: every changed section, rendered, with both versions.`,
+    `**[Download the rendered architecture review](${ARTIFACT_PLACEHOLDER})** — unzip and open the review page in a browser: changes shown inside their chapters.`,
     "",
   ];
   for (const review of changed) {
-    lines.push(`<details><summary>Changes in <code>${review.workspace}</code></summary>`, "");
-    lines.push(...describeElements(review));
-    const messages = review.diff.findings.map(
-      (f) => `- ${f.severity}: ${f.message} (\`${f.file}${f.line > 0 ? `:${f.line}` : ""}\`)`,
+    const { groups } = review.diff;
+    lines.push(`#### \`${review.workspace}\``, "");
+    if (groups.warnings.length > 0) {
+      lines.push("**Warnings**", "");
+      for (const f of groups.warnings) {
+        lines.push(`- ${f.message} (\`${f.file}${f.line > 0 ? `:${f.line}` : ""}\`)`);
+      }
+      lines.push("");
+    }
+    if (groups.untouched.length > 0) {
+      lines.push(
+        "**Code changed, architecture untouched** — do these elements still describe the code?",
+        "",
+        ...groups.untouched.map(codeChangeLine),
+        "",
+      );
+    }
+    if (groups.uncovered.length > 0) {
+      lines.push(
+        "**Not covered by any building block**",
+        "",
+        ...groups.uncovered.map((path) => `- \`${path}\``),
+        "",
+      );
+    }
+    if (groups.updated.length > 0) {
+      lines.push(
+        `<details><summary>Code changed, element also updated in this change (${groups.updated.length})</summary>`,
+        "",
+        ...groups.updated.map(codeChangeLine),
+        "",
+        "</details>",
+        "",
+      );
+    }
+    const changes = describeElements(review);
+    lines.push(
+      `<details><summary>Changed elements, relations, diagrams and sections (${changes.length})</summary>`,
+      "",
+      ...changes,
+      "",
+      "</details>",
+      "",
     );
-    if (messages.length > 0) lines.push("", "Findings:", "", ...messages);
-    lines.push("", "</details>", "");
   }
   return `${lines.join("\n")}\n`;
 }
