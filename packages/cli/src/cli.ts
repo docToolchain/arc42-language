@@ -25,27 +25,18 @@ import {
   formatExplainDiagramListText,
   explainIgnore,
   formatExplainIgnoreText,
-  lintArchitectureDiff,
-  buildDiffView,
   ELEMENT_KIND_ORDER,
   computeCoverage,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
-import type {
-  BlockType,
-  Diagnostic,
-  DiagramType,
-  DiffFinding,
-  DiffPayload,
-  DiffResult,
-} from "@arc42/core";
+import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
 import {
   getElements,
-  loadDiffSnapshots,
+  loadDiffPayload,
   loadWorkspace,
   validateWorkspace,
 } from "@arc42/workspace-fs";
-import type { DiffSnapshots, DiffSpec } from "@arc42/workspace-fs";
+import type { DiffSpec } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
@@ -178,48 +169,6 @@ function printDiffHelp() {
 // validate
 // ---------------------------------------------------------------------------
 
-interface LoadedDiff {
-  snapshots: DiffSnapshots;
-  result: DiffResult;
-  /** All findings, warnings first — the order `arc42 diff` prints them in. */
-  findings: DiffFinding[];
-  payload: DiffPayload;
-}
-
-/** Load both snapshots of a change, lint it and build its render-ready view. */
-async function loadDiff(dir: string, spec: DiffSpec): Promise<LoadedDiff> {
-  const snapshots = await loadDiffSnapshots(dir, spec);
-  const result = lintArchitectureDiff({
-    changes: snapshots.changes,
-    base: snapshots.base.payload,
-    head: snapshots.head.payload,
-    baseKnownPaths: snapshots.base.knownPaths,
-    headKnownPaths: snapshots.head.knownPaths,
-  });
-  const findings = [
-    ...result.consistencyFindings,
-    ...result.pathFindings,
-    ...result.coverageFindings,
-  ].sort(
-    (a, b) =>
-      Number(b.severity === "warning") - Number(a.severity === "warning") ||
-      a.file.localeCompare(b.file) ||
-      a.line - b.line ||
-      a.kind.localeCompare(b.kind),
-  );
-  return {
-    snapshots,
-    result,
-    findings,
-    payload: {
-      base: { label: snapshots.base.label, commit: snapshots.baseCommit },
-      head: { label: snapshots.head.label },
-      findings,
-      view: buildDiffView(snapshots.base.payload, snapshots.head.payload, result.architecture),
-    },
-  };
-}
-
 /**
  * Read `--diff [<spec>] [--staged]` of serve and build. Returns undefined when
  * --diff is absent; a reference or --staged without --diff is a usage error.
@@ -271,7 +220,7 @@ async function runDiff(dir: string, args: string[]) {
   }
 
   try {
-    const { snapshots, result, findings } = await loadDiff(dir, {
+    const { snapshots, result, findings } = await loadDiffPayload(dir, {
       reference: positionals[0],
       staged: Boolean(values.staged || values.cached),
     });
@@ -701,7 +650,7 @@ async function runServe(dir: string, args: string[]) {
       workspaceJson = JSON.stringify(await loadWorkspace(dir));
       return;
     }
-    const diff = await loadDiff(dir, diffSpec);
+    const diff = await loadDiffPayload(dir, diffSpec);
     workspaceJson = JSON.stringify(diff.snapshots.head.payload);
     diffJson = JSON.stringify(diff.payload);
     diffError = undefined;
@@ -975,7 +924,7 @@ async function runBuild(dir: string, args: string[]) {
   let diffJson: string | undefined;
   try {
     if (diffSpec) {
-      const diff = await loadDiff(dir, diffSpec);
+      const diff = await loadDiffPayload(dir, diffSpec);
       workspaceJson = JSON.stringify(diff.snapshots.head.payload);
       diffJson = JSON.stringify(diff.payload);
     } else {
