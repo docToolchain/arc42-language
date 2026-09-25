@@ -187,6 +187,32 @@ describe("architecture diff lint", () => {
     expect(withPaths.pathFindings).toEqual(withoutPaths.pathFindings);
   });
 
+  test("groups code changes by element, separating untouched from updated elements", () => {
+    const base = workspace(
+      interfaces(["api", "src/api"], ["events", "src/events"], ["jobs", "src/jobs"]),
+    );
+    const head = workspace(
+      interfaces(["api", "src/api"], ["events", "src/events-v2"], ["jobs", "src/jobs"]),
+    );
+    const result = lintArchitectureDiff({
+      changes: [
+        change("src/api/index.ts", [[1, 1]]),
+        change("src/api/routes.ts", [[1, 1]]),
+        change("src/events/index.ts", [[1, 1]]),
+      ],
+      base,
+      head,
+    });
+    expect(result.groups).toEqual({
+      warnings: result.consistencyFindings,
+      untouched: [{ elementId: "api", files: ["src/api/index.ts", "src/api/routes.ts"] }],
+      updated: [{ elementId: "events", files: ["src/events/index.ts"] }],
+      uncovered: [],
+    });
+    // Grouping never drops a finding.
+    expect(result.pathFindings).toHaveLength(3);
+  });
+
   describe("coverage findings (new-building-block-hint)", () => {
     const noChanges: FileChange[] = [];
 

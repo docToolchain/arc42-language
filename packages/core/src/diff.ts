@@ -28,12 +28,32 @@ export interface DiffFinding {
   elementId?: string;
 }
 
+/** Implementation files that changed under one architecture element's path. */
+export interface ElementCodeChange {
+  elementId: string;
+  /** Changed files, sorted. */
+  files: string[];
+}
+
+/** The findings of a change, grouped for a reviewer. Nothing is left out. */
+export interface FindingGroups {
+  /** Consistency warnings (block and prose not changed together). */
+  warnings: DiffFinding[];
+  /** Code changed under an element whose architecture this change did not touch. */
+  untouched: ElementCodeChange[];
+  /** Code changed under an element that this change also added, modified or removed. */
+  updated: ElementCodeChange[];
+  /** Paths that became uncovered by any building block. */
+  uncovered: string[];
+}
+
 export interface DiffResult {
   /** The semantic diff the consistency findings are derived from. */
   architecture: ArchitectureDiff;
   consistencyFindings: DiffFinding[];
   pathFindings: DiffFinding[];
   coverageFindings: DiffFinding[];
+  groups: FindingGroups;
   hasBlockingFindings: boolean;
 }
 
@@ -162,6 +182,31 @@ function coverageDiffFindings(options: LintDiffOptions): DiffFinding[] {
   }));
 }
 
+function groupFindings(
+  architecture: ArchitectureDiff,
+  consistency: DiffFinding[],
+  paths: DiffFinding[],
+  coverage: DiffFinding[],
+): FindingGroups {
+  const changedElements = new Set(architecture.elements.map((change) => change.id));
+  const filesByElement = new Map<string, Set<string>>();
+  for (const finding of paths) {
+    const elementId = finding.elementId!;
+    const files = filesByElement.get(elementId) ?? new Set<string>();
+    files.add(finding.file);
+    filesByElement.set(elementId, files);
+  }
+  const codeChanges = [...filesByElement.entries()]
+    .map(([elementId, files]) => ({ elementId, files: [...files].sort() }))
+    .sort((a, b) => a.elementId.localeCompare(b.elementId));
+  return {
+    warnings: consistency,
+    untouched: codeChanges.filter((change) => !changedElements.has(change.elementId)),
+    updated: codeChanges.filter((change) => changedElements.has(change.elementId)),
+    uncovered: coverage.map((finding) => finding.file),
+  };
+}
+
 /**
  * Lint a change to the architecture: derive consistency findings (block and
  * prose changed together) from the semantic diff of both snapshots, and
@@ -179,15 +224,18 @@ export function lintArchitectureDiff(options: LintDiffOptions): DiffResult {
     options.headKnownPaths || options.baseKnownPaths
       ? new Set([...(options.headKnownPaths ?? []), ...(options.baseKnownPaths ?? [])])
       : undefined;
+  const paths = pathFindings(
+    options.changes,
+    [...options.head.elements, ...options.base.elements],
+    knownPaths,
+  );
+  const coverage = coverageDiffFindings(options);
   return {
     architecture,
     consistencyFindings: consistency,
-    pathFindings: pathFindings(
-      options.changes,
-      [...options.head.elements, ...options.base.elements],
-      knownPaths,
-    ),
-    coverageFindings: coverageDiffFindings(options),
+    pathFindings: paths,
+    coverageFindings: coverage,
+    groups: groupFindings(architecture, consistency, paths, coverage),
     hasBlockingFindings: consistency.length > 0,
   };
 }

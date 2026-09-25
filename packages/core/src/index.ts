@@ -23,7 +23,15 @@ export type {
 
 export type { ValidateResult, GetDocumentsOptions } from "./arc42.ts";
 export type { PathEvidence, ValidationContext } from "./validator/types.ts";
-export type { LintDiffOptions, DiffFinding, DiffResult, FileChange, LineRange } from "./diff.ts";
+export type {
+  DiffFinding,
+  DiffResult,
+  ElementCodeChange,
+  FileChange,
+  FindingGroups,
+  LineRange,
+  LintDiffOptions,
+} from "./diff.ts";
 export type {
   ArchitectureDiff,
   AttributeChange,

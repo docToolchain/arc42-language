@@ -248,6 +248,7 @@ async function runDiff(dir: string, args: string[]) {
             accepted,
             hasBlockingFindings: result.hasBlockingFindings,
             findings,
+            groups: result.groups,
             architecture: result.architecture,
           },
           null,

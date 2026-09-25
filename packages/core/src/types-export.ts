@@ -73,6 +73,8 @@ export type {
 export type {
   // Diff lint
   DiffFinding,
+  ElementCodeChange,
+  FindingGroups,
 } from "./diff.ts";
 
 export type {

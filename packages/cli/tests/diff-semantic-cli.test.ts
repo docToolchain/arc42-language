@@ -202,6 +202,12 @@ describe("arc42 diff --format json", () => {
       hasBlockingFindings: true,
       findings: [{ kind: "block-without-prose-change", elementId: "service", line: 8 }],
     });
+    expect(output.groups).toEqual({
+      warnings: [expect.objectContaining({ elementId: "service" })],
+      untouched: [],
+      updated: [],
+      uncovered: [],
+    });
     expect(output.architecture.elements).toMatchObject([
       {
         id: "service",
