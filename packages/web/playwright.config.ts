@@ -22,7 +22,7 @@ export default defineConfig({
     },
     {
       // Demo project: screen-recording walkthrough, headed, with video capture.
-      // Run explicitly with: pnpm demo
+      // Run explicitly with: pnpm demo / pnpm demo:diff
       name: "demo",
       use: {
         ...devices["Desktop Chrome"],
@@ -33,7 +33,7 @@ export default defineConfig({
           slowMo: 0,
         },
       },
-      testMatch: ["**/demo.spec.ts"],
+      testMatch: ["**/demo.spec.ts", "**/demo-diff.spec.ts"],
       timeout: 120000,
     },
   ],

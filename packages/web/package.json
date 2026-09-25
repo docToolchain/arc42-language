@@ -11,7 +11,8 @@
     "test:e2e": "playwright test --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug=cli",
-    "demo": "playwright test --project=demo"
+    "demo": "playwright test --project=demo demo.spec.ts",
+    "demo:diff": "playwright test --project=demo demo-diff.spec.ts"
   },
   "dependencies": {
     "@arc42/core": "workspace:*",
