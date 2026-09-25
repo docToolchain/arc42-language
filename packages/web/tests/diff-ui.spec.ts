@@ -103,6 +103,10 @@ test.describe("Changes inline in the chapters", () => {
   }) => {
     await page.goto(`/#${BB}`);
     const catalog = segment(page, "modified: Catalog Service");
+    // The section status reads apart from the status of the elements inside it.
+    await expect(catalog.getByTestId("segment-status")).toHaveText("Section changed");
+    await expect(catalog.getByTestId("element-change")).toHaveAttribute("data-status", "modified");
+    await expect(catalog.getByTestId("segment-heading-change")).toHaveCount(0);
     const row = catalog.getByTestId("attribute-change");
     await expect(row.locator("th")).toHaveText("technology");
     await expect(row.locator("td").nth(0)).toHaveText("Node.js / Express");
@@ -157,6 +161,34 @@ test.describe("Changes inline in the chapters", () => {
     await expect(page.locator("article h1")).toBeVisible();
     await expect(page.getByTestId("chapter-diff")).toHaveCount(0);
     await expect(page.getByTestId("diff-segment")).toHaveCount(0);
+  });
+});
+
+test.describe("Changes view — renamed sections", () => {
+  test("shows a section whose heading was renamed once, as changed", async ({ page }) => {
+    const root = createDiffRepository();
+    const file = join(root, BB);
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace("## Catalog Service\n", () => "## Catalog\n"),
+    );
+    const server = await startDiffServer(root, 3399);
+    try {
+      await page.goto(`${server.url}/#${BB}`);
+      const catalog = segment(page, "modified: Catalog");
+      await expect(catalog.getByTestId("segment-status")).toContainText("Section changed");
+      await expect(catalog.getByTestId("segment-heading-change")).toHaveText(
+        /heading\s*Catalog Service\s*→?\s*(renamed to)?\s*Catalog$/,
+      );
+      await expect(segment(page, "removed: Catalog Service")).toHaveCount(0);
+      await expect(segment(page, "added: Catalog")).toHaveCount(0);
+      // The previous version carries the old heading.
+      await catalog.getByTestId("toggle-base").click();
+      await expect(catalog.getByTestId("segment-base").locator("h2")).toHaveText("Catalog Service");
+    } finally {
+      await server.stop();
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

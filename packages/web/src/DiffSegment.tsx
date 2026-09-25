@@ -214,6 +214,13 @@ function ChangeList({ segment }: { segment: DiffSegment }) {
   );
 }
 
+/** Status of a section — worded apart from the element status chips inside it. */
+const SECTION_STATUS: Record<DiffSegment["status"], string> = {
+  added: "Section added",
+  modified: "Section changed",
+  removed: "Section removed",
+};
+
 /** One changed section, marked by status, with both versions available. */
 export function SegmentView({
   segment,
@@ -236,8 +243,16 @@ export function SegmentView({
       data-status={segment.status}
       aria-label={`${segment.status}: ${title}`}
     >
-      <header className={styles.segmentHeader}>
-        <span className={styles.status}>{segment.status}</span>
+      <header className={styles.segmentHeader} data-testid="segment-status">
+        <span className={styles.sectionStatus}>{SECTION_STATUS[segment.status]}</span>
+        {segment.heading && (
+          <span className={styles.headingRename} data-testid="segment-heading-change">
+            heading <del className={styles.before}>{segment.heading.before}</del>
+            <span aria-hidden="true"> → </span>
+            <span className={styles.visuallyHidden}> renamed to </span>
+            <ins className={styles.after}>{segment.heading.after}</ins>
+          </span>
+        )}
       </header>
       <ChangeList segment={segment} />
       {segment.status === "removed" && segment.base && (
