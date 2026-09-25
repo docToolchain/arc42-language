@@ -606,9 +606,12 @@ Reads workspace data from the core library via an HTTP API (when served by the C
 baked-in JSON file (when published as a static site). Presents prose and DSL blocks together:
 prose is shown as formatted text; arc42 element blocks are revealed by clicking a coloured
 stripe; Mermaid diagrams are rendered inline. An Agent view toggle shows raw DSL fences for
-tooling consumers. Imports shared types from `@arc42/core/types` — a dedicated browser-safe
-subpath export that eliminates the need for a hand-maintained local type mirror. Designed to
-work equally as a `localhost` server and as a GitHub Pages static deployment.
+tooling consumers. When a difference is supplied (`serve --diff`, `build --diff`), a Changes
+view lists the changed sections of both snapshots grouped by document — rendered like the
+documentation itself, with the attribute changes of each element and the lint findings. Imports
+shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
+the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
+and as a GitHub Pages static deployment.
 
 ```arc42
 :::building-block
@@ -639,7 +642,8 @@ path: packages/web/src/App.tsx
 
 The CLI hosts the web renderer as a local HTTP server. On `arc42 serve`, it builds the workspace
 payload via the core library, exposes it at `/api/workspace`, and serves the web renderer's static
-assets.
+assets. With `--diff`, it also exposes the visualized difference at `/api/diff` (404 without
+`--diff`, 500 with the error when the difference cannot be computed).
 
 ```arc42
 :::ignore H020 if-cli and if-cli-web share packages/cli/src/cli.ts as the entry point but represent distinct contracts: if-cli is the command-line interface for all actors, if-cli-web is the HTTP hosting contract specifically for the Web Renderer :::
@@ -647,7 +651,7 @@ assets.
 id: if-cli-web
 title: Web Renderer Hosting Contract
 provider: bb-web-renderer
-protocol: HTTP (localhost) — static assets + JSON API
+protocol: HTTP (localhost) — static assets + JSON API (/api/workspace, /api/diff)
 path: packages/cli/src/cli.ts
 :::
 ```
