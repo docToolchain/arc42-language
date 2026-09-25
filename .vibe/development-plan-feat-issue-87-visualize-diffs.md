@@ -92,6 +92,25 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   history would make the feature unusable, skipping them silently would hide the problem.
 - **Shallow clones**: a boundary commit is refused ("fetch more history") instead of being
   compared with the empty tree, which would show the whole repository as added.
+- **Changes live in the chapters, not in one long list** (user decision after the first review
+  on #91):
+  - With `--diff` (serve and build), a changed chapter in the Documents view *is* the diff: the
+    head document rendered in full, changed sections marked in place (status border, attribute
+    changes on the cards, "Show previous version"), removed sections as ghosts at their former
+    position.
+  - In the history (serve and build), a pearl shows its changed chapters the same way, but only
+    changed sections are rendered; unchanged sections show their heading with a **skeleton**.
+    No snapshot is loaded — loading full snapshots on request is follow-up issue #92.
+  - Positions come from a per-document **outline** in the diff view: the merged heading order of
+    base and head with a status per section (unchanged/added/modified/removed); a removed section
+    sits right after the base section that preceded it.
+- **The Changes view becomes a review summary**: warnings (linking to their element), hints
+  **grouped by element** — "code changed, architecture untouched" first, then "code changed,
+  element also updated in this change" — uncovered paths, and a compact index of changed elements
+  per chapter, all linking into the chapters. Grouping is computed once in core
+  (`FindingGroups`) and shared by the web, `arc42 diff --format json` and the pull request comment.
+  Nothing is hidden (rejected: suppressing hints for updated elements — an updated element does
+  not prove the code change under its path was reviewed).
 - **Commits:** Conventional Commits with `## Intent`, `## Key decisions`,
   `## Side effects` body (see `.agents/skills/commit/SKILL.md`).
 
@@ -132,7 +151,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   a replacer function whenever the replacement is data.
 - The single-file bundle contains `</head>` inside its inlined JavaScript; data is inserted after
   the first `<head>` instead.
-- Follow-up issues: #89 (strict `--format` for validate/rules/explain), #90 (feature-level prose
+- Follow-up issues: #92 (full snapshots for unchanged sections in the history), #89 (strict `--format` for validate/rules/explain), #90 (feature-level prose
   triggering `prose-without-block-change`).
 - `affectedRanges` / `affectedFiles` in `DiffResult` are only consumed by tests.
 - `pnpm run check` on a fresh checkout reports 4 type errors in `MetaModelView.tsx`
