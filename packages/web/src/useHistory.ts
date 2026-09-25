@@ -3,12 +3,11 @@ import type { HistoryEntry, HistoryPearl } from "./types";
 
 /**
  * Where the architecture history lives: `arc42 serve` answers under
- * /api/history/, `arc42 build --with-history` writes history/ next to the page.
- * Both provide index.jsonl and chunk-<n>.jsonl.
+ * /api/history/, `arc42 build --with-history` writes history/ next to the page,
+ * and `--single-file` puts the same files into the page itself. All provide
+ * index.jsonl and chunk-<n>.jsonl.
  */
-export interface HistorySource {
-  base: string;
-}
+export type HistorySource = { base: string } | { files: Record<string, string> };
 
 export type HistoryState =
   | { status: "loading" }
@@ -25,6 +24,15 @@ function parseJsonLines<T>(text: string): T[] {
     .split("\n")
     .filter((line) => line.trim() !== "")
     .map((line) => JSON.parse(line) as T);
+}
+
+async function readJsonLines<T>(source: HistorySource, name: string): Promise<T[]> {
+  if ("files" in source) {
+    const text = source.files[name];
+    if (text === undefined) throw new Error(`The page contains no history file ${name}`);
+    return parseJsonLines<T>(text);
+  }
+  return fetchJsonLines<T>(`${source.base}${name}`);
 }
 
 async function fetchJsonLines<T>(url: string): Promise<T[]> {
@@ -58,7 +66,7 @@ export function useHistory(source: HistorySource | null, version: number) {
     requested.current = new Set();
     setEntries(new Map());
     setChunkErrors(new Map());
-    fetchJsonLines<HistoryPearl>(`${source.base}index.jsonl`)
+    readJsonLines<HistoryPearl>(source, "index.jsonl")
       .then((pearls) => active && setState({ status: "ready", pearls }))
       .catch((error: unknown) => {
         if (active)
@@ -73,7 +81,7 @@ export function useHistory(source: HistorySource | null, version: number) {
     (chunk: number) => {
       if (!source || requested.current.has(chunk)) return;
       requested.current.add(chunk);
-      fetchJsonLines<HistoryEntry>(`${source.base}chunk-${chunk}.jsonl`)
+      readJsonLines<HistoryEntry>(source, `chunk-${chunk}.jsonl`)
         .then((loaded) =>
           setEntries((previous) => {
             const next = new Map(previous);

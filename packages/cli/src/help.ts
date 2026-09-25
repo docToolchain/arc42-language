@@ -215,6 +215,8 @@ Options:
   --with-history        Include the architecture history (every commit that touched the
                         architecture documents, plus uncommitted changes) as JSONL files
                         in <out>/history/; requires a Git repository
+  --single-file         Write one self-contained <out>/index.html — web app, workspace,
+                        difference and history inlined — that also works opened from disk
   -h, --help            Show this help
 
 The command reads the workspace, copies the bundled web assets to --out, and injects
@@ -229,6 +231,7 @@ Examples:
   arc42 --dir examples/bookstore-backend build --out site/bookstore --base /bookstore/
   arc42 build --out review --diff origin/main...HEAD   # architecture review site for a pull request
   arc42 build --out site/docs --with-history           # documentation with its change history
+  arc42 build --out review --diff main...HEAD --single-file   # one HTML file to attach or mail
 `;
   }
 
