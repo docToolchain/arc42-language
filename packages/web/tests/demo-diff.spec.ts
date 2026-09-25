@@ -118,9 +118,8 @@ test("arc42 serve --diff demo — architecture evolution", async ({ page }, test
     await page.getByTestId("history-pearl").first().waitFor({ state: "visible" });
     await page.waitForTimeout(PAUSE_MED);
 
-    const pearlOf = (subject: string) =>
-      page.getByTestId("history-pearl").filter({ hasText: subject });
-    const pearl = (subject: string) => pearlOf(subject).getByTestId("pearl-select");
+    const pearl = (subject: string) =>
+      page.getByTestId("history-pearl").filter({ hasText: subject }).getByTestId("pearl-select");
 
     // A pearl opens that version of the architecture…
     await centerAndClick(page, pearl("feat: add book recommendations"), PAUSE_MED);
@@ -128,12 +127,8 @@ test("arc42 serve --diff demo — architecture evolution", async ({ page }, test
     await page.waitForTimeout(PAUSE_LONG);
     await screenshot("history-feature-commit");
 
-    // …and its message button shows why it changed.
-    await centerAndClick(
-      page,
-      pearlOf("feat: add book recommendations").getByTestId("pearl-message-button"),
-      PAUSE_MED,
-    );
+    // …with its commit message collapsed above the change: expand it to see why.
+    await centerAndClick(page, page.getByTestId("commit-message-toggle"), PAUSE_MED);
     await page.getByTestId("commit-message").waitFor({ state: "visible" });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     await page.waitForTimeout(PAUSE_LONG);
