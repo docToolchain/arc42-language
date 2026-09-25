@@ -101,6 +101,21 @@ export function createHistoryRepository(): string {
 const IGNORE = ":::ignore H014 This is only a demo for the arc42, code is out of scope:::";
 
 /**
+ * Create a repository with the bookstore example as its only commit, tagged
+ * `v1.0` — the starting point of both demos.
+ */
+export function createBookstoreRepository(): string {
+  const root = mkdtempSync(join(tmpdir(), "arc42-demo-bookstore-"));
+  cpSync(bookstoreDir, root, { recursive: true });
+  git(root, "init", "-q");
+  git(root, "config", "user.email", "architect@example.com");
+  git(root, "config", "user.name", "Bookstore Architect");
+  commitAll(root, "docs: initial bookstore architecture");
+  git(root, "tag", "v1.0");
+  return root;
+}
+
+/**
  * Create a repository that tells a short architecture story for the diff demo.
  * The first commit is tagged `v1.0`; on top of it, newest last:
  * - "feat: add book recommendations" — new service + API, gateway wired, diagram updated
@@ -111,13 +126,7 @@ const IGNORE = ":::ignore H014 This is only a demo for the arc42, code is out of
  *   technology changes without a prose update (a lint warning)
  */
 export function createEvolutionRepository(): string {
-  const root = mkdtempSync(join(tmpdir(), "arc42-demo-evolution-"));
-  cpSync(bookstoreDir, root, { recursive: true });
-  git(root, "init", "-q");
-  git(root, "config", "user.email", "architect@example.com");
-  git(root, "config", "user.name", "Bookstore Architect");
-  commitAll(root, "docs: initial bookstore architecture");
-  git(root, "tag", "v1.0");
+  const root = createBookstoreRepository();
 
   edit(
     root,

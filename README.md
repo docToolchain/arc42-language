@@ -23,6 +23,13 @@ cd arc42-language
 npx @doctc/arc42 --dir examples/bookstore-backend serve
 ```
 
+In the browser, `arc42 serve` renders the architecture as readable chapters, with every
+element, relation and decision one click away:
+
+![arc42 serve demo](demo/serve-demo.gif)
+
+([video](demo/serve-demo.mp4) · recorded by `pnpm --filter @arc42/web demo`)
+
 Architecture changes with every commit — `arc42 serve --diff` shows how:
 changes inline in their chapters, only the changed words marked, lint warnings
 linked to their elements, and a history with one pearl per commit.
