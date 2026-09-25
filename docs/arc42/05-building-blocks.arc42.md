@@ -606,12 +606,13 @@ Reads workspace data from the core library via an HTTP API (when served by the C
 baked-in JSON file (when published as a static site). Presents prose and DSL blocks together:
 prose is shown as formatted text; arc42 element blocks are revealed by clicking a coloured
 stripe; Mermaid diagrams are rendered inline. An Agent view toggle shows raw DSL fences for
-tooling consumers. When a difference is supplied (`serve --diff`, `build --diff`), a Changes
-view lists the changed sections of both snapshots grouped by document — rendered like the
-documentation itself, with the attribute changes of each element and the lint findings. Inside a
-Git repository the sidebar also offers the architecture history as a chain of pearls — one per
-commit that touched the architecture documents — whose changes load lazily as they scroll into
-view and render in the same Changes view. Imports
+tooling consumers. When a difference is supplied (`serve --diff`, `build --diff`), changed
+chapters show their changes in place — changed sections marked, removed ones at their former
+position — and a Changes summary lists what needs attention (warnings, code changed under
+untouched elements) with links into the chapters. Inside a Git repository the sidebar also
+offers the architecture history as a chain of pearls — one per commit that touched the
+architecture documents — whose changes load lazily as they scroll into view; there, unchanged
+sections appear as headings with placeholders. Imports
 shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
 the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
 and as a GitHub Pages static deployment.
