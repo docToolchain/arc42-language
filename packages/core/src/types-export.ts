@@ -76,6 +76,12 @@ export type {
 } from "./diff.ts";
 
 export type {
+  // Architecture history
+  HistoryEntry,
+  HistoryPearl,
+} from "./history.ts";
+
+export type {
   // Render-ready diff view
   DiffDocument,
   DiffPayload,

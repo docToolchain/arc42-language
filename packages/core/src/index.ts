@@ -12,6 +12,7 @@ export {
 export { lintArchitectureDiff } from "./diff.ts";
 export { diffWorkspaces } from "./workspace-diff.ts";
 export { buildDiffView } from "./diff-view.ts";
+export type { HistoryEntry, HistoryPearl } from "./history.ts";
 export type {
   DiffDocument,
   DiffPayload,
