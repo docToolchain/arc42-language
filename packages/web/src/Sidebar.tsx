@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import type { DocumentAst, AstNode, HeadingNode, BlockNode } from "./types";
+import type { DocumentAst, AstNode, HeadingNode, BlockNode, DiffDocument } from "./types";
+import { ChangeCounts } from "./ChangesView";
 import styles from "./Sidebar.module.css";
 import { filename } from "./utils";
 import { KIND_COLOR } from "./ElementCard";
@@ -11,6 +12,13 @@ interface SidebarProps {
   onSelectHeading: (headingSlug: string) => void;
   onSelectMetaModel: () => void;
   showMetaModel: boolean;
+  /** Present when a difference is visualized (serve/build --diff). */
+  changes?: {
+    active: boolean;
+    onSelect: () => void;
+    /** Changed documents by file path. */
+    documents: Map<string, DiffDocument>;
+  };
   viewMode: "human" | "agent";
   onToggleViewMode: () => void;
   theme: "dark" | "light";
@@ -26,6 +34,7 @@ export function Sidebar({
   onSelectHeading,
   onSelectMetaModel,
   showMetaModel,
+  changes,
   viewMode,
   onToggleViewMode,
   theme,
@@ -79,9 +88,28 @@ export function Sidebar({
         </button>
       </div>
 
+      {changes && (
+        <a
+          data-testid="sidebar-changes-link"
+          href="#changes"
+          aria-current={changes.active ? "page" : undefined}
+          className={[styles.docBtn, styles.changesLink, changes.active ? styles.docBtnActive : ""]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={(e) => {
+            e.preventDefault();
+            changes.onSelect();
+          }}
+        >
+          <span className={styles.docLabel}>Changes</span>
+          <ChangeCounts {...totalCounts([...changes.documents.values()])} />
+        </a>
+      )}
+
       <ul className={styles.docs} role="list">
         {documents.map((doc, i) => {
-          const isActive = i === activeDocIndex;
+          const isActive = i === activeDocIndex && !changes?.active;
+          const docChanges = changes?.documents.get(doc.filePath);
           return (
             <li key={doc.filePath} className={styles.doc}>
               <a
@@ -97,6 +125,11 @@ export function Sidebar({
                 }}
               >
                 <span className={styles.docLabel}>{chapterLabel(doc)}</span>
+                {docChanges && (
+                  <span data-testid="doc-change-badge">
+                    <ChangeCounts {...docChanges} />
+                  </span>
+                )}
               </a>
 
               {isActive && activeDoc && (
@@ -161,6 +194,17 @@ export function Sidebar({
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function totalCounts(documents: DiffDocument[]) {
+  return documents.reduce(
+    (total, d) => ({
+      added: total.added + d.added,
+      modified: total.modified + d.modified,
+      removed: total.removed + d.removed,
+    }),
+    { added: 0, modified: 0, removed: 0 },
+  );
+}
 
 function getDocHeadings(doc: DocumentAst): HeadingNode[] {
   return doc.nodes.filter((n: AstNode): n is HeadingNode => n.kind === "heading");

@@ -1,15 +1,20 @@
 import React, { useMemo, useEffect, useState } from "react";
-import type { WorkspacePayload, Element } from "./types";
+import type { DiffDocument, DiffPayload, WorkspacePayload, Element } from "./types";
 import { Sidebar } from "./Sidebar";
 import { DocumentView } from "./DocumentView";
 import { CoverageView } from "./CoverageView";
 import { MetaModelView } from "./MetaModelView";
+import { ChangesView } from "./ChangesView";
 import { filename } from "./utils";
 import { useTheme } from "./useTheme";
 import styles from "./App.module.css";
 
 interface AppProps {
   payload: WorkspacePayload;
+  /** The visualized difference (serve/build --diff), if any. */
+  diff?: DiffPayload | null;
+  /** Error of a difference that could not be computed. */
+  diffError?: string | null;
 }
 
 // ─── Hash-based routing ───────────────────────────────────────────────────────
@@ -113,7 +118,7 @@ function useHashRouter(documents: WorkspacePayload["documents"]) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-export function App({ payload }: AppProps) {
+export function App({ payload, diff = null, diffError = null }: AppProps) {
   const {
     activeDocIndex,
     targetElementId,
@@ -140,6 +145,32 @@ export function App({ payload }: AppProps) {
     window.location.hash = "meta-model";
     setSidebarOpen(false);
   }
+
+  // Changes view — #changes, and the landing page whenever a difference is shown
+  const hasDiff = diff !== null || diffError !== null;
+  const isChangesHash = () =>
+    window.location.hash === "#changes" ||
+    (hasDiff && (window.location.hash === "" || window.location.hash === "#"));
+  const [showChanges, setShowChanges] = useState(isChangesHash);
+
+  useEffect(() => {
+    setShowChanges(isChangesHash());
+    function onHashChange() {
+      setShowChanges(isChangesHash());
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [hasDiff]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function selectChanges() {
+    window.location.hash = "changes";
+    setSidebarOpen(false);
+  }
+
+  const changedDocuments = useMemo(
+    () => new Map<string, DiffDocument>(diff?.view.documents.map((d) => [d.file, d]) ?? []),
+    [diff],
+  );
 
   function navigateToChapter(chapter: number) {
     const doc = payload.documents.find((d) =>
@@ -199,6 +230,11 @@ export function App({ payload }: AppProps) {
         onSelectHeading={navigateToHeading}
         onSelectMetaModel={selectMetaModel}
         showMetaModel={showMetaModel}
+        changes={
+          hasDiff
+            ? { active: showChanges, onSelect: selectChanges, documents: changedDocuments }
+            : undefined
+        }
         viewMode={viewMode}
         onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
         theme={theme}
@@ -209,6 +245,8 @@ export function App({ payload }: AppProps) {
       <main className={styles.main}>
         {showMetaModel ? (
           <MetaModelView onNavigateToChapter={navigateToChapter} />
+        ) : showChanges ? (
+          <ChangesView diff={diff} error={diffError} viewMode={viewMode} />
         ) : (
           <>
             <DocumentView

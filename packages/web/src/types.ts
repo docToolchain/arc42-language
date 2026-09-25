@@ -53,6 +53,13 @@ export type {
   CoveredPath,
   // Notation
   Notation,
+  // Architecture diff
+  AttributeChange,
+  DiffDocument,
+  DiffFinding,
+  DiffPayload,
+  DiffSegment,
+  SectionContent,
 } from "@arc42/core/types";
 
 /** Virtual node type created by DocumentView grouping — never from the server */
