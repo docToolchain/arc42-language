@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 import { loadWorkspaceFromDocuments } from "../src/arc42.ts";
-import { lintArchitectureDiff, type FileChange } from "../src/diff.ts";
+import { lintArchitectureDiff } from "../src/diff.ts";
 import { parseMarkdown } from "../src/parser/markdown-parser.ts";
 import type { WorkspacePayload } from "../src/workspace.ts";
 
@@ -47,20 +47,10 @@ function buildingBlocks(...entries: Array<[id: string, path: string]>): string {
   );
 }
 
-const change = (
-  filePath: string,
-  newRanges: [number, number][],
-  oldRanges = newRanges,
-): FileChange => ({
-  filePath,
-  oldRanges: oldRanges.map(([start, end]) => ({ start, end })),
-  newRanges: newRanges.map(([start, end]) => ({ start, end })),
-});
-
 describe("architecture diff lint", () => {
   test("reports a block-only change and ignores an unrelated section", () => {
     const result = lintArchitectureDiff({
-      changes: [change(FILE, [[8, 8]])],
+      changedFiles: [FILE],
       base: workspace(architecture(service(), section("Other", "Narrative"))),
       head: workspace(
         architecture(service("Narrative", "Order Service"), section("Other", "Narrative")),
@@ -73,7 +63,7 @@ describe("architecture diff lint", () => {
 
   test("accepts a prose and block change in the same section", () => {
     const result = lintArchitectureDiff({
-      changes: [change(FILE, [[5, 8]])],
+      changedFiles: [FILE],
       base: workspace(architecture(service())),
       head: workspace(architecture(service("Updated narrative", "Order Service"))),
     });
@@ -82,7 +72,7 @@ describe("architecture diff lint", () => {
 
   test("reports prose-only changes", () => {
     const result = lintArchitectureDiff({
-      changes: [change(FILE, [[5, 5]])],
+      changedFiles: [FILE],
       base: workspace(architecture(service())),
       head: workspace(architecture(service("Updated narrative"))),
     });
@@ -91,7 +81,7 @@ describe("architecture diff lint", () => {
 
   test("accepts deletion of a block together with its prose", () => {
     const result = lintArchitectureDiff({
-      changes: [change(FILE, [[0, -1]], [[1, 11]])],
+      changedFiles: [FILE],
       base: workspace(architecture(service())),
       head: workspace(),
     });
@@ -100,7 +90,7 @@ describe("architecture diff lint", () => {
 
   test("reports deletion of a block when its prose remains", () => {
     const result = lintArchitectureDiff({
-      changes: [change(FILE, [[7, 6]], [[7, 11]])],
+      changedFiles: [FILE],
       base: workspace(architecture(service())),
       head: workspace(architecture(section("Service", "Narrative"))),
     });
@@ -110,7 +100,7 @@ describe("architecture diff lint", () => {
   test("reports path impact as a non-blocking hint", () => {
     const docs = workspace(interfaces(["service-api", "src/service"]));
     const result = lintArchitectureDiff({
-      changes: [change("src/service/index.ts", [[4, 4]])],
+      changedFiles: ["src/service/index.ts"],
       base: docs,
       head: docs,
     });
@@ -122,10 +112,10 @@ describe("architecture diff lint", () => {
   test("architecture documents are not implementation paths", () => {
     const docs = workspace(interfaces(["workspace-access", "docs"]));
     const result = lintArchitectureDiff({
-      changes: [
-        change("docs/05-building-blocks.arc42.md", [[4, 4]]),
-        change("docs/06-runtime-view.arc42.adoc", [[4, 4]]),
-        change("docs/assets/overview.svg", [[1, 1]]),
+      changedFiles: [
+        "docs/05-building-blocks.arc42.md",
+        "docs/06-runtime-view.arc42.adoc",
+        "docs/assets/overview.svg",
       ],
       base: docs,
       head: docs,
@@ -138,7 +128,7 @@ describe("architecture diff lint", () => {
   test("building-block path changes do not produce path hints", () => {
     const docs = workspace(buildingBlocks(["service", "src/service"]));
     const result = lintArchitectureDiff({
-      changes: [change("src/service/index.ts", [[4, 4]])],
+      changedFiles: ["src/service/index.ts"],
       base: docs,
       head: docs,
     });
@@ -148,7 +138,7 @@ describe("architecture diff lint", () => {
   test("uses path components rather than textual prefixes", () => {
     const docs = workspace(interfaces(["service-api", "src/service"]));
     const result = lintArchitectureDiff({
-      changes: [change("src/services.ts", [[4, 4]])],
+      changedFiles: ["src/services.ts"],
       base: docs,
       head: docs,
     });
@@ -160,11 +150,7 @@ describe("architecture diff lint", () => {
       interfaces(["file", "src/Makefile"], ["dir", "src/foo.test"], ["missing", "src/missing"]),
     );
     const result = lintArchitectureDiff({
-      changes: [
-        change("src/Makefile", [[4, 4]]),
-        change("src/foo.test/index.ts", [[5, 5]]),
-        change("src/missing/file.ts", [[6, 6]]),
-      ],
+      changedFiles: ["src/Makefile", "src/foo.test/index.ts", "src/missing/file.ts"],
       base: docs,
       head: docs,
       headKnownPaths: new Set(["src/Makefile", "src/foo.test/index.ts"]),
@@ -174,7 +160,7 @@ describe("architecture diff lint", () => {
 
   test("keeps consistency findings independent from supplied path evidence", () => {
     const options = {
-      changes: [change(FILE, [[5, 5]])],
+      changedFiles: [FILE],
       base: workspace(architecture(service())),
       head: workspace(architecture(service("Updated prose"))),
     };
@@ -195,11 +181,7 @@ describe("architecture diff lint", () => {
       interfaces(["api", "src/api"], ["events", "src/events-v2"], ["jobs", "src/jobs"]),
     );
     const result = lintArchitectureDiff({
-      changes: [
-        change("src/api/index.ts", [[1, 1]]),
-        change("src/api/routes.ts", [[1, 1]]),
-        change("src/events/index.ts", [[1, 1]]),
-      ],
+      changedFiles: ["src/api/index.ts", "src/api/routes.ts", "src/events/index.ts"],
       base,
       head,
     });
@@ -214,11 +196,11 @@ describe("architecture diff lint", () => {
   });
 
   describe("coverage findings (new-building-block-hint)", () => {
-    const noChanges: FileChange[] = [];
+    const noChanges: string[] = [];
 
     test("returns empty coverageFindings when the head has no elements", () => {
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(),
         head: workspace(),
         headKnownPaths: new Set(["src/foo.ts"]),
@@ -228,7 +210,7 @@ describe("architecture diff lint", () => {
 
     test("returns empty coverageFindings when no headKnownPaths provided", () => {
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(),
         head: workspace(buildingBlocks(["service", "src"])),
       });
@@ -237,7 +219,7 @@ describe("architecture diff lint", () => {
 
     test("returns empty coverageFindings when headKnownPaths is empty", () => {
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(),
         head: workspace(buildingBlocks(["service", "src"])),
         headKnownPaths: new Set(),
@@ -250,7 +232,7 @@ describe("architecture diff lint", () => {
       // head: element only covers src/app → src/lib is newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(buildingBlocks(["app", "src/app"], ["lib", "src/lib"])),
         head: workspace(buildingBlocks(["app", "src/app"])),
         headKnownPaths: trackedPaths,
@@ -270,7 +252,7 @@ describe("architecture diff lint", () => {
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const docs = workspace(buildingBlocks(["app", "src/app"]));
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: docs,
         head: docs,
         headKnownPaths: trackedPaths,
@@ -283,7 +265,7 @@ describe("architecture diff lint", () => {
       // Empty base → any currently uncovered path is treated as newly uncovered
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(),
         head: workspace(buildingBlocks(["app", "src/app"])),
         headKnownPaths: trackedPaths,
@@ -300,7 +282,7 @@ describe("architecture diff lint", () => {
         "src/middle/index.ts",
       ]);
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(),
         head: workspace(buildingBlocks(["zebra", "src/zebra"])), // alpha and middle are uncovered
         headKnownPaths: trackedPaths,
@@ -314,7 +296,7 @@ describe("architecture diff lint", () => {
       // src/app is covered, src/lib is not — establishes a domain so uncovered paths appear
       const trackedPaths = new Set(["src/app/index.ts", "src/lib/index.ts"]);
       const result = lintArchitectureDiff({
-        changes: noChanges,
+        changedFiles: noChanges,
         base: workspace(),
         head: workspace(buildingBlocks(["app", "src/app"])), // src/lib is newly uncovered
         headKnownPaths: trackedPaths,

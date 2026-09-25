@@ -438,7 +438,7 @@ path: packages/workspace-fs/src/index.ts
 
 The filesystem workspace adapter loads the two snapshots of a change from git — working tree,
 index or commits, including commit ranges — as full workspace payloads parsed with the
-workspace's notation, together with the changed file hunks and each side's known paths. Diff
+workspace's notation, together with the names of the changed files and each side's known paths. Diff
 Lint consumes them. This is a filesystem concern; the diff itself is pure and source-independent.
 
 ```arc42

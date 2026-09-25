@@ -3,9 +3,9 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 import { computeCoverage, loadWorkspaceFromDocuments } from "@arc42/core";
-import type { FileChange, WorkspacePayload } from "@arc42/core";
+import type { WorkspacePayload } from "@arc42/core";
 
-import { git, parseHunks } from "./git-diff.ts";
+import { git } from "./git-diff.ts";
 import { detectNotation, isArchitectureFile, parseWorkspaceFiles } from "./workspace-parse.ts";
 
 /**
@@ -54,9 +54,8 @@ export interface DiffSnapshots {
    * base is an index that differs from HEAD, because no commit describes it.
    */
   acceptanceBase?: string;
-  /** Changed line ranges of every changed file, repository-relative. */
-  changes: FileChange[];
-  patch: string;
+  /** Repository-relative paths of all changed files (code and documents). */
+  changedFiles: string[];
 }
 
 interface SnapshotSource {
@@ -131,7 +130,7 @@ interface Comparison {
   head: SnapshotSource;
   baseCommit: string;
   acceptanceBase?: string;
-  patchArgs: string[];
+  diffArgs: string[];
 }
 
 function comparison(root: string, spec: DiffSpec): Comparison {
@@ -151,7 +150,7 @@ function comparison(root: string, spec: DiffSpec): Comparison {
       head: commitSource(root, commit),
       baseCommit: parent ?? EMPTY_TREE,
       acceptanceBase: parent,
-      patchArgs: [parent ?? EMPTY_TREE, commit],
+      diffArgs: [parent ?? EMPTY_TREE, commit],
     };
   }
   const range = spec.reference ? /^(.*?)(\.\.\.?)(.*)$/.exec(spec.reference) : null;
@@ -167,7 +166,7 @@ function comparison(root: string, spec: DiffSpec): Comparison {
       head: commitSource(root, to),
       baseCommit,
       acceptanceBase: baseCommit,
-      patchArgs: [baseCommit, to],
+      diffArgs: [baseCommit, to],
     };
   }
   if (spec.staged) {
@@ -177,7 +176,7 @@ function comparison(root: string, spec: DiffSpec): Comparison {
       head: indexSource(root),
       baseCommit,
       acceptanceBase: baseCommit,
-      patchArgs: ["--cached", baseCommit],
+      diffArgs: ["--cached", baseCommit],
     };
   }
   if (spec.reference) {
@@ -187,7 +186,7 @@ function comparison(root: string, spec: DiffSpec): Comparison {
       head: workingTreeSource(root),
       baseCommit,
       acceptanceBase: baseCommit,
-      patchArgs: [baseCommit],
+      diffArgs: [baseCommit],
     };
   }
   const baseCommit = resolveCommit(root, "HEAD");
@@ -196,7 +195,7 @@ function comparison(root: string, spec: DiffSpec): Comparison {
     head: workingTreeSource(root),
     baseCommit,
     acceptanceBase: indexMatchesHead(root) ? baseCommit : undefined,
-    patchArgs: [],
+    diffArgs: [],
   };
 }
 
@@ -231,15 +230,17 @@ export async function loadDiffSnapshots(dir: string, spec: DiffSpec = {}): Promi
   const workspace = relative(root, realpathSync(resolve(dir))).replaceAll("\\", "/");
   const inWorkspace = (path: string) =>
     workspace === "" || path === workspace || path.startsWith(`${workspace}/`);
-  const { base, head, baseCommit, acceptanceBase, patchArgs } = comparison(root, spec);
-  const patch = git(root, ["diff", "--unified=0", "--no-renames", ...patchArgs, "--"]);
+  const { base, head, baseCommit, acceptanceBase, diffArgs } = comparison(root, spec);
+  // File names are all the lint needs; -z keeps unusual names unquoted.
+  const changedFiles = nulSeparated(
+    git(root, ["diff", "--name-only", "-z", "--no-renames", ...diffArgs, "--"]),
+  );
   return {
     root,
     base: await loadSnapshot(base, inWorkspace),
     head: await loadSnapshot(head, inWorkspace),
     baseCommit,
     acceptanceBase,
-    changes: parseHunks(patch),
-    patch,
+    changedFiles,
   };
 }

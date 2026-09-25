@@ -16,7 +16,7 @@ export interface LoadedDiff {
 export async function loadDiffPayload(dir: string, spec: DiffSpec): Promise<LoadedDiff> {
   const snapshots = await loadDiffSnapshots(dir, spec);
   const result = lintArchitectureDiff({
-    changes: snapshots.changes,
+    changedFiles: snapshots.changedFiles,
     base: snapshots.base.payload,
     head: snapshots.head.payload,
     baseKnownPaths: snapshots.base.knownPaths,

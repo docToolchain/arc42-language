@@ -23,7 +23,7 @@ import { createAdapterForNotation } from "./notation/index.ts";
 import { detectNotation, parseWorkspaceFiles } from "./workspace-parse.ts";
 import type { SourceFile } from "./workspace-parse.ts";
 
-export { parseDiffPathHeader, gitLsFiles } from "./git-diff.ts";
+export { gitLsFiles } from "./git-diff.ts";
 export { loadDiffSnapshots, EMPTY_TREE } from "./diff-snapshots.ts";
 export { loadDiffPayload } from "./diff-payload.ts";
 export type { LoadedDiff } from "./diff-payload.ts";
