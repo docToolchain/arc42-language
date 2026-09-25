@@ -11,7 +11,8 @@ import type {
 } from "./types";
 import { groupNodes } from "./DocumentView";
 import { AstNodeRenderer } from "./AstNodeRenderer";
-import { diffTokens, wordTokens, type DiffPart } from "./textDiff";
+import { marked } from "marked";
+import { diffTokens, markHtmlChanges, wordTokens, type DiffPart } from "./textDiff";
 import { filename } from "./utils";
 import styles from "./ChangesView.module.css";
 
@@ -107,18 +108,43 @@ export function NodesRender({
   );
 }
 
+function proseHtml(node: AstNode & { kind: "prose" }): string {
+  return node.renderedHtml ?? (marked.parse(node.text, { async: false }) as string);
+}
+
+/** The head nodes with added prose words in `<ins>` and removed ones in `<del>`. */
+function markProseChanges(head: AstNode[], base: AstNode[]): AstNode[] {
+  const prose = (nodes: AstNode[]) =>
+    nodes.filter((node): node is AstNode & { kind: "prose" } => node.kind === "prose");
+  const marked = markHtmlChanges(prose(base).map(proseHtml), prose(head).map(proseHtml), {
+    added: styles.proseAdded!,
+    removed: styles.proseRemoved!,
+  });
+  let index = 0;
+  return head.map((node) =>
+    node.kind === "prose" ? { ...node, renderedHtml: marked[index++]! } : node,
+  );
+}
+
 /** Render one side of a changed section with the elements it carries. */
 function SectionRender({
   content,
+  compareTo,
   viewMode,
   targetElementId,
   onTargetConsumed,
 }: {
   content: SectionContent;
+  /** The other version: prose words that differ from it are marked. */
+  compareTo?: SectionContent;
   viewMode: "human" | "agent";
   targetElementId?: string | null;
   onTargetConsumed?: () => void;
 }) {
+  const nodes = useMemo(
+    () => (compareTo ? markProseChanges(content.nodes, compareTo.nodes) : content.nodes),
+    [content, compareTo],
+  );
   const elementsMap = useMemo(
     () => new Map<string, Element>(content.elements.map((element) => [element.id, element])),
     [content],
@@ -132,7 +158,7 @@ function SectionRender({
   );
   return (
     <NodesRender
-      nodes={content.nodes}
+      nodes={nodes}
       viewMode={viewMode}
       elementsMap={elementsMap}
       elementDocMap={elementDocMap}
@@ -394,6 +420,7 @@ export function SegmentView({
         <div data-testid="segment-head">
           <SectionRender
             content={segment.head}
+            {...(segment.status === "modified" && segment.base ? { compareTo: segment.base } : {})}
             viewMode={viewMode}
             targetElementId={targetElementId}
             onTargetConsumed={onTargetConsumed}
