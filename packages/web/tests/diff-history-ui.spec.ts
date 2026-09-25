@@ -43,17 +43,17 @@ async function expectFeatureCommit(page: Page) {
   await pearl(page, SUBJECTS[2]!).getByTestId("pearl-select").click();
   await expect(page).toHaveURL(/#history:[0-9a-f]{40}$/);
   await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(SUBJECTS[2]!);
-  // The pearl opens only the version; its message button adds the commit message.
+  // The commit message is collapsed; the toggle above the change expands it.
+  const toggle = page.getByTestId("commit-message-toggle");
   await expect(page.getByTestId("commit-message")).toHaveCount(0);
-  await pearl(page, SUBJECTS[2]!).getByTestId("pearl-message-button").click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
   await expect(page).toHaveURL(/#history:[0-9a-f]{40}:message$/);
   await expect(page.getByTestId("commit-message").locator("strong")).toHaveText(
     "p95 search latency",
   );
-  await page.getByTestId("commit-message-toggle").click();
+  await toggle.click();
   await expect(page.getByTestId("commit-message")).toHaveCount(0);
-  // Commits without a message body have no message button.
-  await expect(pearl(page, SUBJECTS[1]!).getByTestId("pearl-message-button")).toHaveCount(0);
   await expect(page.getByTestId("diff-finding")).toContainText([
     "Block 'bb-catalog-service' changed without changing its section prose.",
   ]);
@@ -115,6 +115,8 @@ test.describe("History in arc42 serve", () => {
     await page.goto(`${server.url}/#history`);
     await pearl(page, SUBJECTS[1]!).getByTestId("pearl-select").click();
     await expect(page.getByTestId("changes-empty")).toHaveText("No architecture changes.");
+    // A commit without a message body offers no message to expand.
+    await expect(page.getByTestId("commit-message-toggle")).toHaveCount(0);
   });
 
   test("returns to the documents", async ({ page }) => {

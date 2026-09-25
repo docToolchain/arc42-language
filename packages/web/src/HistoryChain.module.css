@@ -36,7 +36,7 @@
   align-items: flex-start;
   gap: 0.6rem;
   width: 100%;
-  padding: 0.4rem 2.2rem 0.4rem 1rem;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
   background: none;
   border: none;
   text-align: left;
@@ -131,29 +131,4 @@
   font-family: var(--font-sans);
   color: var(--diff-removed);
   font-weight: 600;
-}
-
-/* Opens the version together with its commit message (the pearl itself opens only the version). */
-.messageButton {
-  position: absolute;
-  top: 0.35rem;
-  right: 0.4rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  background: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.messageButton:hover,
-.messageButton:focus-visible {
-  color: var(--accent);
-  border-color: var(--border);
-  background: var(--bg-card);
 }

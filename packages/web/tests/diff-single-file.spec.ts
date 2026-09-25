@@ -79,7 +79,7 @@ test.describe("arc42 build --single-file", () => {
       await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(
         "feat: switch the catalog to Go",
       );
-      await pearls.nth(2).getByTestId("pearl-message-button").click();
+      await page.getByTestId("commit-message-toggle").click();
       await expect(page.getByTestId("commit-message").locator("strong")).toHaveText(
         "p95 search latency",
       );
