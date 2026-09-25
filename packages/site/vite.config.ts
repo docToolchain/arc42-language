@@ -11,6 +11,12 @@ export default defineConfig({
   build: {
     outDir: resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(import.meta.dirname, "index.html"),
+        evolution: resolve(import.meta.dirname, "evolution/index.html"),
+      },
+    },
   },
   server: {
     port: 5174,
