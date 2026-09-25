@@ -22,7 +22,8 @@ function git(root: string, ...args: string[]): string {
 function edit(root: string, file: string, from: string | RegExp, to: string) {
   const path = join(root, file);
   const content = readFileSync(path, "utf8");
-  const next = content.replace(from, to);
+  // A replacer function keeps "$&" and friends in `to` literal.
+  const next = content.replace(from, () => to);
   if (next === content) throw new Error(`Fixture edit did not apply to ${file}: ${String(from)}`);
   writeFileSync(path, next);
 }
@@ -35,7 +36,7 @@ export const GLOSSARY = "12-glossary.arc42.md";
  * - bb-catalog-service: technology changed without prose change (lint warning)
  * - "SMS Delivery Contract" section removed (element + section removed)
  * - "Idempotency Key" glossary term added in a new section
- * - glossary preamble prose changed, containing a literal "</script>"
+ * - glossary preamble prose changed, containing a literal "</script>" and "$&"
  */
 export function createDiffRepository(): string {
   const root = mkdtempSync(join(tmpdir(), "arc42-e2e-diff-"));
@@ -57,7 +58,7 @@ export function createDiffRepository(): string {
     root,
     GLOSSARY,
     "These definitions ensure all stakeholders share the same understanding.",
-    "These definitions ensure all stakeholders share the same understanding. Terms are plain words, never `</script>` tags.",
+    "These definitions ensure all stakeholders share the same understanding. Terms are plain words, never `</script>` tags or `$&` patterns.",
   );
   writeFileSync(
     join(root, GLOSSARY),

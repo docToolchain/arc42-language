@@ -1044,7 +1044,7 @@ async function runBuild(dir: string, args: string[]) {
     html = html.replace(/ href="\/assets\//g, ` href="${base}assets/`);
   }
 
-  // Inject workspace before </head>
+  // Inject workspace data into <head>
   // Escape "<" so that "</script>" inside a string cannot end the script element.
   const inlineJson = (json: string) => json.replaceAll("<", "\\u003c");
   const injection =
@@ -1052,7 +1052,16 @@ async function runBuild(dir: string, args: string[]) {
     (diffJson !== undefined ? `\n<script>window.__DIFF__=${inlineJson(diffJson)};</script>` : "") +
     // The web app loads history/index.jsonl and history/chunk-<n>.jsonl relative to the page.
     (history ? `\n<script>window.__HISTORY__={"base":"history/"};</script>` : "");
-  html = html.replace("</head>", `${injection}\n</head>`);
+  // Insert right after the opening <head> tag — the first one is always the real
+  // tag, while "</head>" may also occur inside inlined JavaScript.
+  // Slicing instead of String.replace keeps "$&" and friends in the data literal.
+  const headStart = html.indexOf("<head>");
+  if (headStart === -1) {
+    console.error(`No <head> element found in ${indexPath}`);
+    process.exit(1);
+  }
+  const insertAt = headStart + "<head>".length;
+  html = `${html.slice(0, insertAt)}\n${injection}${html.slice(insertAt)}`;
 
   writeFileSync(indexPath, html, "utf8");
 
