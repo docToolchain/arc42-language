@@ -84,6 +84,16 @@ describe("arc42 diff — semantic comparison", () => {
     expect(result.status).toBe(1);
   });
 
+  test("does not treat architecture documents as implementation files", () => {
+    const withAccess = (prose: string) =>
+      `${markdown(SERVICE, prose)}\n## Documentation Access\n\nThe documentation itself.\n\n\`\`\`arc42\n:::interface\nid: docs-access\ntitle: Documentation Access\nprovider: service\npath: architecture.arc42.md\n:::\n\`\`\`\n`;
+    const root = repository(MD, withAccess("The service owns orders."));
+    writeFileSync(join(root, MD), withAccess("The service owns orders and invoices."));
+    const result = runDiff(root, "--strict");
+    expect(result.stdout).not.toContain("hint");
+    expect(result.stdout).toContain("Section prose changed without changing block 'service'.");
+  });
+
   test("reads AsciiDoc on both sides", () => {
     const adoc = "architecture.arc42.adoc";
     const asciidoc = (technology: string) =>

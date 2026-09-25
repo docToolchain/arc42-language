@@ -119,6 +119,22 @@ describe("architecture diff lint", () => {
     expect(result.hasBlockingFindings).toBe(false);
   });
 
+  test("architecture documents are not implementation paths", () => {
+    const docs = workspace(interfaces(["workspace-access", "docs"]));
+    const result = lintArchitectureDiff({
+      changes: [
+        change("docs/05-building-blocks.arc42.md", [[4, 4]]),
+        change("docs/06-runtime-view.arc42.adoc", [[4, 4]]),
+        change("docs/assets/overview.svg", [[1, 1]]),
+      ],
+      base: docs,
+      head: docs,
+    });
+    expect(result.pathFindings.map((finding) => finding.file)).toEqual([
+      "docs/assets/overview.svg",
+    ]);
+  });
+
   test("building-block path changes do not produce path hints", () => {
     const docs = workspace(buildingBlocks(["service", "src/service"]));
     const result = lintArchitectureDiff({
