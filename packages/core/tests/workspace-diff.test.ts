@@ -167,6 +167,78 @@ describe("diffWorkspaces — elements", () => {
   });
 });
 
+describe("diffWorkspaces — renamed headings", () => {
+  const nested = (parent: string, child: string, prose = "Notes on the service.") =>
+    `${service().replace("## Service", `## ${parent}`)}\n### ${child}\n\n${prose}\n`;
+
+  test("a section keeps its identity when it defines the same block", () => {
+    const diff = diffWorkspaces(
+      workspace({ [FILE]: service() }),
+      workspace({
+        [FILE]: service(undefined, { id: "service", title: "Orders", technology: "Node" }).replace(
+          "## Service",
+          "## Orders",
+        ),
+      }),
+    );
+    expect(diff.elements).toMatchObject([
+      {
+        id: "service",
+        status: "modified",
+        proseChanged: true,
+        section: { headingPath: ["Building Block View", "Orders"] },
+      },
+    ]);
+    expect(diff.proseSections).toEqual([]);
+  });
+
+  test("subsections follow a renamed enclosing section", () => {
+    const diff = diffWorkspaces(
+      workspace({ [FILE]: nested("Service", "Notes") }),
+      workspace({ [FILE]: nested("Orders", "Notes") }),
+    );
+    // The heading rename is a prose change of the defining element only.
+    expect(diff.elements).toMatchObject([{ id: "service", status: "unchanged" }]);
+    expect(diff.proseSections).toEqual([]);
+
+    const revised = diffWorkspaces(
+      workspace({ [FILE]: nested("Service", "Notes") }),
+      workspace({ [FILE]: nested("Orders", "Notes", "Revised notes.") }),
+    );
+    expect(revised.proseSections).toMatchObject([
+      {
+        status: "modified",
+        section: { headingPath: ["Building Block View", "Orders", "Notes"] },
+      },
+    ]);
+  });
+
+  test("an element whose enclosing heading was renamed has unchanged prose", () => {
+    const withChild = (parent: string, technology: string) =>
+      `# Building Block View\n\n## ${parent}\n\nThe core.\n\n### Service\n\nThe service owns orders.\n\n${block("building-block", { id: "service", title: "Service", technology })}\n`;
+    const diff = diffWorkspaces(
+      workspace({ [FILE]: withChild("Core", "Node") }),
+      workspace({ [FILE]: withChild("Kernel", "Go") }),
+    );
+    expect(diff.elements).toMatchObject([
+      { id: "service", status: "modified", proseChanged: false },
+    ]);
+  });
+
+  test("a renamed section without a block is a removal plus an addition", () => {
+    const diff = diffWorkspaces(
+      workspace({ "01-introduction.arc42.md": `# Introduction\n\n## Purpose\n\nSells books.\n` }),
+      workspace({ "01-introduction.arc42.md": `# Introduction\n\n## Goals\n\nSells books.\n` }),
+    );
+    expect(diff.proseSections.map((change) => [change.section.headingPath, change.status])).toEqual(
+      [
+        [["Introduction", "Goals"], "added"],
+        [["Introduction", "Purpose"], "removed"],
+      ],
+    );
+  });
+});
+
 describe("diffWorkspaces — edges, diagrams and prose sections", () => {
   const concepts = `# Cross-cutting Concepts\n\n## Logging\n\nLogs.\n\n${block("concept", { id: "logging", title: "Logging" })}\n`;
 

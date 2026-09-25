@@ -13,7 +13,12 @@ import type { DiffFinding, FindingGroups } from "./diff.ts";
 import type { Element } from "./model/types.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { WorkspacePayload } from "./workspace.ts";
-import { SnapshotIndex, diffWorkspaces, sectionKey as sectionKeyOf } from "./workspace-diff.ts";
+import {
+  SectionMatching,
+  SnapshotIndex,
+  diffWorkspaces,
+  sectionKey as sectionKeyOf,
+} from "./workspace-diff.ts";
 import type {
   ArchitectureDiff,
   ChangeStatus,
@@ -37,7 +42,10 @@ export interface SectionContent {
 export interface DiffSegment {
   /** Added: only in head. Removed: only in base. Modified: in both. */
   status: ChangeStatus;
+  /** The head section; the base section for a removed one. */
   section: SectionRef;
+  /** Set when the section's heading was renamed (paired by the block it defines). */
+  heading?: { before: string; after: string };
   base?: SectionContent;
   head?: SectionContent;
   elements: ElementChange[];
@@ -149,15 +157,22 @@ export function buildDiffView(
 ): DiffView {
   const baseIndex = new SnapshotIndex(base, "base");
   const headIndex = new SnapshotIndex(head, "head");
+  const sections = new SectionMatching(baseIndex, headIndex);
+  // Keyed by the head section, or by the base section when it was removed.
   const drafts = new Map<string, SegmentDraft>();
 
   const draftFor = (file: string, line: number, side: "base" | "head") => {
     const index = side === "base" ? baseIndex : headIndex;
     const section = index.sectionContaining(file, line);
-    const draft = drafts.get(section.key) ?? { elements: [], diagrams: [] };
-    draft.base ??= baseIndex.sections.get(section.key);
-    draft.head ??= headIndex.sections.get(section.key);
-    drafts.set(section.key, draft);
+    const pair =
+      side === "base"
+        ? { base: section, head: sections.headOf(section) }
+        : { base: sections.baseOf(section), head: section };
+    const key = (pair.head ?? section).key;
+    const draft = drafts.get(key) ?? { elements: [], diagrams: [] };
+    draft.base ??= pair.base;
+    draft.head ??= pair.head;
+    drafts.set(key, draft);
     return draft;
   };
 
@@ -197,6 +212,9 @@ export function buildDiffView(
     document.segments.push({
       status: !draft.base ? "added" : !draft.head ? "removed" : "modified",
       section: section.ref,
+      ...(draft.base && draft.head && draft.base.title !== draft.head.title
+        ? { heading: { before: draft.base.title, after: draft.head.title } }
+        : {}),
       ...(draft.base ? { base: sectionContent(draft.base, baseIndex, base.edges) } : {}),
       ...(draft.head ? { head: sectionContent(draft.head, headIndex, head.edges) } : {}),
       elements: draft.elements,
@@ -224,7 +242,7 @@ export function buildDiffView(
     for (const segment of document.segments) {
       statuses.set(sectionKeyOf(segment.section), segment.status);
     }
-    document.outline = documentOutline(document.file, baseIndex, headIndex, statuses);
+    document.outline = documentOutline(document.file, baseIndex, headIndex, sections, statuses);
   }
   return { documents, edges: diff.edges };
 }
@@ -252,16 +270,17 @@ function documentOutline(
   file: string,
   baseIndex: SnapshotIndex,
   headIndex: SnapshotIndex,
+  sections: SectionMatching,
   statuses: Map<string, ChangeStatus>,
 ): OutlineEntry[] {
   const headSections = headIndex.sectionsByFile.get(file) ?? [];
-  const headKeys = new Set(headSections.map((section) => section.key));
-  // Removed sections, grouped by the last preceding base section that survives in head.
+  // Removed sections, grouped by the head counterpart of the last preceding base section that survives.
   const removedAfter = new Map<string | null, Section[]>();
   let anchor: string | null = null;
   for (const section of baseIndex.sectionsByFile.get(file) ?? []) {
-    if (headKeys.has(section.key)) {
-      anchor = section.key;
+    const counterpart = sections.headOf(section);
+    if (counterpart) {
+      anchor = counterpart.key;
       continue;
     }
     removedAfter.set(anchor, [...(removedAfter.get(anchor) ?? []), section]);
