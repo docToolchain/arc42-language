@@ -24,7 +24,9 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   belongs to a section, and the diff needs no pseudo-section fallback.
 - **Scope:** model diff first. Prose changes in a block's section are attached to that
   block (`proseChanged`). Prose-only sections are diffed too, keyed by document +
-  heading path; a renamed heading is a removal plus an addition.
+  heading path. *Revised after dogfooding on #91:* a renamed heading is the same section
+  when the section defines the same block (see **Section identity**); only a renamed
+  heading without a block is a removal plus an addition.
 - **No workarounds; errors surface noisily.** No fallback parsers, no fallback identity
   keys (`id ?? startLine`), no pseudo-sections, no silently kept stale payloads.
 - **"Block changed" = a parsed attribute value changed**, not "a line in the block was
@@ -40,11 +42,20 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   hunks at all (refines the issue plan's `diffWorkspaces(base, head, changes)`). Hunks remain
   only for the lint layer's implementation-path hints on code files.
 - **Section identity** = file + heading path (+ 1-based occurrence for repeated identical
-  paths). A section holding a block in either snapshot is reported through its elements;
+  paths). *Revised after dogfooding on #91* (renaming `### Architecture Diff` → `### Diff Lint`
+  showed a "removed" section holding a "modified" element): sections left unpaired by heading
+  path are paired within the same document when they define the same block (first block id —
+  the model identity outranks the heading text), or when they keep their title under an
+  enclosing section that was paired (an ancestor heading was renamed). `SectionMatching` in
+  `workspace-diff.ts` is shared by the diff and the view; a heading change counts as a prose
+  change of the paired section, and the segment carries `heading: {before, after}`. Element ids
+  keep strict identity — no heuristics there. A section holding a block in either snapshot is reported through its elements;
   only sections without blocks on both sides appear as prose sections. A document preamble
   (prose before the first heading) is a prose section with an empty heading path.
-- **Element `proseChanged`:** both sides → section key or prose differs; added → no base
-  section with the same key, or its prose differs; removed → symmetric against head. This
+- **Element `proseChanged`:** both sides → the sections are not paired, or the paired
+  section's heading or prose differs; added → no paired base section, or its heading or prose
+  differs; removed → symmetric against head. A renamed *enclosing* heading alone is no prose
+  change. This
   reproduces the #36 rules (paired deletion accepted, prose left behind reported).
 - **Attribute comparison** ignores `id`/`loc`, trims strings and compares lists as sets.
   Diagram `source` ignores trailing whitespace per line.
@@ -294,6 +305,9 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       have line 0; hunk parsing, `FileChange`/`LineRange` removed). The line numbers were never
       used once consistency moved to the semantic diff; names are cheaper and robust to unusual
       file names.
+- [x] `fix(core,web)`: a renamed heading is the same section when it defines the same block
+      (`SectionMatching`, segment `heading`); section status is a bar ("Section added / changed /
+      removed") worded apart from the element status chips.
 
 ## Commit
 ### Tasks
