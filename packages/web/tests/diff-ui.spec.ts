@@ -1,13 +1,13 @@
 import { spawnSync } from "node:child_process";
-import { createServer, type Server } from "node:http";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { extname, join } from "node:path";
+import { join } from "node:path";
 import {
   BB,
   createDiffRepository,
   expect,
   runCli,
+  serveStatic,
   startDiffServer,
   test,
   type Page,
@@ -134,38 +134,20 @@ test.describe("Changes view — live updates", () => {
 });
 
 test.describe("Changes view — static build", () => {
-  let site: Server | undefined;
-  let out: string | undefined;
-
-  test.afterEach(async () => {
-    await new Promise<void>((resolve) => (site ? site.close(() => resolve()) : resolve()));
-    if (out) rmSync(out, { recursive: true, force: true });
-  });
-
   test("renders the difference frozen into build --diff", async ({ page, diffRepository }) => {
-    out = mkdtempSync(join(tmpdir(), "arc42-e2e-diff-site-"));
+    const out = mkdtempSync(join(tmpdir(), "arc42-e2e-diff-site-"));
     runCli("--dir", diffRepository, "build", "--out", out, "--diff");
-    const root = out;
-    const types: Record<string, string> = {
-      ".html": "text/html",
-      ".js": "text/javascript",
-      ".css": "text/css",
-      ".svg": "image/svg+xml",
-    };
-    site = createServer((req, res) => {
-      const path = join(root, (req.url ?? "/").split("?")[0] === "/" ? "index.html" : req.url!);
-      if (!existsSync(path)) {
-        res.writeHead(404).end();
-        return;
-      }
-      res.writeHead(200, { "Content-Type": types[extname(path)] ?? "application/octet-stream" });
-      res.end(readFileSync(path));
-    });
-    await new Promise<void>((resolve) => site!.listen(3393, "127.0.0.1", resolve));
-
-    await page.goto("http://127.0.0.1:3393/");
-    await expect(page.getByTestId("changes-view")).toBeVisible();
-    await expect(page.getByTestId("diff-segment")).toHaveCount(4);
-    await expect(segment(page, "added: Idempotency Key")).toBeVisible();
+    const site = await serveStatic(out, 3393);
+    try {
+      await page.goto(`${site.url}/`);
+      await expect(page.getByTestId("changes-view")).toBeVisible();
+      await expect(page.getByTestId("diff-segment")).toHaveCount(4);
+      await expect(segment(page, "added: Idempotency Key")).toBeVisible();
+      // Without --with-history there is no history to switch to.
+      await expect(page.getByTestId("sidebar-tab-history")).toHaveCount(0);
+    } finally {
+      await site.stop();
+      rmSync(out, { recursive: true, force: true });
+    }
   });
 });

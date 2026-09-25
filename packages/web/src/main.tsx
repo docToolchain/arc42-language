@@ -2,6 +2,7 @@ import React, { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import type { DiffPayload, WorkspacePayload } from "./types";
+import type { HistorySource } from "./useHistory";
 import styles from "./App.module.css";
 import "./styles.css";
 
@@ -27,6 +28,8 @@ async function fetchDiff(): Promise<DiffState> {
 function Root() {
   const [payload, setPayload] = useState<WorkspacePayload | null>(null);
   const [diffState, setDiffState] = useState<DiffState>({ diff: null, error: null });
+  const [history, setHistory] = useState<HistorySource | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,13 +39,18 @@ function Root() {
     const injectedWindow = window as unknown as {
       __WORKSPACE__?: WorkspacePayload;
       __DIFF__?: DiffPayload;
+      __HISTORY__?: HistorySource;
     };
     const injected = injectedWindow.__WORKSPACE__;
     if (injected) {
       setPayload(injected);
       setDiffState({ diff: injectedWindow.__DIFF__ ?? null, error: null });
+      // build --with-history announces its history/ directory
+      setHistory(injectedWindow.__HISTORY__ ?? null);
       return;
     }
+    // serve always offers the history; its index answers why when there is none.
+    setHistory({ base: "/api/history/" });
 
     let events: EventSource | undefined;
     let active = true;
@@ -60,6 +68,7 @@ function Root() {
         // reloads over SSE. Exported workspaces do not have this endpoint.
         events = new EventSource("/api/workspace/events");
         events.addEventListener("workspace", () => {
+          setRefreshToken((token) => token + 1);
           void fetch("/api/workspace")
             .then((r) => {
               if (!r.ok) throw new Error(`Server returned ${r.status}`);
@@ -98,7 +107,15 @@ function Root() {
     );
   }
 
-  return <App payload={payload} diff={diffState.diff} diffError={diffState.error} />;
+  return (
+    <App
+      payload={payload}
+      diff={diffState.diff}
+      diffError={diffState.error}
+      history={history}
+      refreshToken={refreshToken}
+    />
+  );
 }
 
 const rootEl = document.getElementById("root");

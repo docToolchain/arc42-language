@@ -5,9 +5,10 @@
 
 import { test as base, expect, type Page } from "@playwright/test";
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -94,6 +95,34 @@ export function createHistoryRepository(): string {
     "id: bb-order-service\ntitle: Order Service\ntechnology: Kotlin",
   );
   return root;
+}
+
+/** Serve a directory of static files, like a static host serving an `arc42 build` output. */
+export async function serveStatic(
+  root: string,
+  port: number,
+): Promise<{ url: string; stop: () => Promise<void> }> {
+  const types: Record<string, string> = {
+    ".html": "text/html",
+    ".js": "text/javascript",
+    ".css": "text/css",
+    ".svg": "image/svg+xml",
+    ".jsonl": "application/x-ndjson",
+  };
+  const server = createServer((req, res) => {
+    const path = join(root, (req.url ?? "/").split("?")[0] === "/" ? "index.html" : req.url!);
+    if (!existsSync(path)) {
+      res.writeHead(404).end();
+      return;
+    }
+    res.writeHead(200, { "Content-Type": types[extname(path)] ?? "application/octet-stream" });
+    res.end(readFileSync(path));
+  });
+  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  return {
+    url: `http://127.0.0.1:${port}`,
+    stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
 }
 
 export function runCli(...args: string[]): string {

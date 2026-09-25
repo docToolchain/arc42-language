@@ -5,6 +5,10 @@ import { DocumentView } from "./DocumentView";
 import { CoverageView } from "./CoverageView";
 import { MetaModelView } from "./MetaModelView";
 import { ChangesView } from "./ChangesView";
+import { HistoryChain } from "./HistoryChain";
+import { HistoryEntryView } from "./HistoryEntryView";
+import { pearlKey, useHistory } from "./useHistory";
+import type { HistorySource } from "./useHistory";
 import { filename } from "./utils";
 import { useTheme } from "./useTheme";
 import styles from "./App.module.css";
@@ -15,6 +19,10 @@ interface AppProps {
   diff?: DiffPayload | null;
   /** Error of a difference that could not be computed. */
   diffError?: string | null;
+  /** Where to load the architecture history from, if any. */
+  history?: HistorySource | null;
+  /** Changes whenever the server announces new data. */
+  refreshToken?: number;
 }
 
 // ─── Hash-based routing ───────────────────────────────────────────────────────
@@ -118,7 +126,13 @@ function useHashRouter(documents: WorkspacePayload["documents"]) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-export function App({ payload, diff = null, diffError = null }: AppProps) {
+export function App({
+  payload,
+  diff = null,
+  diffError = null,
+  history = null,
+  refreshToken = 0,
+}: AppProps) {
   const {
     activeDocIndex,
     targetElementId,
@@ -168,9 +182,41 @@ export function App({ payload, diff = null, diffError = null }: AppProps) {
   }
 
   const changedDocuments = useMemo(
-    () => new Map<string, DiffDocument>(diff?.view.documents.map((d) => [d.file, d]) ?? []),
+    () =>
+      new Map<string, DiffDocument>(diff?.view.documents.map((d) => [filename(d.file), d]) ?? []),
     [diff],
   );
+
+  // History — #history, #history:<commit|worktree>
+  const historyKeyFromHash = () =>
+    window.location.hash.startsWith("#history")
+      ? window.location.hash.slice("#history:".length) || null
+      : undefined;
+  const [historyKey, setHistoryKey] = useState<string | null | undefined>(historyKeyFromHash);
+  useEffect(() => {
+    function onHashChange() {
+      setHistoryKey(historyKeyFromHash());
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const showHistory = history !== null && historyKey !== undefined;
+  const historyData = useHistory(history, refreshToken);
+  const pearls = historyData.state.status === "ready" ? historyData.state.pearls : [];
+
+  // Entering the history without a selection opens the newest pearl.
+  useEffect(() => {
+    if (showHistory && historyKey === null && pearls[0]) {
+      window.history.replaceState(null, "", `#history:${pearlKey(pearls[0])}`);
+      setHistoryKey(pearlKey(pearls[0]));
+    }
+  }, [showHistory, historyKey, pearls]);
+
+  function selectPearl(key: string) {
+    window.location.hash = `history:${key}`;
+  }
+
+  const selectedPearl = pearls.find((pearl) => pearlKey(pearl) === historyKey);
 
   function navigateToChapter(chapter: number) {
     const doc = payload.documents.find((d) =>
@@ -235,6 +281,31 @@ export function App({ payload, diff = null, diffError = null }: AppProps) {
             ? { active: showChanges, onSelect: selectChanges, documents: changedDocuments }
             : undefined
         }
+        history={
+          history
+            ? {
+                active: showHistory,
+                onSelect: () => {
+                  window.location.hash = "history";
+                },
+                onSelectDocuments: () => {
+                  window.location.hash = hasDiff
+                    ? "changes"
+                    : hashForDoc(payload.documents[activeDocIndex]?.filePath ?? "");
+                },
+                panel: (
+                  <HistoryChain
+                    state={historyData.state}
+                    entries={historyData.entries}
+                    chunkErrors={historyData.chunkErrors}
+                    requestChunk={historyData.requestChunk}
+                    selectedKey={historyKey ?? null}
+                    onSelect={selectPearl}
+                  />
+                ),
+              }
+            : undefined
+        }
         viewMode={viewMode}
         onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
         theme={theme}
@@ -245,6 +316,16 @@ export function App({ payload, diff = null, diffError = null }: AppProps) {
       <main className={styles.main}>
         {showMetaModel ? (
           <MetaModelView onNavigateToChapter={navigateToChapter} />
+        ) : showHistory ? (
+          <HistoryEntryView
+            pearl={selectedPearl}
+            entry={historyKey ? historyData.entries.get(historyKey) : undefined}
+            chunkError={
+              selectedPearl ? historyData.chunkErrors.get(selectedPearl.chunk) : undefined
+            }
+            requestChunk={historyData.requestChunk}
+            viewMode={viewMode}
+          />
         ) : showChanges ? (
           <ChangesView diff={diff} error={diffError} viewMode={viewMode} />
         ) : (
