@@ -19,11 +19,19 @@ import { detectNotation, isArchitectureFile, parseWorkspaceFiles } from "./works
  * | `{ staged: true, reference }` | commit          | index        |
  * | `{ reference: "a..b" }`       | commit a        | commit b     |
  * | `{ reference: "a...b" }`      | merge-base(a,b) | commit b     |
+ * | `{ commit }`                  | first parent    | commit       |
+ *
+ * `{ commit }` shows what a single commit changed; a root commit is compared
+ * with the empty tree. It cannot be combined with `reference` or `staged`.
  */
 export interface DiffSpec {
   reference?: string;
   staged?: boolean;
+  commit?: string;
 }
+
+/** Git's well-known id of the empty tree — the base of a root commit. */
+export const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 export interface Snapshot {
   /** "working tree", "index", or the resolved commit id. */
@@ -88,6 +96,16 @@ function workingTreeSource(root: string): SnapshotSource {
   };
 }
 
+function emptySource(): SnapshotSource {
+  return {
+    label: "empty",
+    paths: () => [],
+    read: (path) => {
+      throw new Error(`The empty snapshot has no file ${path}`);
+    },
+  };
+}
+
 function resolveCommit(root: string, reference: string): string {
   return git(root, ["rev-parse", "--verify", `${reference}^{commit}`]).trim();
 }
@@ -110,6 +128,20 @@ interface Comparison {
 }
 
 function comparison(root: string, spec: DiffSpec): Comparison {
+  if (spec.commit !== undefined) {
+    if (spec.reference !== undefined || spec.staged) {
+      throw new Error("A single commit cannot be combined with a reference or --staged");
+    }
+    const commit = resolveCommit(root, spec.commit);
+    const parent = git(root, ["rev-list", "--parents", "-n", "1", commit]).trim().split(" ")[1];
+    return {
+      base: parent ? commitSource(root, parent) : emptySource(),
+      head: commitSource(root, commit),
+      baseCommit: parent ?? EMPTY_TREE,
+      acceptanceBase: parent,
+      patchArgs: [parent ?? EMPTY_TREE, commit],
+    };
+  }
   const range = spec.reference ? /^(.*?)(\.\.\.?)(.*)$/.exec(spec.reference) : null;
   if (range) {
     if (spec.staged) {
