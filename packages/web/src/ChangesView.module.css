@@ -9,6 +9,41 @@
   color: var(--text-muted);
 }
 
+/* Commit message of a history entry, between its metadata and its change. */
+.messageToggle {
+  margin-left: 0.75rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.messageToggle:hover {
+  text-decoration: underline;
+}
+
+.commitMessage {
+  margin-top: -0.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  overflow-wrap: anywhere;
+}
+
+.commitMessage > :first-child {
+  margin-top: 0;
+}
+
+.commitMessage > :last-child {
+  margin-bottom: 0;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;

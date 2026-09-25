@@ -11,7 +11,8 @@ interface HistoryChainProps {
   chunkErrors: Map<number, string>;
   requestChunk: (chunk: number) => void;
   selectedKey: string | null;
-  onSelect: (key: string) => void;
+  /** Open a pearl's version; `message` also shows its commit message. */
+  onSelect: (key: string, message?: boolean) => void;
 }
 
 type PearlState = "pending" | "semantic" | "empty" | "error";
@@ -81,7 +82,7 @@ function Pearl({
   entry: HistoryEntry | undefined;
   chunkError: string | undefined;
   selected: boolean;
-  onSelect: (key: string) => void;
+  onSelect: (key: string, message?: boolean) => void;
   requestChunk: (chunk: number) => void;
 }) {
   const ref = useRef<HTMLLIElement>(null);
@@ -115,6 +116,7 @@ function Pearl({
         type="button"
         className={[styles.pearlButton, selected ? styles.selected : ""].filter(Boolean).join(" ")}
         aria-current={selected ? "true" : undefined}
+        data-testid="pearl-select"
         onClick={() => onSelect(pearlKey(pearl))}
       >
         <span className={[styles.bead, styles[state]].join(" ")} aria-hidden="true" />
@@ -128,14 +130,34 @@ function Pearl({
           </span>
         </span>
       </button>
-      {selected && entry?.messageHtml && (
-        <div
-          className={styles.message}
-          data-testid="pearl-message"
-          // Rendered on the server from the commit message (repository content).
-          dangerouslySetInnerHTML={{ __html: entry.messageHtml }}
-        />
+      {entry?.messageHtml && (
+        <button
+          type="button"
+          className={styles.messageButton}
+          data-testid="pearl-message-button"
+          aria-label={`Show the commit message of ${pearl.subject}`}
+          title="Show commit message"
+          onClick={() => onSelect(pearlKey(pearl), true)}
+        >
+          <MessageIcon />
+        </button>
       )}
     </li>
+  );
+}
+
+/** Speech bubble with text lines: "this commit has a message". */
+function MessageIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path
+        d="M2.5 2.5h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7l-3 2.5V11.5H2.5a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path d="M4.5 5.5h7M4.5 8h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
   );
 }

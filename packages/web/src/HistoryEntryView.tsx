@@ -13,6 +13,9 @@ interface HistoryEntryViewProps {
   viewMode: "human" | "agent";
   /** Element id → file name in the current documentation, for elements this entry does not show. */
   elementDocMap: Map<string, string>;
+  /** Show the commit message above the change. */
+  messageOpen: boolean;
+  onToggleMessage: () => void;
 }
 
 /** The change of one pearl of the architecture history. */
@@ -23,6 +26,8 @@ export function HistoryEntryView({
   requestChunk,
   viewMode,
   elementDocMap,
+  messageOpen,
+  onToggleMessage,
 }: HistoryEntryViewProps) {
   useEffect(() => {
     if (pearl && !entry) requestChunk(pearl.chunk);
@@ -68,11 +73,34 @@ export function HistoryEntryView({
       </p>
     );
   }
+  const message = entry?.messageHtml;
   const meta = (
-    <p className={styles.range} data-testid="history-entry-meta">
-      <code>{pearl.commit ? pearl.commit.slice(0, 8) : "working tree"}</code>
-      {pearl.author && ` · ${pearl.author}`} · {pearl.date.slice(0, 10)}
-    </p>
+    <>
+      <p className={styles.range} data-testid="history-entry-meta">
+        <code>{pearl.commit ? pearl.commit.slice(0, 8) : "working tree"}</code>
+        {pearl.author && ` · ${pearl.author}`} · {pearl.date.slice(0, 10)}
+        {message && (
+          <button
+            type="button"
+            className={styles.messageToggle}
+            aria-expanded={messageOpen}
+            data-testid="commit-message-toggle"
+            onClick={onToggleMessage}
+          >
+            {messageOpen ? "Hide commit message" : "Show commit message"}
+          </button>
+        )}
+      </p>
+      {message && messageOpen && (
+        <section
+          className={styles.commitMessage}
+          aria-label="Commit message"
+          data-testid="commit-message"
+          // Rendered on the server from the commit message (repository content).
+          dangerouslySetInnerHTML={{ __html: message }}
+        />
+      )}
+    </>
   );
   if (!entry) {
     return (
