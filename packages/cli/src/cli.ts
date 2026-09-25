@@ -960,12 +960,14 @@ async function runBuild(dir: string, args: string[]) {
       diff: { type: "boolean", default: false },
       staged: { type: "boolean", default: false },
       "with-history": { type: "boolean", default: false },
+      "single-file": { type: "boolean", default: false },
     },
     strict: false,
   });
 
   const outDir = values["out"] as string | undefined;
   const base = (values["base"] as string) || "./";
+  const singleFile = values["single-file"] === true;
 
   if (!outDir) {
     console.error("arc42 build: --out <dir> is required");
@@ -973,9 +975,12 @@ async function runBuild(dir: string, args: string[]) {
     process.exit(2);
   }
 
-  const webDir = join(__dirname, "web");
-  if (!existsSync(webDir)) {
-    console.error(`Web assets not found at ${webDir}. Run 'pnpm build:web' first.`);
+  // --single-file uses the web app bundled into one self-contained index.html.
+  const webDir = join(__dirname, singleFile ? "web-single" : "web");
+  if (!existsSync(join(webDir, "index.html"))) {
+    console.error(
+      `Web assets not found at ${webDir}. Run 'pnpm ${singleFile ? "build:web:single" : "build:web"}' first.`,
+    );
     process.exit(1);
   }
 
@@ -1010,18 +1015,27 @@ async function runBuild(dir: string, args: string[]) {
     }
   }
 
+  // The history as JSON Lines files: index.jsonl plus chunk-<n>.jsonl
+  const historyFiles: Record<string, string> = {};
+  if (history) {
+    historyFiles["index.jsonl"] = toJsonLines(history.pearls);
+    for (const chunk of new Set(history.pearls.map((pearl) => pearl.chunk))) {
+      historyFiles[`chunk-${chunk}.jsonl`] = toJsonLines(
+        await loadHistoryChunk(dir, history, chunk),
+      );
+    }
+  }
+
   // Copy web assets to output directory
   mkdirSync(outDir, { recursive: true });
   cpSync(webDir, outDir, { recursive: true });
 
-  if (history) {
+  // Next to the page — or, with --single-file, inside it (below).
+  if (history && !singleFile) {
     const historyDir = join(outDir, "history");
     mkdirSync(historyDir, { recursive: true });
-    writeFileSync(join(historyDir, "index.jsonl"), toJsonLines(history.pearls), "utf8");
-    const chunks = new Set(history.pearls.map((pearl) => pearl.chunk));
-    for (const chunk of chunks) {
-      const entries = await loadHistoryChunk(dir, history, chunk);
-      writeFileSync(join(historyDir, `chunk-${chunk}.jsonl`), toJsonLines(entries), "utf8");
+    for (const [name, content] of Object.entries(historyFiles)) {
+      writeFileSync(join(historyDir, name), content, "utf8");
     }
   }
 
@@ -1050,10 +1064,15 @@ async function runBuild(dir: string, args: string[]) {
   const injection =
     `<script>window.__WORKSPACE__=${inlineJson(workspaceJson)};</script>` +
     (diffJson !== undefined ? `\n<script>window.__DIFF__=${inlineJson(diffJson)};</script>` : "") +
-    // The web app loads history/index.jsonl and history/chunk-<n>.jsonl relative to the page.
-    (history ? `\n<script>window.__HISTORY__={"base":"history/"};</script>` : "");
+    // The web app loads history/index.jsonl and history/chunk-<n>.jsonl relative to the
+    // page, or reads the same files from the page itself with --single-file.
+    (history
+      ? `\n<script>window.__HISTORY__=${inlineJson(
+          JSON.stringify(singleFile ? { files: historyFiles } : { base: "history/" }),
+        )};</script>`
+      : "");
   // Insert right after the opening <head> tag — the first one is always the real
-  // tag, while "</head>" may also occur inside inlined JavaScript.
+  // tag, while "</head>" may also occur inside inlined JavaScript (--single-file).
   // Slicing instead of String.replace keeps "$&" and friends in the data literal.
   const headStart = html.indexOf("<head>");
   if (headStart === -1) {
