@@ -15,6 +15,7 @@ graph TD
     bb-api-gateway["API Gateway\n(nginx)"]
     bb-catalog-service["Catalog Service\n(Node.js / Express)"]
     bb-order-service["Order Service\n(Node.js / Express)"]
+    bb-recommendation-service["Recommendation Service\n(Python / FastAPI)"]
     bb-auth-service["Auth Service\n(Node.js / Express)"]
     bb-notification-service["Notification Service\n(Node.js / Express)"]
     bb-message-queue["Message Queue\n(AWS SQS)"]
@@ -26,6 +27,8 @@ graph TD
     bb-api-gateway -->|"if-gateway-catalog"| bb-catalog-service
     bb-api-gateway -->|"if-gateway-order"| bb-order-service
     bb-api-gateway -->|"if-gateway-auth"| bb-auth-service
+    bb-api-gateway -->|"if-gateway-recommend"| bb-recommendation-service
+    bb-recommendation-service -->|"if-order-catalog"| bb-catalog-service
     bb-catalog-service -->|"if-catalog-db"| bb-catalog-db
     bb-catalog-service -->|"if-catalog-cache"| bb-cache
     bb-order-service -->|"if-order-db"| bb-order-db
@@ -37,7 +40,7 @@ graph TD
 
 ## API Gateway
 
-The gateway is the single entry point for all external traffic. It terminates TLS, validates JWT tokens, enforces rate limits, and routes requests to the appropriate downstream service. No business logic lives here — the gateway is a pure infrastructure component. It rejects unauthenticated requests before they reach any business service (except for public endpoints like catalog search and login).
+The gateway is the single entry point for all external traffic. It terminates TLS, validates JWT tokens, enforces rate limits, and routes requests to the appropriate downstream service, including personalised book recommendations. No business logic lives here — the gateway is a pure infrastructure component. It rejects unauthenticated requests before they reach any business service (except for public endpoints like catalog search and login).
 
 The gateway propagates a trace identifier on every request. If the incoming request carries an `X-Trace-Id` header, the gateway preserves it; otherwise, it generates a new one. This trace id flows through all downstream calls and appears in every log entry.
 
@@ -49,7 +52,7 @@ id: bb-api-gateway
 title: API Gateway
 technology: nginx
 implements: concept-logging, concept-auth, concept-error-handling
-requires: if-gateway-catalog, if-gateway-order, if-gateway-auth
+requires: if-gateway-catalog, if-gateway-order, if-gateway-auth, if-gateway-recommend
 :::
 ```
 
@@ -114,6 +117,37 @@ id: if-order-catalog
 title: Catalog Lookup API
 provider: bb-catalog-service
 protocol: HTTP/JSON (internal)
+:::
+```
+
+## Recommendation Service
+
+The Recommendation Service suggests books to readers. It ranks titles by a reader's order history and by what similar readers bought, and reads product details from the Catalog Service so that suggestions never show stale prices.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::building-block
+id: bb-recommendation-service
+title: Recommendation Service
+technology: Python / FastAPI
+implements: concept-logging, concept-error-handling
+requires: if-order-catalog
+:::
+```
+
+### Recommendation API
+
+The gateway forwards `/recommendations` requests to this contract.
+
+```arc42
+:::ignore H014 This is only a demo for the arc42, code is out of scope:::
+
+:::interface
+id: if-gateway-recommend
+title: Recommendation API
+provider: bb-recommendation-service
+protocol: HTTP/JSON
 :::
 ```
 

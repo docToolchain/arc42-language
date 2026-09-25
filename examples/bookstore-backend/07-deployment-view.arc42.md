@@ -72,7 +72,7 @@ hosts: bb-api-gateway
 
 ## Application Cluster
 
-An ECS Fargate cluster runs all application services as containerized tasks. Each service runs as a separate ECS service with independent scaling policies, health checks, and deployment configurations. Fargate eliminates the need to manage EC2 instances, reducing operational overhead for the small team.
+An ECS Fargate cluster runs all application services as containerized tasks. Each service runs as a separate ECS service with independent scaling policies, health checks, and deployment configurations. Fargate eliminates the need to manage EC2 instances, reducing operational overhead for the small team. The Recommendation Service joins as one more ECS service.
 
 ```arc42
 :::deployment-node
@@ -80,7 +80,7 @@ id: dn-prod-ecs
 title: ECS Fargate Cluster
 type: container
 parent: dn-production
-hosts: bb-catalog-service, bb-order-service, bb-auth-service, bb-notification-service
+hosts: bb-catalog-service, bb-order-service, bb-auth-service, bb-notification-service, bb-recommendation-service
 :::
 ```
 
@@ -168,7 +168,7 @@ type: environment
 
 ## Staging Application Cluster
 
-A smaller ECS Fargate cluster running all services with reduced task counts (one task per service instead of the production minimum of two).
+A smaller ECS Fargate cluster running all services with reduced task counts (one task per service instead of the production minimum of two), including the Recommendation Service.
 
 ```arc42
 :::deployment-node
@@ -176,7 +176,7 @@ id: dn-staging-ecs
 title: ECS Fargate Cluster (Staging)
 type: container
 parent: dn-staging
-hosts: bb-api-gateway, bb-catalog-service, bb-order-service, bb-auth-service, bb-notification-service
+hosts: bb-api-gateway, bb-catalog-service, bb-order-service, bb-auth-service, bb-notification-service, bb-recommendation-service
 :::
 ```
 
