@@ -9,7 +9,7 @@
  * paths) so that sections can be matched across snapshots.
  */
 
-import type { BlockType, DocumentAst } from "./ast.ts";
+import type { AstNode, BlockType, DocumentAst } from "./ast.ts";
 import type { DiagramArtifact, Element } from "./model/types.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { WorkspacePayload } from "./workspace.ts";
@@ -89,7 +89,8 @@ export interface ArchitectureDiff {
   documents: DocumentChangeSummary[];
 }
 
-interface Section {
+/** @internal Shared with the diff view; not part of the public API. */
+export interface Section {
   ref: SectionRef;
   key: string;
   startLine: number;
@@ -98,6 +99,8 @@ interface Section {
   hasBlocks: boolean;
   /** Whitespace-normalized prose of the section. */
   prose: string;
+  /** The section's AST nodes, starting with its heading (none for a preamble). */
+  nodes: AstNode[];
 }
 
 function normalizeText(text: string): string {
@@ -127,12 +130,14 @@ function sectionsOf(document: DocumentAst): Section[] {
       isPreamble,
       hasBlocks: false,
       prose: "",
+      nodes: [],
     });
     prose.push([]);
   };
 
   open([], 1, true);
   for (const node of document.nodes) {
+    if (node.kind !== "heading") sections[sections.length - 1]!.nodes.push(node);
     const current = sections[sections.length - 1]!;
     if (node.kind === "heading") {
       current.endLine = node.line - 1;
@@ -143,6 +148,7 @@ function sectionsOf(document: DocumentAst): Section[] {
         node.line,
         false,
       );
+      sections[sections.length - 1]!.nodes.push(node);
     } else if (node.kind === "prose") {
       prose[prose.length - 1]!.push(node.text);
     } else if (node.kind === "block") {
@@ -157,11 +163,17 @@ function sectionsOf(document: DocumentAst): Section[] {
   sections.forEach((section, index) => {
     section.prose = normalizeText(prose[index]!.join(" "));
   });
-  // A preamble without prose is not a section of the document.
-  return sections.filter((section) => !section.isPreamble || section.prose !== "");
+  // A preamble without prose or diagrams is not a section of the document.
+  return sections.filter(
+    (section) =>
+      !section.isPreamble ||
+      section.prose !== "" ||
+      section.nodes.some((node) => node.kind === "diagram" || node.kind === "bare-mermaid"),
+  );
 }
 
-class SnapshotIndex {
+/** @internal Shared with the diff view; not part of the public API. */
+export class SnapshotIndex {
   readonly sections = new Map<string, Section>();
   private readonly sectionsByFile = new Map<string, Section[]>();
   readonly elements = new Map<string, Element>();
@@ -191,13 +203,21 @@ class SnapshotIndex {
     }
   }
 
+  /** The section of an element; a preamble does not hold elements (E017). */
   sectionAt(file: string, line: number): Section {
+    const section = this.sectionContaining(file, line);
+    if (section.isPreamble) {
+      throw new Error(`${file}:${line}: element is not placed in any section of its document`);
+    }
+    return section;
+  }
+
+  /** The section (including a document preamble) that contains a line. */
+  sectionContaining(file: string, line: number): Section {
     const section = this.sectionsByFile
       .get(file)
       ?.find((candidate) => candidate.startLine <= line && line <= candidate.endLine);
-    if (!section || section.isPreamble) {
-      throw new Error(`${file}:${line}: element is not placed in any section of its document`);
-    }
+    if (!section) throw new Error(`${file}:${line}: line is not part of any known section`);
     return section;
   }
 }
