@@ -127,6 +127,13 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   `bb-web-renderer`) without a model change is reported as `prose-without-block-change` and has
   to be accepted with `ARC42_CONSISTENT` every time. Worth discussing whether feature-level prose
   should live in a sub-section without a block.
+- `String.replace` with a string replacement expands `$&`, `$'`, `$1` …: `build` injected the
+  data that way (fixed in 3326476), and so did the e2e fixture's `edit()` helper. Use slicing or
+  a replacer function whenever the replacement is data.
+- The single-file bundle contains `</head>` inside its inlined JavaScript; data is inserted after
+  the first `<head>` instead.
+- Follow-up issues: #89 (strict `--format` for validate/rules/explain), #90 (feature-level prose
+  triggering `prose-without-block-change`).
 - `affectedRanges` / `affectedFiles` in `DiffResult` are only consumed by tests.
 - `pnpm run check` on a fresh checkout reports 4 type errors in `MetaModelView.tsx`
   until `pnpm run build` has run: the `@arc42/core` `.` export has no `types`
@@ -153,7 +160,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       diff view in the web (inline mode), Playwright e2e.
 - [x] Phase 5: history JSONL (index + chunks) for serve and build `--with-history`, pearl chain
       sidebar view, commit message, working-tree pearl.
-- [ ] Phase 6: `build --single-file` (with and without `--with-history`).
+- [x] Phase 6: `build --single-file` (with and without `--with-history`).
 - [ ] Phase 7: side-by-side mode, graph highlighting, example GitHub Action for PR previews.
 
 ## Code
@@ -233,6 +240,12 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   2 ignore-only, 1 shallow boundary error.
 - Tests: `history.test.ts` (12, real repos), Playwright `diff-history-cli.spec.ts` (5) and
   `diff-history-ui.spec.ts` (8); 53/53 e2e green.
+
+### Phase 6 — single file
+- [x] 3326476 `fix(cli)`: data injected after `<head>` by slicing (was `html.replace("</head>")`).
+- [x] d41abf7 `feat(cli)`: `build --single-file` from `dist/web-single/index.html`; history inlined as
+      `window.__HISTORY__ = { files: {…} }`; web `HistorySource = { base } | { files }`.
+- Tests: `diff-single-file.spec.ts` opens the file via `file://` and asserts no requests; 56/56 e2e.
 
 ## Commit
 ### Tasks
