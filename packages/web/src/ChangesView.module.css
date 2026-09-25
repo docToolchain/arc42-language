@@ -258,15 +258,59 @@
   overflow-wrap: anywhere;
 }
 
+/* Changed tokens within a value; unchanged text around them stays plain. */
+.before,
+.after {
+  border-radius: 2px;
+  text-decoration: none;
+}
+
 .before {
   text-decoration: line-through;
   color: var(--diff-removed);
-  background: color-mix(in srgb, var(--diff-removed) 8%, transparent);
+  background: color-mix(in srgb, var(--diff-removed) 14%, transparent);
 }
 
 .after {
   color: var(--diff-added);
-  background: color-mix(in srgb, var(--diff-added) 8%, transparent);
+  background: color-mix(in srgb, var(--diff-added) 14%, transparent);
+}
+
+/* Multi-line values (diagram sources): a line diff with unchanged runs collapsed. */
+.lineDiff {
+  margin: 0;
+  padding: 0.35rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.line,
+.lineRemoved,
+.lineAdded,
+.lineGap {
+  display: block;
+  padding: 0 0.6rem 0 2.2rem;
+  text-indent: -1.6rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.lineRemoved {
+  color: var(--diff-removed);
+  background: color-mix(in srgb, var(--diff-removed) 10%, transparent);
+}
+
+.lineAdded {
+  color: var(--diff-added);
+  background: color-mix(in srgb, var(--diff-added) 10%, transparent);
+}
+
+.lineGap {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .removedContent {

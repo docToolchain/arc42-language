@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { groupNodes } from "./DocumentView";
 import { AstNodeRenderer } from "./AstNodeRenderer";
+import { diffTokens, wordTokens, type DiffPart } from "./textDiff";
 import { filename } from "./utils";
 import styles from "./ChangesView.module.css";
 
@@ -142,10 +143,143 @@ function SectionRender({
   );
 }
 
-function formatValue(value: unknown): string {
-  if (value === undefined) return "—";
-  if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "—";
+/** Tokens of an attribute value: list items, lines of a multi-line text, or words. */
+function valueText(value: unknown): string {
   return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function isMultiline(value: unknown): boolean {
+  return typeof value === "string" && value.includes("\n");
+}
+
+/** One side of a changed single-line value: unchanged text plain, the changed tokens marked. */
+function ValueSide({
+  parts,
+  side,
+  separator,
+}: {
+  parts: DiffPart<string>[];
+  side: "before" | "after";
+  separator: string;
+}) {
+  const hidden = side === "before" ? "insert" : "delete";
+  const shown = parts.filter((part) => part.op !== hidden);
+  if (shown.length === 0) return <>—</>;
+  const Mark = side === "before" ? "del" : "ins";
+  let first = true;
+  return (
+    <>
+      {shown.flatMap((part, index) =>
+        part.values.map((value, position) => {
+          const text = `${first ? "" : separator}${value}`;
+          first = false;
+          return part.op === "equal" ? (
+            <React.Fragment key={`${index}-${position}`}>{text}</React.Fragment>
+          ) : (
+            <Mark
+              key={`${index}-${position}`}
+              className={side === "before" ? styles.before : styles.after}
+              data-testid={side === "before" ? "value-removed" : "value-added"}
+            >
+              {text}
+            </Mark>
+          );
+        }),
+      )}
+    </>
+  );
+}
+
+/** Unchanged lines kept around a change in a multi-line value; longer runs collapse. */
+const LINE_CONTEXT = 2;
+
+function LineDiff({ before, after }: { before: string; after: string }) {
+  const lines = (text: string) =>
+    text === "" ? [] : text.split("\n").map((line) => line.trimEnd());
+  const parts = diffTokens(lines(before), lines(after));
+  const rows: React.ReactNode[] = [];
+  parts.forEach((part, index) => {
+    let values = part.values;
+    if (part.op === "equal") {
+      const head = index === 0 ? 0 : LINE_CONTEXT;
+      const tail = index === parts.length - 1 ? 0 : LINE_CONTEXT;
+      if (values.length > head + tail + 1) {
+        const hidden = values.length - head - tail;
+        values = [...values.slice(0, head), "", ...values.slice(values.length - tail)];
+        rows.push(
+          ...values.map((line, position) =>
+            position === head ? (
+              <span key={`${index}-gap`} className={styles.lineGap} data-testid="line-gap">
+                ⋯ {hidden} unchanged {hidden === 1 ? "line" : "lines"}
+              </span>
+            ) : (
+              <span key={`${index}-${position}`} className={styles.line}>
+                {`  ${line}`}
+              </span>
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    const marker = part.op === "equal" ? " " : part.op === "delete" ? "−" : "+";
+    const className =
+      part.op === "equal"
+        ? styles.line
+        : part.op === "delete"
+          ? styles.lineRemoved
+          : styles.lineAdded;
+    rows.push(
+      ...values.map((line, position) => (
+        <span
+          key={`${index}-${position}`}
+          className={className}
+          data-testid={
+            part.op === "equal" ? undefined : `line-${part.op === "delete" ? "removed" : "added"}`
+          }
+        >
+          {`${marker} ${line}`}
+        </span>
+      )),
+    );
+  });
+  return <pre className={styles.lineDiff}>{rows}</pre>;
+}
+
+function AttributeRow({ attribute }: { attribute: AttributeChange }) {
+  const { before, after } = attribute;
+  if (isMultiline(before) || isMultiline(after)) {
+    return (
+      <tr data-testid="attribute-change">
+        <th scope="row">{attribute.name}</th>
+        <td colSpan={2}>
+          <LineDiff
+            before={before === undefined ? "" : valueText(before)}
+            after={after === undefined ? "" : valueText(after)}
+          />
+        </td>
+      </tr>
+    );
+  }
+  const lists = Array.isArray(before) || Array.isArray(after);
+  const tokens = (value: unknown): string[] => {
+    if (value === undefined) return [];
+    if (Array.isArray(value)) return value.map(valueText);
+    return wordTokens(valueText(value));
+  };
+  const parts = diffTokens(tokens(before), tokens(after));
+  const separator = lists ? ", " : "";
+  return (
+    <tr data-testid="attribute-change">
+      <th scope="row">{attribute.name}</th>
+      <td>
+        <ValueSide parts={parts} side="before" separator={separator} />
+      </td>
+      <td>
+        <ValueSide parts={parts} side="after" separator={separator} />
+      </td>
+    </tr>
+  );
 }
 
 function AttributeTable({ attributes }: { attributes: AttributeChange[] }) {
@@ -155,11 +289,7 @@ function AttributeTable({ attributes }: { attributes: AttributeChange[] }) {
       <table className={styles.attributes}>
         <tbody>
           {attributes.map((attribute) => (
-            <tr key={attribute.name} data-testid="attribute-change">
-              <th scope="row">{attribute.name}</th>
-              <td className={styles.before}>{formatValue(attribute.before)}</td>
-              <td className={styles.after}>{formatValue(attribute.after)}</td>
-            </tr>
+            <AttributeRow key={attribute.name} attribute={attribute} />
           ))}
         </tbody>
       </table>
