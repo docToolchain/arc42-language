@@ -247,6 +247,17 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       `window.__HISTORY__ = { files: {…} }`; web `HistorySource = { base } | { files }`.
 - Tests: `diff-single-file.spec.ts` opens the file via `file://` and asserts no requests; 56/56 e2e.
 
+### Dogfooding — pull request architecture review
+- [x] f5c3136 `feat(ci)`: `scripts/architecture-review.ts` (per workspace: `diff <base>...HEAD --format json`,
+      `build --diff --single-file` when the semantic diff is non-empty; `result.json`, `summary.md`,
+      `changed=` output) + `.github/workflows/architecture-review.yml` (artifact
+      `architecture-review-pr-<n>`, job summary, sticky comment by HTML marker; forks: summary only).
+- [x] 7e09724 `docs(arc42)`: `scenario-pr-architecture-review`.
+- Local run on this branch vs. dfeed25: ~2 s, `docs/arc42` +4 ~10 −0 with a 4.3 MB page; examples unchanged.
+- Tests: `diff-review-script.spec.ts` (3); 59/59 e2e green.
+- Not verifiable here: the workflow itself (needs a pull request); `artifact-url` output of
+  upload-artifact (available since v4).
+
 ## Commit
 ### Tasks
 - [ ] Keep docs/arc42 (dogfood) aligned when CLI/core responsibilities change (phases 1–4).
