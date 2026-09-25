@@ -29,14 +29,18 @@ import {
   computeCoverage,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
-import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
+import type { BlockType, Diagnostic, DiagramType, HistoryEntry, HistoryPearl } from "@arc42/core";
 import {
   getElements,
+  listArchitectureHistory,
   loadDiffPayload,
+  loadHistoryChunk,
+  loadHistoryEntry,
   loadWorkspace,
+  toJsonLines,
   validateWorkspace,
 } from "@arc42/workspace-fs";
-import type { DiffSpec } from "@arc42/workspace-fs";
+import type { ArchitectureHistory, DiffSpec } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
@@ -711,14 +715,62 @@ async function runServe(dir: string, args: string[]) {
     { recursive: true },
     (changed) => !changed || changed.endsWith(".arc42.md") || changed.endsWith(".arc42.adoc"),
   );
-  if (diffSpec) {
-    // The default comparison and --staged read the index; every comparison
-    // resolves HEAD-relative references.
-    const gitDir = execFileSync("git", ["-C", dir, "rev-parse", "--absolute-git-dir"], {
+  // Follow the Git index and HEAD: with --diff they define the comparison, and
+  // the history gains pearls on commit. Outside a repository there is nothing
+  // to follow (--diff has already failed to load in that case).
+  let gitDir: string | undefined;
+  try {
+    gitDir = execFileSync("git", ["-C", dir, "rev-parse", "--absolute-git-dir"], {
       encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
     }).trim();
+  } catch {
+    gitDir = undefined;
+  }
+  if (gitDir) {
     watchPath(gitDir, { recursive: false }, (changed) => changed === "index" || changed === "HEAD");
   }
+
+  // History entries of commits never change; the working-tree entry is always recomputed.
+  const historyEntries = new Map<string, Promise<HistoryEntry>>();
+  const historyEntry = (history: ArchitectureHistory, pearl: HistoryPearl) => {
+    if (pearl.commit === null) return loadHistoryEntry(dir, history, pearl);
+    let entry = historyEntries.get(pearl.commit);
+    if (!entry) {
+      entry = loadHistoryEntry(dir, history, pearl);
+      historyEntries.set(pearl.commit, entry);
+    }
+    return entry;
+  };
+
+  const serveHistory = async (url: string, res: import("node:http").ServerResponse) => {
+    const jsonLines = { "Content-Type": "application/x-ndjson; charset=utf-8" };
+    let history: ArchitectureHistory;
+    try {
+      history = listArchitectureHistory(dir);
+    } catch (err) {
+      // Not a Git repository (or Git fails): the web shows the reason.
+      res.writeHead(422, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+      return;
+    }
+    if (url === "/api/history/index.jsonl") {
+      res.writeHead(200, jsonLines);
+      res.end(toJsonLines(history.pearls));
+      return;
+    }
+    const chunk = Number(/^\/api\/history\/chunk-(\d+)\.jsonl$/.exec(url)?.[1]);
+    const pearls = history.pearls.filter((pearl) => pearl.chunk === chunk);
+    if (pearls.length === 0) {
+      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: `No history chunk ${url}` }));
+      return;
+    }
+    const entries: HistoryEntry[] = [];
+    for (const pearl of pearls) entries.push(await historyEntry(history, pearl));
+    res.writeHead(200, jsonLines);
+    res.end(toJsonLines(entries));
+  };
 
   const server = createServer((req, res) => {
     const url = req.url ?? "/";
@@ -727,6 +779,14 @@ async function runServe(dir: string, args: string[]) {
     if (url === "/api/workspace" || url === "/api/workspace/") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(workspaceJson);
+      return;
+    }
+
+    if (url.startsWith("/api/history/")) {
+      serveHistory(url.split("?")[0]!, res).catch((err: unknown) => {
+        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: String(err) }));
+      });
       return;
     }
 
@@ -899,6 +959,7 @@ async function runBuild(dir: string, args: string[]) {
       base: { type: "string", default: "./" },
       diff: { type: "boolean", default: false },
       staged: { type: "boolean", default: false },
+      "with-history": { type: "boolean", default: false },
     },
     strict: false,
   });
@@ -935,9 +996,34 @@ async function runBuild(dir: string, args: string[]) {
     process.exit(1);
   }
 
+  // Compute the history before writing anything: outside a Git repository
+  // --with-history fails without leaving a partial site behind.
+  let history: ArchitectureHistory | undefined;
+  if (values["with-history"]) {
+    try {
+      history = listArchitectureHistory(dir);
+    } catch (err) {
+      console.error(
+        `arc42 build --with-history: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      process.exit(1);
+    }
+  }
+
   // Copy web assets to output directory
   mkdirSync(outDir, { recursive: true });
   cpSync(webDir, outDir, { recursive: true });
+
+  if (history) {
+    const historyDir = join(outDir, "history");
+    mkdirSync(historyDir, { recursive: true });
+    writeFileSync(join(historyDir, "index.jsonl"), toJsonLines(history.pearls), "utf8");
+    const chunks = new Set(history.pearls.map((pearl) => pearl.chunk));
+    for (const chunk of chunks) {
+      const entries = await loadHistoryChunk(dir, history, chunk);
+      writeFileSync(join(historyDir, `chunk-${chunk}.jsonl`), toJsonLines(entries), "utf8");
+    }
+  }
 
   // Inject workspace data into index.html
   const indexPath = join(outDir, "index.html");
@@ -963,7 +1049,9 @@ async function runBuild(dir: string, args: string[]) {
   const inlineJson = (json: string) => json.replaceAll("<", "\\u003c");
   const injection =
     `<script>window.__WORKSPACE__=${inlineJson(workspaceJson)};</script>` +
-    (diffJson !== undefined ? `\n<script>window.__DIFF__=${inlineJson(diffJson)};</script>` : "");
+    (diffJson !== undefined ? `\n<script>window.__DIFF__=${inlineJson(diffJson)};</script>` : "") +
+    // The web app loads history/index.jsonl and history/chunk-<n>.jsonl relative to the page.
+    (history ? `\n<script>window.__HISTORY__={"base":"history/"};</script>` : "");
   html = html.replace("</head>", `${injection}\n</head>`);
 
   writeFileSync(indexPath, html, "utf8");
