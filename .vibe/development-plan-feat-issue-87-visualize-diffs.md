@@ -62,6 +62,28 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - **Lint API:** `lintArchitectureDiff({ changes, base, head, baseKnownPaths, headKnownPaths })`
   returns `DiffResult` with the `architecture` diff attached, so CLI JSON and web get findings
   and changes from one call. Path hints read interface *elements*, not raw AST blocks.
+- **serve and build are symmetric** (user decision, replaces the earlier "timeline" and
+  "serve --diff" split):
+  - `--diff <spec>` visualizes a *single* difference (live in serve, frozen in build).
+  - Without `--diff`, the docs view gains an alternative left-sidebar view: a **pearl chain**
+    of commits (next to the human/agent toggle). Selecting a pearl shows its commit message
+    (Markdown, rendered server-side) and the rendered changed segments on the right.
+  - History data is **JSONL**: serve answers `GET /api/history?...` lazily for the time range in
+    the viewport; `build --with-history` writes `history/*.jsonl` files loaded statically;
+    `build --with-history --single-file` inlines everything, however large.
+  - `build --single-file` is a flag of its own (also without history).
+- **Pearls** = first-parent commits touching architecture documents. Commits with a non-empty
+  semantic diff are full pearls; semantically empty ones (reformatting) are smaller and neutral.
+  Code-only commits are not pearls. Merges diff against their first parent.
+- **Working-tree pearl** at the top of the chain whenever there are uncommitted changes — in
+  serve (live) *and* build (frozen at build time; absent in CI where it equals HEAD).
+- **Self-contained JSONL lines**: commit metadata, rendered commit message, lint findings and a
+  `DiffView` with the rendered base/head content of every changed segment — no full workspace
+  per commit is needed to render it. One format for serve and build, one loader in the web.
+- **Two-level loading**: a small eager pearl index (sha, date, title, +/~/− counts) so the whole
+  chain is visible, plus chunked detail (`history/NNNN.jsonl` ⇔ `/api/history` chunk API).
+- **Outside a git repository** serve shows a visible "not a git repository" note in the pearl
+  view and keeps serving the docs; `serve --diff` and `build --with-history` fail.
 - **Commits:** Conventional Commits with `## Intent`, `## Key decisions`,
   `## Side effects` body (see `.agents/skills/commit/SKILL.md`).
 
@@ -83,6 +105,10 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - A section holding both a block and a diagram attaches diagram-describing prose to the block
   (e.g. `bb-core` + core drill-down diagram). Changing that prose alone is reported; accept with
   `ARC42_CONSISTENT` when the model is intentionally unchanged.
+- Playwright in this container: `@playwright/test` 1.63 expects Chromium 1243, the image has
+  1194. Local runs use an untracked `packages/web/playwright.local.config.ts` (listed in
+  `.git/info/exclude`) that sets `executablePath: /opt/pw-browsers/chromium`; the committed
+  config is unchanged. Baseline: 24/24 e2e green.
 - `affectedRanges` / `affectedFiles` in `DiffResult` are only consumed by tests.
 - `pnpm run check` on a fresh checkout reports 4 type errors in `MetaModelView.tsx`
   until `pnpm run build` has run: the `@arc42/core` `.` export has no `types`
@@ -105,9 +131,12 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Phase 1: `loadDiffSnapshots(dir, spec)` + `diffWorkspaces(base, head)` alongside existing code.
 - [x] Phase 2: rename to `lintArchitectureDiff`, rebuild on phase 1, remove line-range logic and old `collectGitDiff` parsing path.
 - [x] Phase 3: `arc42 diff --format json`.
-- [ ] Phase 4: `serve --diff` / `build --diff`, Changes view, inline mode.
-- [ ] Phase 5: side-by-side mode, graph highlighting, example GitHub Action.
-- [ ] Phase 6: timeline (`arc42 history`, web Timeline view).
+- [ ] Phase 4: `DiffView` (rendered changed segments) + `serve --diff` / `build --diff` with the
+      diff view in the web (inline mode), Playwright e2e.
+- [ ] Phase 5: history JSONL (index + chunks) for serve and build `--with-history`, pearl chain
+      sidebar view, commit message, working-tree pearl.
+- [ ] Phase 6: `build --single-file` (with and without `--with-history`).
+- [ ] Phase 7: side-by-side mode, graph highlighting, example GitHub Action for PR previews.
 
 ## Code
 ### Phase 0 — E017 (540e96c)
