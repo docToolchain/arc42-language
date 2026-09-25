@@ -105,6 +105,11 @@ arc42 diff origin/main...HEAD
 # Machine-readable findings plus the semantic change set (elements, relations, diagrams, prose)
 arc42 diff origin/main...HEAD --format json
 
+# See a difference rendered in the browser: live for uncommitted changes …
+arc42 serve --diff
+# … or as a static review site for a pull request
+arc42 build --out review --diff origin/main...HEAD
+
 # Show all diff modes, options, and pre-commit guidance
 arc42 diff --help
 

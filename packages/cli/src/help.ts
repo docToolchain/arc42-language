@@ -175,15 +175,25 @@ Examples:
 
 Usage:
   arc42 [--dir <path>] serve [options]
+  arc42 [--dir <path>] serve --diff [<reference> | <base>..<head> | <base>...<head>] [--staged]
 
 Options:
   --port <number>       HTTP port (default: 3142)
   --open                Open the browser after starting the server
+  --diff                Visualize one architecture difference; takes the same comparison
+                        arguments as \`arc42 diff\` (default: working tree versus index)
+  --staged              With --diff: compare the index with HEAD, or with <reference>
   -h, --help            Show this help
 
 The server watches the selected directory recursively and refreshes the browser when
-*.arc42.md or *.arc42.adoc files change. It exits 1 when the workspace or web assets cannot be loaded.
+*.arc42.md or *.arc42.adoc files change; with --diff it also follows the Git index and HEAD.
+It exits 1 when the workspace, the difference or the web assets cannot be loaded.
 Use --dir or ARC42_DIR to select the workspace.
+
+Examples:
+  arc42 serve --open
+  arc42 serve --diff                 # uncommitted changes, live
+  arc42 serve --diff main...HEAD     # the changes of the current branch
 `;
   }
 
@@ -192,10 +202,14 @@ Use --dir or ARC42_DIR to select the workspace.
 
 Usage:
   arc42 [--dir <path>] build --out <dir> [options]
+  arc42 [--dir <path>] build --out <dir> --diff [<reference> | <base>..<head> | <base>...<head>]
 
 Options:
   --out <dir>           Output directory (required)
   --base <url-path>     Base URL path for assets, e.g. /docs/ (default: ./)
+  --diff                Include one architecture difference, frozen at build time; takes the
+                        same comparison arguments as \`arc42 diff\`
+  --staged              With --diff: compare the index with HEAD, or with <reference>
   -h, --help            Show this help
 
 The command reads the workspace, copies the bundled web assets to --out, and injects
@@ -208,6 +222,7 @@ for invalid command options.
 Examples:
   arc42 build --out site/docs
   arc42 --dir examples/bookstore-backend build --out site/bookstore --base /bookstore/
+  arc42 build --out review --diff origin/main...HEAD   # architecture review site for a pull request
 `;
   }
 

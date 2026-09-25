@@ -12,7 +12,13 @@ export {
 export { lintArchitectureDiff } from "./diff.ts";
 export { diffWorkspaces } from "./workspace-diff.ts";
 export { buildDiffView } from "./diff-view.ts";
-export type { DiffDocument, DiffSegment, DiffView, SectionContent } from "./diff-view.ts";
+export type {
+  DiffDocument,
+  DiffPayload,
+  DiffSegment,
+  DiffView,
+  SectionContent,
+} from "./diff-view.ts";
 
 export type { ValidateResult, GetDocumentsOptions } from "./arc42.ts";
 export type { PathEvidence, ValidationContext } from "./validator/types.ts";

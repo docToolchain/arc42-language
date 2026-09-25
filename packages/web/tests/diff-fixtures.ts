@@ -1,0 +1,155 @@
+/// <reference types="node" />
+
+// Fixtures for architecture-diff e2e tests: a temporary Git repository with a
+// copy of the bookstore example, committed, plus known uncommitted edits.
+
+import { test as base, expect, type Page } from "@playwright/test";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const bookstoreDir = resolve(__dirname, "../../../examples/bookstore-backend");
+export const cliPath = resolve(__dirname, "../../cli/dist/cli.mjs");
+
+function git(root: string, ...args: string[]): string {
+  return execFileSync("git", ["-C", root, ...args], { encoding: "utf8" });
+}
+
+function edit(root: string, file: string, from: string | RegExp, to: string) {
+  const path = join(root, file);
+  const content = readFileSync(path, "utf8");
+  const next = content.replace(from, to);
+  if (next === content) throw new Error(`Fixture edit did not apply to ${file}: ${String(from)}`);
+  writeFileSync(path, next);
+}
+
+export const BB = "05-building-blocks.arc42.md";
+export const GLOSSARY = "12-glossary.arc42.md";
+
+/**
+ * Create a repository whose working tree differs from HEAD by:
+ * - bb-catalog-service: technology changed without prose change (lint warning)
+ * - "SMS Delivery Contract" section removed (element + section removed)
+ * - "Idempotency Key" glossary term added in a new section
+ * - glossary preamble prose changed, containing a literal "</script>"
+ */
+export function createDiffRepository(): string {
+  const root = mkdtempSync(join(tmpdir(), "arc42-e2e-diff-"));
+  cpSync(bookstoreDir, root, { recursive: true });
+  git(root, "init", "-q");
+  git(root, "config", "user.email", "test@example.com");
+  git(root, "config", "user.name", "arc42 e2e");
+  git(root, "add", ".");
+  git(root, "commit", "-qm", "initial architecture");
+
+  edit(
+    root,
+    BB,
+    "id: bb-catalog-service\ntitle: Catalog Service\ntechnology: Node.js / Express",
+    "id: bb-catalog-service\ntitle: Catalog Service\ntechnology: Go",
+  );
+  edit(root, BB, /### SMS Delivery Contract\n[\s\S]*?:::\n```\n\n/, "");
+  edit(
+    root,
+    GLOSSARY,
+    "These definitions ensure all stakeholders share the same understanding.",
+    "These definitions ensure all stakeholders share the same understanding. Terms are plain words, never `</script>` tags.",
+  );
+  writeFileSync(
+    join(root, GLOSSARY),
+    `${readFileSync(join(root, GLOSSARY), "utf8").trimEnd()}\n\n## Idempotency Key\n\nA client-chosen key that makes retried order submissions safe.\n\n\`\`\`arc42\n:::glossary-term\nid: term-idempotency-key\ntitle: Idempotency Key\ndefinition: A client-supplied key that lets the Order Service recognize and ignore duplicate submissions.\n:::\n\`\`\`\n`,
+  );
+  return root;
+}
+
+export function runCli(...args: string[]): string {
+  return execFileSync("node", [cliPath, ...args], { encoding: "utf8" });
+}
+
+async function waitForServer(url: string, timeoutMs = 15000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return;
+    } catch {
+      // not ready yet
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error(`Server at ${url} did not become ready within ${timeoutMs}ms`);
+}
+
+async function stopServer(server: ChildProcess): Promise<void> {
+  if (server.exitCode !== null || server.signalCode !== null) return;
+  const exited = new Promise<void>((resolve) => server.once("exit", () => resolve()));
+  server.kill("SIGTERM");
+  await Promise.race([exited, new Promise<void>((resolve) => setTimeout(resolve, 2000))]);
+  if (server.exitCode === null && server.signalCode === null) {
+    server.kill("SIGKILL");
+    await exited;
+  }
+}
+
+/** Start `arc42 serve --diff [...args]` for a repository and wait until it answers. */
+export async function startDiffServer(
+  root: string,
+  port: number,
+  ...args: string[]
+): Promise<{ url: string; stop: () => Promise<void> }> {
+  const url = `http://localhost:${port}`;
+  const server = spawn(
+    "node",
+    [cliPath, "--dir", root, "serve", "--diff", ...args, "--port", String(port)],
+    { stdio: "ignore" },
+  );
+  await waitForServer(`${url}/api/diff`);
+  return { url, stop: () => stopServer(server) };
+}
+
+type WorkerFixtures = { diffRepository: string; diffServerURL: string };
+
+export const test = base.extend<object, WorkerFixtures>({
+  diffRepository: [
+    async ({ playwright }, use) => {
+      void playwright;
+      const root = createDiffRepository();
+      try {
+        await use(root);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    { scope: "worker" },
+  ],
+
+  diffServerURL: [
+    async ({ diffRepository }, use, workerInfo) => {
+      const server = await startDiffServer(diffRepository, 3300 + workerInfo.workerIndex);
+      try {
+        await use(server.url);
+      } finally {
+        await server.stop();
+      }
+    },
+    { scope: "worker" },
+  ],
+
+  page: async ({ browser, diffServerURL }, use) => {
+    const context = await browser.newContext({ baseURL: diffServerURL });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+
+  request: async ({ playwright, diffServerURL }, use) => {
+    const context = await playwright.request.newContext({ baseURL: diffServerURL });
+    await use(context);
+    await context.dispose();
+  },
+});
+
+export { expect, type Page };
