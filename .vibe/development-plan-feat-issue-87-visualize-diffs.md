@@ -321,6 +321,9 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
       Short unchanged filler between changes (≤ 1 word of ≤ 3 characters) folds into the change so
       rewrites read as removed-then-added instead of confetti. Presentation only; "Show previous
       version" still shows the full base.
+- [x] `feat(web)`: a changed section has a Changes / Current / Previous switch in its status bar
+      (replaces "Show previous version"): marked changes by default, each version readable on
+      its own without marks. Added and removed sections have no switch.
 
 ## Commit
 ### Tasks

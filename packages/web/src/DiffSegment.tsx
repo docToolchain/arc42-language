@@ -378,6 +378,43 @@ const SECTION_STATUS: Record<DiffSegment["status"], string> = {
 };
 
 /** One changed section, marked by status, with both versions available. */
+/** How a changed section's content is shown: marked changes, or one of the two versions. */
+type SectionVersion = "changes" | "current" | "previous";
+
+const VERSION_LABEL: Record<SectionVersion, string> = {
+  changes: "Changes",
+  current: "Current",
+  previous: "Previous",
+};
+
+function VersionSwitch({
+  value,
+  onChange,
+}: {
+  value: SectionVersion;
+  onChange: (version: SectionVersion) => void;
+}) {
+  return (
+    <span
+      className={styles.versionSwitch}
+      role="group"
+      aria-label="Show"
+      data-testid="version-switch"
+    >
+      {(Object.keys(VERSION_LABEL) as SectionVersion[]).map((version) => (
+        <button
+          key={version}
+          type="button"
+          aria-pressed={value === version}
+          onClick={() => onChange(version)}
+        >
+          {VERSION_LABEL[version]}
+        </button>
+      ))}
+    </span>
+  );
+}
+
 export function SegmentView({
   segment,
   viewMode,
@@ -389,9 +426,22 @@ export function SegmentView({
   targetElementId?: string | null;
   onTargetConsumed?: () => void;
 }) {
-  const [showBase, setShowBase] = useState(false);
+  const [version, setVersion] = useState<SectionVersion>("changes");
   const path = segment.section.headingPath;
   const title = path[path.length - 1] ?? "Preamble";
+  const compared = segment.status === "modified" && segment.base && segment.head;
+  const head = (compareTo?: SectionContent) =>
+    segment.head && (
+      <div data-testid="segment-head" data-version={compareTo ? "changes" : "current"}>
+        <SectionRender
+          content={segment.head}
+          {...(compareTo ? { compareTo } : {})}
+          viewMode={viewMode}
+          targetElementId={targetElementId}
+          onTargetConsumed={onTargetConsumed}
+        />
+      </div>
+    );
   return (
     <section
       className={[styles.segment, STATUS_CLASS[segment.status]].join(" ")}
@@ -409,6 +459,7 @@ export function SegmentView({
             <ins className={styles.after}>{segment.heading.after}</ins>
           </span>
         )}
+        {compared && <VersionSwitch value={version} onChange={setVersion} />}
       </header>
       <ChangeList segment={segment} />
       {segment.status === "removed" && segment.base && (
@@ -416,34 +467,13 @@ export function SegmentView({
           <SectionRender content={segment.base} viewMode={viewMode} />
         </div>
       )}
-      {segment.status !== "removed" && segment.head && (
-        <div data-testid="segment-head">
-          <SectionRender
-            content={segment.head}
-            {...(segment.status === "modified" && segment.base ? { compareTo: segment.base } : {})}
-            viewMode={viewMode}
-            targetElementId={targetElementId}
-            onTargetConsumed={onTargetConsumed}
-          />
+      {segment.status === "added" && head()}
+      {compared && version === "changes" && head(segment.base)}
+      {compared && version === "current" && head()}
+      {compared && version === "previous" && (
+        <div data-testid="segment-base">
+          <SectionRender content={segment.base!} viewMode={viewMode} />
         </div>
-      )}
-      {segment.status === "modified" && segment.base && (
-        <>
-          <button
-            type="button"
-            className={styles.toggleBase}
-            aria-expanded={showBase}
-            data-testid="toggle-base"
-            onClick={() => setShowBase((value) => !value)}
-          >
-            {showBase ? "Hide previous version" : "Show previous version"}
-          </button>
-          {showBase && (
-            <div className={styles.removedContent} data-testid="segment-base">
-              <SectionRender content={segment.base} viewMode={viewMode} />
-            </div>
-          )}
-        </>
       )}
     </section>
   );
