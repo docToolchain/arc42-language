@@ -4,17 +4,6 @@ import type { WorkspacePayload } from "./workspace.ts";
 import { diffWorkspaces } from "./workspace-diff.ts";
 import type { ArchitectureDiff, ElementChange } from "./workspace-diff.ts";
 
-export interface LineRange {
-  start: number;
-  end: number;
-}
-
-export interface FileChange {
-  filePath: string;
-  oldRanges: LineRange[];
-  newRanges: LineRange[];
-}
-
 export interface DiffFinding {
   kind:
     | "block-without-prose-change"
@@ -58,8 +47,8 @@ export interface DiffResult {
 }
 
 export interface LintDiffOptions {
-  /** Changed line ranges of all changed repository files (code and documents). */
-  changes: FileChange[];
+  /** Repository-relative paths of all changed files (code and documents). */
+  changedFiles: string[];
   base: WorkspacePayload;
   head: WorkspacePayload;
   /** Tracked paths for the base snapshot. */
@@ -131,29 +120,27 @@ function isArchitectureDocument(filePath: string): boolean {
 }
 
 function pathFindings(
-  changes: FileChange[],
+  changedFiles: string[],
   elements: Element[],
   knownPaths?: Set<string>,
 ): DiffFinding[] {
   const result: DiffFinding[] = [];
   const seen = new Set<string>();
-  const implementationChanges = changes.filter(
-    (change) => !isArchitectureDocument(change.filePath),
-  );
+  const implementationFiles = changedFiles.filter((file) => !isArchitectureDocument(file));
   for (const element of elements) {
     if (element.kind !== "interface" || element.path === undefined) continue;
-    for (const change of implementationChanges) {
-      if (!pathMatches(element.path, change.filePath, knownPaths)) continue;
-      const key = `${element.id}:${change.filePath}`;
+    for (const file of implementationFiles) {
+      if (!pathMatches(element.path, file, knownPaths)) continue;
+      const key = `${element.id}:${file}`;
       if (seen.has(key)) continue;
       seen.add(key);
       result.push({
         kind: "implementation-path",
         severity: "hint",
-        file: change.filePath,
-        line: change.newRanges[0]?.start ?? 1,
+        file: file,
+        line: 0,
         elementId: element.id,
-        message: `${change.filePath} changed; review architecture element '${element.id}' (${element.path}).`,
+        message: `${file} changed; review architecture element '${element.id}' (${element.path}).`,
       });
     }
   }
@@ -225,7 +212,7 @@ export function lintArchitectureDiff(options: LintDiffOptions): DiffResult {
       ? new Set([...(options.headKnownPaths ?? []), ...(options.baseKnownPaths ?? [])])
       : undefined;
   const paths = pathFindings(
-    options.changes,
+    options.changedFiles,
     [...options.head.elements, ...options.base.elements],
     knownPaths,
   );

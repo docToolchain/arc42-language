@@ -28,9 +28,7 @@ export type {
   DiffFinding,
   DiffResult,
   ElementCodeChange,
-  FileChange,
   FindingGroups,
-  LineRange,
   LintDiffOptions,
 } from "./diff.ts";
 export type {

@@ -93,7 +93,7 @@ describe("loadDiffSnapshots — comparison scopes", () => {
         attributes: [{ name: "technology", before: "Node", after: "Go" }],
       },
     ]);
-    expect(snapshots.changes.map((change) => change.filePath)).toEqual([FILE]);
+    expect(snapshots.changedFiles).toEqual([FILE]);
   });
 
   test("compares a reference with the working tree", async () => {
@@ -147,7 +147,7 @@ describe("loadDiffSnapshots — single commit", () => {
     expect(snapshots.head.label).toBe(second);
     expect(serviceTechnology(snapshots.base.payload)).toBe("Node");
     expect(serviceTechnology(snapshots.head.payload)).toBe("Go");
-    expect(snapshots.changes.map((change) => change.filePath)).toEqual([FILE]);
+    expect(snapshots.changedFiles).toEqual([FILE]);
   });
 
   test("compares a root commit with the empty tree", async () => {
@@ -174,13 +174,25 @@ describe("loadDiffSnapshots — single commit", () => {
     );
   });
 
-  test("handles patches larger than a mebibyte", async () => {
+  test("reads architecture documents larger than a mebibyte", async () => {
     const root = repository({ [FILE]: markdown("Owns orders.") });
-    write(root, "data/large.txt", `${"x".repeat(100)}\n`.repeat(30000));
-    const large = commit(root, "large file");
+    const longProse = `${"The service owns orders. ".repeat(40)}\n\n`.repeat(1500);
+    write(root, FILE, markdown(longProse));
+    const large = commit(root, "long prose");
     const snapshots = await loadDiffSnapshots(root, { commit: large });
-    expect(snapshots.patch.length).toBeGreaterThan(1024 * 1024);
-    expect(snapshots.changes.map((change) => change.filePath)).toEqual(["data/large.txt"]);
+    expect(snapshots.changedFiles).toEqual([FILE]);
+    expect(diffWorkspaces(snapshots.base.payload, snapshots.head.payload).elements).toMatchObject([
+      { id: "service", status: "unchanged", proseChanged: true },
+    ]);
+  });
+
+  test("reports changed files with unusual names verbatim", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    const names = ["src/with space.ts", 'src/quote".ts', "src/ä.ts"];
+    for (const name of names) write(root, name, "export {};\n");
+    const added = commit(root, "unusual names");
+    const snapshots = await loadDiffSnapshots(root, { commit: added });
+    expect([...snapshots.changedFiles].sort()).toEqual([...names].sort());
   });
 
   test("rejects a commit combined with a reference", async () => {
