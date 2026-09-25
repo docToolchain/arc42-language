@@ -22,7 +22,7 @@ graph TD
     bb-catalog-db["Catalog Database\n(PostgreSQL 16)"]
     bb-order-db["Order Database\n(PostgreSQL 16)"]
     bb-auth-db["Auth Database\n(PostgreSQL 16)"]
-    bb-cache["Response Cache\n(Redis 7)"]
+    bb-cache["Read Cache\n(Redis 7)"]
 
     bb-api-gateway -->|"if-gateway-catalog"| bb-catalog-service
     bb-api-gateway -->|"if-gateway-order"| bb-order-service
@@ -421,7 +421,7 @@ protocol: PostgreSQL wire protocol (TLS)
 :::
 ```
 
-## Response Cache
+## Read Cache
 
 A Redis instance that fronts the Catalog Service for read-heavy endpoints: catalog search and book detail retrieval. Cache entries have a 60-second TTL as a safety net, but primary invalidation is event-driven — catalog writes trigger immediate eviction of affected keys.
 
@@ -432,7 +432,7 @@ The cache is a performance optimization, not a data store. If Redis is unavailab
 
 :::building-block
 id: bb-cache
-title: Response Cache
+title: Read Cache
 technology: Redis 7
 implements: concept-logging, concept-cache-invalidation
 :::
