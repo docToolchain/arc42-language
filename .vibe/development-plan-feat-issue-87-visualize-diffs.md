@@ -131,7 +131,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Phase 1: `loadDiffSnapshots(dir, spec)` + `diffWorkspaces(base, head)` alongside existing code.
 - [x] Phase 2: rename to `lintArchitectureDiff`, rebuild on phase 1, remove line-range logic and old `collectGitDiff` parsing path.
 - [x] Phase 3: `arc42 diff --format json`.
-- [ ] Phase 4: `DiffView` (rendered changed segments) + `serve --diff` / `build --diff` with the
+- [x] Phase 4: `DiffView` (rendered changed segments) + `serve --diff` / `build --diff` with the
       diff view in the web (inline mode), Playwright e2e.
 - [ ] Phase 5: history JSONL (index + chunks) for serve and build `--with-history`, pearl chain
       sidebar view, commit message, working-tree pearl.
@@ -179,8 +179,27 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Unknown `--format` values exit 2 (validate silently falls back to text; not changed here).
 - [x] Black-box tests: change set + findings, acceptance, unknown format.
 
+### Phase 4 — single difference in the web
+- [x] 3f748f8 `feat(core)`: `buildDiffView` — segments per changed section with both sides' AST
+      nodes, the elements they define or mention (edge endpoints, ids used as diagram tokens) and
+      the edges between them; self-contained, JSON round-trip safe. Sections keep their nodes; a
+      preamble holding a diagram is a section.
+- [x] 25bb16f `feat(cli)`: shared `loadDiff` → `DiffPayload { base, head, findings, view }`;
+      `serve --diff` (`/api/diff`, head as `/api/workspace`, watches `.git/index` + `HEAD`, 500 +
+      error on failed reload), `build --diff` (`window.__DIFF__`). Inline JSON escapes `<`
+      (fixes a latent `</script>` break for `__WORKSPACE__` too).
+- [x] e41e668 `feat(web)`: Changes view (`#changes`, landing page with a diff), sidebar entry +
+      per-document badges, segments with status colours, attribute table, previous-version toggle,
+      findings, empty state, error alert.
+- [x] 5999c0d `docs(arc42)`: `if-cli-web` (`/api/diff`), `bb-web-renderer` prose (accepted finding).
+- Tests: Playwright `diff-cli.spec.ts` (API/CLI, 7) + `diff-ui.spec.ts` (UI, 9); 40/40 e2e green.
+- Insight: CLI tests run from source have no bundled web assets, so serve/build are tested
+  black-box in the Playwright suite against `packages/cli/dist`.
+- Insight: rendered section headings are `h2` like the document titles in the Changes view —
+  tests use `data-testid="diff-document-title"`.
+
 ## Commit
 ### Tasks
 - [ ] Keep docs/arc42 (dogfood) aligned when CLI/core responsibilities change (phases 1–4).
 - [x] README / CLI help for `a..b`, `a...b`, `--format json`.
-- [ ] README / CLI help for `serve --diff`, `build --diff`.
+- [x] README / CLI help for `serve --diff`, `build --diff`.
