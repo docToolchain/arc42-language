@@ -71,8 +71,14 @@ export type {
 } from "./workspace-diff.ts";
 
 export type {
+  // Diff lint
+  DiffFinding,
+} from "./diff.ts";
+
+export type {
   // Render-ready diff view
   DiffDocument,
+  DiffPayload,
   DiffSegment,
   DiffView,
   SectionContent,

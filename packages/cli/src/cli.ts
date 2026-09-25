@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { join, dirname, extname } from "node:path";
 import { createServer } from "node:http";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { discoverArc42Dir } from "./discover.ts";
 import { fileURLToPath } from "node:url";
 import {
@@ -26,17 +26,26 @@ import {
   explainIgnore,
   formatExplainIgnoreText,
   lintArchitectureDiff,
+  buildDiffView,
   ELEMENT_KIND_ORDER,
   computeCoverage,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
-import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
+import type {
+  BlockType,
+  Diagnostic,
+  DiagramType,
+  DiffFinding,
+  DiffPayload,
+  DiffResult,
+} from "@arc42/core";
 import {
   getElements,
   loadDiffSnapshots,
   loadWorkspace,
   validateWorkspace,
 } from "@arc42/workspace-fs";
+import type { DiffSnapshots, DiffSpec } from "@arc42/workspace-fs";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
@@ -169,6 +178,73 @@ function printDiffHelp() {
 // validate
 // ---------------------------------------------------------------------------
 
+interface LoadedDiff {
+  snapshots: DiffSnapshots;
+  result: DiffResult;
+  /** All findings, warnings first — the order `arc42 diff` prints them in. */
+  findings: DiffFinding[];
+  payload: DiffPayload;
+}
+
+/** Load both snapshots of a change, lint it and build its render-ready view. */
+async function loadDiff(dir: string, spec: DiffSpec): Promise<LoadedDiff> {
+  const snapshots = await loadDiffSnapshots(dir, spec);
+  const result = lintArchitectureDiff({
+    changes: snapshots.changes,
+    base: snapshots.base.payload,
+    head: snapshots.head.payload,
+    baseKnownPaths: snapshots.base.knownPaths,
+    headKnownPaths: snapshots.head.knownPaths,
+  });
+  const findings = [
+    ...result.consistencyFindings,
+    ...result.pathFindings,
+    ...result.coverageFindings,
+  ].sort(
+    (a, b) =>
+      Number(b.severity === "warning") - Number(a.severity === "warning") ||
+      a.file.localeCompare(b.file) ||
+      a.line - b.line ||
+      a.kind.localeCompare(b.kind),
+  );
+  return {
+    snapshots,
+    result,
+    findings,
+    payload: {
+      base: { label: snapshots.base.label, commit: snapshots.baseCommit },
+      head: { label: snapshots.head.label },
+      findings,
+      view: buildDiffView(snapshots.base.payload, snapshots.head.payload, result.architecture),
+    },
+  };
+}
+
+/**
+ * Read `--diff [<spec>] [--staged]` of serve and build. Returns undefined when
+ * --diff is absent; a reference or --staged without --diff is a usage error.
+ */
+function diffSpecFromArgs(
+  command: string,
+  positionals: string[],
+  values: { diff?: boolean | string; staged?: boolean | string },
+): DiffSpec | undefined {
+  if (!values.diff) {
+    if (positionals.length > 0 || values.staged) {
+      console.error(`arc42 ${command}: a reference and --staged require --diff`);
+      process.exit(2);
+    }
+    return undefined;
+  }
+  if (positionals.length > 1) {
+    console.error(
+      `Usage: arc42 ${command} --diff [<reference> | <base>..<head> | <base>...<head>]`,
+    );
+    process.exit(2);
+  }
+  return { reference: positionals[0], staged: Boolean(values.staged) };
+}
+
 async function runDiff(dir: string, args: string[]) {
   if (args.includes("--help") || args.includes("-h")) {
     printDiffHelp();
@@ -195,28 +271,10 @@ async function runDiff(dir: string, args: string[]) {
   }
 
   try {
-    const snapshots = await loadDiffSnapshots(dir, {
+    const { snapshots, result, findings } = await loadDiff(dir, {
       reference: positionals[0],
       staged: Boolean(values.staged || values.cached),
     });
-    const result = lintArchitectureDiff({
-      changes: snapshots.changes,
-      base: snapshots.base.payload,
-      head: snapshots.head.payload,
-      baseKnownPaths: snapshots.base.knownPaths,
-      headKnownPaths: snapshots.head.knownPaths,
-    });
-    const findings = [
-      ...result.consistencyFindings,
-      ...result.pathFindings,
-      ...result.coverageFindings,
-    ].sort(
-      (a, b) =>
-        Number(b.severity === "warning") - Number(a.severity === "warning") ||
-        a.file.localeCompare(b.file) ||
-        a.line - b.line ||
-        a.kind.localeCompare(b.kind),
-    );
     const accepted =
       snapshots.acceptanceBase !== undefined &&
       process.env["ARC42_CONSISTENT"] === snapshots.acceptanceBase;
@@ -607,17 +665,21 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 async function runServe(dir: string, args: string[]) {
-  const { values } = parseArgs({
+  const { values, positionals } = parseArgs({
     args,
+    allowPositionals: true,
     options: {
       port: { type: "string", default: "3142" },
       open: { type: "boolean", default: false },
+      diff: { type: "boolean", default: false },
+      staged: { type: "boolean", default: false },
     },
     strict: false,
   });
 
   const port = parseInt(values["port"] as string, 10);
   const openBrowser = values["open"] as boolean;
+  const diffSpec = diffSpecFromArgs("serve", positionals, values);
   const webDir = join(__dirname, "web");
 
   if (!existsSync(webDir)) {
@@ -625,12 +687,29 @@ async function runServe(dir: string, args: string[]) {
     process.exit(1);
   }
 
-  // Keep the payload in memory, but refresh it whenever a discovered document
-  // changes. The browser subscribes to /api/workspace/events below.
+  // Keep the payloads in memory, but refresh them whenever a discovered document
+  // (or, with --diff, the git index or HEAD) changes. The browser subscribes to
+  // /api/workspace/events below.
   let workspaceJson: string;
+  // With --diff: the serialized DiffPayload, or the error of the last reload.
+  let diffJson: string | undefined;
+  let diffError: string | undefined;
+  let diffLabel = "";
+
+  const load = async () => {
+    if (!diffSpec) {
+      workspaceJson = JSON.stringify(await loadWorkspace(dir));
+      return;
+    }
+    const diff = await loadDiff(dir, diffSpec);
+    workspaceJson = JSON.stringify(diff.snapshots.head.payload);
+    diffJson = JSON.stringify(diff.payload);
+    diffError = undefined;
+    diffLabel = `${diff.payload.base.label} → ${diff.payload.head.label}`;
+  };
+
   try {
-    const payload = await loadWorkspace(dir);
-    workspaceJson = JSON.stringify(payload);
+    await load();
   } catch (err) {
     console.error(`Failed to load workspace from ${dir}: ${String(err)}`);
     process.exit(1);
@@ -638,33 +717,58 @@ async function runServe(dir: string, args: string[]) {
 
   const eventClients = new Set<import("node:http").ServerResponse>();
   let reloadTimer: NodeJS.Timeout | undefined;
-  let watcher: import("node:fs").FSWatcher | undefined;
+  const watchers: import("node:fs").FSWatcher[] = [];
+
+  const notifyClients = () => {
+    for (const client of eventClients) client.write("event: workspace\ndata: changed\n\n");
+  };
 
   const reloadWorkspace = () => {
-    void loadWorkspace(dir)
-      .then((payload) => {
-        workspaceJson = JSON.stringify(payload);
-        for (const client of eventClients) client.write("event: workspace\ndata: changed\n\n");
-      })
+    void load()
+      .then(notifyClients)
       .catch((err: unknown) => {
-        // Keep serving the last valid payload while the user is editing. A
-        // partially written document should not take down the dev server.
         console.error(`Failed to reload workspace from ${dir}: ${String(err)}`);
+        if (!diffSpec) return;
+        // A diff that cannot be computed must not be shown as if it were
+        // current: surface the error in the browser instead.
+        diffError = String(err);
+        notifyClients();
       });
   };
 
-  try {
-    watcher = watch(dir, { recursive: true }, (_event, filename) => {
-      const changed = filename?.toString() ?? "";
-      if (changed && !changed.endsWith(".arc42.md") && !changed.endsWith(".arc42.adoc")) return;
-      if (reloadTimer) clearTimeout(reloadTimer);
-      reloadTimer = setTimeout(reloadWorkspace, 100);
-    });
-    watcher.on("error", (err) => {
-      console.error(`Failed to watch workspace ${dir}: ${String(err)}`);
-    });
-  } catch (err) {
-    console.error(`Failed to watch workspace ${dir}: ${String(err)}`);
+  const scheduleReload = () => {
+    if (reloadTimer) clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(reloadWorkspace, 100);
+  };
+
+  const watchPath = (
+    path: string,
+    options: { recursive: boolean },
+    accept: (f: string) => boolean,
+  ) => {
+    try {
+      const watcher = watch(path, options, (_event, filename) => {
+        if (accept(filename?.toString() ?? "")) scheduleReload();
+      });
+      watcher.on("error", (err) => console.error(`Failed to watch ${path}: ${String(err)}`));
+      watchers.push(watcher);
+    } catch (err) {
+      console.error(`Failed to watch ${path}: ${String(err)}`);
+    }
+  };
+
+  watchPath(
+    dir,
+    { recursive: true },
+    (changed) => !changed || changed.endsWith(".arc42.md") || changed.endsWith(".arc42.adoc"),
+  );
+  if (diffSpec) {
+    // The default comparison and --staged read the index; every comparison
+    // resolves HEAD-relative references.
+    const gitDir = execFileSync("git", ["-C", dir, "rev-parse", "--absolute-git-dir"], {
+      encoding: "utf8",
+    }).trim();
+    watchPath(gitDir, { recursive: false }, (changed) => changed === "index" || changed === "HEAD");
   }
 
   const server = createServer((req, res) => {
@@ -674,6 +778,20 @@ async function runServe(dir: string, args: string[]) {
     if (url === "/api/workspace" || url === "/api/workspace/") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       res.end(workspaceJson);
+      return;
+    }
+
+    if (url === "/api/diff" || url === "/api/diff/") {
+      if (!diffSpec) {
+        res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: "arc42 serve was started without --diff" }));
+      } else if (diffError !== undefined) {
+        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: diffError }));
+      } else {
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(diffJson);
+      }
       return;
     }
 
@@ -721,6 +839,7 @@ async function runServe(dir: string, args: string[]) {
     const url = `http://localhost:${port}`;
     console.log(`arc42 serve  →  ${url}`);
     console.log(`  workspace: ${dir}`);
+    if (diffSpec) console.log(`  diff:      ${diffLabel}`);
     console.log(`  Press Ctrl+C to stop.`);
 
     if (openBrowser) {
@@ -739,7 +858,7 @@ async function runServe(dir: string, args: string[]) {
     server.on("error", reject);
     process.on("SIGINT", () => {
       if (reloadTimer) clearTimeout(reloadTimer);
-      watcher?.close();
+      for (const watcher of watchers) watcher.close();
       for (const client of eventClients) client.end();
       server.close();
       process.exit(0);
@@ -823,11 +942,14 @@ async function runCoverage(dir: string, args: string[]) {
 // ---------------------------------------------------------------------------
 
 async function runBuild(dir: string, args: string[]) {
-  const { values } = parseArgs({
+  const { values, positionals } = parseArgs({
     args,
+    allowPositionals: true,
     options: {
       out: { type: "string" },
       base: { type: "string", default: "./" },
+      diff: { type: "boolean", default: false },
+      staged: { type: "boolean", default: false },
     },
     strict: false,
   });
@@ -847,11 +969,18 @@ async function runBuild(dir: string, args: string[]) {
     process.exit(1);
   }
 
-  // Load workspace
+  // Load workspace — with --diff, the head snapshot of the difference
+  const diffSpec = diffSpecFromArgs("build", positionals, values);
   let workspaceJson: string;
+  let diffJson: string | undefined;
   try {
-    const payload = await loadWorkspace(dir);
-    workspaceJson = JSON.stringify(payload);
+    if (diffSpec) {
+      const diff = await loadDiff(dir, diffSpec);
+      workspaceJson = JSON.stringify(diff.snapshots.head.payload);
+      diffJson = JSON.stringify(diff.payload);
+    } else {
+      workspaceJson = JSON.stringify(await loadWorkspace(dir));
+    }
   } catch (err) {
     console.error(`Failed to load workspace from ${dir}: ${String(err)}`);
     process.exit(1);
@@ -881,7 +1010,11 @@ async function runBuild(dir: string, args: string[]) {
   }
 
   // Inject workspace before </head>
-  const injection = `<script>window.__WORKSPACE__=${workspaceJson};</script>`;
+  // Escape "<" so that "</script>" inside a string cannot end the script element.
+  const inlineJson = (json: string) => json.replaceAll("<", "\\u003c");
+  const injection =
+    `<script>window.__WORKSPACE__=${inlineJson(workspaceJson)};</script>` +
+    (diffJson !== undefined ? `\n<script>window.__DIFF__=${inlineJson(diffJson)};</script>` : "");
   html = html.replace("</head>", `${injection}\n</head>`);
 
   writeFileSync(indexPath, html, "utf8");

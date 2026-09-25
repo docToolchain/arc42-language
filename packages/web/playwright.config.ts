@@ -18,7 +18,7 @@ export default defineConfig({
       // Default project: all functional tests, headless
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testMatch: ["**/serve-ui.spec.ts"],
+      testMatch: ["**/serve-ui.spec.ts", "**/diff-*.spec.ts"],
     },
     {
       // Demo project: screen-recording walkthrough, headed, with video capture.

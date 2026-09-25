@@ -431,3 +431,10 @@ test.describe("API endpoint", () => {
     expect(body.elements.length).toBeGreaterThan(0);
   });
 });
+
+test.describe("Diff API without --diff", () => {
+  test("answers 404 when serve was started without --diff", async ({ request }) => {
+    const response = await request.get("/api/diff");
+    expect(response.status()).toBe(404);
+  });
+});

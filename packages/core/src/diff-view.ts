@@ -9,6 +9,7 @@
  */
 
 import type { AstNode, HeadingNode } from "./ast.ts";
+import type { DiffFinding } from "./diff.ts";
 import type { Element } from "./model/types.ts";
 import type { Edge } from "./resolver/types.ts";
 import type { WorkspacePayload } from "./workspace.ts";
@@ -58,6 +59,18 @@ export interface DiffDocument {
 export interface DiffView {
   documents: DiffDocument[];
   edges: EdgeChange[];
+}
+
+/**
+ * One visualized difference, as served by `arc42 serve --diff` (`/api/diff`)
+ * and injected by `arc42 build --diff` (`window.__DIFF__`).
+ */
+export interface DiffPayload {
+  base: { label: string; commit: string };
+  head: { label: string };
+  /** Lint findings, warnings first (same order as `arc42 diff`). */
+  findings: DiffFinding[];
+  view: DiffView;
 }
 
 interface SegmentDraft {
