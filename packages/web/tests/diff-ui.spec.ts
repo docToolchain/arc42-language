@@ -192,6 +192,48 @@ test.describe("Changes view — renamed sections", () => {
   });
 });
 
+test.describe("Changes view — value changes", () => {
+  test("marks only the changed part of a value", async ({ page }) => {
+    const root = createDiffRepository();
+    const file = join(root, BB);
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8")
+        .replace("requires: if-catalog-db, if-catalog-cache\n", () => "requires: if-catalog-db\n")
+        .replace(
+          'bb-order-service["Order Service\\n(Node.js / Express)"]',
+          () => 'bb-order-service["Order Service\\n(Kotlin)"]',
+        ),
+    );
+    const server = await startDiffServer(root, 3400);
+    try {
+      await page.goto(`${server.url}/#${BB}`);
+      const catalog = segment(page, "modified: Catalog Service");
+      const requires = catalog.getByTestId("attribute-change").filter({ hasText: "requires" });
+      // Kept list items stay plain; only the removed item is marked.
+      await expect(requires.locator("td").nth(0)).toHaveText("if-catalog-db, if-catalog-cache");
+      await expect(requires.getByTestId("value-removed")).toHaveText(", if-catalog-cache");
+      await expect(requires.locator("td").nth(1)).toHaveText("if-catalog-db");
+      await expect(requires.getByTestId("value-added")).toHaveCount(0);
+
+      // Words: "Node.js / Express" → "Go" replaces every token.
+      const technology = catalog.getByTestId("attribute-change").filter({ hasText: "technology" });
+      await expect(technology.getByTestId("value-added")).toHaveText(["Go"]);
+
+      // A diagram source is a line diff: one line out, one in, the rest collapsed.
+      const source = segment(page, "modified: Building Blocks")
+        .getByTestId("attribute-change")
+        .filter({ hasText: "source" });
+      await expect(source.getByTestId("line-removed")).toHaveText([/\(Node\.js \/ Express\)/]);
+      await expect(source.getByTestId("line-added")).toHaveText([/\(Kotlin\)/]);
+      await expect(source.getByTestId("line-gap").first()).toContainText("unchanged lines");
+    } finally {
+      await server.stop();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 test.describe("Changes view — live updates", () => {
   test("follows edits, reports an empty difference and surfaces errors", async ({ page }) => {
     const root = createDiffRepository();

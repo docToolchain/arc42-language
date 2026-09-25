@@ -308,6 +308,12 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] `fix(core,web)`: a renamed heading is the same section when it defines the same block
       (`SectionMatching`, segment `heading`); section status is a bar ("Section added / changed /
       removed") worded apart from the element status chips.
+- [x] `feat(web)`: attribute changes mark only what changed (review feedback: "everything shown
+      as changed"). Lists diff by item, single-line values by word, both keeping the before/after
+      columns with unchanged text plain; multi-line values (diagram sources) become a line diff
+      across both columns with unchanged runs collapsed to 2 lines of context. A plain LCS in
+      `web/src/textDiff.ts` (common prefix/suffix trimmed first) — presentation only, the core
+      `AttributeChange` stays whole values.
 
 ## Commit
 ### Tasks
