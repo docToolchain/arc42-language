@@ -186,7 +186,9 @@ Options:
   -h, --help            Show this help
 
 The server watches the selected directory recursively and refreshes the browser when
-*.arc42.md or *.arc42.adoc files change; with --diff it also follows the Git index and HEAD.
+*.arc42.md or *.arc42.adoc files change, and follows the Git index and HEAD. Inside a Git
+repository the browser also offers the architecture history: every commit that touched the
+architecture documents, computed lazily as it scrolls into view.
 It exits 1 when the workspace, the difference or the web assets cannot be loaded.
 Use --dir or ARC42_DIR to select the workspace.
 
@@ -210,6 +212,9 @@ Options:
   --diff                Include one architecture difference, frozen at build time; takes the
                         same comparison arguments as \`arc42 diff\`
   --staged              With --diff: compare the index with HEAD, or with <reference>
+  --with-history        Include the architecture history (every commit that touched the
+                        architecture documents, plus uncommitted changes) as JSONL files
+                        in <out>/history/; requires a Git repository
   -h, --help            Show this help
 
 The command reads the workspace, copies the bundled web assets to --out, and injects
@@ -223,6 +228,7 @@ Examples:
   arc42 build --out site/docs
   arc42 --dir examples/bookstore-backend build --out site/bookstore --base /bookstore/
   arc42 build --out review --diff origin/main...HEAD   # architecture review site for a pull request
+  arc42 build --out site/docs --with-history           # documentation with its change history
 `;
   }
 

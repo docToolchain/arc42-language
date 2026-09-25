@@ -110,6 +110,10 @@ arc42 serve --diff
 # … or as a static review site for a pull request
 arc42 build --out review --diff origin/main...HEAD
 
+# Browse the architecture history — every commit that changed the architecture — in
+# `arc42 serve`, or include it in a static site
+arc42 build --out site/docs --with-history
+
 # Show all diff modes, options, and pre-commit guidance
 arc42 diff --help
 

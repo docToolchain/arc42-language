@@ -65,6 +65,37 @@ export function createDiffRepository(): string {
   return root;
 }
 
+function commitAll(root: string, ...messages: string[]) {
+  git(root, "add", "-A");
+  git(root, "commit", "-q", ...messages.flatMap((message) => ["-m", message]));
+}
+
+/**
+ * Create a repository with this architecture history, newest first:
+ * - uncommitted: bb-order-service technology changed
+ * - "style: reflow the glossary intro" — reformatting only (not semantic)
+ * - "feat: switch the catalog to Go" — the edits of createDiffRepository, with a Markdown body
+ * - "initial architecture" — root commit
+ */
+export function createHistoryRepository(): string {
+  const root = createDiffRepository();
+  commitAll(root, "feat: switch the catalog to Go", "Go keeps **p95 search latency** low.");
+  edit(
+    root,
+    GLOSSARY,
+    "These definitions ensure all stakeholders share the same understanding.",
+    "These definitions ensure all stakeholders\nshare the same understanding.",
+  );
+  commitAll(root, "style: reflow the glossary intro");
+  edit(
+    root,
+    BB,
+    "id: bb-order-service\ntitle: Order Service\ntechnology: Node.js / Express",
+    "id: bb-order-service\ntitle: Order Service\ntechnology: Kotlin",
+  );
+  return root;
+}
+
 export function runCli(...args: string[]): string {
   return execFileSync("node", [cliPath, ...args], { encoding: "utf8" });
 }
@@ -94,20 +125,27 @@ async function stopServer(server: ChildProcess): Promise<void> {
   }
 }
 
-/** Start `arc42 serve --diff [...args]` for a repository and wait until it answers. */
-export async function startDiffServer(
+/** Start `arc42 serve [...args]` for a directory and wait until it answers. */
+export async function startServer(
   root: string,
   port: number,
   ...args: string[]
 ): Promise<{ url: string; stop: () => Promise<void> }> {
   const url = `http://localhost:${port}`;
-  const server = spawn(
-    "node",
-    [cliPath, "--dir", root, "serve", "--diff", ...args, "--port", String(port)],
-    { stdio: "ignore" },
-  );
-  await waitForServer(`${url}/api/diff`);
+  const server = spawn("node", [cliPath, "--dir", root, "serve", ...args, "--port", String(port)], {
+    stdio: "ignore",
+  });
+  await waitForServer(`${url}/api/workspace`);
   return { url, stop: () => stopServer(server) };
+}
+
+/** Start `arc42 serve --diff [...args]` for a repository and wait until it answers. */
+export function startDiffServer(
+  root: string,
+  port: number,
+  ...args: string[]
+): Promise<{ url: string; stop: () => Promise<void> }> {
+  return startServer(root, port, "--diff", ...args);
 }
 
 type WorkerFixtures = { diffRepository: string; diffServerURL: string };
