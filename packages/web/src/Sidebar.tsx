@@ -19,6 +19,8 @@ interface SidebarProps {
     /** Changed documents by file name. */
     documents: Map<string, DiffDocument>;
   };
+  /** Heading anchor → change status, for the active document of a visualized difference. */
+  changedHeadings?: Map<string, string>;
   /** Present when an architecture history is available (serve, build --with-history). */
   history?: {
     active: boolean;
@@ -43,6 +45,7 @@ export function Sidebar({
   onSelectMetaModel,
   showMetaModel,
   changes,
+  changedHeadings,
   history,
   viewMode,
   onToggleViewMode,
@@ -192,6 +195,17 @@ export function Sidebar({
                               }}
                             >
                               <span className={styles.headingText}>{h.text}</span>
+                              {changedHeadings?.get(slug) && (
+                                <span
+                                  className={[
+                                    styles.headingChange,
+                                    styles[`headingChange-${changedHeadings.get(slug)}`],
+                                  ].join(" ")}
+                                  data-testid="heading-change"
+                                  data-status={changedHeadings.get(slug)}
+                                  title={`${changedHeadings.get(slug)} in this change`}
+                                />
+                              )}
                               {headingKinds.length > 0 && (
                                 <span className={styles.headingDots} aria-hidden="true">
                                   {headingKinds.map((kind: string) => (

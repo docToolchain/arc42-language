@@ -272,3 +272,113 @@
   color: var(--text);
   border-color: var(--text-muted);
 }
+
+/* ─── Summary groups and index ─────────────────────────────────────────────── */
+
+.groupTitle {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: default;
+}
+
+details > .groupTitle {
+  cursor: pointer;
+}
+
+.groupHint {
+  margin: -0.25rem 0 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.files {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.index ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.index li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.indexTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-weight: 500;
+}
+
+.indexItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.indexItems .chip {
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.indexItems a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.indexItems a:hover {
+  text-decoration: underline;
+}
+
+/* ─── Chapter with inline changes ──────────────────────────────────────────── */
+
+.chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.chapterHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Placeholder for the content of an unchanged section that is not loaded */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.skeleton span {
+  display: block;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.skeleton span:nth-child(2) {
+  width: 85%;
+}
+
+.skeleton span:nth-child(3) {
+  width: 60%;
+}

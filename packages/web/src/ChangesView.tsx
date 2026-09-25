@@ -1,19 +1,18 @@
-import React, { useMemo, useState } from "react";
-import type {
-  AstNode,
-  AttributeChange,
-  DiffDocument,
-  DiffFinding,
-  DiffPayload,
-  DiffSegment,
-  Element,
-  SectionContent,
-} from "./types";
-import { groupNodes } from "./DocumentView";
-import { AstNodeRenderer } from "./AstNodeRenderer";
+import React from "react";
+import type { DiffPayload, DiffSegment, ElementCodeChange } from "./types";
+import { ChangeCounts, STATUS_CLASS, snapshotLabel } from "./DiffSegment";
+import { ChapterDiff } from "./ChapterDiff";
 import { filename } from "./utils";
 import docStyles from "./DocumentView.module.css";
 import styles from "./ChangesView.module.css";
+
+export { ChangeCounts, snapshotLabel } from "./DiffSegment";
+
+/** Where a link in the summary leads: the Documents view (--diff) or the chapters below (history). */
+export interface ChangeLink {
+  href: string;
+  onClick?: (event: React.MouseEvent) => void;
+}
 
 interface ChangesViewProps {
   diff: DiffPayload | null;
@@ -24,15 +23,52 @@ interface ChangesViewProps {
   title?: string;
   /** Shown below the heading, e.g. commit metadata. */
   meta?: React.ReactNode;
+  /** Link to an architecture element, if it can be shown. */
+  elementLink: (elementId: string) => ChangeLink | null;
+  /** Link to the changes of a document. */
+  documentLink: (file: string) => ChangeLink;
+  /**
+   * Render the changed chapters below the summary (history: without the full
+   * documents, unchanged sections are skeletons).
+   */
+  withChapters?: boolean;
+  targetElementId?: string | null;
+  onTargetConsumed?: () => void;
 }
 
-/** Shorten a commit id to 8 characters; labels such as "working tree" pass through. */
-export function snapshotLabel(label: string): string {
-  return /^[0-9a-f]{40}$/.test(label) ? label.slice(0, 8) : label;
+function Link({
+  link,
+  children,
+  testId,
+}: {
+  link: ChangeLink | null;
+  children: React.ReactNode;
+  testId?: string;
+}) {
+  if (!link) return <>{children}</>;
+  return (
+    <a href={link.href} onClick={link.onClick} data-testid={testId}>
+      {children}
+    </a>
+  );
 }
 
-/** Renders one visualized architecture difference, grouped by document. */
-export function ChangesView({ diff, error, viewMode, title = "Changes", meta }: ChangesViewProps) {
+/**
+ * Review summary of one architecture difference: what needs attention first,
+ * then a compact index of what changed — each item linking to the change.
+ */
+export function ChangesView({
+  diff,
+  error,
+  viewMode,
+  title = "Changes",
+  meta,
+  elementLink,
+  documentLink,
+  withChapters = false,
+  targetElementId,
+  onTargetConsumed,
+}: ChangesViewProps) {
   return (
     <article className={styles.changes} data-testid="changes-view">
       <h1 className={[docStyles.heading, docStyles.heading1, docStyles.chapterTitle].join(" ")}>
@@ -53,254 +89,194 @@ export function ChangesView({ diff, error, viewMode, title = "Changes", meta }: 
           <pre>{error}</pre>
         </div>
       )}
-      {diff && error === null && <Findings findings={diff.findings} />}
       {diff && error === null && diff.view.documents.length === 0 && (
         <p className={styles.empty} data-testid="changes-empty">
           No architecture changes.
         </p>
       )}
-      {diff &&
-        error === null &&
-        diff.view.documents.map((document) => (
-          <DocumentChanges key={document.file} document={document} viewMode={viewMode} />
-        ))}
+      {diff && error === null && (
+        <>
+          <Attention diff={diff} elementLink={elementLink} />
+          <ChangeIndex diff={diff} elementLink={elementLink} documentLink={documentLink} />
+          {withChapters &&
+            diff.view.documents.map((document) => (
+              <ChapterDiff
+                key={document.file}
+                diff={document}
+                viewMode={viewMode}
+                targetElementId={targetElementId}
+                onTargetConsumed={onTargetConsumed}
+              />
+            ))}
+        </>
+      )}
     </article>
   );
 }
 
-function Findings({ findings }: { findings: DiffFinding[] }) {
-  if (findings.length === 0) return null;
-  return (
-    <section className={styles.findings} aria-label="Findings" data-testid="diff-findings">
-      <ul role="list">
-        {findings.map((finding, index) => (
-          <li
-            key={`${finding.kind}-${finding.file}-${finding.line}-${index}`}
-            className={finding.severity === "warning" ? styles.warning : undefined}
-            data-testid="diff-finding"
-          >
-            <span className={styles.severity}>{finding.severity}</span>
-            <span>{finding.message}</span>
-            <code className={styles.location}>
-              {filename(finding.file)}
-              {finding.line > 0 ? `:${finding.line}` : ""}
-            </code>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function Counts({
-  added,
-  modified,
-  removed,
-}: Pick<DiffDocument, "added" | "modified" | "removed">) {
-  return (
-    <span className={styles.counts}>
-      {added > 0 && <span className={styles.countAdded}>+{added}</span>}
-      {modified > 0 && <span className={styles.countModified}>~{modified}</span>}
-      {removed > 0 && <span className={styles.countRemoved}>−{removed}</span>}
-    </span>
-  );
-}
-
-export { Counts as ChangeCounts };
-
-function DocumentChanges({
-  document,
-  viewMode,
+function CodeChanges({
+  changes,
+  elementLink,
 }: {
-  document: DiffDocument;
-  viewMode: "human" | "agent";
+  changes: ElementCodeChange[];
+  elementLink: (elementId: string) => ChangeLink | null;
 }) {
   return (
-    <section className={styles.document} data-testid="diff-document" data-file={document.file}>
-      <header className={styles.documentHeader}>
-        <h2 className={styles.documentTitle} data-testid="diff-document-title">
-          <a href={`#${filename(document.file)}`}>{document.title}</a>
-        </h2>
-        <Counts {...document} />
-      </header>
-      {document.segments.map((segment) => (
-        <Segment
-          key={JSON.stringify([segment.section.headingPath, segment.section.occurrence])}
-          segment={segment}
-          viewMode={viewMode}
-        />
-      ))}
-    </section>
-  );
-}
-
-const STATUS_CLASS: Record<string, string | undefined> = {
-  added: styles.added,
-  modified: styles.modified,
-  removed: styles.removed,
-  unchanged: styles.modified,
-};
-
-function Segment({ segment, viewMode }: { segment: DiffSegment; viewMode: "human" | "agent" }) {
-  const [showBase, setShowBase] = useState(false);
-  const path = segment.section.headingPath;
-  return (
-    <section
-      className={[styles.segment, STATUS_CLASS[segment.status]].join(" ")}
-      data-testid="diff-segment"
-      data-status={segment.status}
-      aria-label={`${segment.status}: ${path[path.length - 1] ?? "Preamble"}`}
-    >
-      <header className={styles.segmentHeader}>
-        <span className={styles.status}>{segment.status}</span>
-        <span className={styles.path}>{path.length > 0 ? path.join(" › ") : "Preamble"}</span>
-      </header>
-      <ChangeList segment={segment} />
-      {segment.status === "removed" && segment.base && (
-        <div className={styles.removedContent} data-testid="segment-base">
-          <SectionRender content={segment.base} viewMode={viewMode} />
-        </div>
-      )}
-      {segment.status !== "removed" && segment.head && (
-        <div data-testid="segment-head">
-          <SectionRender content={segment.head} viewMode={viewMode} />
-        </div>
-      )}
-      {segment.status === "modified" && segment.base && (
-        <>
-          <button
-            type="button"
-            className={styles.toggleBase}
-            aria-expanded={showBase}
-            data-testid="toggle-base"
-            onClick={() => setShowBase((value) => !value)}
-          >
-            {showBase ? "Hide previous version" : "Show previous version"}
-          </button>
-          {showBase && (
-            <div className={styles.removedContent} data-testid="segment-base">
-              <SectionRender content={segment.base} viewMode={viewMode} />
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
-function formatValue(value: unknown): string {
-  if (value === undefined) return "—";
-  if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "—";
-  return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-function AttributeTable({ attributes }: { attributes: AttributeChange[] }) {
-  if (attributes.length === 0) return null;
-  return (
-    <div className={styles.attributesWrap}>
-      <table className={styles.attributes}>
-        <tbody>
-          {attributes.map((attribute) => (
-            <tr key={attribute.name} data-testid="attribute-change">
-              <th scope="row">{attribute.name}</th>
-              <td className={styles.before}>{formatValue(attribute.before)}</td>
-              <td className={styles.after}>{formatValue(attribute.after)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ChangeList({ segment }: { segment: DiffSegment }) {
-  const items = [
-    ...segment.elements.map((change) => ({
-      key: `element-${change.id}`,
-      label: change.id,
-      kind: change.kind as string,
-      status: change.status,
-      note: change.proseChanged ? "prose changed" : undefined,
-      attributes: change.attributes,
-    })),
-    ...segment.diagrams.map((change) => ({
-      key: `diagram-${change.id}`,
-      label: change.id,
-      kind: "diagram",
-      status: change.status,
-      note: undefined,
-      attributes: change.attributes,
-    })),
-  ];
-  if (items.length === 0 && !segment.prose) return null;
-  return (
-    <ul className={styles.changeList} role="list">
-      {items.map((item) => (
-        <li key={item.key} data-testid="element-change" data-status={item.status}>
-          <span className={[styles.chip, STATUS_CLASS[item.status]].join(" ")}>
-            {item.status === "unchanged" ? "prose" : item.status}
+    <ul role="list">
+      {changes.map((change) => (
+        <li key={change.elementId} data-testid="code-change" data-element={change.elementId}>
+          <Link link={elementLink(change.elementId)}>
+            <code>{change.elementId}</code>
+          </Link>
+          <span className={styles.files}>
+            {change.files.map((file) => (
+              <code key={file}>{file}</code>
+            ))}
           </span>
-          <span className={styles.kind}>{item.kind}</span>
-          <code>{item.label}</code>
-          {item.note && item.status === "modified" && (
-            <span className={styles.note}>{item.note}</span>
-          )}
-          <AttributeTable attributes={item.attributes} />
         </li>
       ))}
-      {segment.prose && (
-        <li data-testid="element-change" data-status={segment.prose.status}>
-          <span className={[styles.chip, STATUS_CLASS[segment.prose.status]].join(" ")}>
-            {segment.prose.status}
-          </span>
-          <span className={styles.kind}>prose</span>
-        </li>
-      )}
     </ul>
   );
 }
 
-function SectionRender({
-  content,
-  viewMode,
+/** Findings, grouped by what needs attention. */
+function Attention({
+  diff,
+  elementLink,
 }: {
-  content: SectionContent;
-  viewMode: "human" | "agent";
+  diff: DiffPayload;
+  elementLink: (elementId: string) => ChangeLink | null;
 }) {
-  const elementsMap = useMemo(
-    () => new Map<string, Element>(content.elements.map((element) => [element.id, element])),
-    [content],
-  );
-  const elementDocMap = useMemo(
-    () =>
-      new Map<string, string>(
-        content.elements.map((element) => [element.id, filename(element.loc.file)]),
-      ),
-    [content],
-  );
-  const groups = useMemo(() => groupNodes(content.nodes), [content]);
+  const { warnings, untouched, updated, uncovered } = diff.groups;
   return (
     <>
-      {groups.map((group, index) => (
-        <AstNodeRenderer
-          key={index}
-          node={
-            group.kind === "other"
-              ? group.node
-              : ({
-                  kind: "prose-run",
-                  text: group.text,
-                  renderedHtml: group.renderedHtml,
-                  block: group.block,
-                  ignores: group.ignores,
-                } as AstNode)
-          }
-          viewMode={viewMode}
-          elementsMap={elementsMap}
-          elementDocMap={elementDocMap}
-          edges={content.edges}
-        />
-      ))}
+      {warnings.length > 0 && (
+        <section className={styles.findings} aria-label="Warnings" data-testid="diff-warnings">
+          <h2 className={styles.groupTitle}>Warnings</h2>
+          <ul role="list">
+            {warnings.map((finding, index) => (
+              <li
+                key={`${finding.kind}-${finding.file}-${finding.line}-${index}`}
+                className={styles.warning}
+                data-testid="diff-finding"
+              >
+                <Link link={finding.elementId ? elementLink(finding.elementId) : null}>
+                  {finding.message}
+                </Link>
+                <code className={styles.location}>
+                  {filename(finding.file)}
+                  {finding.line > 0 ? `:${finding.line}` : ""}
+                </code>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {untouched.length > 0 && (
+        <section
+          className={styles.findings}
+          aria-label="Code changed, architecture untouched"
+          data-testid="diff-untouched"
+        >
+          <h2 className={styles.groupTitle}>Code changed, architecture untouched</h2>
+          <p className={styles.groupHint}>Do these elements still describe the code?</p>
+          <CodeChanges changes={untouched} elementLink={elementLink} />
+        </section>
+      )}
+      {uncovered.length > 0 && (
+        <section
+          className={styles.findings}
+          aria-label="Not covered by any building block"
+          data-testid="diff-uncovered"
+        >
+          <h2 className={styles.groupTitle}>Not covered by any building block</h2>
+          <ul role="list">
+            {uncovered.map((path) => (
+              <li key={path}>
+                <code>{path}</code>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {updated.length > 0 && (
+        <details className={styles.findings} data-testid="diff-updated">
+          <summary className={styles.groupTitle}>
+            Code changed, element also updated in this change ({updated.length})
+          </summary>
+          <CodeChanges changes={updated} elementLink={elementLink} />
+        </details>
+      )}
     </>
+  );
+}
+
+function segmentItems(segment: DiffSegment) {
+  const items = [
+    ...segment.elements.map((change) => ({
+      key: change.id,
+      label: change.id,
+      elementId: change.id as string | null,
+      status: change.status === "unchanged" ? "modified" : change.status,
+    })),
+    ...segment.diagrams.map((change) => ({
+      key: `diagram-${change.id}`,
+      label: change.id,
+      elementId: null,
+      status: change.status,
+    })),
+  ];
+  if (segment.prose) {
+    items.push({
+      key: `section-${segment.section.headingPath.join("/")}`,
+      label: `§ ${segment.section.headingPath[segment.section.headingPath.length - 1] ?? "Preamble"}`,
+      elementId: null,
+      status: segment.prose.status,
+    });
+  }
+  return items;
+}
+
+/** Compact index of what changed, per chapter. */
+function ChangeIndex({
+  diff,
+  elementLink,
+  documentLink,
+}: {
+  diff: DiffPayload;
+  elementLink: (elementId: string) => ChangeLink | null;
+  documentLink: (file: string) => ChangeLink;
+}) {
+  if (diff.view.documents.length === 0) return null;
+  return (
+    <section className={styles.index} aria-label="Changed chapters" data-testid="diff-index">
+      <h2 className={styles.groupTitle}>Changed chapters</h2>
+      <ul role="list">
+        {diff.view.documents.map((document) => (
+          <li key={document.file} data-testid="diff-index-document" data-file={document.file}>
+            <span className={styles.indexTitle}>
+              <Link link={documentLink(document.file)} testId="diff-index-document-link">
+                {document.title}
+              </Link>
+              <ChangeCounts {...document} />
+            </span>
+            <span className={styles.indexItems}>
+              {document.segments.flatMap(segmentItems).map((item) => (
+                <span
+                  key={item.key}
+                  className={[styles.chip, STATUS_CLASS[item.status]].join(" ")}
+                  data-testid="diff-index-item"
+                  data-status={item.status}
+                >
+                  <Link link={item.elementId ? elementLink(item.elementId) : null}>
+                    {item.label}
+                  </Link>
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

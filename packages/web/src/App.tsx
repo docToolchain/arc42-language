@@ -218,6 +218,31 @@ export function App({
 
   const selectedPearl = pearls.find((pearl) => pearlKey(pearl) === historyKey);
 
+  // Summary links of a visualized difference lead into the chapters: to the
+  // element card when the element exists after the change, else to its chapter.
+  const diffElementFiles = useMemo(() => {
+    const files = new Map<string, { file: string; inHead: boolean }>();
+    for (const document of diff?.view.documents ?? []) {
+      for (const segment of document.segments) {
+        for (const change of segment.elements) {
+          const location = change.head ?? change.base;
+          if (location) {
+            files.set(change.id, { file: filename(location.file), inHead: !!change.head });
+          }
+        }
+      }
+    }
+    return files;
+  }, [diff]);
+  function diffElementLink(elementId: string) {
+    const changed = diffElementFiles.get(elementId);
+    if (changed) {
+      return { href: changed.inHead ? `#${changed.file}:el-${elementId}` : `#${changed.file}` };
+    }
+    const file = elementDocMap.get(elementId);
+    return file ? { href: `#${file}:el-${elementId}` } : null;
+  }
+
   function navigateToChapter(chapter: number) {
     const doc = payload.documents.find((d) =>
       filename(d.filePath).startsWith(String(chapter).padStart(2, "0")),
@@ -247,6 +272,25 @@ export function App({
   }, [payload.elements]);
 
   const activeDoc = payload.documents[activeDocIndex];
+
+  // Headings of the active chapter that the visualized difference changed.
+  const activeChangedHeadings = useMemo(() => {
+    const outline = activeDoc
+      ? changedDocuments.get(filename(activeDoc.filePath))?.outline
+      : undefined;
+    if (!outline) return undefined;
+    return new Map(
+      outline
+        .filter((entry) => entry.status === "added" || entry.status === "modified")
+        .map((entry) => [
+          entry.title
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .replace(/\s+/g, "-"),
+          entry.status,
+        ]),
+    );
+  }, [activeDoc, changedDocuments]);
   const isChapter05 = activeDoc ? filename(activeDoc.filePath).startsWith("05") : false;
 
   return (
@@ -276,6 +320,7 @@ export function App({
         onSelectHeading={navigateToHeading}
         onSelectMetaModel={selectMetaModel}
         showMetaModel={showMetaModel}
+        changedHeadings={activeChangedHeadings}
         changes={
           hasDiff
             ? { active: showChanges, onSelect: selectChanges, documents: changedDocuments }
@@ -325,9 +370,16 @@ export function App({
             }
             requestChunk={historyData.requestChunk}
             viewMode={viewMode}
+            elementDocMap={elementDocMap}
           />
         ) : showChanges ? (
-          <ChangesView diff={diff} error={diffError} viewMode={viewMode} />
+          <ChangesView
+            diff={diff}
+            error={diffError}
+            viewMode={viewMode}
+            elementLink={diffElementLink}
+            documentLink={(file) => ({ href: `#${filename(file)}` })}
+          />
         ) : (
           <>
             <DocumentView
@@ -339,6 +391,7 @@ export function App({
               activeDocIndex={activeDocIndex}
               targetElementId={targetElementId}
               onTargetConsumed={clearTargetElementId}
+              diffDocuments={hasDiff ? changedDocuments : undefined}
             />
             {isChapter05 && payload.coverage && (
               <CoverageView coverage={payload.coverage} elementDocMap={elementDocMap} />

@@ -215,3 +215,21 @@
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+/* Change status of a heading in a visualized difference */
+.headingChange {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: var(--diff-modified);
+}
+
+.headingChange-added {
+  background: var(--diff-added);
+}
+
+.headingChange-modified {
+  background: var(--diff-modified);
+}

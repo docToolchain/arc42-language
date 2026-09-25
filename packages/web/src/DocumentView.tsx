@@ -11,6 +11,9 @@ import type {
   DocumentAst,
 } from "./types";
 import { AstNodeRenderer } from "./AstNodeRenderer";
+import { ChapterDiff } from "./ChapterDiff";
+import type { DiffDocument } from "./types";
+import { filename } from "./utils";
 
 interface DocumentViewProps {
   documents: DocumentAst[];
@@ -21,6 +24,8 @@ interface DocumentViewProps {
   activeDocIndex: number;
   targetElementId: string | null;
   onTargetConsumed: () => void;
+  /** Changed documents of a visualized difference, by file name: shown with inline changes. */
+  diffDocuments?: Map<string, DiffDocument>;
 }
 
 /**
@@ -141,7 +146,33 @@ export function groupNodes(nodes: AstNode[]): RenderGroup[] {
   return groups;
 }
 
-export function DocumentView({
+/**
+ * The active document — with its changes inline when a visualized difference
+ * touches it. A separate component per mode keeps each one's hooks stable.
+ */
+export function DocumentView(props: DocumentViewProps) {
+  const doc = props.documents[props.activeDocIndex];
+  const diffDocument = doc ? props.diffDocuments?.get(filename(doc.filePath)) : undefined;
+  if (doc && diffDocument) {
+    return (
+      <ChapterDiff
+        diff={diffDocument}
+        context={{
+          document: doc,
+          elementsMap: props.elementsMap,
+          elementDocMap: props.elementDocMap,
+          edges: props.edges,
+        }}
+        viewMode={props.viewMode}
+        targetElementId={props.targetElementId}
+        onTargetConsumed={props.onTargetConsumed}
+      />
+    );
+  }
+  return <PlainDocumentView {...props} />;
+}
+
+function PlainDocumentView({
   documents,
   viewMode,
   elementsMap,

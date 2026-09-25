@@ -56,7 +56,10 @@ test.describe("arc42 build --single-file", () => {
     try {
       await openFromDisk(page, out);
       await expect(page.getByTestId("changes-view")).toBeVisible();
-      await expect(page.getByTestId("diff-segment")).toHaveCount(4);
+      await expect(page.getByTestId("diff-index-item")).toHaveCount(4);
+      await page.getByTestId("diff-index-document-link").first().click();
+      await expect(page.getByTestId("chapter-diff")).toBeVisible();
+      await expect(page.getByTestId("diff-segment")).toHaveCount(2);
     } finally {
       rmSync(out, { recursive: true, force: true });
       rmSync(root, { recursive: true, force: true });
@@ -73,7 +76,7 @@ test.describe("arc42 build --single-file", () => {
       await expect(pearls).toHaveCount(4);
       await expect(pearls.nth(1)).toHaveAttribute("data-state", "empty");
       await pearls.nth(2).getByRole("button").click();
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(
         "feat: switch the catalog to Go",
       );
       await expect(pearls.nth(2).getByTestId("pearl-message").locator("strong")).toHaveText(

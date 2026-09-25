@@ -70,7 +70,7 @@ test.describe("architecture review script", () => {
     // The review page is self-contained: open it from disk.
     await page.goto(pathToFileURL(join(out, "workspace.html")).href);
     await expect(page.getByTestId("changes-view")).toBeVisible();
-    await expect(page.getByTestId("diff-segment")).toHaveCount(4);
+    await expect(page.getByTestId("diff-index-item")).toHaveCount(4);
   });
 
   test("reports no change without a review page", () => {
