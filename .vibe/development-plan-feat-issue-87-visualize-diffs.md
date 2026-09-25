@@ -84,6 +84,14 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   chain is visible, plus chunked detail (`history/NNNN.jsonl` ⇔ `/api/history` chunk API).
 - **Outside a git repository** serve shows a visible "not a git repository" note in the pearl
   view and keeps serving the docs; `serve --diff` and `build --with-history` fail.
+- **Pearl index is cheap git metadata only** (sha, parent, author, date, subject, chunk). The
+  semantic flag and counts need the diff, so they arrive with the chunk; unloaded pearls are drawn
+  outlined. Otherwise drawing the chain would compute every diff and defeat lazy loading.
+- **A broken commit fails only its pearl** (`error` on the entry, red pearl, alert in the main
+  view). Old commits may violate rules introduced later (E017, duplicate ids); failing the whole
+  history would make the feature unusable, skipping them silently would hide the problem.
+- **Shallow clones**: a boundary commit is refused ("fetch more history") instead of being
+  compared with the empty tree, which would show the whole repository as added.
 - **Commits:** Conventional Commits with `## Intent`, `## Key decisions`,
   `## Side effects` body (see `.agents/skills/commit/SKILL.md`).
 
@@ -109,6 +117,16 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   1194. Local runs use an untracked `packages/web/playwright.local.config.ts` (listed in
   `.git/info/exclude`) that sets `executablePath: /opt/pw-browsers/chromium`; the committed
   config is unchanged. Baseline: 24/24 e2e green.
+- Commits that only add `:::ignore` directives are semantically empty (ignores are not part of
+  the model) — they show as small neutral pearls.
+- `execFileSync` defaults to a 1 MiB output buffer; real patches exceed it (root commit of this
+  repository: 1.8 MB). `git()` now allows 1 GiB.
+- The normal workspace payload uses absolute paths, snapshots repository-relative ones: the web
+  matches documents by file name (as the hash routes already do).
+- Recurring dogfood finding: describing a new feature in a building block's prose (e.g.
+  `bb-web-renderer`) without a model change is reported as `prose-without-block-change` and has
+  to be accepted with `ARC42_CONSISTENT` every time. Worth discussing whether feature-level prose
+  should live in a sub-section without a block.
 - `affectedRanges` / `affectedFiles` in `DiffResult` are only consumed by tests.
 - `pnpm run check` on a fresh checkout reports 4 type errors in `MetaModelView.tsx`
   until `pnpm run build` has run: the `@arc42/core` `.` export has no `types`
@@ -133,7 +151,7 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
 - [x] Phase 3: `arc42 diff --format json`.
 - [x] Phase 4: `DiffView` (rendered changed segments) + `serve --diff` / `build --diff` with the
       diff view in the web (inline mode), Playwright e2e.
-- [ ] Phase 5: history JSONL (index + chunks) for serve and build `--with-history`, pearl chain
+- [x] Phase 5: history JSONL (index + chunks) for serve and build `--with-history`, pearl chain
       sidebar view, commit message, working-tree pearl.
 - [ ] Phase 6: `build --single-file` (with and without `--with-history`).
 - [ ] Phase 7: side-by-side mode, graph highlighting, example GitHub Action for PR previews.
@@ -197,6 +215,24 @@ https://github.com/docToolchain/arc42-language/issues/87#issuecomment-5822082903
   black-box in the Playwright suite against `packages/cli/dist`.
 - Insight: rendered section headings are `h2` like the document titles in the Changes view —
   tests use `data-testid="diff-document-title"`.
+
+### Phase 5 — history
+- [x] e86ecc4 `refactor`: `loadDiff` → `loadDiffPayload` in workspace-fs.
+- [x] f8f82fc `feat(workspace-fs)`: `{ commit }` spec (first parent → commit; root vs empty tree).
+- [x] 561d2e6 `fix(workspace-fs)`: 1 GiB git output buffer; shallow boundary commits refused.
+- [x] e31a49e `feat(core,workspace-fs)`: `HistoryPearl`/`HistoryEntry`, `listArchitectureHistory`
+      (first-parent log over the workspace's architecture files, working-tree pearl),
+      `loadHistoryEntry`/`loadHistoryChunk` (chunks of 20), `toJsonLines`.
+- [x] 0754717 `feat(cli)`: `/api/history/index.jsonl` + `chunk-<n>.jsonl` (commit entries cached,
+      working tree recomputed, 422 outside Git); serve always follows the Git index/HEAD;
+      `build --with-history` writes `history/` and injects `window.__HISTORY__`.
+- [x] d3da91d `feat(web)`: Documents/History tabs, pearl chain, lazy chunks, commit message in the
+      sidebar, entry view via ChangesView.
+- [x] 9e55957 `docs(arc42)`: `if-cli-web`, `bb-web-renderer` (accepted finding), `dec-symmetric-history`.
+- Real history of `docs/arc42` (shallow clone, 18 pearls): ~3.5 s for all entries; 15 semantic,
+  2 ignore-only, 1 shallow boundary error.
+- Tests: `history.test.ts` (12, real repos), Playwright `diff-history-cli.spec.ts` (5) and
+  `diff-history-ui.spec.ts` (8); 53/53 e2e green.
 
 ## Commit
 ### Tasks
