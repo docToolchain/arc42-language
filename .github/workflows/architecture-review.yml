@@ -1,0 +1,101 @@
+name: Architecture review
+
+# For every pull request: compare the architecture with the merge base, render
+# the changes as one self-contained HTML page per workspace, publish the pages
+# as a workflow artifact and point reviewers to them with a pull request
+# comment (updated in place on every push).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: architecture-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # Workspaces whose architecture is reviewed.
+  WORKSPACES: docs/arc42 examples/bookstore-backend examples/kanban-board
+
+jobs:
+  review:
+    name: Architecture review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The merge base with the target branch must be available.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Review architecture changes
+        id: review
+        run: >-
+          node --experimental-strip-types --no-warnings scripts/architecture-review.ts
+          --base "origin/${{ github.base_ref }}" --out architecture-review $WORKSPACES
+
+      - name: Upload review pages
+        id: upload
+        if: steps.review.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: architecture-review-pr-${{ github.event.pull_request.number }}
+          path: architecture-review/*.html
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Report in the job summary and on the pull request
+        uses: actions/github-script@v9
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          CHANGED: ${{ steps.review.outputs.changed }}
+        with:
+          script: |
+            const fs = require("node:fs");
+            const marker = "<!-- arc42-architecture-review -->";
+            const body = fs
+              .readFileSync("architecture-review/summary.md", "utf8")
+              .replaceAll("{{ARTIFACT_URL}}", () => process.env.ARTIFACT_URL ?? "");
+            await core.summary.addRaw(body).write();
+
+            // Pull requests from forks get a read-only token: the job summary has to do.
+            const pullRequest = context.payload.pull_request;
+            if (pullRequest.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+              core.notice("Pull request from a fork: see the job summary for the architecture review.");
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const issue_number = pullRequest.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(
+              (comment) => comment.user?.type === "Bot" && comment.body?.includes(marker),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else if (process.env.CHANGED === "true") {
+              // Without architecture changes, only an existing comment is updated.
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
