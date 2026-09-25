@@ -13,7 +13,7 @@ notation: mermaid
 ```mermaid
 graph TD
     bb-api-gateway["API Gateway\n(nginx)"]
-    bb-catalog-service["Catalog Service\n(Node.js / Express)"]
+    bb-catalog-service["Catalog Service\n(Go)"]
     bb-order-service["Order Service\n(Node.js / Express)"]
     bb-recommendation-service["Recommendation Service\n(Python / FastAPI)"]
     bb-auth-service["Auth Service\n(Node.js / Express)"]
@@ -75,7 +75,7 @@ protocol: HTTPS / REST + JSON
 
 The Catalog Service owns all product data: titles, authors, ISBNs, prices, cover image references, categories, and real-time inventory counts. It is the only service that writes to the catalog database. The service exposes endpoints for full-text search, category browsing, and individual book detail retrieval.
 
-Search and detail responses are served from Redis cache whenever possible. Cache misses fall through to PostgreSQL, and the result is written back to the cache. When an administrator updates catalog data, the service publishes a cache invalidation event so stale data is evicted within seconds. This caching strategy is critical for meeting the 200ms p95 search latency target.
+Search and detail responses are served from Redis cache whenever possible. Cache misses fall through to PostgreSQL, and the result is written back to the cache. When an administrator updates catalog data, the service publishes a cache invalidation event so stale data is evicted within seconds. Together with the Go runtime, this caching strategy keeps search well within the 200ms p95 latency target.
 
 ```arc42
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
@@ -83,7 +83,7 @@ Search and detail responses are served from Redis cache whenever possible. Cache
 :::building-block
 id: bb-catalog-service
 title: Catalog Service
-technology: Node.js / Express
+technology: Go
 implements: concept-logging, concept-error-handling, concept-cache-invalidation, concept-data-ownership
 requires: if-catalog-db, if-catalog-cache
 :::

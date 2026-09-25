@@ -181,3 +181,17 @@ date: 2026-01-20
 addresses: qg-maintainability, con-aws, con-data-residency
 :::
 ```
+
+## Go for Catalog Search
+
+Load tests showed the Node.js catalog search at 340ms p95 under peak traffic, well above the 200ms target. A Go implementation of the same endpoints stays below 120ms with a fraction of the memory, and the team already runs Go in other products.
+
+```arc42
+:::decision
+id: dec-go-catalog
+title: Implement the Catalog Service in Go
+status: accepted
+date: 2026-09-01
+addresses: qg-performance
+:::
+```
