@@ -139,6 +139,30 @@ describe("buildDiffView", () => {
     ]);
   });
 
+  test("shows a renamed section once, with its heading change", () => {
+    const view = buildDiffView(
+      workspace({ [BB]: buildingBlocks("Node"), [CONCEPTS]: concepts }),
+      workspace({
+        [BB]: buildingBlocks("Go").replace("## Service", "## Orders"),
+        [CONCEPTS]: concepts,
+      }),
+    );
+    const [document] = view.documents;
+    expect(document!.segments).toHaveLength(1);
+    expect(document!.segments[0]).toMatchObject({
+      status: "modified",
+      section: { headingPath: ["Building Block View", "Orders"] },
+      heading: { before: "Service", after: "Orders" },
+      elements: [{ id: "service", status: "modified", proseChanged: true }],
+    });
+    expect(document!.segments[0]!.base!.nodes[0]).toMatchObject({ text: "Service" });
+    expect(document!.outline.map((entry) => [entry.title, entry.status])).toEqual([
+      ["Building Block View", "unchanged"],
+      ["Orders", "modified"],
+      ["Other", "unchanged"],
+    ]);
+  });
+
   test("survives a JSON round trip unchanged", () => {
     const view = buildDiffView(
       workspace({ [BB]: buildingBlocks("Node"), [CONCEPTS]: concepts }),

@@ -334,9 +334,10 @@ formatting-only edits, misattributed sections appended after a block, and could 
 actually changed. The diff now compares the parsed base and head models — elements by id,
 relations by source, type and target, prose by the normalized text of its section — and the
 consistency lint is derived from that comparison. The same result feeds change visualization.
-Renamed ids and headings are deliberately a removal plus an addition, and snapshots that cannot be
-interpreted unambiguously (duplicate ids, blocks outside a heading) are rejected rather than
-guessed at.
+Renamed ids are deliberately a removal plus an addition. A renamed heading is not: the section
+keeps its identity through the block it defines, since the model outranks the heading text.
+Snapshots that cannot be interpreted unambiguously (duplicate ids, blocks outside a heading) are
+rejected rather than guessed at.
 
 ```arc42
 :::decision

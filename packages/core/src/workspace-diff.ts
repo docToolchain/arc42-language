@@ -5,6 +5,10 @@
  * matched by id, edges by (from, relation, to), and prose by the text of the
  * section it lives in. Formatting-only edits therefore produce no changes.
  *
+ * Sections are matched by heading path; a section whose heading was renamed
+ * is still the same section when it defines the same block (see
+ * {@link SectionMatching}).
+ *
  * Both payloads must use the same file path convention (e.g. repository-relative
  * paths) so that sections can be matched across snapshots.
  */
@@ -97,6 +101,12 @@ export interface Section {
   endLine: number;
   isPreamble: boolean;
   hasBlocks: boolean;
+  /** The section's own heading text; empty for a preamble. */
+  title: string;
+  /** Key of the enclosing section; absent for top-level sections and the preamble. */
+  parent?: string;
+  /** Id of the section's first block — the element the section defines. */
+  definingId?: string;
   /** Whitespace-normalized prose of the section. */
   prose: string;
   /** The section's AST nodes, starting with its heading (none for a preamble). */
@@ -115,41 +125,46 @@ export function sectionKey(ref: SectionRef): string {
 function sectionsOf(document: DocumentAst): Section[] {
   const sections: Section[] = [];
   const occurrences = new Map<string, number>();
-  const stack: { level: number; text: string }[] = [];
+  const stack: { level: number; text: string; key: string }[] = [];
   const prose: string[][] = [];
 
-  const open = (headingPath: string[], startLine: number, isPreamble: boolean) => {
+  const open = (headingPath: string[], startLine: number, parent?: string): Section => {
     const pathKey = JSON.stringify(headingPath);
     const occurrence = (occurrences.get(pathKey) ?? 0) + 1;
     occurrences.set(pathKey, occurrence);
     const ref = { file: document.filePath, headingPath, occurrence };
-    sections.push({
+    const section: Section = {
       ref,
       key: sectionKey(ref),
       startLine,
       endLine: Number.MAX_SAFE_INTEGER,
-      isPreamble,
+      isPreamble: headingPath.length === 0,
       hasBlocks: false,
+      title: headingPath[headingPath.length - 1] ?? "",
+      ...(parent !== undefined ? { parent } : {}),
       prose: "",
       nodes: [],
-    });
+    };
+    sections.push(section);
     prose.push([]);
+    return section;
   };
 
-  open([], 1, true);
+  open([], 1);
   for (const node of document.nodes) {
     if (node.kind !== "heading") sections[sections.length - 1]!.nodes.push(node);
     const current = sections[sections.length - 1]!;
     if (node.kind === "heading") {
       current.endLine = node.line - 1;
       while (stack.length > 0 && stack[stack.length - 1]!.level >= node.level) stack.pop();
-      stack.push({ level: node.level, text: node.text.trim() });
-      open(
-        stack.map((entry) => entry.text),
+      const text = node.text.trim();
+      const section = open(
+        [...stack.map((entry) => entry.text), text],
         node.line,
-        false,
+        stack[stack.length - 1]?.key,
       );
-      sections[sections.length - 1]!.nodes.push(node);
+      stack.push({ level: node.level, text, key: section.key });
+      section.nodes.push(node);
     } else if (node.kind === "prose") {
       prose[prose.length - 1]!.push(node.text);
     } else if (node.kind === "block") {
@@ -159,6 +174,9 @@ function sectionsOf(document: DocumentAst): Section[] {
         );
       }
       current.hasBlocks = true;
+      if (current.definingId === undefined && node.attributes.id) {
+        current.definingId = node.attributes.id;
+      }
     }
   }
   sections.forEach((section, index) => {
@@ -224,6 +242,65 @@ export class SnapshotIndex {
   }
 }
 
+/**
+ * @internal Pairs the sections of two snapshots. A section is the same in both
+ * when its heading path is unchanged; otherwise, within the same document,
+ * when it defines the same block (its heading was renamed) or when it keeps
+ * its title under an enclosing section that was paired (an ancestor heading
+ * was renamed). Unpaired sections were removed (base) or added (head).
+ */
+export class SectionMatching {
+  private readonly headByBase = new Map<string, Section>();
+  private readonly baseByHead = new Map<string, Section>();
+
+  constructor(base: SnapshotIndex, head: SnapshotIndex) {
+    for (const [key, section] of head.sections) {
+      const baseSection = base.sections.get(key);
+      if (baseSection) this.pair(baseSection, section);
+    }
+    for (const [file, headSections] of head.sectionsByFile) {
+      const baseSections = base.sectionsByFile.get(file) ?? [];
+      // Document order: an enclosing section is paired before its subsections.
+      for (const section of headSections) {
+        if (this.baseByHead.has(section.key)) continue;
+        const unpaired = baseSections.filter((candidate) => !this.headByBase.has(candidate.key));
+        const parent =
+          section.parent === undefined ? undefined : this.baseByHead.get(section.parent);
+        const match =
+          (section.definingId !== undefined
+            ? unpaired.find((candidate) => candidate.definingId === section.definingId)
+            : undefined) ??
+          (parent !== undefined
+            ? unpaired.find(
+                (candidate) => candidate.parent === parent.key && candidate.title === section.title,
+              )
+            : undefined);
+        if (match) this.pair(match, section);
+      }
+    }
+  }
+
+  private pair(base: Section, head: Section): void {
+    this.headByBase.set(base.key, head);
+    this.baseByHead.set(head.key, base);
+  }
+
+  /** The head section paired with a base section; undefined when it was removed. */
+  headOf(section: Section): Section | undefined {
+    return this.headByBase.get(section.key);
+  }
+
+  /** The base section paired with a head section; undefined when it was added. */
+  baseOf(section: Section): Section | undefined {
+    return this.baseByHead.get(section.key);
+  }
+}
+
+/** Heading or prose of a paired section differs between snapshots. */
+function sectionTextChanged(base: Section, head: Section): boolean {
+  return base.title !== head.title || base.prose !== head.prose;
+}
+
 function normalizeValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value
@@ -279,19 +356,23 @@ function location(loc: { file: string; line: number }): Location {
   return { file: loc.file, line: loc.line };
 }
 
-function diffElements(base: SnapshotIndex, head: SnapshotIndex): ElementChange[] {
+function diffElements(
+  base: SnapshotIndex,
+  head: SnapshotIndex,
+  sections: SectionMatching,
+): ElementChange[] {
   const changes: ElementChange[] = [];
   for (const [id, headElement] of head.elements) {
     const headSection = head.sectionAt(headElement.loc.file, headElement.loc.line);
     const baseElement = base.elements.get(id);
     if (!baseElement) {
-      const baseSection = base.sections.get(headSection.key);
+      const baseSection = sections.baseOf(headSection);
       changes.push({
         id,
         kind: headElement.kind,
         status: "added",
         attributes: [],
-        proseChanged: !baseSection || baseSection.prose !== headSection.prose,
+        proseChanged: !baseSection || sectionTextChanged(baseSection, headSection),
         head: location(headElement.loc),
         section: headSection.ref,
       });
@@ -300,7 +381,7 @@ function diffElements(base: SnapshotIndex, head: SnapshotIndex): ElementChange[]
     const baseSection = base.sectionAt(baseElement.loc.file, baseElement.loc.line);
     const attributes = attributeChanges(baseElement, headElement, ELEMENT_IGNORED);
     const proseChanged =
-      baseSection.key !== headSection.key || baseSection.prose !== headSection.prose;
+      sections.headOf(baseSection) !== headSection || sectionTextChanged(baseSection, headSection);
     if (attributes.length === 0 && !proseChanged) continue;
     changes.push({
       id,
@@ -316,13 +397,13 @@ function diffElements(base: SnapshotIndex, head: SnapshotIndex): ElementChange[]
   for (const [id, baseElement] of base.elements) {
     if (head.elements.has(id)) continue;
     const baseSection = base.sectionAt(baseElement.loc.file, baseElement.loc.line);
-    const headSection = head.sections.get(baseSection.key);
+    const headSection = sections.headOf(baseSection);
     changes.push({
       id,
       kind: baseElement.kind,
       status: "removed",
       attributes: [],
-      proseChanged: !headSection || headSection.prose !== baseSection.prose,
+      proseChanged: !headSection || sectionTextChanged(baseSection, headSection),
       base: location(baseElement.loc),
       section: baseSection.ref,
     });
@@ -383,20 +464,22 @@ function sectionLocation(section: Section): Location {
   return { file: section.ref.file, line: section.startLine };
 }
 
-function diffProseSections(base: SnapshotIndex, head: SnapshotIndex): ProseSectionChange[] {
+function diffProseSections(
+  base: SnapshotIndex,
+  head: SnapshotIndex,
+  sections: SectionMatching,
+): ProseSectionChange[] {
   const changes: ProseSectionChange[] = [];
-  const proseOnly = (key: string) =>
-    !base.sections.get(key)?.hasBlocks && !head.sections.get(key)?.hasBlocks;
-  for (const [key, headSection] of head.sections) {
-    if (!proseOnly(key)) continue;
-    const baseSection = base.sections.get(key);
+  for (const headSection of head.sections.values()) {
+    const baseSection = sections.baseOf(headSection);
+    if (headSection.hasBlocks || baseSection?.hasBlocks) continue;
     if (!baseSection) {
       changes.push({
         status: "added",
         section: headSection.ref,
         head: sectionLocation(headSection),
       });
-    } else if (baseSection.prose !== headSection.prose) {
+    } else if (sectionTextChanged(baseSection, headSection)) {
       changes.push({
         status: "modified",
         section: headSection.ref,
@@ -405,8 +488,8 @@ function diffProseSections(base: SnapshotIndex, head: SnapshotIndex): ProseSecti
       });
     }
   }
-  for (const [key, baseSection] of base.sections) {
-    if (head.sections.has(key) || !proseOnly(key)) continue;
+  for (const baseSection of base.sections.values()) {
+    if (baseSection.hasBlocks || sections.headOf(baseSection)) continue;
     changes.push({
       status: "removed",
       section: baseSection.ref,
@@ -443,9 +526,10 @@ function summarize(
 export function diffWorkspaces(base: WorkspacePayload, head: WorkspacePayload): ArchitectureDiff {
   const baseIndex = new SnapshotIndex(base, "base");
   const headIndex = new SnapshotIndex(head, "head");
-  const elements = diffElements(baseIndex, headIndex);
+  const sections = new SectionMatching(baseIndex, headIndex);
+  const elements = diffElements(baseIndex, headIndex, sections);
   const diagrams = diffDiagrams(baseIndex, headIndex);
-  const proseSections = diffProseSections(baseIndex, headIndex);
+  const proseSections = diffProseSections(baseIndex, headIndex, sections);
   return {
     elements,
     diagrams,

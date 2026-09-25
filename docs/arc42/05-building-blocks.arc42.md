@@ -318,9 +318,11 @@ path: packages/core/src/index.ts
 Compares two workspace models instead of lines. Elements and diagrams are matched by id,
 relations by source, type and target, and prose by the whitespace-normalized text of its
 section; prose in a block's section is attached to that block's element. Reformatting therefore
-produces no change, and a renamed id or heading is a removal plus an addition. The comparison
-refuses snapshots it cannot interpret unambiguously — duplicate ids or blocks outside any
-heading — instead of guessing.
+produces no change, and a renamed id is a removal plus an addition. Sections are matched by
+heading path; a section whose heading was renamed stays the same section when it defines the
+same block, or when only an enclosing heading was renamed. The comparison refuses snapshots it
+cannot interpret unambiguously — duplicate ids or blocks outside any heading — instead of
+guessing.
 
 ```arc42
 :::building-block
