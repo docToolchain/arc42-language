@@ -113,3 +113,54 @@ export async function centerAndClick(page: Page, locator: Locator, pause = PAUSE
   await page.waitForTimeout(pause);
   await locator.click();
 }
+
+// ─── Captions ─────────────────────────────────────────────────────────────────
+//
+// A banner at the bottom of the viewport that tells the viewer what they are
+// looking at. The page is a single-page app, so the banner survives navigation
+// between chapters once added.
+
+export async function injectCaption(page: Page) {
+  await page.addStyleTag({
+    content: `
+      #pw-caption {
+        position: fixed;
+        left: 50%;
+        bottom: 28px;
+        transform: translateX(-50%);
+        max-width: min(900px, calc(100vw - 80px));
+        padding: 12px 22px;
+        border-radius: 10px;
+        background: rgba(17, 24, 39, 0.92);
+        color: #fff;
+        font: 500 20px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        z-index: 2147483645;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+      }
+      #pw-caption.pw-caption--visible { opacity: 1; }
+    `,
+  });
+  await page.evaluate(() => {
+    const caption = document.createElement("div");
+    caption.id = "pw-caption";
+    document.body.appendChild(caption);
+  });
+}
+
+/** Show a caption (fading between texts) and give the viewer time to read it. */
+export async function caption(page: Page, text: string, pause = PAUSE_MED) {
+  await page.evaluate(async (next) => {
+    const element = document.getElementById("pw-caption")!;
+    if (element.classList.contains("pw-caption--visible")) {
+      element.classList.remove("pw-caption--visible");
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+    element.textContent = next;
+    element.classList.add("pw-caption--visible");
+  }, text);
+  await page.waitForTimeout(pause);
+}

@@ -12,7 +12,8 @@ import {
 // ─── Architecture diff walkthrough ────────────────────────────────────────────
 //
 // This script is NOT a functional test — it is a choreographed walkthrough of
-// how `arc42 serve --diff` visualizes the evolution of an architecture,
+// how `arc42 serve --diff` visualizes the evolution of an architecture — the
+// sequel to demo.spec.ts, which reads the same architecture at v1.0 —
 // intended to be captured as a screen recording.
 //
 // The repository tells a short story on top of the bookstore example (see
