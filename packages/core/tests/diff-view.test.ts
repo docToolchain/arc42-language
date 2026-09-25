@@ -146,4 +146,65 @@ describe("buildDiffView", () => {
     );
     expect(JSON.parse(JSON.stringify(view))).toEqual(view);
   });
+
+  test("outlines a changed document with every section and its status", () => {
+    const view = buildDiffView(
+      workspace({ [BB]: buildingBlocks("Node"), [CONCEPTS]: concepts }),
+      workspace({ [BB]: buildingBlocks("Go"), [CONCEPTS]: concepts }),
+    );
+    const outline = view.documents[0]!.outline;
+    expect(outline.map((entry) => [entry.level, entry.title, entry.status])).toEqual([
+      [1, "Building Block View", "unchanged"],
+      [2, "Service", "modified"],
+      [2, "Other", "unchanged"],
+    ]);
+    // Head line ranges slice the head document into its sections.
+    expect(outline[1]!.head!.startLine).toBe(3);
+    expect(outline[1]!.head!.endLine).toBe(outline[2]!.head!.startLine - 1);
+    expect(outline[2]!.head!.endLine).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  test("places a removed section after the section that preceded it", () => {
+    const three = `# Glossary\n\n## Alpha\n\nA.\n\n## Beta\n\nB.\n\n## Gamma\n\nC.\n`;
+    const withoutBeta = `# Glossary\n\n## Alpha\n\nA.\n\n## Gamma\n\nC.\n`;
+    const view = buildDiffView(
+      workspace({ "12-glossary.arc42.md": three }),
+      workspace({ "12-glossary.arc42.md": withoutBeta }),
+    );
+    expect(view.documents[0]!.outline.map((entry) => [entry.title, entry.status])).toEqual([
+      ["Glossary", "unchanged"],
+      ["Alpha", "unchanged"],
+      ["Beta", "removed"],
+      ["Gamma", "unchanged"],
+    ]);
+    expect(view.documents[0]!.outline[2]!.head).toBeUndefined();
+  });
+
+  test("places removed leading sections first and outlines added and deleted documents", () => {
+    const view = buildDiffView(
+      workspace({ "12-glossary.arc42.md": `Intro prose.\n\n# Glossary\n\nTerms.\n` }),
+      workspace({
+        "12-glossary.arc42.md": `# Glossary\n\nTerms.\n`,
+        "01-introduction.arc42.md": `# Introduction and Goals\n\nHello.\n`,
+      }),
+    );
+    const byFile = new Map(view.documents.map((document) => [document.file, document]));
+    expect(
+      byFile.get("12-glossary.arc42.md")!.outline.map((entry) => [entry.level, entry.status]),
+    ).toEqual([
+      [0, "removed"],
+      [1, "unchanged"],
+    ]);
+    expect(byFile.get("01-introduction.arc42.md")!.outline.map((entry) => entry.status)).toEqual([
+      "added",
+    ]);
+
+    const deleted = buildDiffView(
+      workspace({ "01-introduction.arc42.md": `# Introduction and Goals\n\nHello.\n` }),
+      workspace({}),
+    );
+    expect(deleted.documents[0]!.outline).toMatchObject([
+      { title: "Introduction and Goals", status: "removed" },
+    ]);
+  });
 });
