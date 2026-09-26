@@ -22,6 +22,21 @@
   display: none;
 }
 
+/* Shown above every view while an earlier version replaces the current one. */
+.versionBanner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  font-size: 0.9rem;
+}
+
 .loadSpinner {
   display: flex;
   flex-direction: column;

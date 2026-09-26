@@ -20,16 +20,14 @@ export function pearlKey(pearl: { commit: string | null }): string {
   return pearl.commit ?? "worktree";
 }
 
-async function readJsonLines<T>(source: HistorySource, name: string): Promise<T[]> {
+/** Read one history file as text, from the server or the site, or from the page itself. */
+export async function readHistoryFile(source: HistorySource, name: string): Promise<string> {
   if ("files" in source) {
     const text = source.files[name];
     if (text === undefined) throw new Error(`The page contains no history file ${name}`);
-    return parseJsonLines<T>(text);
+    return text;
   }
-  return fetchJsonLines<T>(`${source.base}${name}`);
-}
-
-async function fetchJsonLines<T>(url: string): Promise<T[]> {
+  const url = `${source.base}${name}`;
   const response = await fetch(url);
   if (!response.ok) {
     let reason = `${url} returned ${response.status}`;
@@ -40,7 +38,11 @@ async function fetchJsonLines<T>(url: string): Promise<T[]> {
     }
     throw new Error(reason);
   }
-  return parseJsonLines<T>(await response.text());
+  return response.text();
+}
+
+async function readJsonLines<T>(source: HistorySource, name: string): Promise<T[]> {
+  return parseJsonLines<T>(await readHistoryFile(source, name));
 }
 
 /**

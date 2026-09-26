@@ -3,6 +3,7 @@ import type { HistoryEntry, HistoryPearl } from "./types";
 import { ChangesView } from "./ChangesView";
 import type { ChangeLink } from "./ChangesView";
 import { filename } from "./utils";
+import { versionHref } from "./version";
 import styles from "./ChangesView.module.css";
 
 interface HistoryEntryViewProps {
@@ -16,6 +17,8 @@ interface HistoryEntryViewProps {
   /** Show the commit message above the change. */
   messageOpen: boolean;
   onToggleMessage: () => void;
+  /** Open the whole architecture as it was at a commit. */
+  onBrowse: (commit: string) => void;
 }
 
 /** The change of one pearl of the architecture history. */
@@ -28,6 +31,7 @@ export function HistoryEntryView({
   elementDocMap,
   messageOpen,
   onToggleMessage,
+  onBrowse,
 }: HistoryEntryViewProps) {
   useEffect(() => {
     if (pearl && !entry) requestChunk(pearl.chunk);
@@ -79,6 +83,19 @@ export function HistoryEntryView({
       <p className={styles.range} data-testid="history-entry-meta">
         <code>{pearl.commit ? pearl.commit.slice(0, 8) : "working tree"}</code>
         {pearl.author && ` · ${pearl.author}`} · {pearl.date.slice(0, 10)}
+        {pearl.commit && (
+          <a
+            className={styles.messageToggle}
+            href={versionHref(pearl.commit)}
+            data-testid="browse-version"
+            onClick={(event) => {
+              event.preventDefault();
+              onBrowse(pearl.commit!);
+            }}
+          >
+            Browse this version
+          </a>
+        )}
         {message && (
           <button
             type="button"

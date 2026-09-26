@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import type { DiffPayload, WorkspacePayload } from "./types";
 import type { HistorySource } from "./useHistory";
+import { useSnapshot } from "./useSnapshot";
+import { useVersion, versionHref } from "./version";
 import styles from "./App.module.css";
 import "./styles.css";
 
@@ -31,6 +33,10 @@ function Root() {
   const [history, setHistory] = useState<HistorySource | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // An earlier version, selected by ?version=<commit>, replaces the workspace.
+  const version = useVersion();
+  // Whether there is a history is known once the workspace has loaded.
+  const snapshot = useSnapshot(payload ? history : undefined, version);
 
   useEffect(() => {
     // Mode 1 (arc42 build): workspace — and with --diff, the difference — injected
@@ -107,8 +113,39 @@ function Root() {
     );
   }
 
+  if (version) {
+    if (snapshot.status === "error") {
+      return (
+        <div className={styles.loadError} data-testid="version-error">
+          <h1>Failed to load version {version.slice(0, 8)}</h1>
+          <pre>{snapshot.reason}</pre>
+          <a href={versionHref(null)}>Back to the current version</a>
+        </div>
+      );
+    }
+    if (snapshot.status === "loading") {
+      return (
+        <div className={styles.loadSpinner} role="status" aria-label="Loading…">
+          <div className={styles.spinner} />
+          <p>Loading version {version.slice(0, 8)}…</p>
+        </div>
+      );
+    }
+    // The difference belongs to the current version, so it is not shown here.
+    return (
+      <App
+        key={version}
+        payload={snapshot.payload}
+        history={history}
+        refreshToken={refreshToken}
+        version={version}
+      />
+    );
+  }
+
   return (
     <App
+      key="current"
       payload={payload}
       diff={diffState.diff}
       diffError={diffState.error}
