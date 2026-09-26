@@ -54,10 +54,11 @@ test.describe("architecture review script", () => {
     const comment = readFileSync(join(out, "summary.md"), "utf8");
     expect(comment.startsWith("<!-- arc42-architecture-review -->\n")).toBe(true);
     expect(comment).toContain(
-      "| `.` | 1 | 2 | 1 | 1 | 0 | [Open `workspace.html`]({{PAGE_URL:workspace.html}}) |",
+      "**[Open the architecture review of `.`]({{PAGE_URL:workspace.html}})**",
     );
+    expect(comment).toContain("| `.` | 1 | 2 | 1 | 1 | 0 |");
     expect(comment).toContain("#### `.`");
-    expect(comment).toContain("[download all review pages]({{ARTIFACT_URL}})");
+    expect(comment).toContain("All review pages as a zip: [download]({{ARTIFACT_URL}})");
     expect(comment).toContain(
       "- `bb-catalog-service` (building-block) — modified — technology: `Node.js / Express` → `Go`",
     );
