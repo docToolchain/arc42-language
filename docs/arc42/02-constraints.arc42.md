@@ -38,12 +38,9 @@ source: Architecture decision dec-runtime-builtins
 ## Browser Bundle Safety
 
 Packages imported by the web SPA (`@arc42/web`) must not transitively pull in Node.js-only
-dependencies, and heavy dependencies such as `asciidoctor` must stay out of the main page.
-Vite tree-shaking cannot remove a module that is statically imported, so the boundary is the
-entry point: heavy code sits behind its own subpath, no static import of the SPA reaches it, and
-it is loaded only through a dynamic `import()`, which Vite puts into a separate chunk. A dynamic
-import of a module the SPA also imports statically is no boundary: Vite keeps it in the main
-chunk.
+dependencies, and heavy dependencies such as `asciidoctor` must not be part of what every reader
+loads. Heavy code is isolated behind its own entry point and loaded only when a feature needs
+it; code the SPA already loads up front offers no such isolation.
 
 ```arc42
 :::constraint

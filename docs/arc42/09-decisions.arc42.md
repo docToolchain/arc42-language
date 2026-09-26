@@ -372,15 +372,12 @@ addresses: qg-readability, qg-cli-usability
 
 ## The Web Renderer Owns the History Format
 
-The history files have one reader, the Web Renderer. So the Web Renderer owns their format: the
-file names, the chunking, and the types of the lines. The CLI writes them (`build`) or serves them
-(`serve`) in that format with the Web Renderer's format module — types and plain functions, no
-React and no browser APIs — so no Node.js code reaches the browser. The
-Filesystem Workspace Adapter only reads git and returns plain data. The Core Library knows no
-files, folders or addresses; it only turns files into a model and compares models. Today the
-format is spread over all three: the Core Library documents it, the Filesystem Workspace Adapter
-decides the chunks, and the CLI decides the addresses. Rejected: keeping the format in the Core
-Library (it would learn about storage), and a separate format package (no second reader exists).
+The history files have one reader, the Web Renderer, so the Web Renderer owns their format. The
+CLI delivers the history in that format, written for a static site or served. The Filesystem
+Workspace Adapter only reads git and returns plain data. The Core Library knows no files,
+folders or addresses: it turns files into a model and compares models. Before, the format was
+spread over all three. Rejected: the format in the Core Library (it would learn about storage),
+and a separate format package (there is no second reader).
 
 ```arc42
 :::decision
@@ -395,17 +392,16 @@ addresses: qg-extensibility, con-browser-bundle-safety
 ## Old Versions Load as Files and Are Parsed in the Browser
 
 Readers should be able to open the whole architecture at an earlier commit, not only its change.
-The history therefore also holds each commit's file list (the git blob ids of its architecture
-files and every tracked path) and the architecture files themselves, each version stored once
-under its blob id. Code files are listed by path only: with their blob ids a list would change
-with almost every commit. A commit whose tracked paths equal an earlier one's refers to that
-list. The browser parses a version with the same Core Library
-functions the CLI uses, and only when a reader opens it. Only architecture files are ever written
-or served; code appears by path and blob id only, which coverage needs. The change is additive:
-a build without history is unchanged. Rejected: a finished model per commit (grows with every
-commit, nothing shared), moving all diffing into the browser (a large rebuild, not needed), and
-reading git straight from the browser (git over HTTP lacks CORS; the GitHub API has tight quotas
-and cannot list the commits that touched `*.arc42.md` files).
+The history therefore also holds, for each commit, its architecture files and the tracked paths
+that coverage needs. Every file version is stored once and shared between the commits that
+contain it, and so is an unchanged path list, so the history grows with the changes, not with the
+number of commits. The browser builds a version with the same Core Library processing the CLI
+uses, and only when a reader opens it. Only architecture files are ever written or served; code
+appears by path only. The change is additive: without the history, nothing changes. Rejected: a
+finished model per commit (grows with every commit, nothing shared), computing all differences
+in the browser (a large rebuild, not needed), and reading git straight from the browser (plain git
+hosting is not reachable from web pages; hosting APIs have tight quotas and cannot find the
+commits that touched the architecture).
 
 ```arc42
 :::decision
@@ -417,27 +413,24 @@ addresses: qg-readability, con-browser-bundle-safety
 :::
 ```
 
-## Both Notations Live in the Core Library, Each Behind Its Own Subpath
+## Both Notations Live in the Core Library, Each Loadable on Its Own
 
 `dec-asciidoc-in-workspace-fs` kept both notations in the Filesystem Workspace Adapter to keep
-`marked` and `asciidoctor` out of the browser, relying on the server to render all prose ahead of
-time. Browsing earlier versions ends that premise: the browser now parses and renders prose, for
-both notations alike. The goal still holds — the main page does not carry `asciidoctor` — but it
-is reached by the entry point, not by the package: both notations move to the Core Library, each
-behind its own subpath, imported on demand for the notation a workspace uses. (`marked` is small
-and the Web Renderer already bundles it for its own rendering.) `asciidoctor` ships an official
-browser build. The two notations stay together, next to the interface they implement, and the
-Filesystem Workspace Adapter holds no notation code. The CLI bundles the built `@arc42/core`,
-so every subpath export needs a built file: the Core Library builds one entry per export, taken
-from its `package.json`, and the CLI build fails on any import it cannot resolve instead of
-leaving it external. Rejected: a
-separate notations package (one package more, no benefit over subpaths), and keeping AsciiDoc in
-the Filesystem Workspace Adapter (earlier versions of AsciiDoc workspaces could not be opened).
+their rendering libraries out of the browser, relying on the server to render all prose ahead of
+time. Browsing earlier versions ends that premise: the browser now renders prose, for both
+notations alike. The goal still holds — readers do not load the heavy AsciiDoc renderer unless
+they need it — but it is reached by loading each notation on its own and on demand, not by
+keeping it in a server-only package. So both notations belong to the Core Library, next to the
+interface they implement, and the Filesystem Workspace Adapter holds no notation code. Every
+separately loadable part of the Core Library must be part of the CLI's build; the CLI build fails
+rather than ship anything it cannot resolve. Rejected: a separate notations package (one package
+more, no benefit), and keeping AsciiDoc server-only (earlier versions of AsciiDoc workspaces could
+not be opened).
 
 ```arc42
 :::decision
 id: dec-notations-in-core
-title: Both notation implementations live in the Core Library behind their own subpaths
+title: Both notation implementations live in the Core Library, each loadable on its own
 status: accepted
 date: 2026-09-26
 addresses: qg-extensibility, con-browser-bundle-safety

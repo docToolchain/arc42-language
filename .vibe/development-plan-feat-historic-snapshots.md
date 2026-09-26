@@ -363,6 +363,11 @@ No separate notations package is needed.
   file; the H020 ignore is gone); `bb-notation-adapter` and `bb-prose-renderer` point at their
   interface files, since the notation directories contain both.
 
+- **Architecture text stays at the level of concepts and responsibilities** (user review). The
+  arc42 chapters say who owns what and why — no function names, package subpaths, file or URL
+  formats, byte sizes or bundler mechanics. Those live in the code, the commit messages and this
+  plan.
+
 ### Measurements after implementation (this repository, `docs/arc42`, 53 commits)
 
 | | Bytes | Gzipped |
