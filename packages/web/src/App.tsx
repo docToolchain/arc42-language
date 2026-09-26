@@ -11,6 +11,7 @@ import { pearlKey, useHistory } from "./useHistory";
 import type { HistorySource } from "./useHistory";
 import { filename } from "./utils";
 import { useTheme } from "./useTheme";
+import { openVersion, versionHref } from "./version";
 import styles from "./App.module.css";
 
 interface AppProps {
@@ -23,6 +24,8 @@ interface AppProps {
   history?: HistorySource | null;
   /** Changes whenever the server announces new data. */
   refreshToken?: number;
+  /** The commit of the earlier version shown instead of the current one, if any. */
+  version?: string | null;
 }
 
 // ─── Hash-based routing ───────────────────────────────────────────────────────
@@ -132,6 +135,7 @@ export function App({
   diffError = null,
   history = null,
   refreshToken = 0,
+  version = null,
 }: AppProps) {
   const {
     activeDocIndex,
@@ -222,6 +226,13 @@ export function App({
   }
 
   const selectedPearl = pearls.find((pearl) => pearlKey(pearl) === historyKey);
+  const versionPearl = version ? pearls.find((pearl) => pearl.commit === version) : undefined;
+
+  /** Open the history; from an earlier version, back in the current one at that pearl. */
+  function selectHistory() {
+    if (version) openVersion(null, `#history:${version}`);
+    else window.location.hash = "history";
+  }
 
   // Summary links of a visualized difference lead into the chapters: to the
   // element card when the element exists after the change, else to its chapter.
@@ -335,9 +346,7 @@ export function App({
           history
             ? {
                 active: showHistory,
-                onSelect: () => {
-                  window.location.hash = "history";
-                },
+                onSelect: selectHistory,
                 onSelectDocuments: () => {
                   window.location.hash = hasDiff
                     ? "changes"
@@ -364,6 +373,29 @@ export function App({
         onClose={() => setSidebarOpen(false)}
       />
       <main className={styles.main}>
+        {version && (
+          <p className={styles.versionBanner} role="status" data-testid="version-banner">
+            <span>
+              Earlier version <code>{version.slice(0, 8)}</code>
+              {versionPearl && (
+                <>
+                  {" "}
+                  · {versionPearl.subject} · {versionPearl.date.slice(0, 10)}
+                </>
+              )}
+            </span>
+            <a
+              href={versionHref(null)}
+              data-testid="version-leave"
+              onClick={(event) => {
+                event.preventDefault();
+                openVersion(null);
+              }}
+            >
+              Back to the current version
+            </a>
+          </p>
+        )}
         {showMetaModel ? (
           <MetaModelView onNavigateToChapter={navigateToChapter} />
         ) : showHistory ? (
@@ -378,6 +410,7 @@ export function App({
             elementDocMap={elementDocMap}
             messageOpen={historyMessage}
             onToggleMessage={() => historyKey && selectPearl(historyKey, !historyMessage)}
+            onBrowse={(commit) => openVersion(commit)}
           />
         ) : showChanges ? (
           <ChangesView

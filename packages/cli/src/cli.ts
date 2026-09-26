@@ -862,8 +862,9 @@ async function runServe(dir: string, args: string[]) {
     }
 
     // Static SPA assets
-    // Resolve path: "/" → "index.html", otherwise strip leading "/"
-    let filePath = url === "/" ? join(webDir, "index.html") : join(webDir, url.split("?")[0]);
+    // Resolve path without the query: "/" → "index.html", otherwise strip leading "/"
+    const path = url.split("?")[0]!;
+    let filePath = path === "/" ? join(webDir, "index.html") : join(webDir, path);
 
     // Prevent path traversal
     if (!filePath.startsWith(webDir)) {

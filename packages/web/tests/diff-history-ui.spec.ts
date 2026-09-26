@@ -1,7 +1,8 @@
-import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   BB,
   createHistoryRepository,
@@ -37,6 +38,30 @@ async function expectPearlChain(page: Page) {
   await expect(pearl(page, SUBJECTS[1]!)).toContainText("no model change");
   await expect(pearl(page, SUBJECTS[2]!)).toHaveAttribute("data-state", "semantic");
   await expect(pearl(page, SUBJECTS[3]!)).toHaveAttribute("data-state", "semantic");
+}
+
+/**
+ * Browse the root commit from the history: chapter 5 still has the SMS Delivery
+ * Contract, which the next commit removed. Navigation stays in that version.
+ */
+async function expectBrowsedRootVersion(page: Page) {
+  await pearl(page, SUBJECTS[3]!).getByTestId("pearl-select").click();
+  await page.getByTestId("browse-version").click();
+  await expect(page).toHaveURL(/\?version=[0-9a-f]{40}$/);
+  const banner = page.getByTestId("version-banner");
+  await expect(banner).toContainText(SUBJECTS[3]!);
+  await page.getByTestId("sidebar-doc-link").filter({ hasText: "5. Building Blocks" }).click();
+  await expect(page).toHaveURL(/\?version=[0-9a-f]{40}#05-building-blocks\.arc42\.md$/);
+  await expect(page.getByRole("heading", { name: "SMS Delivery Contract" })).toBeVisible();
+  await expect(banner).toBeVisible();
+}
+
+/** Leave the version: the current documentation no longer has the section. */
+async function expectCurrentVersion(page: Page) {
+  await expect(page.getByTestId("version-banner")).toHaveCount(0);
+  await page.getByTestId("sidebar-doc-link").filter({ hasText: "5. Building Blocks" }).click();
+  await expect(page.getByRole("heading", { name: "Order Service", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "SMS Delivery Contract" })).toHaveCount(0);
 }
 
 async function expectFeatureCommit(page: Page) {
@@ -139,6 +164,31 @@ test.describe("History in arc42 serve", () => {
     await expect(page.getByTestId("history-pearl")).toHaveCount(4);
   });
 
+  test("browses an earlier version as a whole and returns to the current one", async ({ page }) => {
+    await page.goto(`${server.url}/#history`);
+    await expectBrowsedRootVersion(page);
+    await page.getByTestId("version-leave").click();
+    await expect(page).not.toHaveURL(/version=/);
+    await expect(page.getByTestId("version-banner")).toHaveCount(0);
+
+    // The browser's back button returns to the version; the history tab leaves it
+    // for the current version, at the pearl of that version.
+    await page.goBack();
+    await expect(page.getByTestId("version-banner")).toBeVisible();
+    await page.getByTestId("sidebar-tab-history").click();
+    await expect(page).toHaveURL(/\/#history:[0-9a-f]{40}$/);
+    await expect(page.getByTestId("version-banner")).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toHaveText(SUBJECTS[3]!);
+    await page.getByTestId("sidebar-tab-documents").click();
+    await expectCurrentVersion(page);
+  });
+
+  test("offers no version to browse for uncommitted changes", async ({ page }) => {
+    await page.goto(`${server.url}/#history`);
+    await expect(page.getByTestId("history-entry-meta")).toContainText("working tree");
+    await expect(page.getByTestId("browse-version")).toHaveCount(0);
+  });
+
   test("marks a commit that cannot be diffed", async ({ page }) => {
     const glossary = join(root, "12-glossary.arc42.md");
     writeFileSync(
@@ -194,6 +244,120 @@ test.describe("History in a static build", () => {
     } finally {
       await site.stop();
       rmSync(out, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("browses an earlier version from the files next to the page", async ({ page }) => {
+    const root = createHistoryRepository();
+    const out = mkdtempSync(join(tmpdir(), "arc42-e2e-history-ui-browse-"));
+    runCli("--dir", root, "build", "--out", out, "--with-history");
+    const site = await serveStatic(out, 3399);
+    const requested: string[] = [];
+    page.on("request", (request) => requested.push(new URL(request.url()).pathname));
+    try {
+      await page.goto(`${site.url}/#history`);
+      await expectBrowsedRootVersion(page);
+      expect(requested.some((path) => /^\/history\/tree\/[0-9a-f]{40}\.json$/.test(path))).toBe(
+        true,
+      );
+      expect(requested.some((path) => /^\/history\/blob\/[0-9a-f]{40}$/.test(path))).toBe(true);
+      await page.getByTestId("version-leave").click();
+      await expectCurrentVersion(page);
+    } finally {
+      await site.stop();
+      rmSync(out, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("browses an earlier version from a single file", async ({ page }) => {
+    const root = createHistoryRepository();
+    const out = mkdtempSync(join(tmpdir(), "arc42-e2e-history-ui-browse-single-"));
+    runCli("--dir", root, "build", "--out", out, "--with-history", "--single-file");
+    try {
+      await page.goto(`file://${join(out, "index.html")}#history`);
+      await expectBrowsedRootVersion(page);
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("shows why a version cannot be loaded", async ({ page }) => {
+    const root = createHistoryRepository();
+    const out = mkdtempSync(join(tmpdir(), "arc42-e2e-history-ui-broken-"));
+    runCli("--dir", root, "build", "--out", out, "--with-history");
+    for (const blob of readdirSync(join(out, "history", "blob"))) {
+      rmSync(join(out, "history", "blob", blob));
+    }
+    const site = await serveStatic(out, 3400);
+    try {
+      await page.goto(`${site.url}/#history`);
+      await pearl(page, SUBJECTS[3]!).getByTestId("pearl-select").click();
+      await page.getByTestId("browse-version").click();
+      const error = page.getByTestId("version-error");
+      await expect(error).toContainText("Failed to load version");
+      await expect(error).toContainText(/history\/blob\/[0-9a-f]{40} returned 404/);
+      await expect(page.locator("article")).toHaveCount(0);
+    } finally {
+      await site.stop();
+      rmSync(out, { recursive: true, force: true });
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+test.describe("History of an AsciiDoc workspace", () => {
+  test("renders an earlier version's prose with the AsciiDoc notation, loaded on demand", async ({
+    page,
+  }) => {
+    const kanban = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "../../../examples/kanban-board",
+    );
+    const root = mkdtempSync(join(tmpdir(), "arc42-e2e-history-adoc-"));
+    const git = (...args: string[]) => execFileSync("git", ["-C", root, ...args]);
+    cpSync(kanban, root, { recursive: true });
+    git("init", "-q");
+    git("config", "user.email", "test@example.com");
+    git("config", "user.name", "arc42 e2e");
+    git("add", ".");
+    git("commit", "-qm", "initial architecture");
+    const file = join(root, "05-building-blocks.arc42.adoc");
+    writeFileSync(
+      file,
+      readFileSync(file, "utf8").replace(
+        "The Frontend is a single-page application",
+        "The Frontend is a *progressive* single-page application",
+      ),
+    );
+    git("commit", "-qam", "docs: the frontend is progressive");
+    const server = await startServer(root, 3401);
+    const scripts: string[] = [];
+    page.on("request", (request) => {
+      if (request.resourceType() === "script") scripts.push(request.url());
+    });
+    try {
+      await page.goto(`${server.url}/#${"05-building-blocks.arc42.adoc"}`);
+      await expect(page.locator("article strong", { hasText: "progressive" })).toBeVisible();
+      const before = scripts.length;
+
+      await page.goto(`${server.url}/#history`);
+      await page
+        .getByTestId("history-pearl")
+        .filter({ hasText: "initial architecture" })
+        .getByTestId("pearl-select")
+        .click();
+      await page.getByTestId("browse-version").click();
+      await page.getByTestId("sidebar-doc-link").filter({ hasText: "5. Building Blocks" }).click();
+      const frontend = page.locator("article p", { hasText: "The Frontend is a single-page" });
+      await expect(frontend).toBeVisible();
+      await expect(page.locator("article strong", { hasText: "progressive" })).toHaveCount(0);
+      // Rendering AsciiDoc in the browser loaded more code than the page itself.
+      expect(scripts.length).toBeGreaterThan(before);
+    } finally {
+      await server.stop();
       rmSync(root, { recursive: true, force: true });
     }
   });
