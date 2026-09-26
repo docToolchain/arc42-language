@@ -1,8 +1,8 @@
-import { access, readdir, readFile } from "node:fs/promises";
-import { dirname, relative, resolve } from "node:path";
+// Public API of the filesystem workspace adapter.
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import {
   computeCoverage,
-  detectNotation,
   getElementsFromDocuments,
   loadNotationAdapter,
   loadWorkspaceFromDocuments,
@@ -13,17 +13,9 @@ import {
   validateDocumentsAsync,
   warmMermaid,
 } from "@arc42/core";
-import type {
-  DocumentAst,
-  GetDocumentsOptions,
-  GetResult,
-  Notation,
-  SourceFile,
-  ValidationContext,
-  ValidateResult,
-  WorkspacePayload,
-} from "@arc42/core";
-import { gitLsFiles } from "./git-diff.ts";
+import type { GetDocumentsOptions, GetResult, ValidateResult, WorkspacePayload } from "@arc42/core";
+import { discoverFilesWithNotation, readSourceFiles, readWorkspaceDocuments } from "./discovery.ts";
+import { pathEvidence } from "./path-evidence.ts";
 
 export { gitLsFiles } from "./git-diff.ts";
 export { loadDiffSnapshots, EMPTY_TREE } from "./diff-snapshots.ts";
@@ -34,120 +26,20 @@ export { readArchitectureBlob, readCommitFiles } from "./snapshot.ts";
 export type { CommitFiles } from "./snapshot.ts";
 export type { ArchitectureCommit, ArchitectureHistory, CommitChange } from "./history.ts";
 export type { DiffSnapshots, DiffSpec, Snapshot } from "./diff-snapshots.ts";
-
-interface DiscoverResult {
-  files: string[];
-  notation: Notation;
-}
-
-/**
- * Scan dir recursively for .arc42.md or .arc42.adoc files.
- * Throws if both extensions are found (mixed workspace is not supported).
- * Returns the file list and the detected notation.
- */
-export async function discoverFiles(dir: string): Promise<string[]> {
-  const { files } = await discoverFilesWithNotation(dir);
-  return files;
-}
-
-async function discoverFilesWithNotation(dir: string): Promise<DiscoverResult> {
-  const mdFiles: string[] = [];
-  const adocFiles: string[] = [];
-
-  async function walk(current: string): Promise<void> {
-    const entries = (await readdir(current, { withFileTypes: true })).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-    for (const entry of entries) {
-      const path = resolve(current, entry.name);
-      if (entry.isDirectory()) await walk(path);
-      else if (entry.isFile()) {
-        if (entry.name.endsWith(".arc42.md")) mdFiles.push(path);
-        else if (entry.name.endsWith(".arc42.adoc")) adocFiles.push(path);
-      }
-    }
-  }
-
-  await walk(resolve(dir));
-
-  const notation = detectNotation([...mdFiles, ...adocFiles], dir);
-  return { files: notation === "asciidoc" ? adocFiles : mdFiles, notation };
-}
-
-function readSourceFiles(files: string[]): Promise<SourceFile[]> {
-  return Promise.all(files.map(async (path) => ({ path, content: await readFile(path, "utf8") })));
-}
-
-export async function readWorkspaceDocuments(dir: string): Promise<DocumentAst[]> {
-  const { files, notation } = await discoverFilesWithNotation(dir);
-  return parseWorkspaceFiles(await readSourceFiles(files), notation);
-}
-
-async function collectPaths(dir: string, root: string): Promise<string[]> {
-  const paths: string[] = [];
-  async function walk(current: string): Promise<void> {
-    const entries = await readdir(current, { withFileTypes: true });
-    for (const entry of entries) {
-      const path = resolve(current, entry.name);
-      paths.push(relative(root, path).replaceAll("\\", "/"));
-      if (entry.isDirectory()) await walk(path);
-    }
-  }
-  await walk(root);
-  return paths;
-}
-
-async function findRepositoryRoot(dir: string): Promise<string> {
-  let current = resolve(dir);
-  while (true) {
-    try {
-      await access(resolve(current, ".git"));
-      return current;
-    } catch {
-      const parent = dirname(current);
-      if (parent === current) return resolve(dir);
-      current = parent;
-    }
-  }
-}
-
-export async function pathEvidence(
-  dir: string,
-  root?: string,
-): Promise<NonNullable<ValidationContext["pathEvidence"]>> {
-  const repositoryRoot = resolve(root ?? (await findRepositoryRoot(dir)));
-  let knownPaths: string[];
-  try {
-    knownPaths = gitLsFiles(repositoryRoot);
-  } catch {
-    knownPaths = await collectPaths(dir, repositoryRoot);
-  }
-  return { root: repositoryRoot, knownPaths };
-}
+export { discoverFiles, readWorkspaceDocuments } from "./discovery.ts";
+export { pathEvidence } from "./path-evidence.ts";
 
 export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
   const { files } = await discoverFilesWithNotation(dir);
-  const repositoryRoot = await findRepositoryRoot(dir);
-  let trackedPaths: string[];
-  try {
-    trackedPaths = gitLsFiles(repositoryRoot);
-  } catch {
-    trackedPaths = await collectPaths(dir, repositoryRoot);
-  }
-  return loadWorkspaceFromFiles(await readSourceFiles(files), trackedPaths, dir);
+  const { knownPaths } = await pathEvidence(dir);
+  return loadWorkspaceFromFiles(await readSourceFiles(files), knownPaths, dir);
 }
 
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {
   warmMermaid();
   const { files, notation } = await discoverFilesWithNotation(dir);
   const documents = await parseWorkspaceFiles(await readSourceFiles(files), notation);
-  const repositoryRoot = resolve(root ?? (await findRepositoryRoot(dir)));
-  let trackedPaths: string[];
-  try {
-    trackedPaths = gitLsFiles(repositoryRoot);
-  } catch {
-    trackedPaths = await collectPaths(dir, repositoryRoot);
-  }
+  const { root: repositoryRoot, knownPaths: trackedPaths } = await pathEvidence(dir, root);
 
   // Load .arc42ignore from repository root (if it exists)
   let coverageIgnore: Set<string> | undefined;
