@@ -38,17 +38,17 @@ source: Architecture decision dec-runtime-builtins
 ## Browser Bundle Safety
 
 Packages imported by the web SPA (`@arc42/web`) must not transitively pull in Node.js-only
-dependencies. Heavy server-side dependencies such as `asciidoctor` must remain confined to
-`@arc42/workspace-fs` and never appear in any import path reachable from the browser bundle.
-Vite tree-shaking cannot remove a module that is statically imported — the package boundary is
-the only safe isolation mechanism.
+dependencies, and heavy dependencies such as `asciidoctor` and `marked` must stay out of the main
+page. Vite tree-shaking cannot remove a module that is statically imported, so the boundary is
+the entry point: heavy code sits behind its own subpath, no static import of the SPA reaches it,
+and the SPA loads it only through a dynamic `import()`, which Vite puts into a separate chunk.
 
 ```arc42
 :::constraint
 id: con-browser-bundle-safety
 title: Web SPA must not bundle Node.js-only dependencies
 category: technical
-source: Architecture decision dec-asciidoc-in-workspace-fs
+source: Architecture decisions dec-asciidoc-in-workspace-fs and dec-notations-in-core
 :::
 ```
 
