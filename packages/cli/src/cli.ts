@@ -1122,15 +1122,17 @@ async function runBuild(dir: string, args: string[]) {
           JSON.stringify(singleFile ? { files: historyFiles } : { base: "history/" }),
         )};</script>`
       : "");
-  // Insert right after the opening <head> tag — the first one is always the real
-  // tag, while "</head>" may also occur inside inlined JavaScript (--single-file).
+  // Insert right after the charset declaration: browsers only honour it within the
+  // first 1024 bytes, and pages opened from disk or served without a charset header
+  // would otherwise be read as Windows-1252. The first match is always the real tag,
+  // since the page's own markup precedes any inlined JavaScript (--single-file).
   // Slicing instead of String.replace keeps "$&" and friends in the data literal.
-  const headStart = html.indexOf("<head>");
-  if (headStart === -1) {
-    console.error(`No <head> element found in ${indexPath}`);
+  const charset = /<meta charset="[^"]*"\s*\/?>/i.exec(html);
+  if (!charset) {
+    console.error(`No <meta charset> element found in ${indexPath}`);
     process.exit(1);
   }
-  const insertAt = headStart + "<head>".length;
+  const insertAt = charset.index + charset[0].length;
   html = `${html.slice(0, insertAt)}\n${injection}${html.slice(insertAt)}`;
 
   writeFileSync(indexPath, html, "utf8");

@@ -44,9 +44,15 @@ test.describe("arc42 build --single-file", () => {
       // loads (asciidoctor's own file once was, twice: +2.6 MB).
       expect(html).not.toContain("data:text/javascript");
 
+      // Browsers honour the charset only within the first 1024 bytes; a page opened
+      // from disk has no charset header to fall back on.
+      expect(Buffer.from(html).indexOf('<meta charset="UTF-8"')).toBeGreaterThanOrEqual(0);
+      expect(Buffer.from(html).indexOf('<meta charset="UTF-8"')).toBeLessThan(1024);
+
       const requests = await openFromDisk(page, out);
       await expect(page.locator("article h1")).toBeVisible();
       await expect(page.getByTestId("sidebar-doc-link")).toHaveCount(12);
+      await expect(page.locator("article")).toContainText("Catalog management — maintaining");
       expect(requests).toEqual([]);
     } finally {
       rmSync(out, { recursive: true, force: true });
