@@ -126,8 +126,8 @@ arc42 serve --diff
 # … or as a static review site for a pull request
 arc42 build --out review --diff origin/main...HEAD
 
-# Browse the architecture history — every commit that changed the architecture — in
-# `arc42 serve`, or include it in a static site
+# Browse the architecture history — every commit that changed the architecture, each
+# one's change and its whole architecture — in `arc42 serve`, or include it in a static site
 arc42 build --out site/docs --with-history
 
 # Everything in one self-contained HTML file (also works opened from disk)

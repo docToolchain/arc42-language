@@ -363,13 +363,13 @@ sequenceDiagram
     actor_reader->>bb_web: Browse the version of a pearl
     bb_web->>bb_cli: Get the file list of the commit
     bb_cli->>bb_workspace_fs: Read the commit's tree
-    bb_workspace_fs-->>bb_cli: Tracked paths with blob ids
+    bb_workspace_fs-->>bb_cli: Architecture files by blob id, every tracked path
     bb_cli-->>bb_web: tree/<commit>.json
     bb_web->>bb_cli: Get each architecture file not loaded yet
     bb_cli->>bb_workspace_fs: Read the blob
     bb_workspace_fs-->>bb_cli: File content, or an error for a non-architecture blob
     bb_cli-->>bb_web: blob/<id>
-    bb_web->>bb_core: Load the loader on demand and build the workspace
+    bb_web->>bb_core: Build the workspace, importing its notation on demand
     bb_core-->>bb_web: Workspace model with coverage
     bb_web-->>actor_reader: Document view of that version, with a banner
 ```
