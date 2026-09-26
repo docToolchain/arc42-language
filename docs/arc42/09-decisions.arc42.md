@@ -367,3 +367,48 @@ date: 2026-09-25
 addresses: qg-readability, qg-cli-usability
 :::
 ```
+
+## The Web Renderer Owns the History Format
+
+The history files have one reader, the Web Renderer. So the Web Renderer owns their format: the
+file names, the chunking, and the types of the lines. The CLI writes them (`build`) or serves them
+(`serve`) in that format with the Web Renderer's format module — types and plain functions, no
+React and no browser APIs — so no Node.js code reaches the browser. The
+Filesystem Workspace Adapter only reads git and returns plain data. The Core Library knows no
+files, folders or addresses; it only turns files into a model and compares models. Today the
+format is spread over all three: the Core Library documents it, the Filesystem Workspace Adapter
+decides the chunks, and the CLI decides the addresses. Rejected: keeping the format in the Core
+Library (it would learn about storage), and a separate format package (no second reader exists).
+
+```arc42
+:::decision
+id: dec-history-format-in-web
+title: The Web Renderer owns the history file format; the Core Library stays free of storage
+status: proposed
+date: 2026-09-26
+addresses: qg-extensibility, con-browser-bundle-safety
+:::
+```
+
+## Old Versions Load as Files and Are Parsed in the Browser
+
+Readers should be able to open the whole architecture at an earlier commit, not only its change.
+The history therefore also holds each commit's file list (every tracked path with its git blob
+id) and the architecture files themselves, each version stored once under its blob id. Unchanged
+file lists are shared between commits. The browser parses a version with the same Core Library
+functions the CLI uses, and only when a reader opens it. Only architecture files are ever written
+or served; code appears by path and blob id only, which coverage needs. The change is additive:
+a build without history is unchanged. Rejected: a finished model per commit (grows with every
+commit, nothing shared), moving all diffing into the browser (a large rebuild, not needed), and
+reading git straight from the browser (git over HTTP lacks CORS; the GitHub API has tight quotas
+and cannot list the commits that touched `*.arc42.md` files).
+
+```arc42
+:::decision
+id: dec-browser-snapshots
+title: Store old versions as shared files and parse them in the browser on demand
+status: proposed
+date: 2026-09-26
+addresses: qg-readability, con-browser-bundle-safety
+:::
+```

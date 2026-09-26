@@ -27,9 +27,36 @@ loading). Nothing is parsed ahead of time for old versions.
 - **Core stays free of data sources.** Core gets pure functions only: files in, model out. It
   knows nothing about git, URLs, folders or file layouts. The user rejected an earlier draft
   that put a "source" interface and the published layout into core.
+- **Responsibilities per package** (recorded as `dec-history-format-in-web`, proposed):
+
+  | Package | Owns | For this feature |
+  |---|---|---|
+  | core | Pure functions: files in, model out; comparing models | `loadWorkspaceFromFiles`; the Markdown notation as a subpath |
+  | workspace-fs | Reading git and the file system; returns plain data | File list and blob of a commit, with the architecture-file check |
+  | web | The history file format it reads (types, file names, chunking), the reader, the UI | Snapshot reader, "Browse this version" |
+  | cli | Delivering: writes (`build`) or serves (`serve`) web's format | New addresses and output folders |
+
+- **`web` owns the history format** because it is the only reader. `cli` imports the format
+  module from `web`: types plus plain functions for chunking and JSON Lines, no React and no
+  browser APIs. One new dev dependency; `cli` already packages `web`'s build.
+  Rejected: the format in core (storage knowledge in core), in `workspace-fs` (web cannot import
+  a Node package), and a separate format package (no second reader).
+- **Fix the existing leak first, as a pure move.** Today the history format is spread out:
+  - `core/src/history.ts` documents the addresses, the folder and the file names; its
+    `HistoryPearl.chunk` field is a storage detail;
+  - `core/src/diff-view.ts:93` mentions `/api/diff` in a comment;
+  - `workspace-fs/src/history.ts` decides the chunks (`HISTORY_CHUNK_SIZE`, `toJsonLines`);
+  - `cli.ts` decides addresses and folders.
+
+  All of it moves to a format module in `web`. `workspace-fs` keeps only listing the commits
+  and computing each commit's change. No behaviour change; the history tests stay green.
 - **No new package.** The reader for snapshot files is a small module in `web`. A separate
   `workspace-http` package is only worth it when a second reader exists (e.g. loading from
   GitHub). See *Notes*.
+- **Our own architecture records both decisions as `proposed`** in chapter 9
+  (`dec-history-format-in-web`, `dec-browser-snapshots`). The building blocks are updated when
+  the code changes, so they never describe what does not exist yet. On completion both
+  decisions become `accepted`.
 - **Layout mirrors git.** Per commit a file list maps each path to its git blob id, and each file
   version is stored once under its blob id. Files that do not change between commits are shared.
   A later GitHub reader would map onto this one to one.
@@ -145,6 +172,14 @@ loading). Nothing is parsed ahead of time for old versions.
 - Old versions never change, so the browser may keep them while the working tree changes.
 - Without a git repository, the new addresses return the same error the history already gives.
 
+### Drift found in our own architecture
+
+`docs/arc42/05-building-blocks.arc42.md` says the Markdown notation adapter and
+`MarkdownProseRenderer` live in `@arc42/core`. They actually live in
+`workspace-fs/src/notation/`. Step 2 moves them into core, which makes the text true; until
+then the text is wrong. Also update the Filesystem Workspace Adapter, Web Renderer and
+Web Renderer Hosting Contract descriptions as each step lands.
+
 ### Open questions
 
 - **AsciiDoc in the browser:**
@@ -167,12 +202,23 @@ loading). Nothing is parsed ahead of time for old versions.
 - [x] Check loading from a git URL in the browser: CORS, GitHub API quotas, history listing
 - [x] Measure storage for this repository; identify file lists as the large part
 - [x] Confirm the change is additive; describe its effect on `serve`
+- [x] Assign responsibilities per package; find the history-format leak in core
+- [x] Record both decisions as `proposed` in our own architecture (chapter 9)
 
 ## Plan
 
 ### Implementation sequence
 
-1. **Core: files in, model out.**
+1. **Refactor: move the history format to `web`.** Pure move, no behaviour change.
+   - Move `HistoryPearl`, `HistoryEntry` and the format description from `core/src/history.ts`
+     to a format module in `web`; drop the `/api/diff` mention from `core/src/diff-view.ts`.
+   - Move chunking and JSONL writing (`HISTORY_CHUNK_SIZE`, `toJsonLines`) from
+     `workspace-fs/src/history.ts` to that module.
+   - `workspace-fs` returns commits and changes as plain data; `cli` uses the `web` module to
+     write and serve them. The module is plain TypeScript (no React, no browser APIs), so `cli`
+     can bundle it; `web` becomes a dev dependency of `cli`.
+   - Update the Hosting Contract and Web Renderer descriptions in chapter 5.
+2. **Core: files in, model out.**
    - Add `loadWorkspaceFromFiles(files, trackedPaths)`: detect the notation, parse, build the
      model, compute coverage.
    - Move `isArchitectureFile` and `detectNotation` into core.
@@ -180,25 +226,27 @@ loading). Nothing is parsed ahead of time for old versions.
      `@arc42/core/notation/markdown`, so `marked` is only pulled in where it is imported.
    - Remove the silent `catch` in `MarkdownProseRenderer`.
    - `workspace-fs` uses the new function. Behaviour stays the same; the existing tests prove it.
-2. **Producer in `workspace-fs`.**
+3. **Producer in `workspace-fs`.**
    - `snapshotTree(dir, commit)`: all tracked paths with blob ids (`git ls-tree -r`).
    - `readSnapshotBlob(dir, id)`: one file (`git cat-file blob`). Refuses any blob that is not
      an architecture file of a history commit.
-3. **Transport in `cli`.**
+4. **Transport in `cli`.**
    - `serve`: `/api/history/tree/<commit>.json` and `/api/history/blob/<id>`.
    - `build --with-history`: write `history/tree/` and `history/blob/`. Each blob once; a file
      list shared with the previous commit when unchanged.
    - `--single-file`: inline them like the other history files.
-4. **Reader and UI in `web`.**
+5. **Reader and UI in `web`.**
    - A snapshot reader on top of `HistorySource`, so URLs and inlined files both work.
    - `useSnapshot(commit)`: loads the parser chunk on demand, fetches files, parses, caches per
      commit.
    - "Browse this version" on a pearl; a URL hash such as `#snapshot:<sha>`; the normal document
      view with a banner and a way back.
-5. **Docs.** The CLI help for `--with-history`, and the history description on the site.
+6. **Docs.** The CLI help for `--with-history`, the history description on the site, chapter 5
+   of our own architecture, and both decisions set to `accepted`.
 
 ### Tests (black-box per phase)
 
+- **refactor:** the existing history tests (workspace-fs, cli, web Playwright) pass unchanged.
 - **core:** `loadWorkspaceFromFiles` gives the same model as `loadWorkspace` for the bookstore
   fixture.
 - **workspace-fs:**
@@ -223,11 +271,12 @@ loading). Nothing is parsed ahead of time for old versions.
 
 ### Tasks
 
-- [ ] Step 1: core — `loadWorkspaceFromFiles`, notation subpaths, remove silent fallback
-- [ ] Step 2: workspace-fs — `snapshotTree`, `readSnapshotBlob` with the architecture-file check
-- [ ] Step 3: cli — `serve` addresses, `build` output, `--single-file`
-- [ ] Step 4: web — snapshot reader, `useSnapshot`, "Browse this version"
-- [ ] Step 5: docs
+- [ ] Step 1: refactor — history format moves from core, workspace-fs and cli into `web`
+- [ ] Step 2: core — `loadWorkspaceFromFiles`, notation subpaths, remove silent fallback
+- [ ] Step 3: workspace-fs — `snapshotTree`, `readSnapshotBlob` with the architecture-file check
+- [ ] Step 4: cli — `serve` addresses, `build` output, `--single-file`
+- [ ] Step 5: web — snapshot reader, `useSnapshot`, "Browse this version"
+- [ ] Step 6: docs — CLI help, site, chapter 5, decisions accepted
 - [ ] Measure the build size and the parse time; record them here
 
 ### Completed
