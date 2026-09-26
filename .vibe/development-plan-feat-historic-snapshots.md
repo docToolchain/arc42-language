@@ -53,10 +53,23 @@ loading). Nothing is parsed ahead of time for old versions.
 - **No new package.** The reader for snapshot files is a small module in `web`. A separate
   `workspace-http` package is only worth it when a second reader exists (e.g. loading from
   GitHub). See *Notes*.
-- **Our own architecture records both decisions as `proposed`** in chapter 9
-  (`dec-history-format-in-web`, `dec-browser-snapshots`). The building blocks are updated when
-  the code changes, so they never describe what does not exist yet. On completion both
-  decisions become `accepted`.
+- **Our own architecture describes the target state first**, in its own pull request, so the
+  impact on the architecture can be reviewed before any code changes (user decision; replaces
+  the earlier idea of updating chapter 5 step by step):
+  - chapter 5: new interfaces `if-web-core` (Browser Workspace Loader) and `if-history-format`
+    (History Format, owned by the Web Renderer); new responsibilities in the prose of the Core
+    Library, Notation Adapter, Prose Renderer, Filesystem Workspace Adapter, CLI, Web Renderer
+    and the Hosting Contract; two new edges in the overview diagram;
+  - chapter 6: new runtime scenario `scenario-browse-earlier-version`;
+  - chapter 9: `dec-history-format-in-web` and `dec-browser-snapshots`, both `proposed`;
+  - chapter 11: `risk-asciidoc-snapshots`, addressed by `dec-browser-snapshots`;
+  - chapter 12: `term-snapshot`.
+- **Code not yet written is marked, not hidden.** `if-history-format` has no `path` yet, with an
+  `ignore H014` naming the file and the step that creates it (the same pattern as
+  `bb-notation-adapter`). Errors cannot be ignored, so a path to a missing file is not an option.
+- **Expected diff-lint warnings** against `main`: prose changed without block changes for
+  `bb-core`, `bb-notation-adapter`, `bb-prose-renderer` and `bb-workspace-fs`. They describe new
+  responsibilities that have no attribute of their own; they are the impact to review.
 - **Layout mirrors git.** Per commit a file list maps each path to its git blob id, and each file
   version is stored once under its blob id. Files that do not change between commits are shared.
   A later GitHub reader would map onto this one to one.
@@ -204,6 +217,7 @@ Web Renderer Hosting Contract descriptions as each step lands.
 - [x] Confirm the change is additive; describe its effect on `serve`
 - [x] Assign responsibilities per package; find the history-format leak in core
 - [x] Record both decisions as `proposed` in our own architecture (chapter 9)
+- [x] Describe the target state in our own architecture (chapters 5, 6, 9, 11, 12); validation clean
 
 ## Plan
 
@@ -241,8 +255,9 @@ Web Renderer Hosting Contract descriptions as each step lands.
      commit.
    - "Browse this version" on a pearl; a URL hash such as `#snapshot:<sha>`; the normal document
      view with a banner and a way back.
-6. **Docs.** The CLI help for `--with-history`, the history description on the site, chapter 5
-   of our own architecture, and both decisions set to `accepted`.
+6. **Docs.** The CLI help for `--with-history` and the history description on the site. In our
+   own architecture: set the `if-history-format` path and drop its `ignore H014` (step 1), and
+   set both decisions to `accepted`. Check chapter 5 still matches the code after each step.
 
 ### Tests (black-box per phase)
 
@@ -276,7 +291,7 @@ Web Renderer Hosting Contract descriptions as each step lands.
 - [ ] Step 3: workspace-fs — `snapshotTree`, `readSnapshotBlob` with the architecture-file check
 - [ ] Step 4: cli — `serve` addresses, `build` output, `--single-file`
 - [ ] Step 5: web — snapshot reader, `useSnapshot`, "Browse this version"
-- [ ] Step 6: docs — CLI help, site, chapter 5, decisions accepted
+- [ ] Step 6: docs — CLI help, site, `if-history-format` path, decisions accepted
 - [ ] Measure the build size and the parse time; record them here
 
 ### Completed

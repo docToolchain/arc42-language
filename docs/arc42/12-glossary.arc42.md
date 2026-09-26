@@ -29,6 +29,19 @@ definition: The sequence of headings, prose nodes, and raw block nodes produced 
 :::
 ```
 
+## Snapshot
+
+A snapshot is what a reader opens from a pearl in the history: the whole architecture as it was at
+that commit, built in the browser from that commit's files.
+
+```arc42
+:::glossary-term
+id: term-snapshot
+title: Snapshot
+definition: The architecture as it was at one earlier commit, built from that commit's architecture files and file list.
+:::
+```
+
 ## Workspace
 
 The workspace is the model that validation and rendering operate on after all discovered files

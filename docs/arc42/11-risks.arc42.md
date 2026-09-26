@@ -32,6 +32,21 @@ mitigation: Validate templates and the project documentation after DSL changes, 
 :::
 ```
 
+## Earlier Versions of AsciiDoc Workspaces
+
+The browser parses earlier versions with the Core Library, but the AsciiDoc prose renderer needs
+`asciidoctor`, which stays out of browser-reachable code. Until this is decided, earlier versions
+open only for Markdown workspaces; an AsciiDoc workspace gets a clear error instead.
+
+```arc42
+:::risk
+id: risk-asciidoc-snapshots
+title: Earlier versions of AsciiDoc workspaces cannot be opened in the browser
+severity: low
+mitigation: Show a clear error for AsciiDoc workspaces; decide between loading asciidoctor on demand for AsciiDoc workspaces only and preparing their models at build time.
+:::
+```
+
 ## Zod Runtime Dependency
 
 The core package currently depends on Zod at runtime for model schema validation. Replacing it
