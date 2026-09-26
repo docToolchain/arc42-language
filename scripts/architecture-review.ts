@@ -215,14 +215,21 @@ function renderSummary(reviews: WorkspaceReview[], base: string): string {
     "",
     `This change affects the architecture of **${changed.length}** workspace${changed.length === 1 ? "" : "s"} (compared with \`${base}\`).`,
     "",
-    "| Workspace | Added | Modified | Removed | Warnings | Code changed, architecture untouched | Review page |",
-    "|---|---:|---:|---:|---:|---:|---|",
+    // The links come first and on their own lines: a wide table hides its last column on mobile.
+    ...changed
+      .map(
+        (review) =>
+          `**[Open the architecture review of \`${review.workspace}\`](${pagePlaceholder(review.page!)})** — the changes inside their chapters, in the browser`,
+      )
+      .flatMap((line) => [line, ""]),
+    "| Workspace | Added | Modified | Removed | Warnings | Code changed, architecture untouched |",
+    "|---|---:|---:|---:|---:|---:|",
     ...changed.map(
       (review) =>
-        `| \`${review.workspace}\` | ${review.added} | ${review.modified} | ${review.removed} | ${review.diff.groups.warnings.length} | ${review.diff.groups.untouched.length} | [Open \`${review.page}\`](${pagePlaceholder(review.page!)}) |`,
+        `| \`${review.workspace}\` | ${review.added} | ${review.modified} | ${review.removed} | ${review.diff.groups.warnings.length} | ${review.diff.groups.untouched.length} |`,
     ),
     "",
-    `**Open** a workspace's review page to see its changes inside their chapters — it opens in the browser, on mobile too. Or [download all review pages](${ARTIFACT_PLACEHOLDER}) as a zip.`,
+    `All review pages as a zip: [download](${ARTIFACT_PLACEHOLDER})`,
     "",
   ];
   for (const review of changed) {
