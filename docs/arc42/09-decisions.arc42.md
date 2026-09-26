@@ -274,8 +274,10 @@ addresses: qg-extensibility, qg-readability, con-browser-bundle-safety
 
 The `asciidoctor` npm package (~1.5 MB) is required for AsciiDoc prose rendering but must not
 enter the browser bundle. `@arc42/core` is browser-safe (zero `node:` imports) and must remain so.
-The `AsciidocProseRenderer` and `AsciidocNotationAdapter` therefore live in `@arc42/workspace-fs`,
-which is Node.js-only. Core exports only the interfaces and Markdown implementations. A separate
+Both notation implementations — Markdown with `marked`, AsciiDoc with `asciidoctor` — therefore
+live in `@arc42/workspace-fs`, which is Node.js-only, and the server renders all prose ahead of
+time; core exports only the interfaces and the parsers. (Earlier versions of this text said core
+holds the Markdown implementation; it never did.) A separate
 `@arc42/workspace-asciidoc` package was considered but rejected: the CLI and server both depend
 on `workspace-fs` already, and a new package would add indirection without a clear consumer benefit.
 
@@ -283,7 +285,7 @@ on `workspace-fs` already, and a new package would add indirection without a cle
 :::decision
 id: dec-asciidoc-in-workspace-fs
 title: AsciiDoc adapter and asciidoctor dependency confined to workspace-fs
-status: accepted
+status: superseded
 date: 2026-09-24
 addresses: qg-extensibility, con-browser-bundle-safety
 :::
@@ -398,8 +400,7 @@ id) and the architecture files themselves, each version stored once under its bl
 file lists are shared between commits. The browser parses a version with the same Core Library
 functions the CLI uses, and only when a reader opens it. Only architecture files are ever written
 or served; code appears by path and blob id only, which coverage needs. The change is additive:
-a build without history is unchanged. AsciiDoc workspaces get a clear error until their prose
-renderer can run in the browser (see the risk). Rejected: a finished model per commit (grows with every
+a build without history is unchanged. Rejected: a finished model per commit (grows with every
 commit, nothing shared), moving all diffing into the browser (a large rebuild, not needed), and
 reading git straight from the browser (git over HTTP lacks CORS; the GitHub API has tight quotas
 and cannot list the commits that touched `*.arc42.md` files).
@@ -410,6 +411,31 @@ id: dec-browser-snapshots
 title: Store old versions as shared files and parse them in the browser on demand
 status: proposed
 date: 2026-09-26
-addresses: qg-readability, con-browser-bundle-safety, risk-asciidoc-snapshots
+addresses: qg-readability, con-browser-bundle-safety
+:::
+```
+
+## Both Notations Live in the Core Library, Each Behind Its Own Subpath
+
+`dec-asciidoc-in-workspace-fs` kept both notations in the Filesystem Workspace Adapter to keep
+`marked` and `asciidoctor` out of the browser, relying on the server to render all prose ahead of
+time. Browsing earlier versions ends that premise: the browser now parses and renders prose, for
+both notations alike. The goal still holds — the main page carries neither library — but it is
+reached by the entry point, not by the package: both notations move to the Core Library, each
+behind its own subpath, which the Web Renderer imports on demand. `asciidoctor` ships an official
+browser build. The two notations stay together, next to the interface they implement, and the
+Filesystem Workspace Adapter holds no notation code. The CLI bundles `@arc42/core` with
+`alwaysBundle`; the subpaths must be bundled the same way, or the build must fail. Rejected: a
+separate notations package (one package more, no benefit over subpaths), and keeping AsciiDoc in
+the Filesystem Workspace Adapter (earlier versions of AsciiDoc workspaces could not be opened).
+
+```arc42
+:::decision
+id: dec-notations-in-core
+title: Both notation implementations live in the Core Library behind their own subpaths
+status: proposed
+date: 2026-09-26
+addresses: qg-extensibility, con-browser-bundle-safety
+supersedes: dec-asciidoc-in-workspace-fs
 :::
 ```

@@ -122,9 +122,9 @@ path: packages/core/src/index.ts
 
 The Web Renderer turns the files of an earlier version into a workspace in the browser:
 `loadWorkspaceFromFiles(files, trackedPaths)` detects the notation, parses, builds the model and
-computes coverage. The Markdown notation comes from its own subpath
-(`@arc42/core/notation/markdown`), so `marked` is only bundled where it is imported. The Web
-Renderer loads this code on demand, only when a reader opens an earlier version.
+computes coverage. The Web Renderer loads this code and the workspace's notation
+(`@arc42/core/notation/markdown` or `…/asciidoc`) on demand, only when a reader opens an earlier
+version, so neither `marked` nor `asciidoctor` enters the main page.
 
 ```arc42
 :::ignore H020 if-web-core and if-cli-core share packages/core/src/index.ts as the entry point but represent distinct contracts: if-cli-core is the CLI's full API, if-web-core is the browser-safe loader the Web Renderer imports on demand :::
@@ -177,10 +177,10 @@ Encapsulates all notation-specific behavior behind a single interface: file exte
 parser selection, prose renderer selection, fence description (for validator messages), and
 chapter filename generation. Two concrete implementations — `MarkdownNotationAdapter` and
 `AsciidocNotationAdapter` — are selected once at workspace discovery time and flow through
-the entire processing pipeline. The Markdown implementation lives in `@arc42/core` under its own
-subpath, so both the Filesystem Workspace Adapter and the Web Renderer use it; the AsciiDoc
-implementation lives in `@arc42/workspace-fs` to keep the `asciidoctor` dependency out of
-browser-reachable code.
+the entire processing pipeline. Both implementations live in `@arc42/core`, each under its own
+subpath (`@arc42/core/notation/markdown`, `@arc42/core/notation/asciidoc`), so the Filesystem
+Workspace Adapter and the Web Renderer use the same code. The main entry imports neither; a
+bundle contains a notation, with `marked` or `asciidoctor`, only where that subpath is imported.
 
 ```arc42
 :::ignore W002 bb-notation-adapter is a new internal building block — interfaces will be added once the implementation path exists :::
@@ -198,9 +198,9 @@ implements: concept-pipeline
 ### Prose Renderer
 
 Runs as a post-parse step and populates the rendered HTML representation of prose in each
-`DocumentAst`. Two implementations: `MarkdownProseRenderer` (lives in `@arc42/core`) and
-`AsciidocProseRenderer` (lives in `@arc42/workspace-fs`). A rendering error is raised, never
-replaced by a fallback. The raw source text is always preserved — non-rendering consumers (diff,
+`DocumentAst`. Two implementations, each in its notation's subpath of `@arc42/core`:
+`MarkdownProseRenderer` (with `marked`) and `AsciidocProseRenderer` (with `asciidoctor`, which
+has a browser build). A rendering error is raised, never replaced by a fallback. The raw source text is always preserved — non-rendering consumers (diff,
 builder, validators) use it and are unaffected.
 
 ```arc42
@@ -412,10 +412,8 @@ path: packages/mermaid/src/index.ts
 Provides the filesystem-backed workspace boundary used by the CLI. It discovers architecture
 documents (`.arc42.md` or `.arc42.adoc`), detects the workspace notation from file extensions,
 errors on mixed-notation workspaces, reads file contents, establishes repository-root context,
-and performs validations that depend on filesystem paths. Also owns the AsciiDoc-specific
-`NotationAdapter` and `ProseRenderer` implementations (`AsciidocNotationAdapter`,
-`AsciidocProseRenderer`) so the `asciidoctor` runtime dependency never enters browser-reachable
-packages. For the architecture history it reads git and returns plain data: the commits that
+and performs validations that depend on filesystem paths. It holds no notation code: it selects
+the notation from `@arc42/core` by file extension. For the architecture history it reads git and returns plain data: the commits that
 touched the architecture documents, each commit's change, each commit's file list (every tracked
 path with its git blob id) and single architecture files by blob id. It refuses any blob that is
 not an architecture file of a history commit, so code is never exposed. It knows nothing about

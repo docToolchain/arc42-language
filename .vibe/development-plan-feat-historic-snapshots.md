@@ -31,7 +31,7 @@ loading). Nothing is parsed ahead of time for old versions.
 
   | Package | Owns | For this feature |
   |---|---|---|
-  | core | Pure functions: files in, model out; comparing models | `loadWorkspaceFromFiles`; the Markdown notation as a subpath |
+  | core | Pure functions: files in, model out; comparing models | `loadWorkspaceFromFiles`; both notations, each as a subpath |
   | workspace-fs | Reading git and the file system; returns plain data | File list and blob of a commit, with the architecture-file check |
   | web | The history file format it reads (types, file names, chunking), the reader, the UI | Snapshot reader, "Browse this version" |
   | cli | Delivering: writes (`build`) or serves (`serve`) web's format | New addresses and output folders |
@@ -62,7 +62,9 @@ loading). Nothing is parsed ahead of time for old versions.
     and the Hosting Contract; two new edges in the overview diagram;
   - chapter 6: new runtime scenario `scenario-browse-earlier-version`;
   - chapter 9: `dec-history-format-in-web` and `dec-browser-snapshots`, both `proposed`;
-  - chapter 11: `risk-asciidoc-snapshots`, addressed by `dec-browser-snapshots`;
+  - chapter 9 also: `dec-notations-in-core` (proposed), superseding `dec-asciidoc-in-workspace-fs`;
+  - chapter 2: `con-browser-bundle-safety` isolates by entry point and dynamic `import()`, not by
+    package;
   - chapter 12: `term-snapshot`.
 - **Code not yet written is marked, not hidden.** `if-history-format` has no `path` yet, with an
   `ignore H014` naming the file and the step that creates it (the same pattern as
@@ -84,8 +86,20 @@ loading). Nothing is parsed ahead of time for old versions.
   on it goes to the normal view.
 - **Diffs stay computed at build/serve time.** The lint's code-change evidence needs `git diff`.
   The existing chunk files with precomputed diffs are kept.
-- **Markdown renderer: remove the silent fallback.** `MarkdownProseRenderer` catches every error
-  and returns `<p>text</p>`. Moving it into core removes that `catch`; errors surface.
+- **Both notations move into core, each behind its own subpath** (`dec-notations-in-core`):
+  - History: the AsciiDoc feature (`4aebe4e`) put *both* renderers into `workspace-fs` to keep
+    `marked` and `asciidoctor` out of the browser; the server rendered all prose ahead of time.
+    Chapter 5 and the decision text wrongly said core holds the Markdown part.
+  - Browsing earlier versions ends that premise: the browser renders prose, for both notations.
+  - The goal (neither library on the main page) is kept by entry points: the SPA imports a
+    notation subpath only through dynamic `import()`. `@asciidoctor/core` 4.1 ships a browser
+    build (990 KB, 229 KB gzipped).
+  - The notations stay together; `workspace-fs` keeps no notation code.
+  - Rejected: a notations package (no benefit over subpaths); only Markdown in core (splits one
+    responsibility over two packages, and old AsciiDoc versions could not be opened).
+- **Remove both silent fallbacks.** `MarkdownProseRenderer` returns `<p>text</p>` and
+  `AsciidocProseRenderer` returns an escaped paragraph on any error. Moving them removes the
+  `catch`; errors surface.
 - **`--single-file`** inlines the snapshot files just like it already inlines `history/`. This
   makes the page bigger, and only happens together with `--with-history`.
 
@@ -187,18 +201,23 @@ loading). Nothing is parsed ahead of time for old versions.
 
 ### Drift found in our own architecture
 
-`docs/arc42/05-building-blocks.arc42.md` says the Markdown notation adapter and
-`MarkdownProseRenderer` live in `@arc42/core`. They actually live in
-`workspace-fs/src/notation/`. Step 2 moves them into core, which makes the text true; until
-then the text is wrong. Also update the Filesystem Workspace Adapter, Web Renderer and
-Web Renderer Hosting Contract descriptions as each step lands.
+Chapter 5 and `dec-asciidoc-in-workspace-fs` said the Markdown notation adapter and
+`MarkdownProseRenderer` live in `@arc42/core`. They always lived in `workspace-fs/src/notation/`,
+with the AsciiDoc ones. The target architecture now places both in core; the superseded
+decision's text is corrected and says so.
+
+### Bundler check before step 2
+
+The AsciiDoc plan noted "subpath imports not inlined by vp pack". The CLI bundles `@arc42/core`
+through `deps.alwaysBundle` in `packages/cli/vite.config.ts`. Verify that the notation subpaths
+are bundled too (probably by listing them there), and that a missing one fails the build loudly
+(e.g. a smoke test of the packed CLI on a Markdown and an AsciiDoc workspace). If subpaths cannot
+be bundled, a separate notations package is the fallback choice.
 
 ### Open questions
 
-- **AsciiDoc in the browser:**
-  - (a) load asciidoctor.js only for `.adoc` workspaces — preferred;
-  - (b) fall back to prepared models;
-  - (c) Markdown only, with a clear error.
+- **AsciiDoc in the browser:** decided — load asciidoctor's browser build on demand, only for
+  AsciiDoc workspaces (`dec-notations-in-core`).
 - **Parse time in the browser** for the bookstore example and for this repository. Expected to be
   small; to be measured.
 
@@ -218,6 +237,7 @@ Web Renderer Hosting Contract descriptions as each step lands.
 - [x] Assign responsibilities per package; find the history-format leak in core
 - [x] Record both decisions as `proposed` in our own architecture (chapter 9)
 - [x] Describe the target state in our own architecture (chapters 5, 6, 9, 11, 12); validation clean
+- [x] Trace the original reason for notations in workspace-fs; move both notations to core in the target
 
 ## Plan
 
@@ -236,9 +256,11 @@ Web Renderer Hosting Contract descriptions as each step lands.
    - Add `loadWorkspaceFromFiles(files, trackedPaths)`: detect the notation, parse, build the
      model, compute coverage.
    - Move `isArchitectureFile` and `detectNotation` into core.
-   - Move the notation parts (parser plus prose renderer) to core subpaths, e.g.
-     `@arc42/core/notation/markdown`, so `marked` is only pulled in where it is imported.
-   - Remove the silent `catch` in `MarkdownProseRenderer`.
+   - First: the bundler check (see *Notes*).
+   - Move both notations (adapter, prose renderer; the parsers stay where they are) from
+     `workspace-fs/src/notation/` to `@arc42/core/notation/markdown` and `…/asciidoc`; move the
+     `marked` and `asciidoctor` dependencies with them. The main entry imports neither.
+   - Remove the silent `catch` in both prose renderers.
    - `workspace-fs` uses the new function. Behaviour stays the same; the existing tests prove it.
 3. **Producer in `workspace-fs`.**
    - `snapshotTree(dir, commit)`: all tracked paths with blob ids (`git ls-tree -r`).
@@ -276,6 +298,11 @@ Web Renderer Hosting Contract descriptions as each step lands.
   - On the evolution repository, open the `v1.0` pearl, browse it, and see "Response Cache"
     (the name before the rename).
   - A missing blob shows an error, not an empty chapter.
+  - An earlier version of an AsciiDoc workspace opens and renders its prose.
+  - The main page's bundle contains neither `marked` nor `asciidoctor` (checked on the build
+    output).
+- **cli (packed):** the packed CLI validates a Markdown and an AsciiDoc workspace (the bundler
+  check).
 
 ### Completed
 
@@ -287,7 +314,8 @@ Web Renderer Hosting Contract descriptions as each step lands.
 ### Tasks
 
 - [ ] Step 1: refactor — history format moves from core, workspace-fs and cli into `web`
-- [ ] Step 2: core — `loadWorkspaceFromFiles`, notation subpaths, remove silent fallback
+- [ ] Step 2: bundler check for core subpaths in the packed CLI
+- [ ] Step 2: core — `loadWorkspaceFromFiles`, both notations as subpaths, remove both silent fallbacks
 - [ ] Step 3: workspace-fs — `snapshotTree`, `readSnapshotBlob` with the architecture-file check
 - [ ] Step 4: cli — `serve` addresses, `build` output, `--single-file`
 - [ ] Step 5: web — snapshot reader, `useSnapshot`, "Browse this version"
