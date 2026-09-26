@@ -30,6 +30,8 @@ export { loadDiffSnapshots, EMPTY_TREE } from "./diff-snapshots.ts";
 export { loadDiffPayload } from "./diff-payload.ts";
 export type { LoadedDiff } from "./diff-payload.ts";
 export { listArchitectureHistory, loadCommitChange } from "./history.ts";
+export { readArchitectureBlob, readCommitFiles } from "./snapshot.ts";
+export type { CommitFiles } from "./snapshot.ts";
 export type { ArchitectureCommit, ArchitectureHistory, CommitChange } from "./history.ts";
 export type { DiffSnapshots, DiffSpec, Snapshot } from "./diff-snapshots.ts";
 

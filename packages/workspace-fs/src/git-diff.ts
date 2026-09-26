@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
+import { relative, resolve } from "node:path";
 
 export function git(root: string, args: string[]): string {
   try {
@@ -19,4 +21,18 @@ export function git(root: string, args: string[]): string {
  */
 export function gitLsFiles(root: string): string[] {
   return git(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
+}
+
+/** The repository of a workspace directory and a test for paths inside the workspace. */
+export function workspaceLocation(dir: string): {
+  root: string;
+  inWorkspace: (path: string) => boolean;
+} {
+  const root = git(resolve(dir), ["rev-parse", "--show-toplevel"]).trim();
+  const workspace = relative(root, realpathSync(resolve(dir))).replaceAll("\\", "/");
+  return {
+    root,
+    inWorkspace: (path) =>
+      workspace === "" || path === workspace || path.startsWith(`${workspace}/`),
+  };
 }

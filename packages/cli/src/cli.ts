@@ -34,6 +34,8 @@ import {
   HISTORY_INDEX_FILE,
   historyChunkFile,
   historyChunkOf,
+  snapshotBlobOf,
+  snapshotTreeOf,
   toJsonLines,
 } from "@arc42/web/history-format";
 import type { HistoryEntry } from "@arc42/web/history-format";
@@ -42,10 +44,18 @@ import {
   listArchitectureHistory,
   loadDiffPayload,
   loadWorkspace,
+  readArchitectureBlob,
   validateWorkspace,
 } from "@arc42/workspace-fs";
 import type { ArchitectureCommit, ArchitectureHistory, DiffSpec } from "@arc42/workspace-fs";
-import { chunkCommits, historyPearls, loadHistoryEntry } from "./history.ts";
+import {
+  chunkCommits,
+  historyCommitIds,
+  historyPearls,
+  loadHistoryEntry,
+  snapshotFiles,
+  snapshotTree,
+} from "./history.ts";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
@@ -762,6 +772,34 @@ async function runServe(dir: string, args: string[]) {
     }
     const pearls = historyPearls(history);
     const file = url.slice("/api/history/".length);
+    const notFound = (error: string) => {
+      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error }));
+    };
+    // Snapshots: read from git on request; only commits and blobs of this history.
+    const treeCommit = snapshotTreeOf(file);
+    if (treeCommit !== undefined) {
+      if (!historyCommitIds(history).includes(treeCommit)) {
+        notFound(`No commit ${treeCommit} in the architecture history`);
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify(snapshotTree(dir, treeCommit)));
+      return;
+    }
+    const blobId = snapshotBlobOf(file);
+    if (blobId !== undefined) {
+      let content: string;
+      try {
+        content = readArchitectureBlob(dir, historyCommitIds(history), blobId);
+      } catch (err) {
+        notFound(err instanceof Error ? err.message : String(err));
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end(content);
+      return;
+    }
     if (file === HISTORY_INDEX_FILE) {
       res.writeHead(200, jsonLines);
       res.end(toJsonLines(pearls));
@@ -770,8 +808,7 @@ async function runServe(dir: string, args: string[]) {
     const chunk = historyChunkOf(file);
     const commits = chunk === undefined ? [] : chunkCommits(history, pearls, chunk);
     if (commits.length === 0) {
-      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ error: `No history chunk ${url}` }));
+      notFound(`No history file ${url}`);
       return;
     }
     const entries: HistoryEntry[] = [];
@@ -1035,6 +1072,7 @@ async function runBuild(dir: string, args: string[]) {
       }
       historyFiles[historyChunkFile(chunk)] = toJsonLines(entries);
     }
+    Object.assign(historyFiles, snapshotFiles(dir, history));
   }
 
   // Copy web assets to output directory
@@ -1046,6 +1084,7 @@ async function runBuild(dir: string, args: string[]) {
     const historyDir = join(outDir, "history");
     mkdirSync(historyDir, { recursive: true });
     for (const [name, content] of Object.entries(historyFiles)) {
+      mkdirSync(dirname(join(historyDir, name)), { recursive: true });
       writeFileSync(join(historyDir, name), content, "utf8");
     }
   }

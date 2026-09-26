@@ -4,6 +4,11 @@ import {
   historyChunkFile,
   historyChunkOf,
   parseJsonLines,
+  sharePathLists,
+  snapshotBlobFile,
+  snapshotBlobOf,
+  snapshotTreeFile,
+  snapshotTreeOf,
   toHistoryPearls,
   toJsonLines,
 } from "./history-format";
@@ -55,5 +60,38 @@ describe("JSON Lines", () => {
     const text = toJsonLines([{ a: 1 }, { b: "x\ny" }]);
     expect(text).toBe('{"a":1}\n{"b":"x\\ny"}\n');
     expect(parseJsonLines(`${text}\n`)).toEqual([{ a: 1 }, { b: "x\ny" }]);
+  });
+});
+
+describe("snapshot files", () => {
+  const commit = "a".repeat(40);
+  const id = "b".repeat(40);
+
+  test("name trees and blobs and read their ids back", () => {
+    expect(snapshotTreeFile(commit)).toBe(`tree/${commit}.json`);
+    expect(snapshotTreeOf(snapshotTreeFile(commit))).toBe(commit);
+    expect(snapshotBlobFile(id)).toBe(`blob/${id}`);
+    expect(snapshotBlobOf(snapshotBlobFile(id))).toBe(id);
+  });
+
+  test("accept full ids only", () => {
+    expect(snapshotTreeOf("tree/HEAD.json")).toBeUndefined();
+    expect(snapshotTreeOf(`tree/${commit}.json/../x`)).toBeUndefined();
+    expect(snapshotBlobOf("blob/abc")).toBeUndefined();
+    expect(snapshotBlobOf(`blob/${id}/x`)).toBeUndefined();
+  });
+
+  test("share a path list with the first tree that has it", () => {
+    const tree = (name: string, paths: string[]) => ({ commit: name, files: {}, paths });
+    const shared = sharePathLists([
+      tree("c3", ["a", "b", "c"]),
+      tree("c2", ["a", "b"]),
+      tree("c1", ["a", "b"]),
+      tree("c0", ["a", "b", "c"]),
+    ]);
+    expect(shared.get("c3")!.paths).toEqual(["a", "b", "c"]);
+    expect(shared.get("c2")!.paths).toEqual(["a", "b"]);
+    expect(shared.get("c1")!.paths).toEqual({ sameAs: "c2" });
+    expect(shared.get("c0")!.paths).toEqual({ sameAs: "c3" });
   });
 });
