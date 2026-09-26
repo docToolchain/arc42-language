@@ -315,9 +315,8 @@ path: packages/core/src/diff.ts
 
 #### Diff Lint Contract
 
-The Core Library exposes Diff Lint as an internal capability of the package. The CLI reaches that
-capability through the opaque Core Library boundary; it does not depend directly on the child
-building block.
+Lints the difference between two versions of a workspace: which elements, relations, diagrams
+and sections changed, and where the documentation drifts from the model or from changed code.
 
 ```arc42
 :::interface
@@ -420,8 +419,8 @@ path: packages/workspace-fs
 
 ### Filesystem Adapter Contract
 
-The CLI selects the workspace directory and delegates filesystem-backed discovery, loading, and
-path-context operations to the filesystem workspace adapter. File watching remains a CLI concern.
+Works on a workspace directory: discovers, loads and validates its architecture documents,
+provides its path context, and reads its changes and its architecture history from git.
 
 ```arc42
 :::interface
@@ -435,9 +434,9 @@ path: packages/workspace-fs/src/index.ts
 
 ### Workspace Path Context
 
-The filesystem workspace adapter computes path evidence (`knownPaths`, repository root) and
-pre-aggregated coverage from the git-tracked file inventory, and injects both into
-`ValidationContext` before passing it to the validator.
+The path evidence of a workspace: its repository root and the paths known there — tracked by
+git, or all paths outside a repository — from which implementation paths are checked and
+coverage is derived.
 
 ```arc42
 :::interface
@@ -750,8 +749,8 @@ path: docs/arc42
 
 ### Documentation Workspace Contract
 
-The filesystem workspace adapter reads `.arc42.md` or `.arc42.adoc` files from the selected documentation workspace
-and supplies their contents and filesystem context to the core processing pipeline.
+The architecture documents of a workspace directory: `.arc42.md` or `.arc42.adoc` files,
+discovered by their extension and read in the workspace's notation.
 
 ```arc42
 :::interface
