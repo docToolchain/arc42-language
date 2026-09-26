@@ -40,6 +40,9 @@ test.describe("arc42 build --single-file", () => {
       expect(readdirSync(out)).toEqual(["index.html"]);
       const html = readFileSync(join(out, "index.html"), "utf8");
       expect(html).not.toMatch(/src="\/assets\/|href="\/assets\//);
+      // Scripts are inlined as code; a script inlined as a data URL is a copy nothing
+      // loads (asciidoctor's own file once was, twice: +2.6 MB).
+      expect(html).not.toContain("data:text/javascript");
 
       const requests = await openFromDisk(page, out);
       await expect(page.locator("article h1")).toBeVisible();
