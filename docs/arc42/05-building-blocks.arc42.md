@@ -50,7 +50,7 @@ filesystem resources, select repository roots, or watch for changes, and it know
 addresses or storage formats. Source acquisition belongs to workspace adapters; the processing
 pipeline is: parse Markdown → build element model → index references → validate or render.
 Callers that already hold the files — the Filesystem Workspace Adapter from disk or git, the Web
-Renderer from an earlier version's files — turn them into a workspace with one function, so every
+Renderer from an earlier version's files — hand them over and receive the workspace, so every
 caller builds the model the same way.
 
 ```arc42
@@ -120,19 +120,17 @@ path: packages/core/src/index.ts
 
 ### Browser Workspace Loader
 
-The Web Renderer turns the files of an earlier version into a workspace in the browser:
-`loadWorkspaceFromFiles(files, trackedPaths, location)` detects the notation, parses, builds the
-model and computes coverage — the same function the Filesystem Workspace Adapter uses. The
-loader shares the Core Library code the page already imports (about 5 KB gzipped more). The
-workspace's notation (`@arc42/core/notation/markdown` or `…/asciidoc`) is imported on demand,
-when a version is opened, so `asciidoctor` enters the browser only for AsciiDoc workspaces.
+The Web Renderer builds the workspace of an earlier version in the browser with the same
+processing the CLI uses: it hands over the version's architecture files and tracked paths and
+receives the model with its coverage. The notation the version uses is loaded only when a version
+is opened.
 
 ```arc42
 :::interface
 id: if-web-core
 title: Browser Workspace Loader
 provider: bb-core
-protocol: TypeScript module import; the notation imported on demand
+protocol: In-process call in the browser; the notation loaded on demand
 path: packages/core/src/workspace-files.ts
 :::
 ```
@@ -177,11 +175,10 @@ Encapsulates all notation-specific behavior behind a single interface: file exte
 parser selection, prose renderer selection, fence description (for validator messages), and
 chapter filename generation. Two concrete implementations — `MarkdownNotationAdapter` and
 `AsciidocNotationAdapter` — are selected once at workspace discovery time and flow through
-the entire processing pipeline. Both implementations live in `@arc42/core`, each under its own
-subpath (`@arc42/core/notation/markdown`, `@arc42/core/notation/asciidoc`), so the Filesystem
-Workspace Adapter and the Web Renderer use the same code. The main entry imports neither;
-`loadNotationAdapter` imports the one a workspace uses, so a bundle loads a notation, with
-`marked` or `asciidoctor`, only when it is needed.
+the entire processing pipeline. Both implementations belong to the Core Library and can be
+loaded separately, so the Filesystem Workspace Adapter and the Web Renderer use the same code,
+and an application loads a notation, with its rendering library, only when a workspace needs
+it.
 
 ```arc42
 :::ignore W002 bb-notation-adapter is a new internal building block — interfaces will be added once the implementation path exists :::
@@ -199,10 +196,9 @@ path: packages/core/src/notation/types.ts
 ### Prose Renderer
 
 Runs as a post-parse step and populates the rendered HTML representation of prose in each
-`DocumentAst`. Two implementations, each in its notation's subpath of `@arc42/core`:
-`MarkdownProseRenderer` (with `marked`) and `AsciidocProseRenderer` (with `asciidoctor`, which
-has a browser build). A rendering error is raised, never replaced by a fallback. The raw source text is always preserved — non-rendering consumers (diff,
-builder, validators) use it and are unaffected.
+`DocumentAst`. There is one implementation per notation, and each is part of its notation. A
+rendering error is raised, never replaced by a fallback. The raw source text is always
+preserved — non-rendering consumers (diff, builder, validators) use it and are unaffected.
 
 ```arc42
 :::ignore W002 bb-prose-renderer is a new internal building block — interfaces will be added once the implementation path exists :::
@@ -413,13 +409,12 @@ path: packages/mermaid/src/index.ts
 Provides the filesystem-backed workspace boundary used by the CLI. It discovers architecture
 documents (`.arc42.md` or `.arc42.adoc`), detects the workspace notation from file extensions,
 errors on mixed-notation workspaces, reads file contents, establishes repository-root context,
-and performs validations that depend on filesystem paths. It holds no notation code: it selects
-the notation from `@arc42/core` by file extension. For the architecture history it reads git and returns plain data: the commits that
-touched the architecture documents, each commit's change, each commit's file list (the git blob
-ids of the workspace's architecture files and every tracked path) and single architecture files
-by blob id. It refuses any blob that is
-not an architecture file of a history commit, so code is never exposed. It knows nothing about
-the history's file format. Other acquisition mechanisms can provide their own adapters without
+and performs validations that depend on filesystem paths. It holds no notation code; it selects
+the notation by file extension. For the architecture history it reads git and returns plain data:
+the commits that touched the architecture documents, each commit's change, the files of each
+commit (its architecture files and every tracked path) and the content of single architecture
+files. It never exposes anything but architecture files of the history, and it knows nothing
+about the history's file format. Other acquisition mechanisms can provide their own adapters without
 expanding the responsibilities of the architecture-processing core. File watching and
 workspace-directory selection remain CLI responsibilities.
 
@@ -492,8 +487,7 @@ five commands: `validate`, `get`, `rules`, `diff`, and `serve`; `diff` selects t
 renders findings acquired by the filesystem workspace adapter through the core diff building block. At build time, the CLI copies the compiled `@arc42/web`
 SPA assets into its own `dist/web/` directory so they can be served statically. For the
 architecture history the CLI only delivers: it takes plain data from the filesystem workspace
-adapter and writes it (`build --with-history`) or serves it (`serve`) in the Web Renderer's
-history format.
+adapter and writes it for a static site or serves it, in the Web Renderer's history format.
 
 ```arc42
 :::building-block
@@ -648,11 +642,10 @@ untouched elements) with links into the chapters. Inside a Git repository the si
 offers the architecture history as a chain of pearls — one per commit that touched the
 architecture documents — whose changes load lazily as they scroll into view; there, unchanged
 sections appear as headings with placeholders. A pearl also opens the whole architecture as it
-was at that commit: the renderer loads the version's files, parses them in the browser with the
-Core Library, and shows the normal document view with a banner naming the commit. The version
-is selected by the URL query (`?version=<commit>`), so every in-page hash link keeps working
-inside it. The renderer
-owns the history's file format, because it is its only reader. Imports
+was at that commit: the renderer loads that version's files, builds its workspace with the Core
+Library and shows it in the normal document view, marked as an earlier version, with navigation
+working as in the current one. The renderer owns the history's file format, because it is its
+only reader. Imports
 shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
 the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
 and as a GitHub Pages static deployment.
@@ -689,10 +682,10 @@ payload via the core library, exposes it at `/api/workspace`, and serves the web
 assets. With `--diff`, it also exposes the visualized difference at `/api/diff` (404 without
 `--diff`, 500 with the error when the difference cannot be computed). The architecture history is
 served under `/api/history/` — `index.jsonl` with the pearls and `chunk-<n>.jsonl` with their
-changes, computed on request, plus `tree/<commit>.json` with a commit's file list and
-`blob/<id>` with one architecture file, read from git on request — in the same layout that
-`arc42 build --with-history` writes to `history/` (422 with the reason outside a Git repository;
-an error for any blob that is not an architecture file of a history commit).
+changes, computed on request, plus each commit's file list and architecture files, read from git
+on request — in the same layout that `arc42 build --with-history` writes to `history/` (422 with
+the reason outside a Git repository). Anything but an architecture file of the history is
+refused.
 
 ```arc42
 :::ignore H020 if-cli and if-cli-web share packages/cli/src/cli.ts as the entry point but represent distinct contracts: if-cli is the command-line interface for all actors, if-cli-web is the HTTP hosting contract specifically for the Web Renderer :::
@@ -707,19 +700,18 @@ path: packages/cli/src/cli.ts
 
 ### History Format
 
-The Web Renderer defines the files of the architecture history: the pearl index, the chunks with
-each pearl's change, the file list per commit and the architecture files stored once under their
-git blob id. A commit whose tracked paths equal an earlier commit's refers to that list instead
-of repeating it. The CLI writes
-and serves the files with this module — types and plain functions, no React and no browser APIs —
-so no Node.js code reaches the browser.
+The Web Renderer defines the files of the architecture history: the list of pearls, each pearl's
+change, and for each commit its file list and architecture files. Each file version is stored
+once and shared between commits, and so is a file list that did not change. The CLI writes and
+serves the history in this format; the definition contains no browser code, so the CLI can use
+it, and no Node.js code reaches the browser through it.
 
 ```arc42
 :::interface
 id: if-history-format
 title: History Format
 provider: bb-web-renderer
-protocol: TypeScript module import (types and plain functions); files in JSON and JSON Lines
+protocol: Shared format definition; history files
 path: packages/web/src/history-format.ts
 :::
 ```

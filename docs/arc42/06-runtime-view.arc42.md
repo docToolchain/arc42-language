@@ -331,8 +331,8 @@ a read-only token, so for them the review appears in the job summary instead of 
 
 A reader opens a pearl in the history and chooses to browse that version. The Web Renderer loads
 the commit's file list and the architecture files it does not hold yet, parses them in the browser
-with the Core Library and shows the normal document view. With `arc42 serve` the files come from
-git on request; a site built with `--with-history` holds the same files next to the page.
+with the Core Library and shows the normal document view. When served, the files come from git on
+request; a static site built with its history holds the same files next to the page.
 
 ```arc42
 :::runtime-scenario
@@ -362,18 +362,18 @@ sequenceDiagram
 
     actor_reader->>bb_web: Browse the version of a pearl
     bb_web->>bb_cli: Get the file list of the commit
-    bb_cli->>bb_workspace_fs: Read the commit's tree
-    bb_workspace_fs-->>bb_cli: Architecture files by blob id, every tracked path
-    bb_cli-->>bb_web: tree/<commit>.json
+    bb_cli->>bb_workspace_fs: Read the commit's files from git
+    bb_workspace_fs-->>bb_cli: Its architecture files and tracked paths
+    bb_cli-->>bb_web: The commit's file list
     bb_web->>bb_cli: Get each architecture file not loaded yet
-    bb_cli->>bb_workspace_fs: Read the blob
-    bb_workspace_fs-->>bb_cli: File content, or an error for a non-architecture blob
-    bb_cli-->>bb_web: blob/<id>
+    bb_cli->>bb_workspace_fs: Read the architecture file
+    bb_workspace_fs-->>bb_cli: The file, or a refusal for anything else
+    bb_cli-->>bb_web: The architecture file
     bb_web->>bb_core: Build the workspace, importing its notation on demand
     bb_core-->>bb_web: Workspace model with coverage
     bb_web-->>actor_reader: Document view of that version, with a banner
 ```
 
-The sequence shows `arc42 serve`. In a site built with `--with-history` the CLI has written the
-same files ahead of time, and the Web Renderer reads them without a server. Earlier versions never
+The sequence shows the served case. For a static site the CLI has written the same files ahead of
+time, and the Web Renderer reads them without a server. Earlier versions never
 change, so the Web Renderer keeps them once loaded.
