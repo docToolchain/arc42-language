@@ -2,10 +2,14 @@ import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import {
   computeCoverage,
+  detectNotation,
   getElementsFromDocuments,
+  loadNotationAdapter,
   loadWorkspaceFromDocuments,
+  loadWorkspaceFromFiles,
   parseArchitectureDocument,
   parseArc42Ignore,
+  parseWorkspaceFiles,
   validateDocumentsAsync,
   warmMermaid,
 } from "@arc42/core";
@@ -14,14 +18,12 @@ import type {
   GetDocumentsOptions,
   GetResult,
   Notation,
+  SourceFile,
   ValidationContext,
   ValidateResult,
   WorkspacePayload,
 } from "@arc42/core";
 import { gitLsFiles } from "./git-diff.ts";
-import { createAdapterForNotation } from "./notation/index.ts";
-import { detectNotation, parseWorkspaceFiles } from "./workspace-parse.ts";
-import type { SourceFile } from "./workspace-parse.ts";
 
 export { gitLsFiles } from "./git-diff.ts";
 export { loadDiffSnapshots, EMPTY_TREE } from "./diff-snapshots.ts";
@@ -30,12 +32,6 @@ export type { LoadedDiff } from "./diff-payload.ts";
 export { listArchitectureHistory, loadCommitChange } from "./history.ts";
 export type { ArchitectureCommit, ArchitectureHistory, CommitChange } from "./history.ts";
 export type { DiffSnapshots, DiffSpec, Snapshot } from "./diff-snapshots.ts";
-
-export {
-  MarkdownNotationAdapter,
-  AsciidocNotationAdapter,
-  createAdapterForNotation,
-} from "./notation/index.ts";
 
 interface DiscoverResult {
   files: string[];
@@ -128,8 +124,7 @@ export async function pathEvidence(
 }
 
 export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
-  const { files, notation } = await discoverFilesWithNotation(dir);
-  const documents = await parseWorkspaceFiles(await readSourceFiles(files), notation);
+  const { files } = await discoverFilesWithNotation(dir);
   const repositoryRoot = await findRepositoryRoot(dir);
   let trackedPaths: string[];
   try {
@@ -137,9 +132,7 @@ export async function loadWorkspace(dir: string): Promise<WorkspacePayload> {
   } catch {
     trackedPaths = await collectPaths(dir, repositoryRoot);
   }
-  const payload = loadWorkspaceFromDocuments(documents);
-  const coverage = computeCoverage(payload.elements, trackedPaths);
-  return { ...payload, coverage, notation };
+  return loadWorkspaceFromFiles(await readSourceFiles(files), trackedPaths, dir);
 }
 
 export async function validateWorkspace(dir: string, root?: string): Promise<ValidateResult> {
@@ -170,7 +163,7 @@ export async function validateWorkspace(dir: string, root?: string): Promise<Val
     pathEvidence: { root: repositoryRoot, knownPaths: trackedPaths },
     coverage,
     coverageIgnore,
-    fenceDescription: createAdapterForNotation(notation).fenceDescription,
+    fenceDescription: (await loadNotationAdapter(notation)).fenceDescription,
   });
 }
 

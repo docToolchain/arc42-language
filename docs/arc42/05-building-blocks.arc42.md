@@ -185,13 +185,13 @@ bundle contains a notation, with `marked` or `asciidoctor`, only where that subp
 ```arc42
 :::ignore W002 bb-notation-adapter is a new internal building block — interfaces will be added once the implementation path exists :::
 :::ignore W012 bb-notation-adapter is an internal core concern — deployment mapping not applicable at this abstraction level :::
-:::ignore H014 bb-notation-adapter path will be set once packages/core/src/notation is created :::
 :::building-block
 id: bb-notation-adapter
 title: Notation Adapter
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+path: packages/core/src/notation/types.ts
 :::
 ```
 
@@ -206,13 +206,13 @@ builder, validators) use it and are unaffected.
 ```arc42
 :::ignore W002 bb-prose-renderer is a new internal building block — interfaces will be added once the implementation path exists :::
 :::ignore W012 bb-prose-renderer is an internal core concern — deployment mapping not applicable at this abstraction level :::
-:::ignore H014 bb-prose-renderer path will be set once packages/core/src/notation is created :::
 :::building-block
 id: bb-prose-renderer
 title: Prose Renderer
 technology: TypeScript
 parent: bb-core
 implements: concept-pipeline
+path: packages/core/src/notation/prose-renderer.ts
 :::
 ```
 

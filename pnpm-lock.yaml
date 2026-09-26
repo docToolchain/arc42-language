@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@asciidoctor/core':
+      specifier: ^4.1.0
+      version: 4.1.0
     '@semantic-release/changelog':
       specifier: 7.0.0
       version: 7.0.0
@@ -21,9 +24,6 @@ catalogs:
     '@types/node':
       specifier: ^24.13.3
       version: 24.13.3
-    asciidoctor:
-      specifier: ^4.1.0
-      version: 4.1.0
     marked:
       specifier: ^14.1.4
       version: 14.1.4
@@ -97,6 +97,12 @@ importers:
       '@arc42/mermaid':
         specifier: workspace:*
         version: link:../mermaid
+      '@asciidoctor/core':
+        specifier: 'catalog:'
+        version: 4.1.0
+      marked:
+        specifier: 'catalog:'
+        version: 14.1.4
       zod:
         specifier: 4.5.4
         version: 4.5.4
@@ -212,12 +218,6 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
-      asciidoctor:
-        specifier: 'catalog:'
-        version: 4.1.0
-      marked:
-        specifier: 'catalog:'
-        version: 14.1.4
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1726,11 +1726,6 @@ packages:
 
   array-ify@1.0.0:
     resolution: {integrity: sha512-c5AMf34bKdvPhQ7tBGhqkgKNUzMr4WUs+WDtC2ZUGOUncbxKMTvqxYctiseW3+L4bA8ec+GcZ6/A/FW4m8ukng==}
-
-  asciidoctor@4.1.0:
-    resolution: {integrity: sha512-6mRDn+vV3a0sT85+gcNqyPmXiwuzx9mGW//P5Y2WsOcWNUmVR0JtRgJFmjkdKKSlJDfE6AI7b0QXeHt6TpQkUQ==}
-    engines: {node: '>=20'}
-    hasBin: true
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -4587,12 +4582,6 @@ snapshots:
   argv-formatter@1.0.0: {}
 
   array-ify@1.0.0: {}
-
-  asciidoctor@4.1.0:
-    dependencies:
-      '@asciidoctor/core': 4.1.0
-    transitivePeerDependencies:
-      - highlight.js
 
   assertion-error@2.0.1: {}
 
