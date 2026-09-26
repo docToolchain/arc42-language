@@ -326,13 +326,12 @@ capability through the opaque Core Library boundary; it does not depend directly
 building block.
 
 ```arc42
-:::ignore H020 if-cli-core and if-core-diff share packages/core/src/index.ts as the entry point but represent distinct contracts: if-cli-core is the full Core Library API surface for the CLI, if-core-diff exposes only the diff capability :::
 :::interface
 id: if-core-diff
 title: Diff Lint Contract
 provider: bb-diff
 protocol: In-process TypeScript function call
-path: packages/core/src/index.ts
+path: packages/core/src/diff.ts
 :::
 ```
 
@@ -440,7 +439,7 @@ id: if-cli-workspace-adapter
 title: Filesystem Adapter Contract
 provider: bb-workspace-fs
 protocol: TypeScript module import
-path: packages/cli/src/cli.ts
+path: packages/workspace-fs/src/index.ts
 :::
 ```
 
@@ -451,13 +450,12 @@ pre-aggregated coverage from the git-tracked file inventory, and injects both in
 `ValidationContext` before passing it to the validator.
 
 ```arc42
-:::ignore H020 if-workspace-paths and if-fs-workspace share packages/workspace-fs/src/index.ts as the entry point but represent distinct contracts: if-fs-workspace is the document discovery and loading contract, if-workspace-paths is the path evidence and coverage context injected into the validator :::
 :::interface
 id: if-workspace-paths
 title: Workspace Path Context
 provider: bb-workspace-fs
 protocol: In-process TypeScript function call
-path: packages/workspace-fs/src/index.ts
+path: packages/workspace-fs/src/path-evidence.ts
 :::
 ```
 
@@ -688,13 +686,12 @@ the reason outside a Git repository). Anything but an architecture file of the h
 refused.
 
 ```arc42
-:::ignore H020 if-cli and if-cli-web share packages/cli/src/cli.ts as the entry point but represent distinct contracts: if-cli is the command-line interface for all actors, if-cli-web is the HTTP hosting contract specifically for the Web Renderer :::
 :::interface
 id: if-cli-web
 title: Web Renderer Hosting Contract
 provider: bb-web-renderer
 protocol: HTTP (localhost) — static assets + JSON API (/api/workspace, /api/diff) + history files (/api/history/)
-path: packages/cli/src/cli.ts
+path: packages/web/src/main.tsx
 :::
 ```
 
@@ -772,13 +769,12 @@ The filesystem workspace adapter reads `.arc42.md` or `.arc42.adoc` files from t
 and supplies their contents and filesystem context to the core processing pipeline.
 
 ```arc42
-:::ignore H020 if-workspace-paths and if-fs-workspace share packages/workspace-fs/src/index.ts as the entry point but represent distinct contracts: if-fs-workspace is the document discovery and loading contract, if-workspace-paths is the path evidence and coverage context injected into the validator :::
 :::interface
 id: if-fs-workspace
 title: Documentation Workspace Contract
 provider: bb-workspace
 protocol: File system read (discovery + file content)
-path: packages/workspace-fs/src/index.ts
+path: packages/workspace-fs/src/discovery.ts
 :::
 ```
 
