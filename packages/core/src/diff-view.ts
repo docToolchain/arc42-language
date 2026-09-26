@@ -89,10 +89,7 @@ export interface DiffView {
   edges: EdgeChange[];
 }
 
-/**
- * One visualized difference, as served by `arc42 serve --diff` (`/api/diff`)
- * and injected by `arc42 build --diff` (`window.__DIFF__`).
- */
+/** One visualized difference: the lint findings and the render-ready view of the change. */
 export interface DiffPayload {
   base: { label: string; commit: string };
   head: { label: string };

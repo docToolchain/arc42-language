@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { HistoryEntry, HistoryPearl } from "./types";
+import { HISTORY_INDEX_FILE, historyChunkFile, parseJsonLines } from "./history-format";
+import type { HistoryEntry, HistoryPearl } from "./history-format";
 
 /**
  * Where the architecture history lives: `arc42 serve` answers under
  * /api/history/, `arc42 build --with-history` writes history/ next to the page,
- * and `--single-file` puts the same files into the page itself. All provide
- * index.jsonl and chunk-<n>.jsonl.
+ * and `--single-file` puts the same files into the page itself. All provide the
+ * files of history-format.ts.
  */
 export type HistorySource = { base: string } | { files: Record<string, string> };
 
@@ -17,13 +18,6 @@ export type HistoryState =
 /** Key of a pearl in routes and maps: its commit id, or "worktree". */
 export function pearlKey(pearl: { commit: string | null }): string {
   return pearl.commit ?? "worktree";
-}
-
-function parseJsonLines<T>(text: string): T[] {
-  return text
-    .split("\n")
-    .filter((line) => line.trim() !== "")
-    .map((line) => JSON.parse(line) as T);
 }
 
 async function readJsonLines<T>(source: HistorySource, name: string): Promise<T[]> {
@@ -66,7 +60,7 @@ export function useHistory(source: HistorySource | null, version: number) {
     requested.current = new Set();
     setEntries(new Map());
     setChunkErrors(new Map());
-    readJsonLines<HistoryPearl>(source, "index.jsonl")
+    readJsonLines<HistoryPearl>(source, HISTORY_INDEX_FILE)
       .then((pearls) => active && setState({ status: "ready", pearls }))
       .catch((error: unknown) => {
         if (active)
@@ -81,7 +75,7 @@ export function useHistory(source: HistorySource | null, version: number) {
     (chunk: number) => {
       if (!source || requested.current.has(chunk)) return;
       requested.current.add(chunk);
-      readJsonLines<HistoryEntry>(source, `chunk-${chunk}.jsonl`)
+      readJsonLines<HistoryEntry>(source, historyChunkFile(chunk))
         .then((loaded) =>
           setEntries((previous) => {
             const next = new Map(previous);

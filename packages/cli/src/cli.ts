@@ -29,18 +29,23 @@ import {
   computeCoverage,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
-import type { BlockType, Diagnostic, DiagramType, HistoryEntry, HistoryPearl } from "@arc42/core";
+import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
+import {
+  HISTORY_INDEX_FILE,
+  historyChunkFile,
+  historyChunkOf,
+  toJsonLines,
+} from "@arc42/web/history-format";
+import type { HistoryEntry } from "@arc42/web/history-format";
 import {
   getElements,
   listArchitectureHistory,
   loadDiffPayload,
-  loadHistoryChunk,
-  loadHistoryEntry,
   loadWorkspace,
-  toJsonLines,
   validateWorkspace,
 } from "@arc42/workspace-fs";
-import type { ArchitectureHistory, DiffSpec } from "@arc42/workspace-fs";
+import type { ArchitectureCommit, ArchitectureHistory, DiffSpec } from "@arc42/workspace-fs";
+import { chunkCommits, historyPearls, loadHistoryEntry } from "./history.ts";
 import { commandHelp, rootHelp } from "./help.ts";
 import { CHAPTERS, guideText, type Notation } from "./guide.ts";
 import { formatCoverageTree } from "./coverage-tree.ts";
@@ -734,12 +739,12 @@ async function runServe(dir: string, args: string[]) {
 
   // History entries of commits never change; the working-tree entry is always recomputed.
   const historyEntries = new Map<string, Promise<HistoryEntry>>();
-  const historyEntry = (history: ArchitectureHistory, pearl: HistoryPearl) => {
-    if (pearl.commit === null) return loadHistoryEntry(dir, history, pearl);
-    let entry = historyEntries.get(pearl.commit);
+  const historyEntry = (commit: ArchitectureCommit) => {
+    if (commit.commit === null) return loadHistoryEntry(dir, commit);
+    let entry = historyEntries.get(commit.commit);
     if (!entry) {
-      entry = loadHistoryEntry(dir, history, pearl);
-      historyEntries.set(pearl.commit, entry);
+      entry = loadHistoryEntry(dir, commit);
+      historyEntries.set(commit.commit, entry);
     }
     return entry;
   };
@@ -755,20 +760,22 @@ async function runServe(dir: string, args: string[]) {
       res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
       return;
     }
-    if (url === "/api/history/index.jsonl") {
+    const pearls = historyPearls(history);
+    const file = url.slice("/api/history/".length);
+    if (file === HISTORY_INDEX_FILE) {
       res.writeHead(200, jsonLines);
-      res.end(toJsonLines(history.pearls));
+      res.end(toJsonLines(pearls));
       return;
     }
-    const chunk = Number(/^\/api\/history\/chunk-(\d+)\.jsonl$/.exec(url)?.[1]);
-    const pearls = history.pearls.filter((pearl) => pearl.chunk === chunk);
-    if (pearls.length === 0) {
+    const chunk = historyChunkOf(file);
+    const commits = chunk === undefined ? [] : chunkCommits(history, pearls, chunk);
+    if (commits.length === 0) {
       res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ error: `No history chunk ${url}` }));
       return;
     }
     const entries: HistoryEntry[] = [];
-    for (const pearl of pearls) entries.push(await historyEntry(history, pearl));
+    for (const commit of commits) entries.push(await historyEntry(commit));
     res.writeHead(200, jsonLines);
     res.end(toJsonLines(entries));
   };
@@ -1016,14 +1023,17 @@ async function runBuild(dir: string, args: string[]) {
     }
   }
 
-  // The history as JSON Lines files: index.jsonl plus chunk-<n>.jsonl
+  // The history files in the Web Renderer's history format
   const historyFiles: Record<string, string> = {};
   if (history) {
-    historyFiles["index.jsonl"] = toJsonLines(history.pearls);
-    for (const chunk of new Set(history.pearls.map((pearl) => pearl.chunk))) {
-      historyFiles[`chunk-${chunk}.jsonl`] = toJsonLines(
-        await loadHistoryChunk(dir, history, chunk),
-      );
+    const pearls = historyPearls(history);
+    historyFiles[HISTORY_INDEX_FILE] = toJsonLines(pearls);
+    for (const chunk of new Set(pearls.map((pearl) => pearl.chunk))) {
+      const entries: HistoryEntry[] = [];
+      for (const commit of chunkCommits(history, pearls, chunk)) {
+        entries.push(await loadHistoryEntry(dir, commit));
+      }
+      historyFiles[historyChunkFile(chunk)] = toJsonLines(entries);
     }
   }
 
@@ -1065,8 +1075,8 @@ async function runBuild(dir: string, args: string[]) {
   const injection =
     `<script>window.__WORKSPACE__=${inlineJson(workspaceJson)};</script>` +
     (diffJson !== undefined ? `\n<script>window.__DIFF__=${inlineJson(diffJson)};</script>` : "") +
-    // The web app loads history/index.jsonl and history/chunk-<n>.jsonl relative to the
-    // page, or reads the same files from the page itself with --single-file.
+    // The web app loads the history files relative to the page, or reads the same
+    // files from the page itself with --single-file.
     (history
       ? `\n<script>window.__HISTORY__=${inlineJson(
           JSON.stringify(singleFile ? { files: historyFiles } : { base: "history/" }),

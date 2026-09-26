@@ -11,7 +11,7 @@ export default defineConfig({
       // Keep Mermaid as a runtime dependency. Bundling it into the CLI
       // transforms its DOMPurify integration and breaks Node parsing.
       onlyBundle: false,
-      alwaysBundle: ["@arc42/core", "@arc42/workspace-fs"],
+      alwaysBundle: ["@arc42/core", "@arc42/web", "@arc42/workspace-fs"],
     },
     inputOptions: {
       // An import the bundler cannot resolve stays external and breaks the published CLI at

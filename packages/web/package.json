@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "exports": {
+    "./history-format": "./src/history-format.ts"
+  },
   "scripts": {
     "dev": "vp dev",
     "build": "tsc --noEmit && vp build",

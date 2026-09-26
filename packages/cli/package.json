@@ -53,6 +53,7 @@
   },
   "devDependencies": {
     "@arc42/core": "workspace:*",
+    "@arc42/web": "workspace:*",
     "@arc42/workspace-fs": "workspace:*",
     "@types/node": "catalog:",
     "typescript": "catalog:",

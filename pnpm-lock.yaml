@@ -76,6 +76,9 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
+      '@arc42/web':
+        specifier: workspace:*
+        version: link:../web
       '@arc42/workspace-fs':
         specifier: workspace:*
         version: link:../workspace-fs
