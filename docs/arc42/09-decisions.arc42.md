@@ -374,8 +374,8 @@ addresses: qg-readability, qg-cli-usability
 
 The history files have one reader, the Web Renderer, so the Web Renderer owns their format. The
 CLI delivers the history in that format, written for a static site or served. The Filesystem
-Workspace Adapter only reads git and returns plain data. The Core Library knows no files,
-folders or addresses: it turns files into a model and compares models. Before, the format was
+Workspace Adapter reads git and returns plain data. The Core Library turns files into a model
+and compares models. Before, the format was
 spread over all three. Rejected: the format in the Core Library (it would learn about storage),
 and a separate format package (there is no second reader).
 
@@ -421,7 +421,7 @@ time. Browsing earlier versions ends that premise: the browser now renders prose
 notations alike. The goal still holds — readers do not load the heavy AsciiDoc renderer unless
 they need it — but it is reached by loading each notation on its own and on demand, not by
 keeping it in a server-only package. So both notations belong to the Core Library, next to the
-interface they implement, and the Filesystem Workspace Adapter holds no notation code. Every
+interface they implement. Every
 separately loadable part of the Core Library must be part of the CLI's build; the CLI build fails
 rather than ship anything it cannot resolve. Rejected: a separate notations package (one package
 more, no benefit), and keeping AsciiDoc server-only (earlier versions of AsciiDoc workspaces could

@@ -331,7 +331,7 @@ a read-only token, so for them the review appears in the job summary instead of 
 ## Reader browses an earlier version
 
 A reader opens a pearl in the history and chooses to browse that version. The Web Renderer loads
-the commit's file list and the architecture files it does not hold yet, parses them in the browser
+the commit's file list and the architecture files it still needs, parses them in the browser
 with the Core Library and shows the normal document view. When served, the files come from git on
 request; a static site built with its history holds the same files next to the page.
 
@@ -376,5 +376,5 @@ sequenceDiagram
 ```
 
 The sequence shows the served case. For a static site the CLI has written the same files ahead of
-time, and the Web Renderer reads them without a server. Earlier versions never
-change, so the Web Renderer keeps them once loaded.
+time, and the Web Renderer reads them without a server. Earlier versions are
+immutable, so the Web Renderer keeps them once loaded.

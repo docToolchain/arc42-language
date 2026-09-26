@@ -40,7 +40,7 @@ source: Architecture decision dec-runtime-builtins
 Packages imported by the web SPA (`@arc42/web`) must not transitively pull in Node.js-only
 dependencies, and heavy dependencies such as `asciidoctor` must not be part of what every reader
 loads. Heavy code is isolated behind its own entry point and loaded only when a feature needs
-it; code the SPA already loads up front offers no such isolation.
+it.
 
 ```arc42
 :::constraint
