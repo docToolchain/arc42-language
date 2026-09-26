@@ -386,7 +386,7 @@ Library (it would learn about storage), and a separate format package (no second
 :::decision
 id: dec-history-format-in-web
 title: The Web Renderer owns the history file format; the Core Library stays free of storage
-status: proposed
+status: accepted
 date: 2026-09-26
 addresses: qg-extensibility, con-browser-bundle-safety
 :::
@@ -395,9 +395,11 @@ addresses: qg-extensibility, con-browser-bundle-safety
 ## Old Versions Load as Files and Are Parsed in the Browser
 
 Readers should be able to open the whole architecture at an earlier commit, not only its change.
-The history therefore also holds each commit's file list (every tracked path with its git blob
-id) and the architecture files themselves, each version stored once under its blob id. Unchanged
-file lists are shared between commits. The browser parses a version with the same Core Library
+The history therefore also holds each commit's file list (the git blob ids of its architecture
+files and every tracked path) and the architecture files themselves, each version stored once
+under its blob id. Code files are listed by path only: with their blob ids a list would change
+with almost every commit. A commit whose tracked paths equal an earlier one's refers to that
+list. The browser parses a version with the same Core Library
 functions the CLI uses, and only when a reader opens it. Only architecture files are ever written
 or served; code appears by path and blob id only, which coverage needs. The change is additive:
 a build without history is unchanged. Rejected: a finished model per commit (grows with every
@@ -409,7 +411,7 @@ and cannot list the commits that touched `*.arc42.md` files).
 :::decision
 id: dec-browser-snapshots
 title: Store old versions as shared files and parse them in the browser on demand
-status: proposed
+status: accepted
 date: 2026-09-26
 addresses: qg-readability, con-browser-bundle-safety
 :::
@@ -420,9 +422,10 @@ addresses: qg-readability, con-browser-bundle-safety
 `dec-asciidoc-in-workspace-fs` kept both notations in the Filesystem Workspace Adapter to keep
 `marked` and `asciidoctor` out of the browser, relying on the server to render all prose ahead of
 time. Browsing earlier versions ends that premise: the browser now parses and renders prose, for
-both notations alike. The goal still holds — the main page carries neither library — but it is
-reached by the entry point, not by the package: both notations move to the Core Library, each
-behind its own subpath, which the Web Renderer imports on demand. `asciidoctor` ships an official
+both notations alike. The goal still holds — the main page does not carry `asciidoctor` — but it
+is reached by the entry point, not by the package: both notations move to the Core Library, each
+behind its own subpath, imported on demand for the notation a workspace uses. (`marked` is small
+and the Web Renderer already bundles it for its own rendering.) `asciidoctor` ships an official
 browser build. The two notations stay together, next to the interface they implement, and the
 Filesystem Workspace Adapter holds no notation code. The CLI bundles the built `@arc42/core`,
 so every subpath export needs a built file: the Core Library builds one entry per export, taken
@@ -435,7 +438,7 @@ the Filesystem Workspace Adapter (earlier versions of AsciiDoc workspaces could 
 :::decision
 id: dec-notations-in-core
 title: Both notation implementations live in the Core Library behind their own subpaths
-status: proposed
+status: accepted
 date: 2026-09-26
 addresses: qg-extensibility, con-browser-bundle-safety
 supersedes: dec-asciidoc-in-workspace-fs

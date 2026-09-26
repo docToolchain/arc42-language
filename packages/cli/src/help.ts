@@ -188,7 +188,8 @@ Options:
 The server watches the selected directory recursively and refreshes the browser when
 *.arc42.md or *.arc42.adoc files change, and follows the Git index and HEAD. Inside a Git
 repository the browser also offers the architecture history: every commit that touched the
-architecture documents, computed lazily as it scrolls into view.
+architecture documents, computed lazily as it scrolls into view. Each commit can be browsed
+as a whole: its architecture files are read from Git and parsed in the browser.
 It exits 1 when the workspace, the difference or the web assets cannot be loaded.
 Use --dir or ARC42_DIR to select the workspace.
 
@@ -213,8 +214,9 @@ Options:
                         same comparison arguments as \`arc42 diff\`
   --staged              With --diff: compare the index with HEAD, or with <reference>
   --with-history        Include the architecture history (every commit that touched the
-                        architecture documents, plus uncommitted changes) as JSONL files
-                        in <out>/history/; requires a Git repository
+                        architecture documents, plus uncommitted changes) in <out>/history/,
+                        with each commit's architecture files to browse it as a whole;
+                        requires a Git repository
   --single-file         Write one self-contained <out>/index.html — web app, workspace,
                         difference and history inlined — that also works opened from disk
   -h, --help            Show this help

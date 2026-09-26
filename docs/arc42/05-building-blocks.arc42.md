@@ -121,19 +121,19 @@ path: packages/core/src/index.ts
 ### Browser Workspace Loader
 
 The Web Renderer turns the files of an earlier version into a workspace in the browser:
-`loadWorkspaceFromFiles(files, trackedPaths)` detects the notation, parses, builds the model and
-computes coverage. The Web Renderer loads this code and the workspace's notation
-(`@arc42/core/notation/markdown` or `…/asciidoc`) on demand, only when a reader opens an earlier
-version, so neither `marked` nor `asciidoctor` enters the main page.
+`loadWorkspaceFromFiles(files, trackedPaths, location)` detects the notation, parses, builds the
+model and computes coverage — the same function the Filesystem Workspace Adapter uses. The
+loader shares the Core Library code the page already imports (about 5 KB gzipped more). The
+workspace's notation (`@arc42/core/notation/markdown` or `…/asciidoc`) is imported on demand,
+when a version is opened, so `asciidoctor` enters the browser only for AsciiDoc workspaces.
 
 ```arc42
-:::ignore H020 if-web-core and if-cli-core share packages/core/src/index.ts as the entry point but represent distinct contracts: if-cli-core is the CLI's full API, if-web-core is the browser-safe loader the Web Renderer imports on demand :::
 :::interface
 id: if-web-core
 title: Browser Workspace Loader
 provider: bb-core
-protocol: TypeScript module import, loaded on demand in the browser
-path: packages/core/src/index.ts
+protocol: TypeScript module import; the notation imported on demand
+path: packages/core/src/workspace-files.ts
 :::
 ```
 
@@ -179,8 +179,9 @@ chapter filename generation. Two concrete implementations — `MarkdownNotationA
 `AsciidocNotationAdapter` — are selected once at workspace discovery time and flow through
 the entire processing pipeline. Both implementations live in `@arc42/core`, each under its own
 subpath (`@arc42/core/notation/markdown`, `@arc42/core/notation/asciidoc`), so the Filesystem
-Workspace Adapter and the Web Renderer use the same code. The main entry imports neither; a
-bundle contains a notation, with `marked` or `asciidoctor`, only where that subpath is imported.
+Workspace Adapter and the Web Renderer use the same code. The main entry imports neither;
+`loadNotationAdapter` imports the one a workspace uses, so a bundle loads a notation, with
+`marked` or `asciidoctor`, only when it is needed.
 
 ```arc42
 :::ignore W002 bb-notation-adapter is a new internal building block — interfaces will be added once the implementation path exists :::
@@ -414,8 +415,9 @@ documents (`.arc42.md` or `.arc42.adoc`), detects the workspace notation from fi
 errors on mixed-notation workspaces, reads file contents, establishes repository-root context,
 and performs validations that depend on filesystem paths. It holds no notation code: it selects
 the notation from `@arc42/core` by file extension. For the architecture history it reads git and returns plain data: the commits that
-touched the architecture documents, each commit's change, each commit's file list (every tracked
-path with its git blob id) and single architecture files by blob id. It refuses any blob that is
+touched the architecture documents, each commit's change, each commit's file list (the git blob
+ids of the workspace's architecture files and every tracked path) and single architecture files
+by blob id. It refuses any blob that is
 not an architecture file of a history commit, so code is never exposed. It knows nothing about
 the history's file format. Other acquisition mechanisms can provide their own adapters without
 expanding the responsibilities of the architecture-processing core. File watching and
@@ -647,7 +649,9 @@ offers the architecture history as a chain of pearls — one per commit that tou
 architecture documents — whose changes load lazily as they scroll into view; there, unchanged
 sections appear as headings with placeholders. A pearl also opens the whole architecture as it
 was at that commit: the renderer loads the version's files, parses them in the browser with the
-Core Library, and shows the normal document view with a banner naming the commit. The renderer
+Core Library, and shows the normal document view with a banner naming the commit. The version
+is selected by the URL query (`?version=<commit>`), so every in-page hash link keeps working
+inside it. The renderer
 owns the history's file format, because it is its only reader. Imports
 shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
 the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
@@ -705,7 +709,8 @@ path: packages/cli/src/cli.ts
 
 The Web Renderer defines the files of the architecture history: the pearl index, the chunks with
 each pearl's change, the file list per commit and the architecture files stored once under their
-git blob id. A file list that did not change is shared with the previous commit. The CLI writes
+git blob id. A commit whose tracked paths equal an earlier commit's refers to that list instead
+of repeating it. The CLI writes
 and serves the files with this module — types and plain functions, no React and no browser APIs —
 so no Node.js code reaches the browser.
 

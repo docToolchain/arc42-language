@@ -72,18 +72,19 @@ loading). Nothing is parsed ahead of time for old versions.
 - **Expected diff-lint warnings** against `main`: prose changed without block changes for
   `bb-core`, `bb-notation-adapter`, `bb-prose-renderer` and `bb-workspace-fs`. They describe new
   responsibilities that have no attribute of their own; they are the impact to review.
-- **Layout mirrors git.** Per commit a file list maps each path to its git blob id, and each file
+- **Layout mirrors git.** Per commit a file list maps each architecture file to its git blob id
+  (code by path only, see *Decisions made while implementing*), and each file
   version is stored once under its blob id. Files that do not change between commits are shared.
   A later GitHub reader would map onto this one to one.
-- **Only architecture files are ever served or written.** Code is listed by path and blob id
-  (needed for coverage), never by content. The producer in `workspace-fs` enforces this, so
+- **Only architecture files are ever served or written.** Code is listed by path (needed for
+  coverage), never by content. The producer in `workspace-fs` enforces this, so
   `serve` and `build` cannot differ. In `serve`, a request for any other blob is an error.
   Without this check anyone reaching the server could read any file of the repository.
 - **File lists are shared when unchanged.** Coverage needs the list of *all* tracked paths of
   a version. One full list per commit costs about as much as all architecture file versions
-  together (see measurements), so a commit refers to the previous list when it did not change.
-- **The working-tree pearl gets no snapshot.** It is the live workspace; "Browse this version"
-  on it goes to the normal view.
+  together (see measurements), so a commit refers to an earlier commit with the same list.
+- **The working-tree pearl gets no snapshot.** It is the live workspace, so it offers no
+  "Browse this version".
 - **Diffs stay computed at build/serve time.** The lint's code-change evidence needs `git diff`.
   The existing chunk files with precomputed diffs are kept.
 - **Both notations move into core, each behind its own subpath** (`dec-notations-in-core`):
@@ -295,7 +296,7 @@ No separate notations package is needed.
    - A snapshot reader on top of `HistorySource`, so URLs and inlined files both work.
    - `useSnapshot(commit)`: loads the parser chunk on demand, fetches files, parses, caches per
      commit.
-   - "Browse this version" on a pearl; a URL hash such as `#snapshot:<sha>`; the normal document
+   - "Browse this version" on a pearl; the URL query `?version=<sha>`; the normal document
      view with a banner and a way back.
 6. **Docs.** The CLI help for `--with-history` and the history description on the site. In our
    own architecture: set the `if-history-format` path and drop its `ignore H014` (step 1), and
@@ -333,14 +334,46 @@ No separate notations package is needed.
 
 ### Tasks
 
-- [ ] Step 1: refactor — history format moves from core, workspace-fs and cli into `web`
+- [x] Step 1: refactor — history format moves from core, workspace-fs and cli into `web`
 - [x] Bundler spike: core builds every subpath export; the CLI fails on unresolved imports
-- [ ] Step 2: core — `loadWorkspaceFromFiles`, both notations as subpaths, remove both silent fallbacks
-- [ ] Step 3: workspace-fs — `snapshotTree`, `readSnapshotBlob` with the architecture-file check
-- [ ] Step 4: cli — `serve` addresses, `build` output, `--single-file`
-- [ ] Step 5: web — snapshot reader, `useSnapshot`, "Browse this version"
-- [ ] Step 6: docs — CLI help, site, `if-history-format` path, decisions accepted
-- [ ] Measure the build size and the parse time; record them here
+- [x] Step 2: core — `loadWorkspaceFromFiles`, both notations as subpaths, remove both silent fallbacks
+- [x] Step 3: workspace-fs — `readCommitFiles`, `readArchitectureBlob` with the architecture-file check
+- [x] Step 4: cli — `serve` addresses, `build` output, `--single-file`
+- [x] Step 5: web — snapshot reader, `useSnapshot`, "Browse this version"
+- [x] Step 6: docs — CLI help, README, site, architecture aligned, decisions accepted
+- [x] Measure the build size and the parse time; record them here
+
+### Decisions made while implementing
+
+- **Code files are listed by path only.** With their blob ids a commit's list changes with almost
+  every commit and could never be shared. Trees hold blob ids for architecture files only.
+- **Shared lists refer to a commit, not a hash.** A tree whose tracked paths equal an earlier
+  tree's holds `paths: { sameAs: <commit> }`; the referenced tree lists them itself. No list
+  files and no hashing; `serve` always inlines, since it stores nothing.
+- **The version lives in the URL query** (`?version=<commit>`), not the hash (`#snapshot:` in the
+  plan). Every in-page link is a hash link built in seven places; the query survives them all,
+  so none needed a change. Back and forward work through `pushState`/`popstate`.
+- **The loader is not a separate chunk.** The page already imports `@arc42/core` statically
+  (`MetaModelView`), so a dynamic import of it is ineffective; the page grows by 5.2 KB gzipped
+  (168.5 → 173.7 KB). The notations are separate chunks: asciidoctor (990 KB) and the AsciiDoc
+  notation (365 KB) load only for AsciiDoc versions. `marked` was already in the page (the web
+  renderer uses it itself); the architecture text claiming otherwise was corrected.
+- **`serve` bug fixed on the way:** `/?query` resolved to the web directory and failed.
+- **Architecture paths:** `if-web-core` points at `packages/core/src/workspace-files.ts` (its own
+  file; the H020 ignore is gone); `bb-notation-adapter` and `bb-prose-renderer` point at their
+  interface files, since the notation directories contain both.
+
+### Measurements after implementation (this repository, `docs/arc42`, 53 commits)
+
+| | Bytes | Gzipped |
+|---|---|---|
+| Trees (`history/tree/`), 14 of 53 sharing a list | 560 KB | 29 KB |
+| Blobs (`history/blob/`), 117 file versions | 1.24 MB | 243 KB |
+| Existing chunks with precomputed diffs, for comparison | 4.78 MB | — |
+
+- Parsing the 12 chapters with `loadWorkspaceFromFiles`: about 70 ms cold, 10 ms warm (Node).
+- This repository adds files often, so fewer lists are shared than expected; a stable
+  repository shares most of them.
 
 ### Completed
 

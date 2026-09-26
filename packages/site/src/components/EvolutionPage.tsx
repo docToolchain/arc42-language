@@ -83,8 +83,8 @@ const HIGHLIGHTS: Highlight[] = [
     text: (
       <>
         Every commit that touched the architecture is a pearl. Open one to see that version&apos;s
-        change, with its commit message above it. Formatting-only commits stay small and neutral —
-        nothing to review there.
+        change, with its commit message above it — or browse that version as a whole, every chapter
+        as it was. Formatting-only commits stay small and neutral — nothing to review there.
       </>
     ),
     image: messageShot,
@@ -234,7 +234,8 @@ export function EvolutionPage() {
               </div>
             </div>
             <p className="evo-footnote">
-              <code>arc42 build --with-history</code> adds the history of pearls to any static site.
+              <code>arc42 build --with-history</code> adds the history of pearls to any static site
+              — every version browsable, parsed right in the browser.
             </p>
           </div>
         </section>
