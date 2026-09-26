@@ -206,13 +206,34 @@ Chapter 5 and `dec-asciidoc-in-workspace-fs` said the Markdown notation adapter 
 with the AsciiDoc ones. The target architecture now places both in core; the superseded
 decision's text is corrected and says so.
 
-### Bundler check before step 2
+### Bundler spike (done, 2026-09-26)
 
-The AsciiDoc plan noted "subpath imports not inlined by vp pack". The CLI bundles `@arc42/core`
-through `deps.alwaysBundle` in `packages/cli/vite.config.ts`. Verify that the notation subpaths
-are bundled too (probably by listing them there), and that a missing one fails the build loudly
-(e.g. a smoke test of the packed CLI on a Markdown and an AsciiDoc workspace). If subpaths cannot
-be bundled, a separate notations package is the fallback choice.
+The AsciiDoc plan noted "subpath imports not inlined by vp pack". The spike found a different
+root cause:
+
+- **Core never built its subpath exports.** `packages/core/vite.config.ts` had no `entry`, so only
+  `dist/index.mjs` existed. `package.json` exports `./parser` → `dist/parser/index.mjs` and
+  `./types` → `dist/types-export.mjs` pointed to files that were never built.
+- **The CLI bundles the built core** (default condition), so it could not resolve a subpath.
+- **The failure was silent.** Rolldown logs `UNRESOLVED_IMPORT` as a warning, keeps the import
+  external and reports "Build complete". The packed CLI then crashed at runtime with
+  `ERR_MODULE_NOT_FOUND`.
+- `deps.alwaysBundle: ["@arc42/core", …]` already covers subpaths once they resolve; no change.
+- `deps.onlyImport` does not catch this: it ignores unresolved imports (tested).
+- `failOnWarn` would, but it also fails on timing-based warnings such as `PLUGIN_TIMINGS`.
+
+Fix, applied in this branch:
+
+- **core:** `pack.entry` is derived from the `development` targets of the `package.json`
+  exports, so every export has a built file and the two cannot drift.
+- **cli:** `pack.inputOptions.onLog` turns `UNRESOLVED_IMPORT` into an error.
+- Verified both ways: core without the parser entry → CLI build fails with
+  `[UNRESOLVED_IMPORT] Could not resolve '@arc42/core/parser'`; with it → the subpath is bundled
+  and the packed CLI runs.
+- `pnpm run check`, `build`, `test` (472 tests) and `validate:all` pass; the packed CLI imports
+  only Node.js built-ins.
+
+No separate notations package is needed.
 
 ### Open questions
 
@@ -256,7 +277,6 @@ be bundled, a separate notations package is the fallback choice.
    - Add `loadWorkspaceFromFiles(files, trackedPaths)`: detect the notation, parse, build the
      model, compute coverage.
    - Move `isArchitectureFile` and `detectNotation` into core.
-   - First: the bundler check (see *Notes*).
    - Move both notations (adapter, prose renderer; the parsers stay where they are) from
      `workspace-fs/src/notation/` to `@arc42/core/notation/markdown` and `…/asciidoc`; move the
      `marked` and `asciidoctor` dependencies with them. The main entry imports neither.
@@ -314,7 +334,7 @@ be bundled, a separate notations package is the fallback choice.
 ### Tasks
 
 - [ ] Step 1: refactor — history format moves from core, workspace-fs and cli into `web`
-- [ ] Step 2: bundler check for core subpaths in the packed CLI
+- [x] Bundler spike: core builds every subpath export; the CLI fails on unresolved imports
 - [ ] Step 2: core — `loadWorkspaceFromFiles`, both notations as subpaths, remove both silent fallbacks
 - [ ] Step 3: workspace-fs — `snapshotTree`, `readSnapshotBlob` with the architecture-file check
 - [ ] Step 4: cli — `serve` addresses, `build` output, `--single-file`

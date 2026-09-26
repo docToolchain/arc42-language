@@ -424,8 +424,10 @@ both notations alike. The goal still holds — the main page carries neither lib
 reached by the entry point, not by the package: both notations move to the Core Library, each
 behind its own subpath, which the Web Renderer imports on demand. `asciidoctor` ships an official
 browser build. The two notations stay together, next to the interface they implement, and the
-Filesystem Workspace Adapter holds no notation code. The CLI bundles `@arc42/core` with
-`alwaysBundle`; the subpaths must be bundled the same way, or the build must fail. Rejected: a
+Filesystem Workspace Adapter holds no notation code. The CLI bundles the built `@arc42/core`,
+so every subpath export needs a built file: the Core Library builds one entry per export, taken
+from its `package.json`, and the CLI build fails on any import it cannot resolve instead of
+leaving it external. Rejected: a
 separate notations package (one package more, no benefit over subpaths), and keeping AsciiDoc in
 the Filesystem Workspace Adapter (earlier versions of AsciiDoc workspaces could not be opened).
 
