@@ -326,3 +326,54 @@ sequenceDiagram
 The workflow lives in `.github/workflows/architecture-review.yml`; its logic is
 `scripts/architecture-review.ts`, which can also be run locally. Pull requests from forks receive
 a read-only token, so for them the review appears in the job summary instead of a comment.
+
+## Reader browses an earlier version
+
+A reader opens a pearl in the history and chooses to browse that version. The Web Renderer loads
+the commit's file list and the architecture files it does not hold yet, parses them in the browser
+with the Core Library and shows the normal document view. With `arc42 serve` the files come from
+git on request; a site built with `--with-history` holds the same files next to the page.
+
+```arc42
+:::runtime-scenario
+id: scenario-browse-earlier-version
+title: Reader browses an earlier version
+trigger: A reader opens a pearl and chooses to browse that version
+involves: bb-web-renderer, bb-cli, bb-workspace-fs, bb-core
+:::
+```
+
+```arc42
+:::diagram
+id: browse-earlier-version-sequence
+scenario: scenario-browse-earlier-version
+notation: mermaid-sequence
+aliases: bb_web=bb-web-renderer, bb_cli=bb-cli, bb_workspace_fs=bb-workspace-fs, bb_core=bb-core
+:::
+```
+
+```mermaid
+sequenceDiagram
+    actor actor_reader as Reader
+    participant bb_web as Web Renderer
+    participant bb_cli as CLI
+    participant bb_workspace_fs as Filesystem Workspace Adapter
+    participant bb_core as Core Library
+
+    actor_reader->>bb_web: Browse the version of a pearl
+    bb_web->>bb_cli: Get the file list of the commit
+    bb_cli->>bb_workspace_fs: Read the commit's tree
+    bb_workspace_fs-->>bb_cli: Tracked paths with blob ids
+    bb_cli-->>bb_web: tree/<commit>.json
+    bb_web->>bb_cli: Get each architecture file not loaded yet
+    bb_cli->>bb_workspace_fs: Read the blob
+    bb_workspace_fs-->>bb_cli: File content, or an error for a non-architecture blob
+    bb_cli-->>bb_web: blob/<id>
+    bb_web->>bb_core: Load the loader on demand and build the workspace
+    bb_core-->>bb_web: Workspace model with coverage
+    bb_web-->>actor_reader: Document view of that version, with a banner
+```
+
+The sequence shows `arc42 serve`. In a site built with `--with-history` the CLI has written the
+same files ahead of time, and the Web Renderer reads them without a server. Earlier versions never
+change, so the Web Renderer keeps them once loaded.

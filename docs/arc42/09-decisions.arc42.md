@@ -398,7 +398,8 @@ id) and the architecture files themselves, each version stored once under its bl
 file lists are shared between commits. The browser parses a version with the same Core Library
 functions the CLI uses, and only when a reader opens it. Only architecture files are ever written
 or served; code appears by path and blob id only, which coverage needs. The change is additive:
-a build without history is unchanged. Rejected: a finished model per commit (grows with every
+a build without history is unchanged. AsciiDoc workspaces get a clear error until their prose
+renderer can run in the browser (see the risk). Rejected: a finished model per commit (grows with every
 commit, nothing shared), moving all diffing into the browser (a large rebuild, not needed), and
 reading git straight from the browser (git over HTTP lacks CORS; the GitHub API has tight quotas
 and cannot list the commits that touched `*.arc42.md` files).
@@ -409,6 +410,6 @@ id: dec-browser-snapshots
 title: Store old versions as shared files and parse them in the browser on demand
 status: proposed
 date: 2026-09-26
-addresses: qg-readability, con-browser-bundle-safety
+addresses: qg-readability, con-browser-bundle-safety, risk-asciidoc-snapshots
 :::
 ```
