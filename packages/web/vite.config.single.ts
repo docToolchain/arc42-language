@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { resolve } from "path";
 import type { Plugin } from "vite-plus";
+import { asciidoctorBrowserPaths } from "./vite-asciidoctor.ts";
 
 /**
  * The HTML parser stops parsing a <script> block when it encounters a bare
@@ -64,7 +65,7 @@ function escapeInlineScriptTags(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), viteSingleFile(), escapeInlineScriptTags()],
+  plugins: [react(), asciidoctorBrowserPaths(), viteSingleFile(), escapeInlineScriptTags()],
   root: resolve(import.meta.dirname),
   build: {
     outDir: resolve(import.meta.dirname, "dist-single"),

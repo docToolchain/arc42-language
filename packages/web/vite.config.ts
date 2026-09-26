@@ -1,9 +1,10 @@
 import { defineConfig } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
+import { asciidoctorBrowserPaths } from "./vite-asciidoctor.ts";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), asciidoctorBrowserPaths()],
   root: resolve(import.meta.dirname),
   // Relative asset URLs: a site built by `arc42 build` works under any subpath,
   // including the lazily loaded chunks (Mermaid) that index.html does not list.
