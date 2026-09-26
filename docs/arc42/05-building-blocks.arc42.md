@@ -34,7 +34,8 @@ graph TD
     bb-cli -->|"if-cli-web"| bb-web-renderer
     bb-cli -->|"if-history-format"| bb-web-renderer
     bb-web-renderer -->|"if-web-cli-api"| bb-cli
-    bb-web-renderer -->|"if-web-core"| bb-core
+    bb-web-renderer -->|"if-workspace-loader"| bb-core
+    bb-workspace-fs -->|"if-workspace-loader"| bb-core
     bb-skill -->|"if-cli"| bb-cli
 ```
 
@@ -43,15 +44,11 @@ shown only in the Core Library drill-down below.
 
 ## Core Library
 
-The architecture-processing heart of the system. It transforms already-acquired architecture
-documents into a typed model, resolves references, validates the model, renders queries, and
-provides the pure architecture-diff analysis used by the CLI. It does not discover files, read
-filesystem resources, select repository roots, or watch for changes, and it knows no folders,
-addresses or storage formats. Source acquisition belongs to workspace adapters; the processing
-pipeline is: parse Markdown → build element model → index references → validate or render.
-Callers that already hold the files — the Filesystem Workspace Adapter from disk or git, the Web
-Renderer from an earlier version's files — hand them over and receive the workspace, so every
-caller builds the model the same way.
+The architecture-processing heart of the system. It transforms architecture documents into a
+typed model, resolves references, validates the model, renders queries, and provides the pure
+architecture-diff analysis. Given a set of architecture files, it builds the workspace, so the
+model is the same wherever the files come from. The processing pipeline is: parse → build
+element model → index references → validate or render.
 
 ```arc42
 :::building-block
@@ -118,19 +115,17 @@ path: packages/core/src/index.ts
 
 ---
 
-### Browser Workspace Loader
+### Workspace Loader
 
-The Web Renderer builds the workspace of an earlier version in the browser with the same
-processing the CLI uses: it hands over the version's architecture files and tracked paths and
-receives the model with its coverage. The notation the version uses is loaded only when a version
-is opened.
+Turns a set of architecture files, together with the paths tracked in the same version, into a
+workspace with its coverage. A notation is loaded when files of that notation are processed.
 
 ```arc42
 :::interface
-id: if-web-core
-title: Browser Workspace Loader
+id: if-workspace-loader
+title: Workspace Loader
 provider: bb-core
-protocol: In-process call in the browser; the notation loaded on demand
+protocol: In-process call; notations loaded on demand
 path: packages/core/src/workspace-files.ts
 :::
 ```
@@ -176,9 +171,8 @@ parser selection, prose renderer selection, fence description (for validator mes
 chapter filename generation. Two concrete implementations — `MarkdownNotationAdapter` and
 `AsciidocNotationAdapter` — are selected once at workspace discovery time and flow through
 the entire processing pipeline. Both implementations belong to the Core Library and can be
-loaded separately, so the Filesystem Workspace Adapter and the Web Renderer use the same code,
-and an application loads a notation, with its rendering library, only when a workspace needs
-it.
+loaded separately: a notation and its rendering library are loaded when a workspace uses that
+notation.
 
 ```arc42
 :::ignore W002 bb-notation-adapter is a new internal building block — interfaces will be added once the implementation path exists :::
@@ -196,8 +190,8 @@ path: packages/core/src/notation/types.ts
 ### Prose Renderer
 
 Runs as a post-parse step and populates the rendered HTML representation of prose in each
-`DocumentAst`. There is one implementation per notation, and each is part of its notation. A
-rendering error is raised, never replaced by a fallback. The raw source text is always
+`DocumentAst`. There is one implementation per notation, part of that notation. Rendering errors
+are raised to the caller. The raw source text is always
 preserved — non-rendering consumers (diff, builder, validators) use it and are unaffected.
 
 ```arc42
@@ -405,17 +399,13 @@ path: packages/mermaid/src/index.ts
 
 ## Filesystem Workspace Adapter
 
-Provides the filesystem-backed workspace boundary used by the CLI. It discovers architecture
-documents (`.arc42.md` or `.arc42.adoc`), detects the workspace notation from file extensions,
-errors on mixed-notation workspaces, reads file contents, establishes repository-root context,
-and performs validations that depend on filesystem paths. It holds no notation code; it selects
-the notation by file extension. For the architecture history it reads git and returns plain data:
-the commits that touched the architecture documents, each commit's change, the files of each
-commit (its architecture files and every tracked path) and the content of single architecture
-files. It never exposes anything but architecture files of the history, and it knows nothing
-about the history's file format. Other acquisition mechanisms can provide their own adapters without
-expanding the responsibilities of the architecture-processing core. File watching and
-workspace-directory selection remain CLI responsibilities.
+Provides the filesystem-backed workspace boundary. It discovers architecture documents
+(`.arc42.md` or `.arc42.adoc`), detects the workspace notation from file extensions, errors on
+mixed-notation workspaces, reads file contents, establishes repository-root context, and performs
+validations that depend on filesystem paths. For the architecture history it reads git: the
+commits that touched the architecture documents, each commit's change, the files of each commit —
+its architecture files and every tracked path — and the content of the history's architecture
+files.
 
 ```arc42
 :::building-block
@@ -423,7 +413,7 @@ id: bb-workspace-fs
 title: Filesystem Workspace Adapter
 technology: TypeScript / Node.js
 implements: concept-pipeline
-requires: if-fs-workspace
+requires: if-fs-workspace, if-workspace-loader
 path: packages/workspace-fs
 :::
 ```
@@ -483,9 +473,8 @@ A thin entry point over the core library and workspace adapters. Parses argument
 `$ARC42_DIR` → cwd), and coordinates the selected workspace adapter with core processing. Implements
 five commands: `validate`, `get`, `rules`, `diff`, and `serve`; `diff` selects the workspace and
 renders findings acquired by the filesystem workspace adapter through the core diff building block. At build time, the CLI copies the compiled `@arc42/web`
-SPA assets into its own `dist/web/` directory so they can be served statically. For the
-architecture history the CLI only delivers: it takes plain data from the filesystem workspace
-adapter and writes it for a static site or serves it, in the Web Renderer's history format.
+SPA assets into its own `dist/web/` directory so they can be served statically. It publishes the
+architecture history in the history format, written for a static site or served.
 
 ```arc42
 :::building-block
@@ -640,10 +629,8 @@ untouched elements) with links into the chapters. Inside a Git repository the si
 offers the architecture history as a chain of pearls — one per commit that touched the
 architecture documents — whose changes load lazily as they scroll into view; there, unchanged
 sections appear as headings with placeholders. A pearl also opens the whole architecture as it
-was at that commit: the renderer loads that version's files, builds its workspace with the Core
-Library and shows it in the normal document view, marked as an earlier version, with navigation
-working as in the current one. The renderer owns the history's file format, because it is its
-only reader. Imports
+was at that commit, in the normal document view, marked as an earlier version, with navigation
+working as in the current one. It defines the format of the history it reads. Imports
 shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
 the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
 and as a GitHub Pages static deployment.
@@ -654,7 +641,7 @@ id: bb-web-renderer
 title: Web Renderer
 technology: TypeScript / React / Vite
 implements: concept-prose-first
-requires: if-web-cli-api, if-web-core
+requires: if-web-cli-api, if-workspace-loader
 path: packages/web
 :::
 ```
@@ -682,8 +669,7 @@ assets. With `--diff`, it also exposes the visualized difference at `/api/diff` 
 served under `/api/history/` — `index.jsonl` with the pearls and `chunk-<n>.jsonl` with their
 changes, computed on request, plus each commit's file list and architecture files, read from git
 on request — in the same layout that `arc42 build --with-history` writes to `history/` (422 with
-the reason outside a Git repository). Anything but an architecture file of the history is
-refused.
+the reason outside a Git repository).
 
 ```arc42
 :::interface
@@ -697,11 +683,10 @@ path: packages/web/src/main.tsx
 
 ### History Format
 
-The Web Renderer defines the files of the architecture history: the list of pearls, each pearl's
-change, and for each commit its file list and architecture files. Each file version is stored
-once and shared between commits, and so is a file list that did not change. The CLI writes and
-serves the history in this format; the definition contains no browser code, so the CLI can use
-it, and no Node.js code reaches the browser through it.
+Defines the files of the architecture history: the list of pearls, each pearl's change, and for
+each commit its file list and architecture files. Each file version is stored once and shared
+between commits, as is an unchanged file list. The definition is platform-neutral, so the history
+is written, served and read with the same definition.
 
 ```arc42
 :::interface
