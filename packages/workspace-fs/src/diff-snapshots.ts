@@ -1,11 +1,11 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 import { isArchitectureFile, loadWorkspaceFromFiles } from "@arc42/core";
 import type { WorkspacePayload } from "@arc42/core";
 
-import { git } from "./git-diff.ts";
+import { git, workspaceLocation } from "./git-diff.ts";
 
 /**
  * Which two snapshots to compare, following `git diff` semantics:
@@ -220,10 +220,7 @@ async function loadSnapshot(
  * blob) are raised, never skipped.
  */
 export async function loadDiffSnapshots(dir: string, spec: DiffSpec = {}): Promise<DiffSnapshots> {
-  const root = git(resolve(dir), ["rev-parse", "--show-toplevel"]).trim();
-  const workspace = relative(root, realpathSync(resolve(dir))).replaceAll("\\", "/");
-  const inWorkspace = (path: string) =>
-    workspace === "" || path === workspace || path.startsWith(`${workspace}/`);
+  const { root, inWorkspace } = workspaceLocation(dir);
   const { base, head, baseCommit, acceptanceBase, diffArgs } = comparison(root, spec);
   // File names are all the lint needs; -z keeps unusual names unquoted.
   const changedFiles = nulSeparated(
