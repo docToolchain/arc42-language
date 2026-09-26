@@ -27,14 +27,8 @@ export { gitLsFiles } from "./git-diff.ts";
 export { loadDiffSnapshots, EMPTY_TREE } from "./diff-snapshots.ts";
 export { loadDiffPayload } from "./diff-payload.ts";
 export type { LoadedDiff } from "./diff-payload.ts";
-export {
-  HISTORY_CHUNK_SIZE,
-  listArchitectureHistory,
-  loadHistoryChunk,
-  loadHistoryEntry,
-  toJsonLines,
-} from "./history.ts";
-export type { ArchitectureHistory } from "./history.ts";
+export { listArchitectureHistory, loadCommitChange } from "./history.ts";
+export type { ArchitectureCommit, ArchitectureHistory, CommitChange } from "./history.ts";
 export type { DiffSnapshots, DiffSpec, Snapshot } from "./diff-snapshots.ts";
 
 export {

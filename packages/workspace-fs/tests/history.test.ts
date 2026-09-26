@@ -4,13 +4,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
-import {
-  HISTORY_CHUNK_SIZE,
-  listArchitectureHistory,
-  loadHistoryChunk,
-  loadHistoryEntry,
-  toJsonLines,
-} from "../src/index.ts";
+import { listArchitectureHistory, loadCommitChange } from "../src/index.ts";
 
 const createdDirs: string[] = [];
 
@@ -59,11 +53,11 @@ describe("listArchitectureHistory", () => {
     const third = commit(root, "switch to go");
 
     const history = listArchitectureHistory(join(root, "docs"));
-    expect(history.pearls).toMatchObject([
-      { commit: third, parent: expect.any(String), subject: "switch to go", chunk: 0 },
-      { commit: first, parent: null, subject: "add service", author: "Ada Architect", chunk: 0 },
+    expect(history.commits).toMatchObject([
+      { commit: third, parent: expect.any(String), subject: "switch to go" },
+      { commit: first, parent: null, subject: "add service", author: "Ada Architect" },
     ]);
-    expect(Date.parse(history.pearls[0]!.date)).not.toBeNaN();
+    expect(Date.parse(history.commits[0]!.date)).not.toBeNaN();
   });
 
   test("follows the first parent through merges", () => {
@@ -77,7 +71,7 @@ describe("listArchitectureHistory", () => {
     git(root, "checkout", "-q", main);
     git(root, "merge", "-q", "--no-ff", "-m", "merge feature", "feature");
 
-    const subjects = listArchitectureHistory(root).pearls.map((pearl) => pearl.subject);
+    const subjects = listArchitectureHistory(root).commits.map((commit) => commit.subject);
     expect(subjects).toEqual(["merge feature", "add service"]);
   });
 
@@ -88,7 +82,7 @@ describe("listArchitectureHistory", () => {
     write(root, "other/01-introduction.arc42.md", "# Introduction and Goals\n\nElsewhere.\n");
     commit(root, "other workspace");
 
-    const subjects = listArchitectureHistory(join(root, "docs")).pearls.map((p) => p.subject);
+    const subjects = listArchitectureHistory(join(root, "docs")).commits.map((c) => c.subject);
     expect(subjects).toEqual(["docs"]);
   });
 
@@ -96,26 +90,23 @@ describe("listArchitectureHistory", () => {
     const root = repository();
     write(root, FILE, markdown("Node"));
     const head = commit(root, "add service");
-    expect(listArchitectureHistory(root).pearls[0]!.commit).toBe(head);
+    expect(listArchitectureHistory(root).commits[0]!.commit).toBe(head);
 
     write(root, FILE, markdown("Go"));
-    expect(listArchitectureHistory(root).pearls[0]).toMatchObject({
+    expect(listArchitectureHistory(root).commits[0]).toMatchObject({
       commit: null,
       parent: head,
       subject: "Uncommitted changes",
+      body: "",
     });
   });
 
-  test("assigns pearls to chunks in order", () => {
+  test("keeps the raw commit message body", () => {
     const root = repository();
-    for (let index = 0; index <= HISTORY_CHUNK_SIZE; index++) {
-      write(root, FILE, markdown(`v${index}`, `Version ${index}.`));
-      commit(root, `version ${index}`);
-    }
-    const chunks = listArchitectureHistory(root).pearls.map((pearl) => pearl.chunk);
-    expect(chunks).toHaveLength(HISTORY_CHUNK_SIZE + 1);
-    expect(chunks.slice(0, HISTORY_CHUNK_SIZE).every((chunk) => chunk === 0)).toBe(true);
-    expect(chunks.at(-1)).toBe(1);
+    write(root, FILE, markdown("Node"));
+    git(root, "add", "-A");
+    git(root, "commit", "-qm", "add service", "-m", "Because **performance** matters.");
+    expect(listArchitectureHistory(root).commits[0]!.body).toBe("Because **performance** matters.");
   });
 
   test("fails outside a Git repository", () => {
@@ -125,7 +116,7 @@ describe("listArchitectureHistory", () => {
   });
 });
 
-describe("loadHistoryEntry / loadHistoryChunk", () => {
+describe("loadCommitChange", () => {
   test("computes the change of each commit against its first parent", async () => {
     const root = repository();
     write(root, FILE, markdown("Node"));
@@ -135,19 +126,19 @@ describe("loadHistoryEntry / loadHistoryChunk", () => {
     git(root, "commit", "-qm", "switch to go", "-m", "Because **performance** matters.");
 
     const history = listArchitectureHistory(root);
-    const [latest, root_] = await loadHistoryChunk(root, history, 0);
+    const latest = await loadCommitChange(root, history.commits[0]!);
+    const root_ = await loadCommitChange(root, history.commits[1]!);
     expect(latest).toMatchObject({
-      commit: history.pearls[0]!.commit,
+      commit: history.commits[0]!.commit,
       semantic: true,
       added: 0,
       modified: 1,
       removed: 0,
-      diff: { head: { label: history.pearls[0]!.commit } },
+      diff: { head: { label: history.commits[0]!.commit } },
     });
-    expect(latest!.messageHtml).toContain("<strong>performance</strong>");
     // The element and the heading-only "Building Block View" section are both new.
-    expect(root_).toMatchObject({ semantic: true, added: 2, messageHtml: "" });
-    expect(root_!.diff!.base.label).toBe("empty");
+    expect(root_).toMatchObject({ semantic: true, added: 2 });
+    expect(root_.diff!.base.label).toBe("empty");
   });
 
   test("marks reformatting-only commits as not semantic", async () => {
@@ -158,7 +149,7 @@ describe("loadHistoryEntry / loadHistoryChunk", () => {
     commit(root, "reflow");
 
     const history = listArchitectureHistory(root);
-    const entry = await loadHistoryEntry(root, history, history.pearls[0]!);
+    const entry = await loadCommitChange(root, history.commits[0]!);
     expect(entry).toMatchObject({ semantic: false, added: 0, modified: 0, removed: 0 });
     expect(entry.diff!.view.documents).toEqual([]);
   });
@@ -171,7 +162,7 @@ describe("loadHistoryEntry / loadHistoryChunk", () => {
     git(root, "add", "-A");
 
     const history = listArchitectureHistory(root);
-    const entry = await loadHistoryEntry(root, history, history.pearls[0]!);
+    const entry = await loadCommitChange(root, history.commits[0]!);
     expect(entry).toMatchObject({ commit: null, semantic: true, modified: 1 });
     expect(entry.diff!.head.label).toBe("working tree");
   });
@@ -188,11 +179,12 @@ describe("loadHistoryEntry / loadHistoryChunk", () => {
     commit(root, "duplicate id");
 
     const history = listArchitectureHistory(root);
-    const [broken, healthy] = await loadHistoryChunk(root, history, 0);
+    const broken = await loadCommitChange(root, history.commits[0]!);
+    const healthy = await loadCommitChange(root, history.commits[1]!);
     expect(broken).toMatchObject({ semantic: false });
-    expect(broken!.error).toContain("Duplicate id 'service'");
-    expect(broken!.diff).toBeUndefined();
-    expect(healthy!.error).toBeUndefined();
+    expect(broken.error).toContain("Duplicate id 'service'");
+    expect(broken.diff).toBeUndefined();
+    expect(healthy.error).toBeUndefined();
   });
 
   test("reports the boundary commit of a shallow clone instead of comparing with nothing", async () => {
@@ -206,14 +198,8 @@ describe("loadHistoryEntry / loadHistoryChunk", () => {
     execFileSync("git", ["clone", "-q", "--depth", "1", `file://${origin}`, clone]);
 
     const history = listArchitectureHistory(clone);
-    expect(history.pearls.map((pearl) => pearl.subject)).toEqual(["second"]);
-    const entry = await loadHistoryEntry(clone, history, history.pearls[0]!);
+    expect(history.commits.map((commit) => commit.subject)).toEqual(["second"]);
+    const entry = await loadCommitChange(clone, history.commits[0]!);
     expect(entry.error).toContain("shallow clone");
-  });
-});
-
-describe("toJsonLines", () => {
-  test("writes one JSON document per line", () => {
-    expect(toJsonLines([{ a: 1 }, { b: "x\ny" }])).toBe('{"a":1}\n{"b":"x\\ny"}\n');
   });
 });

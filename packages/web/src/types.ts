@@ -64,10 +64,9 @@ export type {
   OutlineEntry,
   SectionContent,
   SectionRef,
-  // Architecture history
-  HistoryEntry,
-  HistoryPearl,
 } from "@arc42/core/types";
+
+export type { HistoryEntry, HistoryPearl } from "./history-format";
 
 /** Virtual node type created by DocumentView grouping — never from the server */
 export interface ProseRunNode {

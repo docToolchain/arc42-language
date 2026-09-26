@@ -710,12 +710,12 @@ and serves the files with this module — types and plain functions, no React an
 so no Node.js code reaches the browser.
 
 ```arc42
-:::ignore H014 if-history-format path will be set to packages/web/src/history-format.ts once step 1 of .vibe/development-plan-feat-historic-snapshots.md creates it :::
 :::interface
 id: if-history-format
 title: History Format
 provider: bb-web-renderer
 protocol: TypeScript module import (types and plain functions); files in JSON and JSON Lines
+path: packages/web/src/history-format.ts
 :::
 ```
 
