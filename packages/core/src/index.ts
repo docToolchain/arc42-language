@@ -10,6 +10,14 @@ export {
   validateDocumentsAsync,
 } from "./arc42.ts";
 export { lintArchitectureDiff } from "./diff.ts";
+export {
+  detectNotation,
+  isArchitectureFile,
+  loadNotationAdapter,
+  loadWorkspaceFromFiles,
+  parseWorkspaceFiles,
+} from "./workspace-files.ts";
+export type { SourceFile } from "./workspace-files.ts";
 export { diffWorkspaces } from "./workspace-diff.ts";
 export { buildDiffView } from "./diff-view.ts";
 export type {

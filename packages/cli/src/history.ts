@@ -2,11 +2,12 @@
 // adapter, in the Web Renderer's history format.
 import { toHistoryPearls } from "@arc42/web/history-format";
 import type { HistoryEntry, HistoryPearl } from "@arc42/web/history-format";
-import { createAdapterForNotation, loadCommitChange } from "@arc42/workspace-fs";
+import { MarkdownProseRenderer } from "@arc42/core/notation/markdown";
+import { loadCommitChange } from "@arc42/workspace-fs";
 import type { ArchitectureCommit, ArchitectureHistory } from "@arc42/workspace-fs";
 
 /** Commit messages are Markdown, whatever the workspace's notation. */
-const messageRenderer = createAdapterForNotation("markdown").createProseRenderer();
+const messageRenderer = new MarkdownProseRenderer();
 
 /** The pearls of a history, numbered into chunks. */
 export function historyPearls(history: ArchitectureHistory): HistoryPearl[] {
@@ -18,7 +19,7 @@ export async function loadHistoryEntry(
   dir: string,
   commit: ArchitectureCommit,
 ): Promise<HistoryEntry> {
-  const messageHtml = commit.body ? await messageRenderer.renderProse(commit.body) : "";
+  const messageHtml = commit.body ? messageRenderer.renderProse(commit.body) : "";
   return { ...(await loadCommitChange(dir, commit)), messageHtml };
 }
 

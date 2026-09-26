@@ -5,9 +5,9 @@ import type { AstNode, DocumentAst } from "../ast.ts";
 
 /**
  * Converts raw prose source text to an HTML fragment.
- * Two implementations exist:
- *  - MarkdownProseRenderer (in @arc42/workspace-fs) — wraps marked.parse()
- *  - AsciidocProseRenderer (in @arc42/workspace-fs) — wraps asciidoctor load+convert
+ * Two implementations exist, each behind its notation's subpath:
+ *  - MarkdownProseRenderer (@arc42/core/notation/markdown) — wraps marked.parse()
+ *  - AsciidocProseRenderer (@arc42/core/notation/asciidoc) — wraps asciidoctor load+convert
  *
  * renderProse may return a Promise to support async renderers (e.g. asciidoctor).
  * Callers use renderProseNodesAsync for document rendering.

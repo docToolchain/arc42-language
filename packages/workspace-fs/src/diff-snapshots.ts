@@ -2,11 +2,10 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-import { computeCoverage, loadWorkspaceFromDocuments } from "@arc42/core";
+import { isArchitectureFile, loadWorkspaceFromFiles } from "@arc42/core";
 import type { WorkspacePayload } from "@arc42/core";
 
 import { git } from "./git-diff.ts";
-import { detectNotation, isArchitectureFile, parseWorkspaceFiles } from "./workspace-parse.ts";
 
 /**
  * Which two snapshots to compare, following `git diff` semantics:
@@ -205,17 +204,12 @@ async function loadSnapshot(
 ): Promise<Snapshot> {
   const paths = source.paths();
   const files = paths.filter((path) => isArchitectureFile(path) && inWorkspace(path));
-  const notation = detectNotation(files, source.label);
-  const documents = await parseWorkspaceFiles(
+  const payload = await loadWorkspaceFromFiles(
     files.map((path) => ({ path, content: source.read(path) })),
-    notation,
+    paths,
+    source.label,
   );
-  const payload = loadWorkspaceFromDocuments(documents);
-  return {
-    label: source.label,
-    knownPaths: new Set(paths),
-    payload: { ...payload, coverage: computeCoverage(payload.elements, paths), notation },
-  };
+  return { label: source.label, knownPaths: new Set(paths), payload };
 }
 
 /**

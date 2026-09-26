@@ -29,7 +29,7 @@ export interface WorkspacePayload {
   documents: DocumentAst[];
   /**
    * Pre-computed path coverage result.
-   * Populated by `loadWorkspace()` in @arc42/workspace-fs from the repository inventory.
+   * Populated by `loadWorkspaceFromFiles()` from the tracked paths of the same version.
    * Optional because `loadWorkspaceFromDocuments` (pure, no filesystem) does not populate it.
    * The SPA renders this directly without recomputing.
    */
@@ -38,7 +38,7 @@ export interface WorkspacePayload {
   ignoreDirectives: IgnoreDirective[];
   /**
    * Notation used by all documents in this workspace.
-   * Populated by loadWorkspace() in @arc42/workspace-fs.
+   * Populated by loadWorkspaceFromFiles().
    * Optional because loadWorkspaceFromDocuments (pure, no filesystem) does not populate it.
    */
   notation?: Notation;

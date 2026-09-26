@@ -23,6 +23,16 @@
       "development": "./src/parser/index.ts",
       "default": "./dist/parser/index.mjs"
     },
+    "./notation/markdown": {
+      "types": "./src/notation/markdown/index.ts",
+      "development": "./src/notation/markdown/index.ts",
+      "default": "./dist/notation/markdown/index.mjs"
+    },
+    "./notation/asciidoc": {
+      "types": "./src/notation/asciidoc/index.ts",
+      "development": "./src/notation/asciidoc/index.ts",
+      "default": "./dist/notation/asciidoc/index.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -34,6 +44,8 @@
   },
   "dependencies": {
     "@arc42/mermaid": "workspace:*",
+    "@asciidoctor/core": "catalog:",
+    "marked": "catalog:",
     "zod": "4.5.4"
   },
   "devDependencies": {
