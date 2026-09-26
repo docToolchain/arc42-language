@@ -13,6 +13,14 @@ export default defineConfig({
       onlyBundle: false,
       alwaysBundle: ["@arc42/core", "@arc42/workspace-fs"],
     },
+    inputOptions: {
+      // An import the bundler cannot resolve stays external and breaks the published CLI at
+      // runtime (e.g. a core subpath export without a built file). Fail the build instead.
+      onLog(level, log, handler) {
+        if (log.code === "UNRESOLVED_IMPORT") handler("error", log);
+        else handler(level, log);
+      },
+    },
     copy: [
       // Copy SPA assets from packages/web/dist/ into dist/web/.
       // The glob matches individual files; flatten: false preserves the
