@@ -40,7 +40,7 @@ test.describe("architecture review script", () => {
     // The branch under review: the two commits after "initial architecture".
     const result = review(root, "HEAD~2", out, { GITHUB_OUTPUT: githubOutput });
     expect(result.status, result.stderr).toBe(0);
-    expect(readFileSync(githubOutput, "utf8")).toBe("changed=true\n");
+    expect(readFileSync(githubOutput, "utf8")).toBe('changed=true\npages=["workspace.html"]\n');
 
     const summary = JSON.parse(readFileSync(join(out, "result.json"), "utf8")) as {
       changed: boolean;
@@ -53,9 +53,11 @@ test.describe("architecture review script", () => {
 
     const comment = readFileSync(join(out, "summary.md"), "utf8");
     expect(comment.startsWith("<!-- arc42-architecture-review -->\n")).toBe(true);
-    expect(comment).toContain("| `.` | 1 | 2 | 1 | 1 | 0 | `workspace.html` |");
+    expect(comment).toContain(
+      "| `.` | 1 | 2 | 1 | 1 | 0 | [Open `workspace.html`]({{PAGE_URL:workspace.html}}) |",
+    );
     expect(comment).toContain("#### `.`");
-    expect(comment).toContain("[Download the rendered architecture review]({{ARTIFACT_URL}})");
+    expect(comment).toContain("[download all review pages]({{ARTIFACT_URL}})");
     expect(comment).toContain(
       "- `bb-catalog-service` (building-block) — modified — technology: `Node.js / Express` → `Go`",
     );
@@ -79,7 +81,7 @@ test.describe("architecture review script", () => {
     // Uncommitted changes are not part of a pull request.
     const result = review(root, "HEAD", out, { GITHUB_OUTPUT: githubOutput });
     expect(result.status, result.stderr).toBe(0);
-    expect(readFileSync(githubOutput, "utf8")).toBe("changed=false\n");
+    expect(readFileSync(githubOutput, "utf8")).toBe("changed=false\npages=[]\n");
     expect(readFileSync(join(out, "summary.md"), "utf8")).toBe(
       "<!-- arc42-architecture-review -->\n### Architecture review\n\nNo architecture changes compared with `HEAD`.\n",
     );

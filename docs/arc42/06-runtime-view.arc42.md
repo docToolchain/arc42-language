@@ -276,8 +276,9 @@ skill tells the agent _how_ to read biz42 context — it does not perform that r
 When a pull request is opened or updated, a GitHub Actions workflow compares the architecture of
 each workspace with the merge base of the target branch. Workspaces whose architecture changed are
 rendered as one self-contained review page each — every changed section of both versions, the
-attribute changes and the lint findings — published as a workflow artifact. A pull request comment
-(updated in place on every push) summarizes the changes and links the artifact, so a reviewer sees
+attribute changes and the lint findings. Each page is published so that it opens directly in the
+browser, on mobile too; all pages are also available as one download. A pull request comment
+(updated in place on every push) summarizes the changes and links each page, so a reviewer sees
 the architectural impact at a glance before reading the code diff.
 
 ```arc42
@@ -318,8 +319,8 @@ sequenceDiagram
     bb_cli-->>actor_ci: Changed? Counts and findings
     actor_ci->>bb_cli: arc42 build --diff origin/main...HEAD --single-file
     bb_cli-->>actor_ci: Self-contained review page (web renderer inlined)
-    actor_ci-->>actor_reviewer: Artifact and pull request comment
-    actor_reviewer->>bb_web: Open the review page
+    actor_ci-->>actor_reviewer: Pull request comment linking each review page
+    actor_reviewer->>bb_web: Open a review page in the browser
     bb_web-->>actor_reviewer: Rendered changed sections, both versions
 ```
 

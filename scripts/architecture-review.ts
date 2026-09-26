@@ -11,9 +11,11 @@
  *
  * - <out>/result.json — per workspace: changed, +/~/− counts, findings
  * - <out>/summary.md  — Markdown for a pull request comment / job summary;
- *   the placeholder {{ARTIFACT_URL}} stands for the download link of the pages
+ *   the placeholder {{ARTIFACT_URL}} stands for the download link of all pages
+ *   (zipped), {{PAGE_URL:<page>}} for the link that opens one page directly
  *
- * With GITHUB_OUTPUT set, it also writes `changed=true|false`.
+ * With GITHUB_OUTPUT set, it also writes `changed=true|false` and
+ * `pages=<JSON array of page file names>`.
  * Any failure of the CLI (other than lint findings) fails the script.
  */
 
@@ -33,6 +35,11 @@ import { fileURLToPath } from "node:url";
 
 const MARKER = "<!-- arc42-architecture-review -->";
 const ARTIFACT_PLACEHOLDER = "{{ARTIFACT_URL}}";
+
+/** Placeholder for the link that opens one review page in the browser. */
+function pagePlaceholder(page: string): string {
+  return `{{PAGE_URL:${page}}}`;
+}
 
 interface Finding {
   kind: string;
@@ -212,10 +219,10 @@ function renderSummary(reviews: WorkspaceReview[], base: string): string {
     "|---|---:|---:|---:|---:|---:|---|",
     ...changed.map(
       (review) =>
-        `| \`${review.workspace}\` | ${review.added} | ${review.modified} | ${review.removed} | ${review.diff.groups.warnings.length} | ${review.diff.groups.untouched.length} | \`${review.page}\` |`,
+        `| \`${review.workspace}\` | ${review.added} | ${review.modified} | ${review.removed} | ${review.diff.groups.warnings.length} | ${review.diff.groups.untouched.length} | [Open \`${review.page}\`](${pagePlaceholder(review.page!)}) |`,
     ),
     "",
-    `**[Download the rendered architecture review](${ARTIFACT_PLACEHOLDER})** — unzip and open the review page in a browser: changes shown inside their chapters.`,
+    `**Open** a workspace's review page to see its changes inside their chapters — it opens in the browser, on mobile too. Or [download all review pages](${ARTIFACT_PLACEHOLDER}) as a zip.`,
     "",
   ];
   for (const review of changed) {
@@ -294,7 +301,11 @@ function main() {
   writeFileSync(join(out, "result.json"), `${JSON.stringify({ changed, reviews }, null, 2)}\n`);
   writeFileSync(join(out, "summary.md"), renderSummary(reviews, values.base));
   if (process.env["GITHUB_OUTPUT"]) {
-    appendFileSync(process.env["GITHUB_OUTPUT"], `changed=${changed}\n`);
+    const pages = reviews.flatMap((review) => (review.page ? [review.page] : []));
+    appendFileSync(
+      process.env["GITHUB_OUTPUT"],
+      `changed=${changed}\npages=${JSON.stringify(pages)}\n`,
+    );
   }
   for (const review of reviews) {
     console.log(

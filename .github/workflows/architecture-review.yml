@@ -1,9 +1,10 @@
 name: Architecture review
 
 # For every pull request: compare the architecture with the merge base, render
-# the changes as one self-contained HTML page per workspace, publish the pages
-# as a workflow artifact and point reviewers to them with a pull request
-# comment (updated in place on every push).
+# the changes as one self-contained HTML page per workspace, publish each page
+# as an unzipped artifact that opens in the browser (and all of them as one
+# zip), and point reviewers to them with a pull request comment (updated in
+# place on every push).
 
 on:
   pull_request:
@@ -12,6 +13,8 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  # The report looks up the URLs of this run's artifacts.
+  actions: read
 
 concurrency:
   group: architecture-review-${{ github.event.pull_request.number }}
@@ -25,6 +28,9 @@ jobs:
   review:
     name: Architecture review
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.review.outputs.changed }}
+      pages: ${{ steps.review.outputs.pages }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -52,37 +58,92 @@ jobs:
           node --experimental-strip-types --no-warnings scripts/architecture-review.ts
           --base "origin/${{ github.base_ref }}" --out architecture-review $WORKSPACES
 
-      - name: Upload review pages
-        id: upload
-        if: steps.review.outputs.changed == 'true'
+      # All pages and the summary, zipped: the report job reads the summary, and
+      # readers can download every page at once.
+      - name: Upload the review
         uses: actions/upload-artifact@v7
         with:
           name: architecture-review-pr-${{ github.event.pull_request.number }}
-          path: architecture-review/*.html
+          path: architecture-review/
           if-no-files-found: error
           retention-days: 30
+
+  pages:
+    name: Review page ${{ matrix.page }}
+    needs: review
+    if: needs.review.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        page: ${{ fromJSON(needs.review.outputs.pages) }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: architecture-review-pr-${{ github.event.pull_request.number }}
+          path: architecture-review
+
+      # Unzipped, a single HTML file opens directly in the browser — on mobile too.
+      # The artifact is named after the file.
+      - name: Upload the page unzipped
+        uses: actions/upload-artifact@v7
+        with:
+          path: architecture-review/${{ matrix.page }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
+
+  report:
+    name: Report
+    needs: [review, pages]
+    # Also without changes (pages skipped): an existing comment is updated.
+    if: always() && needs.review.result == 'success' && needs.pages.result != 'failure' && needs.pages.result != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: architecture-review-pr-${{ github.event.pull_request.number }}
+          path: architecture-review
 
       - name: Report in the job summary and on the pull request
         uses: actions/github-script@v9
         env:
-          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
-          CHANGED: ${{ steps.review.outputs.changed }}
+          CHANGED: ${{ needs.review.outputs.changed }}
+          PAGES: ${{ needs.review.outputs.pages }}
+          ZIP_NAME: architecture-review-pr-${{ github.event.pull_request.number }}
         with:
           script: |
             const fs = require("node:fs");
             const marker = "<!-- arc42-architecture-review -->";
-            const body = fs
+            const { owner, repo } = context.repo;
+
+            // Every artifact of this run by name; unzipped pages are named after their file.
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              owner,
+              repo,
+              run_id: context.runId,
+              per_page: 100,
+            });
+            const urlOf = (name) => {
+              const artifact = artifacts.find((candidate) => candidate.name === name);
+              if (!artifact) throw new Error(`No artifact ${name} in run ${context.runId}`);
+              return `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}/artifacts/${artifact.id}`;
+            };
+            let body = fs
               .readFileSync("architecture-review/summary.md", "utf8")
-              .replaceAll("{{ARTIFACT_URL}}", () => process.env.ARTIFACT_URL ?? "");
+              .replaceAll("{{ARTIFACT_URL}}", () => urlOf(process.env.ZIP_NAME));
+            for (const page of JSON.parse(process.env.PAGES)) {
+              body = body.replaceAll(`{{PAGE_URL:${page}}}`, () => urlOf(page));
+            }
+            const left = /\{\{[A-Z_]+(:[^}]*)?\}\}/.exec(body);
+            if (left) throw new Error(`Unresolved placeholder in the summary: ${left[0]}`);
             await core.summary.addRaw(body).write();
 
             // Pull requests from forks get a read-only token: the job summary has to do.
             const pullRequest = context.payload.pull_request;
-            if (pullRequest.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+            if (pullRequest.head.repo.full_name !== `${owner}/${repo}`) {
               core.notice("Pull request from a fork: see the job summary for the architecture review.");
               return;
             }
-            const { owner, repo } = context.repo;
             const issue_number = pullRequest.number;
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
