@@ -55,6 +55,12 @@ export interface DiffSnapshots {
   acceptanceBase?: string;
   /** Repository-relative paths of all changed files (code and documents). */
   changedFiles: string[];
+  /**
+   * Architecture documents of the workspace that Git does not track yet. They
+   * exist in the working tree but are not part of the comparison until added.
+   * Empty unless the head is the working tree.
+   */
+  untracked: string[];
 }
 
 interface SnapshotSource {
@@ -226,6 +232,12 @@ export async function loadDiffSnapshots(dir: string, spec: DiffSpec = {}): Promi
   const changedFiles = nulSeparated(
     git(root, ["diff", "--name-only", "-z", "--no-renames", ...diffArgs, "--"]),
   );
+  const untracked =
+    head.label === "working tree"
+      ? nulSeparated(git(root, ["ls-files", "-z", "--others", "--exclude-standard"]))
+          .filter((path) => isArchitectureFile(path) && inWorkspace(path))
+          .sort((a, b) => a.localeCompare(b))
+      : [];
   return {
     root,
     base: await loadSnapshot(base, inWorkspace),
@@ -233,5 +245,6 @@ export async function loadDiffSnapshots(dir: string, spec: DiffSpec = {}): Promi
     baseCommit,
     acceptanceBase,
     changedFiles,
+    untracked,
   };
 }

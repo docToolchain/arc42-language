@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { diffWorkspaces } from "@arc42/core";
-import { EMPTY_TREE, loadDiffSnapshots } from "../src/index.ts";
+import { EMPTY_TREE, loadDiffPayload, loadDiffSnapshots } from "../src/index.ts";
 
 const createdDirs: string[] = [];
 
@@ -243,6 +243,30 @@ describe("loadDiffSnapshots — workspace content", () => {
     expect(diffWorkspaces(snapshots.base.payload, snapshots.head.payload).elements).toMatchObject([
       { id: "service", status: "removed", proseChanged: true },
     ]);
+  });
+});
+
+describe("loadDiffSnapshots — untracked documents", () => {
+  test("lists documents Git does not track yet when the head is the working tree", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    write(root, "docs/12-glossary.arc42.md", "# Glossary\n");
+    write(root, "docs/notes.md", "# Notes\n");
+    write(root, "other/01-introduction.arc42.md", "# Introduction and Goals\n");
+
+    const snapshots = await loadDiffSnapshots(join(root, "docs"));
+    expect(snapshots.untracked).toEqual(["docs/12-glossary.arc42.md"]);
+    expect(snapshots.head.payload.documents.map((document) => document.filePath)).toEqual([FILE]);
+    expect((await loadDiffPayload(join(root, "docs"), {})).payload.untracked).toEqual([
+      "docs/12-glossary.arc42.md",
+    ]);
+  });
+
+  test("leaves them out when the head is the index or a commit", async () => {
+    const root = repository({ [FILE]: markdown("Owns orders.") });
+    write(root, "docs/12-glossary.arc42.md", "# Glossary\n");
+    expect((await loadDiffSnapshots(root, { staged: true })).untracked).toEqual([]);
+    expect((await loadDiffSnapshots(root, { reference: "HEAD..HEAD" })).untracked).toEqual([]);
+    expect((await loadDiffPayload(root, { staged: true })).payload.untracked).toBeUndefined();
   });
 });
 

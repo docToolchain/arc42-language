@@ -68,6 +68,21 @@
   font-size: 0.85rem;
 }
 
+.untracked {
+  border: 1px solid var(--diff-modified);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  background: color-mix(in srgb, var(--diff-modified) 8%, transparent);
+  font-size: 0.9rem;
+}
+
+.untracked ul {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
 .empty {
   color: var(--text-muted);
 }

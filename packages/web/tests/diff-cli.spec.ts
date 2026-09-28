@@ -115,6 +115,25 @@ test.describe("arc42 serve --diff", () => {
   });
 });
 
+test.describe("arc42 diff — untracked documents", () => {
+  test("warns about documents Git does not track yet", () => {
+    const root = createDiffRepository();
+    try {
+      writeFileSync(join(root, "13-appendix.arc42.md"), "# Appendix\n\nNot added yet.\n");
+      const result = spawnSync("node", [cliPath, "--dir", root, "diff"], { encoding: "utf8" });
+      expect(result.stderr).toContain(
+        "warning 13-appendix.arc42.md  untracked — not part of the comparison until you git add it",
+      );
+      const staged = spawnSync("node", [cliPath, "--dir", root, "diff", "--staged"], {
+        encoding: "utf8",
+      });
+      expect(staged.stderr).not.toContain("untracked");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 test.describe("arc42 build --diff", () => {
   test("injects the difference and escapes script terminators", ({ diffRepository }) => {
     const out = mkdtempSync(join(tmpdir(), "arc42-e2e-build-diff-"));

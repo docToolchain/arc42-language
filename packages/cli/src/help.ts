@@ -156,7 +156,8 @@ Options:
 Without a flag, the command compares the working tree with the index. With <reference>,
 it compares the working tree with that revision. A commit range cannot be combined with
 --staged. Architecture changes are compared semantically: reformatted blocks and reflowed
-prose are not changes. Consistency findings exit 1; set
+prose are not changes. Documents Git does not track yet are not part of a comparison with
+the working tree; they are listed as a warning. Consistency findings exit 1; set
 ARC42_CONSISTENT to the displayed base commit after reviewing them. Advisory path hints do not
 fail the command unless --strict is supplied. Git, parsing, and other operational errors exit 1.
 

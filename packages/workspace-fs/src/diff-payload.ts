@@ -40,6 +40,7 @@ export async function loadDiffPayload(dir: string, spec: DiffSpec): Promise<Load
     payload: {
       base: { label: snapshots.base.label, commit: snapshots.baseCommit },
       head: { label: snapshots.head.label },
+      ...(snapshots.untracked.length > 0 ? { untracked: snapshots.untracked } : {}),
       findings,
       groups: result.groups,
       view: buildDiffView(snapshots.base.payload, snapshots.head.payload, result.architecture),

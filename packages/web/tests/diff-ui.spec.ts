@@ -260,8 +260,15 @@ test.describe("Changes view — live updates", () => {
       await page.goto(`${server.url}/`);
       await expect(page.getByTestId("diff-index-item")).toHaveCount(4);
 
+      // A new document is not part of the comparison until Git tracks it.
+      writeFileSync(join(root, "13-appendix.arc42.md"), "# Appendix\n\nNot added yet.\n");
+      await expect(page.getByTestId("diff-untracked")).toContainText("13-appendix.arc42.md", {
+        timeout: 10000,
+      });
+
       spawnSync("git", ["-C", root, "add", "-A"]);
       await expect(page.getByTestId("changes-empty")).toBeVisible({ timeout: 10000 });
+      await expect(page.getByTestId("diff-untracked")).toHaveCount(0);
 
       // A duplicate id makes the working tree impossible to diff.
       const glossary = join(root, "12-glossary.arc42.md");
