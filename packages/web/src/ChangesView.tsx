@@ -83,6 +83,21 @@ export function ChangesView({
           <code>{snapshotLabel(diff.head.label)}</code>
         </p>
       )}
+      {diff?.untracked && diff.untracked.length > 0 && (
+        <div className={styles.untracked} role="note" data-testid="diff-untracked">
+          <strong>Not part of this comparison:</strong> Git does not track{" "}
+          {diff.untracked.length === 1 ? "this document" : "these documents"} yet. Add{" "}
+          {diff.untracked.length === 1 ? "it" : "them"} with <code>git add</code> to include{" "}
+          {diff.untracked.length === 1 ? "it" : "them"}.
+          <ul role="list">
+            {diff.untracked.map((file) => (
+              <li key={file}>
+                <code>{file}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {error !== null && (
         <div className={styles.error} role="alert" data-testid="diff-error">
           <strong>The difference could not be computed.</strong>

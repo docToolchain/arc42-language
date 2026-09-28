@@ -213,6 +213,13 @@ function diffSpecFromArgs(
   return { reference: positionals[0], staged: Boolean(values.staged) };
 }
 
+/** Warn that documents Git does not track yet are left out of a comparison. */
+function warnUntracked(untracked: readonly string[]) {
+  for (const file of untracked) {
+    console.error(`warning ${file}  untracked — not part of the comparison until you git add it`);
+  }
+}
+
 async function runDiff(dir: string, args: string[]) {
   if (args.includes("--help") || args.includes("-h")) {
     printDiffHelp();
@@ -260,6 +267,7 @@ async function runDiff(dir: string, args: string[]) {
             base: { label: snapshots.base.label, commit: snapshots.baseCommit },
             head: { label: snapshots.head.label },
             acceptanceBase: snapshots.acceptanceBase ?? null,
+            untracked: snapshots.untracked,
             accepted,
             hasBlockingFindings: result.hasBlockingFindings,
             findings,
@@ -306,6 +314,7 @@ async function runDiff(dir: string, args: string[]) {
       );
     }
 
+    warnUntracked(snapshots.untracked);
     if (accepted) {
       console.log("info These changes were accepted as intentional");
     }
@@ -664,6 +673,8 @@ async function runServe(dir: string, args: string[]) {
   let diffJson: string | undefined;
   let diffError: string | undefined;
   let diffLabel = "";
+  // Untracked documents are warned about once, and again whenever the list changes.
+  let untrackedWarned = "[]";
 
   const load = async () => {
     if (!diffSpec) {
@@ -675,6 +686,9 @@ async function runServe(dir: string, args: string[]) {
     diffJson = JSON.stringify(diff.payload);
     diffError = undefined;
     diffLabel = `${diff.payload.base.label} → ${diff.payload.head.label}`;
+    const untracked = JSON.stringify(diff.snapshots.untracked);
+    if (untracked !== untrackedWarned) warnUntracked(diff.snapshots.untracked);
+    untrackedWarned = untracked;
   };
 
   try {
@@ -1037,6 +1051,7 @@ async function runBuild(dir: string, args: string[]) {
   try {
     if (diffSpec) {
       const diff = await loadDiffPayload(dir, diffSpec);
+      warnUntracked(diff.snapshots.untracked);
       workspaceJson = JSON.stringify(diff.snapshots.head.payload);
       diffJson = JSON.stringify(diff.payload);
     } else {
