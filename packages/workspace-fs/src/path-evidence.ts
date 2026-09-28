@@ -1,7 +1,7 @@
 // Path evidence of a workspace: its repository root and the paths known there.
 import { access, readdir } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
-import { gitLsFiles } from "./git-diff.ts";
+import { gitLsFiles } from "@cli42/lib/git";
 
 async function collectPaths(dir: string, root: string): Promise<string[]> {
   const paths: string[] = [];

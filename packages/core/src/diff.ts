@@ -1,8 +1,9 @@
+import { consistencyFindings } from "@cli42/lib/diff";
 import type { Element } from "./model/types.ts";
 import { computeCoverage } from "./coverage.ts";
 import type { WorkspacePayload } from "./workspace.ts";
 import { diffWorkspaces } from "./workspace-diff.ts";
-import type { ArchitectureDiff, ElementChange } from "./workspace-diff.ts";
+import type { ArchitectureDiff } from "./workspace-diff.ts";
 
 export interface DiffFinding {
   kind:
@@ -55,38 +56,6 @@ export interface LintDiffOptions {
   baseKnownPaths?: Set<string>;
   /** Tracked paths for the head snapshot. */
   headKnownPaths?: Set<string>;
-}
-
-function consistencyFinding(change: ElementChange): DiffFinding | undefined {
-  if (change.status === "unchanged") {
-    return {
-      kind: "prose-without-block-change",
-      severity: "warning",
-      file: change.head!.file,
-      line: change.head!.line,
-      elementId: change.id,
-      message: `Section prose changed without changing block '${change.id}'.`,
-    };
-  }
-  if (change.proseChanged) return undefined;
-  if (change.status === "removed") {
-    return {
-      kind: "block-without-prose-change",
-      severity: "warning",
-      file: change.base!.file,
-      line: change.base!.line,
-      elementId: change.id,
-      message: `Block '${change.id}' was deleted without deleting its section prose.`,
-    };
-  }
-  return {
-    kind: "block-without-prose-change",
-    severity: "warning",
-    file: change.head!.file,
-    line: change.head!.line,
-    elementId: change.id,
-    message: `Block '${change.id}' changed without changing its section prose.`,
-  };
 }
 
 function pathParts(value: string): string[] | undefined {
@@ -201,12 +170,7 @@ function groupFindings(
  */
 export function lintArchitectureDiff(options: LintDiffOptions): DiffResult {
   const architecture = diffWorkspaces(options.base, options.head);
-  const consistency = architecture.elements
-    .map(consistencyFinding)
-    .filter((finding): finding is DiffFinding => finding !== undefined)
-    .sort(
-      (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.kind.localeCompare(b.kind),
-    );
+  const consistency: DiffFinding[] = consistencyFindings(architecture.elements);
   const knownPaths =
     options.headKnownPaths || options.baseKnownPaths
       ? new Set([...(options.headKnownPaths ?? []), ...(options.baseKnownPaths ?? [])])

@@ -17,7 +17,7 @@ import type { GetDocumentsOptions, GetResult, ValidateResult, WorkspacePayload }
 import { discoverFilesWithNotation, readSourceFiles, readWorkspaceDocuments } from "./discovery.ts";
 import { pathEvidence } from "./path-evidence.ts";
 
-export { gitLsFiles } from "./git-diff.ts";
+export { gitLsFiles } from "@cli42/lib/git";
 export { loadDiffSnapshots, EMPTY_TREE } from "./diff-snapshots.ts";
 export { loadDiffPayload } from "./diff-payload.ts";
 export type { LoadedDiff } from "./diff-payload.ts";
