@@ -9,6 +9,9 @@ catalogs:
     '@asciidoctor/core':
       specifier: ^4.1.0
       version: 4.1.0
+    '@cli42/lib':
+      specifier: github:mrsimpson/cli42#185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9
+      version: 0.1.0
     '@semantic-release/changelog':
       specifier: 7.0.0
       version: 7.0.0
@@ -82,6 +85,9 @@ importers:
       '@arc42/workspace-fs':
         specifier: workspace:*
         version: link:../workspace-fs
+      '@cli42/lib':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -100,6 +106,9 @@ importers:
       '@asciidoctor/core':
         specifier: 'catalog:'
         version: 4.1.0
+      '@cli42/lib':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9
       marked:
         specifier: 'catalog:'
         version: 14.1.4
@@ -172,6 +181,9 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
+      '@cli42/lib':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9
       marked:
         specifier: ^14.0.0
         version: 14.1.4
@@ -218,6 +230,9 @@ importers:
       '@arc42/core':
         specifier: workspace:*
         version: link:../core
+      '@cli42/lib':
+        specifier: 'catalog:'
+        version: https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -343,6 +358,11 @@ packages:
 
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
+
+  '@cli42/lib@https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9':
+    resolution: {tarball: https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9}
+    version: 0.1.0
+    engines: {node: '>=22.6'}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -3537,6 +3557,8 @@ snapshots:
   '@braintree/sanitize-url@7.1.2': {}
 
   '@chevrotain/types@11.1.2': {}
+
+  '@cli42/lib@https://codeload.github.com/mrsimpson/cli42/tar.gz/185a24cf9e1dfe79e9ea64fb0b68fcc5cda7c7d9': {}
 
   '@colors/colors@1.5.0':
     optional: true

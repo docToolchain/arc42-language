@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@arc42/core": "workspace:*",
+    "@cli42/lib": "catalog:",
     "marked": "^14.0.0",
     "mermaid": "^11.4.0",
     "react": "^18.3.1",

@@ -21,7 +21,8 @@
     "check": "vp check"
   },
   "dependencies": {
-    "@arc42/core": "workspace:*"
+    "@arc42/core": "workspace:*",
+    "@cli42/lib": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
