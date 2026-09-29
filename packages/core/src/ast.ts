@@ -1,4 +1,13 @@
-// AST types produced by the parser
+// AST types produced by the parser: the node types of the shared Markdown
+// notation, with arc42's blocks and diagrams.
+
+import type {
+  BareMermaidNode,
+  HeadingNode,
+  IgnoreNode,
+  MarkdownBlockNode,
+  ProseNode,
+} from "@cli42/lib/parser";
 
 export type BlockType =
   | "quality-goal"
@@ -15,27 +24,9 @@ export type BlockType =
   | "glossary-term"
   | "runtime-scenario";
 
-export interface HeadingNode {
-  kind: "heading";
-  level: number;
-  text: string;
-  line: number;
-}
+export type { BareMermaidNode, HeadingNode, IgnoreNode, ProseNode };
 
-export interface ProseNode {
-  kind: "prose";
-  text: string;
-  line: number;
-  /** HTML fragment populated by ProseRenderer post-parse step. Undefined until rendered. */
-  renderedHtml?: string;
-}
-
-export interface BlockNode {
-  kind: "block";
-  blockType: string; // raw string — builder rejects unknowns
-  attributes: Record<string, string>;
-  startLine: number;
-  endLine: number;
+export interface BlockNode extends MarkdownBlockNode {
   /** True when the block was parsed inside a ```arc42 ... ``` wrapper fence. */
   inArc42Fence: boolean;
 }
@@ -83,29 +74,6 @@ export interface ContextDiagramNode extends DiagramNodeBase {
   diagramType: "context";
   view: "context";
   roots: string[];
-}
-
-/** Bare mermaid fenced block with no preceding :::diagram metadata block.
- * The parser emits this when it encounters ```mermaid without a :::diagram owner.
- * Validator rule W017 warns about these — authors should add a :::diagram block.
- * The web renderer renders the source as-is since the Mermaid is still valid.
- */
-export interface BareMermaidNode {
-  kind: "bare-mermaid";
-  source: string;
-  startLine: number;
-  endLine: number;
-}
-
-/** Ignore directive: `:::ignore RULE [reason] :::` inside an ```arc42 fence.
- * This is a parser-level node that is consumed by the builder and validator.
- */
-export interface IgnoreNode {
-  kind: "ignore";
-  ruleCode: string;
-  reason?: string;
-  startLine: number;
-  endLine: number;
 }
 
 export type DiagramNode =
