@@ -1,3 +1,4 @@
+import { parseDocumentAsync } from "@cli42/lib/notation";
 import { MarkdownParser } from "./parser/markdown-parser.ts";
 import { buildWorkspace } from "./model/builder.ts";
 import { buildIndex } from "./resolver/index.ts";
@@ -10,7 +11,6 @@ import type { DocumentAst } from "./ast.ts";
 import type { Workspace } from "./model/types.ts";
 import type { Parser } from "./parser/markdown-parser.ts";
 import type { ProseRenderer } from "./notation/prose-renderer.ts";
-import { renderProseNodes } from "./notation/prose-renderer.ts";
 import type {
   GetQuery,
   GetResult,
@@ -46,8 +46,7 @@ export async function parseArchitectureDocumentAsync(
   parser: Parser,
   proseRenderer?: ProseRenderer,
 ): Promise<DocumentAst> {
-  const doc = parser.parse(filePath, content);
-  return proseRenderer ? renderProseNodes(doc, proseRenderer) : doc;
+  return parseDocumentAsync(filePath, content, parser, proseRenderer);
 }
 
 /** Build the workspace from documents and index reference relationships */
