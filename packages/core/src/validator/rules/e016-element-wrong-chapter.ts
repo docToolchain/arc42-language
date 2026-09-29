@@ -1,11 +1,8 @@
+import { elementWrongChapterRule } from "@cli42/lib/rules";
+import { ELEMENT_CHAPTER } from "../../model/types.ts";
 import { chapterNumberFromFile } from "../../path-utils.ts";
-import { ELEMENT_CHAPTER, type Element, type Workspace } from "../../model/types.ts";
-import type { ReferenceIndex } from "../../resolver/types.ts";
-import type { Diagnostic, Rule } from "../types.ts";
-
-function describeElement(element: Element): string {
-  return `${element.kind} '${element.id}'`;
-}
+import type { BlockType } from "../../ast.ts";
+import type { Rule, RuleDocs } from "../types.ts";
 
 /**
  * E016 — A typed element is documented in the chapter assigned to its kind.
@@ -13,8 +10,8 @@ function describeElement(element: Element): string {
  * Numbered files define the chapter boundary. Unnumbered documents can be
  * used for snippets and alternate layouts and are intentionally ignored.
  */
-export const e016ElementWrongChapter: Rule = {
-  meta: {
+export const e016ElementWrongChapter: Rule = elementWrongChapterRule<BlockType, RuleDocs>(
+  {
     code: "E016",
     severity: "error",
     type: "problem",
@@ -26,25 +23,5 @@ export const e016ElementWrongChapter: Rule = {
       recommended: true,
     },
   },
-  check(workspace: Workspace, _index: ReferenceIndex): Diagnostic[] {
-    const diagnostics: Diagnostic[] = [];
-
-    for (const element of workspace.elements) {
-      const actualChapter = chapterNumberFromFile(element.loc.file);
-      if (actualChapter === null) continue;
-
-      const expectedChapter = ELEMENT_CHAPTER[element.kind];
-      if (actualChapter === expectedChapter) continue;
-
-      diagnostics.push({
-        code: "E016",
-        severity: "error",
-        message: `${describeElement(element)} belongs in chapter ${expectedChapter}, but is documented in chapter ${actualChapter}`,
-        file: element.loc.file,
-        line: element.loc.line,
-      });
-    }
-
-    return diagnostics;
-  },
-};
+  { chapters: ELEMENT_CHAPTER, chapterOfFile: chapterNumberFromFile },
+);
