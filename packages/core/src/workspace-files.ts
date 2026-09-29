@@ -2,6 +2,7 @@
 // a workspace — the filesystem adapter from disk or git, the web renderer from
 // an earlier version's files. Pure: no files, folders, addresses or formats.
 
+import { detectNotation as detectNotationOf } from "@cli42/lib/notation";
 import { loadWorkspaceFromDocuments, parseArchitectureDocumentAsync } from "./arc42.ts";
 import type { DocumentAst } from "./ast.ts";
 import { computeCoverage } from "./coverage.ts";
@@ -22,14 +23,14 @@ export function isArchitectureFile(path: string): boolean {
  * Throws if both extensions are present (mixed workspace is not supported).
  */
 export function detectNotation(paths: readonly string[], location: string): Notation {
-  const markdown = paths.filter((path) => path.endsWith(".arc42.md")).length;
-  const asciidoc = paths.filter((path) => path.endsWith(".arc42.adoc")).length;
-  if (markdown > 0 && asciidoc > 0) {
-    throw new Error(
-      `Mixed notation workspace: found both .arc42.md (${markdown}) and .arc42.adoc (${asciidoc}) files in ${location}. Use a single notation throughout the workspace.`,
-    );
-  }
-  return asciidoc > 0 ? "asciidoc" : "markdown";
+  return detectNotationOf(
+    paths,
+    [
+      ["markdown", ".arc42.md"],
+      ["asciidoc", ".arc42.adoc"],
+    ],
+    location,
+  );
 }
 
 /**
