@@ -184,7 +184,7 @@ cached in memory for the lifetime of the process.
 
 This scenario describes the two build-time flows specific to the Project Site and the Mermaid
 Syntax building block. During `arc42 validate`, the Validator calls `@arc42/mermaid` to parse
-and check Mermaid diagram syntax (W017). Separately, when the Project Site is built, the Verdicts
+and check Mermaid diagram syntax (E010, E012–E014). Separately, when the Project Site is built, the Verdicts
 Vite Plugin reads `docs/verdicts` markdown files and exposes them as a virtual module consumed by
 the site's React components.
 
@@ -215,10 +215,10 @@ sequenceDiagram
     participant bb_site as Project Site
     participant bb_verdicts as Agent Verdicts
 
-    actor_ci->>bb_validator: arc42 validate (includes W017 rule)
+    actor_ci->>bb_validator: arc42 validate (includes the Mermaid syntax check)
     bb_validator->>bb_mermaid: parseMermaid(diagramSource)
     bb_mermaid-->>bb_validator: MermaidParseResult (ok or failure)
-    bb_validator-->>actor_ci: Diagnostics including W017 for invalid syntax
+    bb_validator-->>actor_ci: Diagnostics including syntax errors of invalid diagrams
 
     actor_ci->>bb_web_renderer: arc42 build (web renderer)
     bb_web_renderer-->>actor_ci: dist/ (HTML/JS/CSS)

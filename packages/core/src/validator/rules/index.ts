@@ -5,12 +5,13 @@
  *
  * Rule shape is ESLint-inspired (meta.docs, type) with arc42-specific extensions.
  */
-import type { Rule } from "../types.ts";
-import { e001DuplicateId } from "./e001-duplicate-id.ts";
+import { genericRules } from "@cli42/lib/rules";
+import { ELEMENT_CHAPTER } from "../../model/types.ts";
+import { chapterNumberFromFile } from "../../path-utils.ts";
+import type { Rule, ValidationContext } from "../types.ts";
 import { e002UnresolvedReference } from "./e002-unresolved-reference.ts";
 import { e003CircularParent } from "./e003-circular-parent.ts";
 import { e004InterfaceBetweenNonBlock } from "./e004-interface-between-non-block.ts";
-import { e005ParseError } from "./e005-parse-error.ts";
 import { e006SupersededDecisionNoSupersedes } from "./e006-superseded-decision-no-supersedes.ts";
 import { e007MultipleSolutionStrategies } from "./e007-multiple-solution-strategies.ts";
 import { e008DiagramValidation } from "./e008-diagram-validation.ts";
@@ -21,13 +22,9 @@ import { e012SequenceDiagramValidation } from "./e012-sequence-diagram-validatio
 import { e013BuildingBlockDiagramValidation } from "./e013-building-block-diagram-validation.ts";
 import { e014ContextDiagramValidation } from "./e014-context-diagram-validation.ts";
 import { e015SelfInterfaceRequirement } from "./e015-self-interface-requirement.ts";
-import { e016ElementWrongChapter } from "./e016-element-wrong-chapter.ts";
-import { e017BlockOutsideSection } from "./e017-block-outside-section.ts";
 import { w001ConceptNotImplemented } from "./w001-concept-not-implemented.ts";
 import { w002IsolatedBuildingBlock } from "./w002-isolated-building-block.ts";
 import { w003StaleProposedDecision } from "./w003-stale-proposed-decision.ts";
-import { w004BlockWithoutProse } from "./w004-block-without-prose.ts";
-import { w005MultipleBlocksUnderHeading } from "./w005-multiple-blocks-under-heading.ts";
 import { w006TooFewQualityGoals } from "./w006-too-few-quality-goals.ts";
 import { w007TooManyQualityGoals } from "./w007-too-many-quality-goals.ts";
 import { w008DecisionNoDate } from "./w008-decision-no-date.ts";
@@ -37,8 +34,6 @@ import { w012BuildingBlockUnmapped } from "./w012-building-block-unmapped.ts";
 import { w013QualityScenarioNoMetric } from "./w013-quality-scenario-no-metric.ts";
 import { w014QualityGoalsNotDescendingPriority } from "./w014-quality-goals-not-descending-priority.ts";
 import { w015MissingChapterHeading } from "./w015-missing-chapter-heading.ts";
-import { w016BlockNotInArc42Fence } from "./w016-block-not-in-arc42-fence.ts";
-import { w017BareMermaidBlock } from "./w017-bare-mermaid-block.ts";
 import { h001DecisionNoAddresses } from "./h001-decision-no-addresses.ts";
 import { h002QualityGoalUnaddressed } from "./h002-quality-goal-unaddressed.ts";
 import { h003BuildingBlockNoTechnology } from "./h003-building-block-no-technology.ts";
@@ -72,12 +67,25 @@ import { h019BuildingBlockDiagramParentNotSubgraph } from "./h019-building-block
 import { h020DuplicateInterfacePath } from "./h020-duplicate-interface-path.ts";
 import { h021UncoveredSourcePath } from "./h021-uncovered-source-path.ts";
 import { h022BuildingBlockNoActorPath } from "./h022-building-block-no-actor-path.ts";
-import { w029UnknownAttribute } from "./w029-unknown-attribute.ts";
+
+/**
+ * The rules every *42 language has (codes EGxx, WGxx), owned by @cli42/lib;
+ * in arc42 they are cross-cutting (chapter 0).
+ */
+const sharedRules: Rule[] = genericRules<ValidationContext>({
+  chapters: ELEMENT_CHAPTER,
+  chapterOfFile: chapterNumberFromFile,
+  fenceFlag: "inArc42Fence",
+  fenceDescription: (context) => context?.fenceDescription ?? "```arc42 fence",
+}).map((rule) => ({
+  ...rule,
+  meta: { ...rule.meta, docs: { ...rule.meta.docs, arc42Chapter: 0 } },
+}));
 
 export const builtinRules: readonly Rule[] = [
+  ...sharedRules,
+
   // Errors — structural / broken references
-  e005ParseError, // All chapters (parse errors)
-  e001DuplicateId, // All chapters
   e002UnresolvedReference, // All chapters
   e003CircularParent, // Chapter 5
   e004InterfaceBetweenNonBlock, // Chapter 5
@@ -91,15 +99,11 @@ export const builtinRules: readonly Rule[] = [
   e013BuildingBlockDiagramValidation, // Chapter 5
   e014ContextDiagramValidation, // Chapter 3
   e015SelfInterfaceRequirement, // Chapter 5
-  e016ElementWrongChapter, // All numbered chapters
-  e017BlockOutsideSection, // All chapters
 
   // Warnings — inconsistencies
   w001ConceptNotImplemented, // Chapter 8
   w002IsolatedBuildingBlock, // Chapter 5
   w003StaleProposedDecision, // Chapter 9
-  w004BlockWithoutProse, // All chapters
-  w005MultipleBlocksUnderHeading, // All chapters
   w006TooFewQualityGoals, // Chapter 10
   w007TooManyQualityGoals, // Chapter 10
   w008DecisionNoDate, // Chapter 9
@@ -109,8 +113,6 @@ export const builtinRules: readonly Rule[] = [
   w013QualityScenarioNoMetric, // Chapter 10
   w014QualityGoalsNotDescendingPriority, // Chapter 10
   w015MissingChapterHeading, // All chapters
-  w016BlockNotInArc42Fence, // All chapters
-  w017BareMermaidBlock, // All chapters (bare mermaid fences)
   w018ImplementationPathOverlap, // Chapter 5
   w019MissingBuildingBlockDiagram, // Chapter 5
   w020MissingContextDiagram, // Chapter 3
@@ -122,7 +124,6 @@ export const builtinRules: readonly Rule[] = [
   w026BuildingBlockParentSubchapter, // Chapter 5
   w027InterfaceProviderSubchapter, // Chapter 5
   w028ContextDiagramInternalBuildingBlock, // Chapter 3
-  w029UnknownAttribute, // All chapters (parse-time unknown attribute detection)
 
   // Hints — best practices
   h001DecisionNoAddresses, // Chapter 9

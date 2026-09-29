@@ -30,7 +30,7 @@ describe("AsciiDoc workspace validation — integration", () => {
     expect(errors).toHaveLength(0);
   });
 
-  test("W016 fires for a block outside the [source,arc42] fence in .arc42.adoc", () => {
+  test("WG05 fires for a block outside the [source,arc42] fence in .arc42.adoc", () => {
     const content = [
       "= Architecture",
       "",
@@ -45,7 +45,7 @@ describe("AsciiDoc workspace validation — integration", () => {
       fenceDescription: "[source,arc42] / ---- fence",
     };
     const result = validateDocuments([adocDoc(content)], context);
-    const w016 = result.diagnostics.filter((d) => d.code === "W016");
+    const w016 = result.diagnostics.filter((d) => d.code === "WG05");
     expect(w016).toHaveLength(1);
     // The message should use the AsciiDoc fence description
     expect(w016[0]!.message).toContain("[source,arc42]");

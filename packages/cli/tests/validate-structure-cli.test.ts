@@ -42,7 +42,7 @@ describe("CLI validate — blocks must live in a section", () => {
     );
     const result = validate(root);
     expect(result.status).toBe(1);
-    expect(result.stdout + result.stderr).toMatch(/E017.*architecture\.arc42\.md:2/);
+    expect(result.stdout + result.stderr).toMatch(/EG04.*architecture\.arc42\.md:2/);
   });
 
   test("fails for an AsciiDoc document without headings", () => {
@@ -53,7 +53,7 @@ describe("CLI validate — blocks must live in a section", () => {
     const result = validate(root, "--format", "json");
     expect(result.status).toBe(1);
     const codes = JSON.parse(result.stdout).diagnostics.map((d: { code: string }) => d.code);
-    expect(codes).toContain("E017");
+    expect(codes).toContain("EG04");
   });
 
   test("passes when every block sits under a heading", () => {
@@ -63,7 +63,7 @@ describe("CLI validate — blocks must live in a section", () => {
     );
     const result = validate(root, "--format", "json");
     const codes = JSON.parse(result.stdout).diagnostics.map((d: { code: string }) => d.code);
-    expect(codes).not.toContain("E017");
+    expect(codes).not.toContain("EG04");
     expect(result.status).toBe(0);
   });
 });

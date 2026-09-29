@@ -4,12 +4,12 @@ import { parseMarkdown } from "../src/parser/markdown-parser.ts";
 import { parseAsciidoc } from "../src/parser/asciidoc-parser.ts";
 
 function e017(docs: Parameters<typeof validateDocuments>[0]) {
-  return validateDocuments(docs).diagnostics.filter((d) => d.code === "E017");
+  return validateDocuments(docs).diagnostics.filter((d) => d.code === "EG04");
 }
 
 const block = ["```arc42", ":::building-block", "id: service", "title: Service", ":::", "```"];
 
-describe("E017 — block outside any section", () => {
+describe("EG04 — block outside any section", () => {
   test("reports a block in a document without headings", () => {
     const doc = parseMarkdown("a.arc42.md", ["The service.", "", ...block].join("\n"));
     const diagnostics = e017([doc]);

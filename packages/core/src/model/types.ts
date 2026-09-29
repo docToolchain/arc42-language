@@ -132,7 +132,7 @@ export interface Workspace {
   parseErrors: ParseError[];
   /** Warnings emitted during parsing — block still parsed successfully (e.g. unknown attributes). */
   parseWarnings?: ParseWarning[];
-  /** Raw parsed documents — used by structure-aware validation rules (W004, W005) */
+  /** Raw parsed documents — used by structure-aware validation rules (WG02, WG03) */
   documents: DocumentAst[];
   diagrams: DiagramArtifact[];
   /** Document-scoped ignore directives extracted by the builder */

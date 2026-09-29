@@ -9,7 +9,7 @@ function workspaceFromContent(filePath: string, content: string) {
   return buildWorkspace([doc]);
 }
 
-describe("W005 — multiple blocks under one heading", () => {
+describe("WG03 — multiple blocks under one heading", () => {
   test("emitted when two blocks share the same heading section", () => {
     const content = `## Interfaces
 
@@ -29,7 +29,7 @@ between: bb-2, bb-3
     const ws = workspaceFromContent("test.arc42.md", content);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.some((d) => d.code === "W005")).toBe(true);
+    expect(diags.some((d) => d.code === "WG03")).toBe(true);
   });
 
   test("NOT emitted when each heading has one block", () => {
@@ -55,6 +55,6 @@ between: bb-2, bb-3
     const ws = workspaceFromContent("test.arc42.md", content);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.some((d) => d.code === "W005")).toBe(false);
+    expect(diags.some((d) => d.code === "WG03")).toBe(false);
   });
 });

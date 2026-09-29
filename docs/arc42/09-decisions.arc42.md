@@ -175,14 +175,14 @@ addresses: qg-extensibility, qg-verifiability, qg-agent-writability
 
 The DSL enforces a structural convention: every element lives in its own `##` section,
 with prose explaining purpose and rationale before the `:::block`. Two validation rules
-(W004, W005) catch violations. This is not arbitrary style — it ensures the documentation
+(WG02, WG03) catch violations. This is not arbitrary style — it ensures the documentation
 is useful to human readers, not just a machine-readable index. An architecture document
 where every block is naked metadata has failed at its primary purpose.
 
 ```arc42
 :::decision
 id: dec-prose-first
-title: Enforce prose-first authoring convention with W004 and W005 rules
+title: Enforce prose-first authoring convention with WG02 and WG03 rules
 status: accepted
 date: 2026-08-17
 addresses: qg-readability, qg-verifiability, con-prose-first-authoring

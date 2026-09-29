@@ -2,7 +2,7 @@
  * Semantic architecture diff between two workspace snapshots — the generic
  * workspace diff of `@cli42/lib`, typed with the arc42 model.
  *
- * A block must be placed under a heading (E017), so a document preamble never
+ * A block must be placed under a heading (EG04), so a document preamble never
  * holds elements.
  */
 
@@ -30,7 +30,7 @@ export type EdgeChange = GenericEdgeChange<WorkspacePayload>;
 export type ArchitectureDiff = WorkspaceDiff<WorkspacePayload>;
 
 /** @internal Shared with the diff view. */
-export const DIFF_OPTIONS: DiffOptions = { preambleBlockRule: "E017" };
+export const DIFF_OPTIONS: DiffOptions = { rejectPreambleBlocks: true };
 
 export function diffWorkspaces(base: WorkspacePayload, head: WorkspacePayload): ArchitectureDiff {
   return diffSnapshots(base, head, DIFF_OPTIONS);

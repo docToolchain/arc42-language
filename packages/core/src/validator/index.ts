@@ -7,7 +7,6 @@ import { mermaidSyntax } from "./mermaid-syntax.ts";
 
 const validator = createValidator({
   rules: builtinRules,
-  ignore: { stale: "W019", rejected: "W030" },
   syntax: mermaidSyntax,
 });
 

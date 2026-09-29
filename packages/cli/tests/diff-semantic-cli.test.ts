@@ -113,7 +113,7 @@ describe("arc42 diff — semantic comparison", () => {
       `${markdown(SERVICE)}\n## Copy\n\nA copy.\n\n\`\`\`arc42\n${SERVICE}\n\`\`\`\n`,
     );
     const result = runDiff(root);
-    expect(result.stderr).toContain("Duplicate id 'service' in head snapshot (E001)");
+    expect(result.stderr).toContain("Duplicate id 'service' in head snapshot (EG01)");
     expect(result.status).toBe(1);
   });
 });

@@ -321,8 +321,8 @@ describe("buildWorkspace", () => {
   });
 });
 
-describe("W029 — unknown attribute on block", () => {
-  test("emits W029 warning when a block has an unrecognised attribute", () => {
+describe("WG01 — unknown attribute on block", () => {
+  test("emits WG01 warning when a block has an unrecognised attribute", () => {
     const ws = buildWorkspace([
       doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high\nproriti: low"),
     ]);
@@ -335,26 +335,26 @@ describe("W029 — unknown attribute on block", () => {
 
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    const w029 = diags.filter((d) => d.code === "W029");
+    const w029 = diags.filter((d) => d.code === "WG01");
     expect(w029).toHaveLength(1);
     expect(w029[0]!.severity).toBe("warning");
     expect(w029[0]!.message).toMatch(/Unknown attribute 'proriti' on quality-goal/);
   });
 
-  test("no W029 when all attributes are known", () => {
+  test("no WG01 when all attributes are known", () => {
     const ws = buildWorkspace([doc("quality-goal\nid: qg-1\ntitle: Perf\npriority: high")]);
     expect(ws.elements).toHaveLength(1);
     expect(ws.parseErrors).toHaveLength(0);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.filter((d) => d.code === "W029")).toHaveLength(0);
+    expect(diags.filter((d) => d.code === "WG01")).toHaveLength(0);
   });
 
-  test("emits one W029 per unknown attribute", () => {
+  test("emits one WG01 per unknown attribute", () => {
     const ws = buildWorkspace([doc("building-block\nid: bb-1\ntitle: API\nfoo: bar\nbaz: qux")]);
     expect(ws.elements).toHaveLength(1);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.filter((d) => d.code === "W029")).toHaveLength(2);
+    expect(diags.filter((d) => d.code === "WG01")).toHaveLength(2);
   });
 });

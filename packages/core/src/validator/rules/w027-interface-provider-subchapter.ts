@@ -20,7 +20,7 @@ interface DocumentSections {
  * W027 — Interfaces are documented in the section of their provider.
  *
  * Interfaces remain first-class elements, but their Markdown placement should
- * make provider ownership visible to readers. E016 separately enforces that
+ * make provider ownership visible to readers. EG03 separately enforces that
  * interface definitions are assigned to chapter 5.
  */
 export const w027InterfaceProviderSubchapter: Rule = {

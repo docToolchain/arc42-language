@@ -9,7 +9,7 @@ function workspaceFromContent(filePath: string, content: string) {
   return buildWorkspace([doc]);
 }
 
-describe("W004 — block without preceding prose", () => {
+describe("WG02 — block without preceding prose", () => {
   test("emitted when a block has no preceding prose in its section", () => {
     const content = `## My Section
 :::building-block
@@ -20,7 +20,7 @@ technology: Go
     const ws = workspaceFromContent("test.arc42.md", content);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.some((d) => d.code === "W004")).toBe(true);
+    expect(diags.some((d) => d.code === "WG02")).toBe(true);
   });
 
   test("NOT emitted when prose precedes the block", () => {
@@ -36,7 +36,7 @@ technology: Go
     const ws = workspaceFromContent("test.arc42.md", content);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.some((d) => d.code === "W004")).toBe(false);
+    expect(diags.some((d) => d.code === "WG02")).toBe(false);
   });
 
   test("emitted for second block if no prose between blocks", () => {
@@ -56,7 +56,7 @@ title: Naked Concept
     const ws = workspaceFromContent("test.arc42.md", content);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    const w004 = diags.filter((d) => d.code === "W004");
+    const w004 = diags.filter((d) => d.code === "WG02");
     expect(w004.length).toBeGreaterThanOrEqual(1);
     expect(w004.some((d) => d.message.includes("c-naked"))).toBe(true);
   });

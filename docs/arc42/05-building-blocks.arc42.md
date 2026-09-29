@@ -212,7 +212,7 @@ path: packages/core/src/notation/prose-renderer.ts
 Turns `DocumentAst[]` into a typed `Workspace` — a flat list of `Element` objects covering quality
 goals, constraints, building blocks, interfaces, concepts, decisions, risks, and glossary terms,
 plus parse errors for missing or invalid required attributes. Unknown block types and structural
-problems are recorded as `ParseError` entries, which the E005 rule surfaces as diagnostics.
+problems are recorded as `ParseError` entries, which the EG02 rule surfaces as diagnostics.
 
 ```arc42
 :::building-block
@@ -369,8 +369,8 @@ path: packages/core/src/workspace-diff.ts
 
 A thin wrapper around the upstream `mermaid` npm package that exposes a Node-compatible,
 tree-shaken syntax check for Mermaid diagrams. Kept as a separate package to isolate the
-large Mermaid bundle from the rest of the toolchain. The Validator uses it for W017 (invalid
-Mermaid syntax) without bundling the full browser-oriented Mermaid runtime into `@arc42/core`.
+large Mermaid bundle from the rest of the toolchain. The Validator uses it to report invalid
+Mermaid syntax (E010, E012–E014) without bundling the full browser-oriented Mermaid runtime into `@arc42/core`.
 
 ```arc42
 :::building-block
