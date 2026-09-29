@@ -104,7 +104,11 @@ function buildResult(blockType: BlockType): ExplainResult {
     description,
     requiredFields: allFields.filter((f) => f.required),
     optionalFields: allFields.filter((f) => !f.required),
-    crossRefs,
+    crossRefs: crossRefs.map(({ field, targetKind, cardinality }) => ({
+      field,
+      targetKind,
+      cardinality,
+    })),
     authoringTips,
   };
 }
@@ -220,7 +224,11 @@ function buildDiagramResult(diagramType: DiagramType): ExplainDiagramResult {
     description,
     requiredFields: allFields.filter((f) => f.required),
     optionalFields: allFields.filter((f) => !f.required),
-    crossRefs,
+    crossRefs: crossRefs.map(({ field, targetKind, cardinality }) => ({
+      field,
+      targetKind,
+      cardinality,
+    })),
     authoringTips,
   };
 }

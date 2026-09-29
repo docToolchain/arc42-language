@@ -42,6 +42,7 @@ export const QualityGoalSchema = z
     description: "An architecturally significant quality attribute goal with a priority.",
     arc42Chapter: 10,
     crossRefs: [
+      // Not indexed: the scenario elaborates the goal (quality-scenario.quality).
       { field: "scenario", targetKind: "quality-scenario", cardinality: "one" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
@@ -71,7 +72,7 @@ export const QualityScenarioSchema = z
     description: "A concrete scenario that makes a quality goal measurable.",
     arc42Chapter: 10,
     crossRefs: [
-      { field: "quality", targetKind: "quality-goal", cardinality: "one" },
+      { field: "quality", targetKind: "quality-goal", cardinality: "one", relation: "elaborates" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "Use the Q42 short form: stimulus (what happens), response (how the system reacts), metric (measurable acceptance criterion).",
@@ -130,7 +131,7 @@ export const ActorSchema = z
     description: "A human role or external system that interacts with the architecture.",
     arc42Chapter: 3,
     crossRefs: [
-      { field: "requires", targetKind: "interface", cardinality: "many" },
+      { field: "requires", targetKind: "interface", cardinality: "many", relation: "requires" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "Actors are *external* — they live outside the system boundary. Internal components are building-blocks.",
@@ -152,7 +153,12 @@ export const SolutionStrategySchema = z
     description: "A high-level architectural strategy that addresses one or more quality goals.",
     arc42Chapter: 4,
     crossRefs: [
-      { field: "addresses", targetKind: "quality-goal", cardinality: "many" },
+      {
+        field: "addresses",
+        targetKind: "quality-goal",
+        cardinality: "many",
+        relation: "addresses",
+      },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "Keep it compact — a short list of keywords or a table mapping quality goals → solution approaches is ideal (arc42 Tip 4-1, 4-2).",
@@ -189,9 +195,9 @@ export const BuildingBlockSchema = z
     description: "An independently deployable software component or group of components.",
     arc42Chapter: 5,
     crossRefs: [
-      { field: "parent", targetKind: "building-block", cardinality: "one" },
-      { field: "implements", targetKind: "concept", cardinality: "many" },
-      { field: "requires", targetKind: "interface", cardinality: "many" },
+      { field: "parent", targetKind: "building-block", cardinality: "one", relation: "parent" },
+      { field: "implements", targetKind: "concept", cardinality: "many", relation: "implements" },
+      { field: "requires", targetKind: "interface", cardinality: "many", relation: "requires" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "The building block view is mandatory — always document at least level 1 (the top-level decomposition) as your starting point (arc42 Tip 5-3).",
@@ -221,7 +227,14 @@ export const InterfaceSchema = z
     description: "A defined interface provided by one building block and required by consumers.",
     arc42Chapter: 5,
     crossRefs: [
-      { field: "provider", targetKind: "building-block", cardinality: "one" },
+      {
+        field: "provider",
+        targetKind: "building-block",
+        cardinality: "one",
+        // The provider provides the interface: provider → interface.
+        relation: "provides",
+        direction: "reverse",
+      },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "provider must reference the building block that owns and provides this interface.",
@@ -245,7 +258,12 @@ export const RuntimeScenarioSchema = z
       "A concrete sequence of interactions that demonstrates a quality goal or use case at runtime.",
     arc42Chapter: 6,
     crossRefs: [
-      { field: "involves", targetKind: "building-block", cardinality: "many" },
+      {
+        field: "involves",
+        targetKind: "building-block",
+        cardinality: "many",
+        relation: "involves",
+      },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "Document only a few representative scenarios — focus on architecturally significant interactions, error paths, and critical external interfaces (arc42 Tip 6-2).",
@@ -276,8 +294,8 @@ export const DeploymentNodeSchema = z
       "An infrastructure node in the deployment view (server, container, cloud region, etc.).",
     arc42Chapter: 7,
     crossRefs: [
-      { field: "hosts", targetKind: "building-block", cardinality: "many" },
-      { field: "parent", targetKind: "deployment-node", cardinality: "one" },
+      { field: "parent", targetKind: "deployment-node", cardinality: "one", relation: "parent" },
+      { field: "hosts", targetKind: "building-block", cardinality: "many", relation: "hosts" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "Document the mapping of software building-blocks to infrastructure explicitly via hosts — this is the primary purpose of the deployment view (arc42 Tips 7-5, 7-6).",
@@ -337,8 +355,13 @@ export const DecisionSchema = z
       "An Architecture Decision Record (ADR) documenting a significant architectural choice.",
     arc42Chapter: 9,
     crossRefs: [
-      { field: "addresses", targetKind: "quality-goal, constraint, or risk", cardinality: "many" },
-      { field: "supersedes", targetKind: "decision", cardinality: "one" },
+      {
+        field: "addresses",
+        targetKind: "quality-goal, constraint, or risk",
+        cardinality: "many",
+        relation: "addresses",
+      },
+      { field: "supersedes", targetKind: "decision", cardinality: "one", relation: "supersedes" },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "Document only architecturally significant decisions — ones that affect structure, quality, dependencies, interfaces, or construction techniques (arc42 Tip 9-1).",

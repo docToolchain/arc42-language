@@ -1,3 +1,5 @@
+import { buildIndex as buildReferenceIndex } from "@cli42/lib/model";
+import { ELEMENT_SCHEMAS } from "../model/schemas.ts";
 import type { Workspace, Element } from "../model/types.ts";
 import type { ReferenceIndex, Edge, DirectedInterfaceEdge } from "./types.ts";
 
@@ -47,87 +49,12 @@ export function deriveInterfaceEdges(workspace: Workspace): DirectedInterfaceEdg
   return edges;
 }
 
+/**
+ * Index the references between elements. The edges come from the
+ * cross-references the schemas declare (see ELEMENT_SCHEMAS); the derived
+ * consumer → provider interface edges are added.
+ */
 export function buildIndex(workspace: Workspace): ReferenceIndex {
-  const byId = new Map<string, Element>();
-  const refsFrom = new Map<string, string[]>();
-  const refsTo = new Map<string, string[]>();
-  const edges: Edge[] = [];
-
-  // Populate byId
-  for (const el of workspace.elements) {
-    byId.set(el.id, el);
-  }
-
-  function addRef(fromId: string, toId: string) {
-    const from = refsFrom.get(fromId) ?? [];
-    from.push(toId);
-    refsFrom.set(fromId, from);
-
-    const to = refsTo.get(toId) ?? [];
-    to.push(fromId);
-    refsTo.set(toId, to);
-  }
-
-  for (const el of workspace.elements) {
-    if (el.kind === "building-block") {
-      if (el.parent) {
-        edges.push({ from: el.id, to: el.parent, relation: "parent" });
-        addRef(el.id, el.parent);
-      }
-      for (const ref of el.implements) {
-        edges.push({ from: el.id, to: ref, relation: "implements" });
-        addRef(el.id, ref);
-      }
-      // building-block requires → interface (consumer → interface)
-      for (const ref of el.requires) {
-        edges.push({ from: el.id, to: ref, relation: "requires" });
-        addRef(el.id, ref);
-      }
-    } else if (el.kind === "actor") {
-      // actor requires → interface (consumer → interface)
-      for (const ref of el.requires) {
-        edges.push({ from: el.id, to: ref, relation: "requires" });
-        addRef(el.id, ref);
-      }
-    } else if (el.kind === "interface") {
-      // building-block → interface (provider → provided interface)
-      edges.push({ from: el.provider, to: el.id, relation: "provides" });
-      addRef(el.provider, el.id);
-    } else if (el.kind === "decision") {
-      for (const ref of el.addresses) {
-        edges.push({ from: el.id, to: ref, relation: "addresses" });
-        addRef(el.id, ref);
-      }
-      if (el.supersedes) {
-        edges.push({ from: el.id, to: el.supersedes, relation: "supersedes" });
-        addRef(el.id, el.supersedes);
-      }
-    } else if (el.kind === "solution-strategy") {
-      for (const ref of el.addresses) {
-        edges.push({ from: el.id, to: ref, relation: "addresses" });
-        addRef(el.id, ref);
-      }
-    } else if (el.kind === "runtime-scenario") {
-      for (const ref of el.involves) {
-        edges.push({ from: el.id, to: ref, relation: "involves" });
-        addRef(el.id, ref);
-      }
-    } else if (el.kind === "deployment-node") {
-      if (el.parent) {
-        edges.push({ from: el.id, to: el.parent, relation: "parent" });
-        addRef(el.id, el.parent);
-      }
-      for (const ref of el.hosts) {
-        edges.push({ from: el.id, to: ref, relation: "hosts" });
-        addRef(el.id, ref);
-      }
-    } else if (el.kind === "quality-scenario") {
-      edges.push({ from: el.id, to: el.quality, relation: "elaborates" });
-      addRef(el.id, el.quality);
-    }
-  }
-
-  const interfaceEdges = deriveInterfaceEdges(workspace);
-
-  return { byId, refsFrom, refsTo, edges, interfaceEdges };
+  const index = buildReferenceIndex<Element, Edge["relation"]>(workspace.elements, ELEMENT_SCHEMAS);
+  return { ...index, interfaceEdges: deriveInterfaceEdges(workspace) };
 }
