@@ -108,10 +108,6 @@ export class TextGetRenderer implements GetRenderer {
     const lines: string[] = [];
     lines.push(`  ${el.id}  ${el.title}  [${el.priority}]`);
 
-    if (el.scenario) {
-      lines.push(`    scenario: ${el.scenario}`);
-    }
-
     // refsFrom contains outgoing - for quality goal, this would be addressed-by
     // We need to find edges where the quality goal is the target
     // This is handled at workspace level with edges array
@@ -255,7 +251,6 @@ export class TextGetRenderer implements GetRenderer {
     switch (el.kind) {
       case "quality-goal":
         if (el.priority) lines.push(`  priority: ${el.priority}`);
-        if (el.scenario) lines.push(`  scenario: ${el.scenario}`);
         break;
       case "quality-scenario":
         lines.push(`  quality: ${el.quality}`);

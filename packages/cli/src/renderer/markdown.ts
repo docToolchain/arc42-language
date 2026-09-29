@@ -182,7 +182,6 @@ export class MarkdownGetRenderer implements GetRenderer {
 
   private qualityGoalFields(el: QualityGoal): string[] {
     const f: string[] = [`priority: ${el.priority}`];
-    if (el.scenario) f.push(`scenario: ${el.scenario}`);
     return f;
   }
 

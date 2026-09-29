@@ -134,15 +134,8 @@ interface EdgeOverride {
 }
 
 const EDGE_OVERRIDES: Record<string, EdgeOverride> = {
-  // quality-goal → quality-scenario: vertically stacked, straight down
-  "quality-goal:scenario:quality-scenario": { fromFace: "bottom", toFace: "top" },
-  // quality-scenario → quality-goal: reverse; nudge left so the two arrows don't overlap
-  "quality-scenario:quality:quality-goal": {
-    fromFace: "left",
-    toFace: "left",
-    cp: [-36, 0],
-    cubic: true,
-  },
+  // quality-scenario → quality-goal: the scenario elaborates the goal above it, straight up
+  "quality-scenario:quality:quality-goal": { fromFace: "top", toFace: "bottom" },
 
   // solution-strategy → quality-goal: same row, straight right
   "solution-strategy:addresses:quality-goal": { fromFace: "right", toFace: "left" },
