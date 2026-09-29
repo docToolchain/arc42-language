@@ -4,16 +4,13 @@
 import type { Workspace } from "../model/types.ts";
 import type { ReferenceIndex } from "../resolver/types.ts";
 import type { CoverageResult } from "../coverage.ts";
+import type {
+  Rule as GenericRule,
+  RuleDocs as GenericRuleDocs,
+  RuleMeta as GenericRuleMeta,
+} from "@cli42/lib/validator";
 
-export type Severity = "error" | "warning" | "hint";
-
-export interface Diagnostic {
-  code: string;
-  severity: Severity;
-  message: string;
-  file: string;
-  line: number;
-}
+export type { Diagnostic, RuleType, Severity } from "@cli42/lib/validator";
 
 export interface PathEvidence {
   /** Known file/directory paths in the repository for implementation-path validation */
@@ -46,45 +43,14 @@ export interface ValidationContext {
  */
 export type Arc42Chapter = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
-/**
- * Rule type — mirrors ESLint's RuleType vocabulary:
- * - "problem"     → likely incorrect / broken (maps to error/warning)
- * - "suggestion"  → not wrong, but could be better (maps to hint)
- */
-export type RuleType = "problem" | "suggestion";
-
-/** Documentation metadata — modelled after ESLint's RulesMetaDocs */
-export interface RuleDocs {
-  /** One-line description, usable in `arc42 rules` output and SKILL.md */
-  description: string;
-  /**
-   * Why this rule exists — the design reasoning behind it.
-   * Shown in `arc42 rules --format text` and surfaced in the SKILL.md.
-   */
-  rationale: string;
+/** Documentation metadata — the engine's rule docs plus the arc42 chapter. */
+export interface RuleDocs extends GenericRuleDocs {
   /** Which arc42 chapter this rule belongs to (0=cross-cutting, 1=QualityGoals, 2=Constraints, 3=SystemScopeAndContext, 5=BuildingBlocks, 6=RuntimeView, 8=Concepts, 9=Decisions, 11=Risks, 12=Glossary) */
   arc42Chapter: Arc42Chapter;
-  /** Whether the rule is enabled by default in the built-in rule set */
-  recommended: boolean;
-  /** Optional URL to extended documentation */
-  url?: string;
 }
 
 /** Full rule metadata — mirrors ESLint's RulesMeta */
-export interface RuleMeta {
-  /** Rule code, e.g. "E001". Never changes once assigned. */
-  code: string;
-  /** Default severity for this rule */
-  severity: Severity;
-  /** Rule type — "problem" or "suggestion" */
-  type: RuleType;
-  /** Human-readable docs */
-  docs: RuleDocs;
-}
+export type RuleMeta = GenericRuleMeta<RuleDocs>;
 
-/** A single validation rule. Inspired by ESLint's RuleDefinition. */
-export interface Rule {
-  meta: RuleMeta;
-  /** Run this rule against the fully-built workspace + index */
-  check(workspace: Workspace, index: ReferenceIndex, context?: ValidationContext): Diagnostic[];
-}
+/** A single validation rule, run against the fully-built workspace + index. */
+export type Rule = GenericRule<Workspace, ReferenceIndex, ValidationContext, RuleDocs>;

@@ -23,6 +23,7 @@
     "check": "vp check"
   },
   "dependencies": {
+    "@cli42/lib": "catalog:",
     "mermaid": "11.17.2"
   },
   "devDependencies": {
