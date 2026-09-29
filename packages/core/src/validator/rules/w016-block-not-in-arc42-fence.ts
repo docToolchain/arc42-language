@@ -1,6 +1,5 @@
-import type { Rule, Diagnostic, ValidationContext } from "../types.ts";
-import type { Workspace } from "../../model/types.ts";
-import type { ReferenceIndex } from "../../resolver/types.ts";
+import { blockNotInFenceRule } from "@cli42/lib/rules";
+import type { Rule, RuleDocs, ValidationContext } from "../types.ts";
 
 /**
  * W016 — A :::block is not wrapped in a DSL fence.
@@ -11,8 +10,8 @@ import type { ReferenceIndex } from "../../resolver/types.ts";
  * raw text. In Markdown this is ```arc42 ... ```; in AsciiDoc it is
  * [source,arc42] followed by ---- ... ----.
  */
-export const w016BlockNotInArc42Fence: Rule = {
-  meta: {
+export const w016BlockNotInArc42Fence: Rule = blockNotInFenceRule<ValidationContext, RuleDocs>(
+  {
     code: "W016",
     severity: "warning",
     type: "suggestion",
@@ -25,26 +24,8 @@ export const w016BlockNotInArc42Fence: Rule = {
       recommended: true,
     },
   },
-  check(workspace: Workspace, _index: ReferenceIndex, context?: ValidationContext): Diagnostic[] {
-    const fenceDescription = context?.fenceDescription ?? "```arc42 fence";
-    const diagnostics: Diagnostic[] = [];
-
-    for (const doc of workspace.documents) {
-      for (const node of doc.nodes) {
-        if (node.kind !== "block") continue;
-        if (node.blockType === "__parse_error__") continue; // error sentinel — not a real block
-        if (node.inArc42Fence) continue; // correctly wrapped
-
-        diagnostics.push({
-          code: "W016",
-          severity: "warning",
-          message: `Block '${node.attributes["id"] ?? node.blockType}' is not wrapped in a ${fenceDescription} — wrap it for proper rendering`,
-          file: doc.filePath,
-          line: node.startLine,
-        });
-      }
-    }
-
-    return diagnostics;
+  {
+    fenceFlag: "inArc42Fence",
+    fenceDescription: (context) => context?.fenceDescription ?? "```arc42 fence",
   },
-};
+);
