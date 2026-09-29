@@ -1,279 +1,91 @@
-import type { DocumentAst } from "../ast.ts";
-import type {
-  Workspace,
-  Element,
-  ParseError,
-  ParseWarning,
-  IgnoreDirective,
-  DiagramArtifact,
-} from "./types.ts";
-import { ELEMENT_SCHEMAS, DIAGRAM_SCHEMAS } from "./schemas.ts";
-import { z } from "zod";
-import type { BlockType } from "../ast.ts";
+import { buildWorkspace as buildModel, parseAttributes } from "@cli42/lib/model";
+import type { DiagramResult } from "@cli42/lib/model";
+import type { DiagramNode, DocumentAst } from "../ast.ts";
+import type { DiagramArtifact, Workspace } from "./types.ts";
+import { DIAGRAM_SCHEMAS, ELEMENT_SCHEMAS } from "./schemas.ts";
 
 /**
- * Map a Zod parse failure into a human-friendly ParseError message that
- * matches the regex expectations in existing tests.
- *
- * The builder owns the error message format; Zod's raw messages are never
- * forwarded to callers.
- *
- * We distinguish "missing" from "invalid enum" by checking the raw input:
- * if the attribute value is undefined/empty it's missing; otherwise it's an
- * invalid enum value.
+ * Validate a `:::diagram` block's metadata against the schema of its diagram
+ * type and build the typed diagram artifact.
  */
-function zodErrorToMessage(
-  blockType: string,
-  // z.ZodError.issues in v4 is typed as $ZodIssue[] which is not directly
-  // compatible with a structural type — cast through unknown at the call site.
-  issues: { path: (string | number)[]; message: string }[],
-  attributes: Record<string, string>,
-): string {
-  // Use the first issue only — one error per block is the existing contract.
-  const issue = issues[0];
-  if (!issue) return `Invalid ${blockType}`;
-
-  const field = issue.path[0];
-
-  if (typeof field === "string") {
-    const rawValue = attributes[field];
-    const isMissing = rawValue === undefined || rawValue.trim() === "";
-
-    if (isMissing) {
-      // Some fields need the block type in the "missing" message for test compat
-      if (field === "type" && blockType === "actor") {
-        return `Missing required attribute 'type' on actor — must be person | system`;
-      }
-      return `Missing required attribute '${field}'`;
-    }
-
-    // Value is present but invalid — emit enum-aware messages
-    if (field === "priority") {
-      return `Invalid priority — must be high | medium | low`;
-    }
-    if (field === "severity") {
-      return `Invalid severity — must be high | medium | low`;
-    }
-    if (field === "status") {
-      return `Invalid status — must be proposed | accepted | deprecated | superseded`;
-    }
-    if (field === "category" && blockType === "constraint") {
-      return `Invalid category — must be technical | organizational | convention`;
-    }
-    if (field === "type" && blockType === "actor") {
-      return `Invalid type on actor — must be person | system`;
-    }
-    if (field === "type" && blockType === "deployment-node") {
-      return `Invalid type on deployment-node — must be server | container | device | cloud-region | environment`;
-    }
-
-    return `Invalid value for '${field}' on ${blockType}`;
+function buildDiagram(
+  node: DiagramNode,
+  loc: { file: string; line: number },
+): DiagramResult<DiagramArtifact> {
+  // Build the raw attributes map for schema validation, normalising empty
+  // strings to undefined so Zod's optional() treats them as absent.
+  const diagramAttrs: Record<string, string | undefined> = {
+    id: node.id || undefined,
+    notation: node.notation || undefined,
+    aliases: node.aliases || undefined,
+  };
+  if (node.diagramType !== "sequence") {
+    // roots is present on deployment, building-block and context nodes
+    const roots = (node as { roots?: string[] }).roots ?? [];
+    diagramAttrs["roots"] = roots.length > 0 ? roots.join(", ") : undefined;
+  }
+  if (node.diagramType === "sequence") {
+    diagramAttrs["scenario"] = node.scenario || undefined;
   }
 
-  return `Invalid ${blockType}: ${issue.message}`;
+  const schema =
+    DIAGRAM_SCHEMAS[node.diagramType as keyof typeof DIAGRAM_SCHEMAS] ?? DIAGRAM_SCHEMAS["generic"];
+  const result = parseAttributes(schema, diagramAttrs, `${node.diagramType} diagram`);
+  if (!result.ok) return { issue: result.issue };
+
+  const { id, notation, aliases, source } = node;
+  const location = { file: loc.file, line: loc.line };
+  switch (node.diagramType) {
+    case "deployment":
+    case "building-block":
+    case "context":
+      return {
+        diagram: {
+          kind: "diagram",
+          diagramType: node.diagramType,
+          view: node.view,
+          id,
+          notation,
+          roots: node.roots,
+          aliases,
+          source,
+          loc: location,
+        } as DiagramArtifact,
+      };
+    case "sequence":
+      return {
+        diagram: {
+          kind: "diagram",
+          diagramType: "sequence",
+          id,
+          scenario: node.scenario,
+          notation: node.notation,
+          aliases,
+          source,
+          loc: location,
+        },
+      };
+    default:
+      return {
+        diagram: {
+          kind: "diagram",
+          diagramType: "generic",
+          id,
+          notation,
+          aliases,
+          source,
+          loc: location,
+        },
+      };
+  }
 }
 
 export function buildWorkspace(documents: DocumentAst[]): Workspace {
-  const elements: Element[] = [];
-  const parseErrors: ParseError[] = [];
-  const parseWarnings: ParseWarning[] = [];
-  const diagrams: DiagramArtifact[] = [];
-  const ignoreDirectives: IgnoreDirective[] = [];
-
-  for (const doc of documents) {
-    let currentHeading: string | undefined = undefined;
-    let pendingProse: string[] = [];
-
-    for (const node of doc.nodes) {
-      if (node.kind === "ignore") {
-        if (node.ruleCode.trim() !== "") {
-          ignoreDirectives.push({
-            ruleCode: node.ruleCode,
-            reason: node.reason,
-            file: doc.filePath,
-            line: node.startLine,
-            used: false,
-          });
-        }
-        continue;
-      }
-      if (node.kind === "heading") {
-        currentHeading = node.text;
-        pendingProse = [];
-        continue;
-      }
-
-      if (node.kind === "prose") {
-        pendingProse.push(node.text);
-        continue;
-      }
-
-      if (node.kind === "diagram") {
-        // Build the raw attributes map for schema validation, normalising empty
-        // strings to undefined so Zod's optional() treats them as absent.
-        const diagramAttrs: Record<string, string | undefined> = {
-          id: node.id || undefined,
-          notation: node.notation || undefined,
-          aliases: node.aliases || undefined,
-        };
-        if (node.diagramType !== "sequence") {
-          // roots is present on deployment, building-block and context nodes
-          const roots = (node as { roots?: string[] }).roots ?? [];
-          diagramAttrs["roots"] = roots.length > 0 ? roots.join(", ") : undefined;
-        }
-        if (node.diagramType === "sequence") {
-          diagramAttrs["scenario"] = node.scenario || undefined;
-        }
-
-        const schema =
-          DIAGRAM_SCHEMAS[node.diagramType as keyof typeof DIAGRAM_SCHEMAS] ??
-          DIAGRAM_SCHEMAS["generic"];
-        const result = schema.safeParse(diagramAttrs);
-        if (!result.success) {
-          parseErrors.push({
-            message: zodErrorToMessage(
-              `${node.diagramType} diagram`,
-              result.error.issues as { path: (string | number)[]; message: string }[],
-              { id: node.id, notation: node.notation },
-            ),
-            file: doc.filePath,
-            line: node.startLine,
-          });
-          continue;
-        }
-
-        if (node.diagramType === "deployment") {
-          diagrams.push({
-            kind: "diagram",
-            diagramType: "deployment",
-            view: "deployment",
-            id: node.id,
-            notation: node.notation,
-            roots: node.roots,
-            aliases: node.aliases,
-            source: node.source,
-            loc: { file: doc.filePath, line: node.startLine },
-          });
-        } else if (node.diagramType === "building-block") {
-          diagrams.push({
-            kind: "diagram",
-            diagramType: "building-block",
-            view: "building-block",
-            id: node.id,
-            notation: node.notation,
-            roots: node.roots,
-            aliases: node.aliases,
-            source: node.source,
-            loc: { file: doc.filePath, line: node.startLine },
-          });
-        } else if (node.diagramType === "context") {
-          diagrams.push({
-            kind: "diagram",
-            diagramType: "context",
-            view: "context",
-            id: node.id,
-            notation: node.notation,
-            roots: node.roots,
-            aliases: node.aliases,
-            source: node.source,
-            loc: { file: doc.filePath, line: node.startLine },
-          });
-        } else if (node.diagramType === "sequence") {
-          diagrams.push({
-            kind: "diagram",
-            diagramType: "sequence",
-            id: node.id,
-            scenario: node.scenario,
-            notation: node.notation,
-            aliases: node.aliases,
-            source: node.source,
-            loc: { file: doc.filePath, line: node.startLine },
-          });
-        } else {
-          diagrams.push({
-            kind: "diagram",
-            diagramType: "generic",
-            id: node.id,
-            notation: node.notation,
-            aliases: node.aliases,
-            source: node.source,
-            loc: { file: doc.filePath, line: node.startLine },
-          });
-        }
-        continue;
-      }
-      if (node.kind !== "block") continue;
-
-      const { blockType, attributes, startLine } = node;
-      const file = doc.filePath;
-      const proseText = pendingProse.length > 0 ? pendingProse.join("\n") : undefined;
-      const loc = { file, line: startLine, heading: currentHeading, prose: proseText };
-      // Prose consumed by this block — reset for next block in same section
-      pendingProse = [];
-
-      if (!Object.hasOwn(ELEMENT_SCHEMAS, blockType)) {
-        // __parse_error__ is a sentinel emitted by the parser for unclosed blocks
-        if (blockType === "__parse_error__") {
-          parseErrors.push({
-            message: attributes["message"] ?? `Unclosed block at line ${startLine}`,
-            file,
-            line: Number(attributes["startLine"] ?? startLine),
-          });
-        } else {
-          parseErrors.push({
-            message: `Unknown block type '${blockType}'`,
-            file,
-            line: startLine,
-          });
-        }
-        continue;
-      }
-
-      const schema = ELEMENT_SCHEMAS[blockType as BlockType];
-
-      // Normalise empty strings to undefined so Zod's optional() treats them
-      // as absent (the DSL parser emits "" for `key:` with no value).
-      const normalisedAttrs: Record<string, string | undefined> = {};
-      for (const [k, v] of Object.entries(attributes)) {
-        // Preserve an explicitly authored empty path so it is reported as an
-        // unresolved link, rather than being mistaken for an omitted field.
-        normalisedAttrs[k] = k === "path" ? v : v === "" || v.trim() === "" ? undefined : v;
-      }
-
-      const result = schema.safeParse(normalisedAttrs);
-
-      if (!result.success) {
-        parseErrors.push({
-          message: zodErrorToMessage(
-            blockType,
-            result.error.issues as { path: (string | number)[]; message: string }[],
-            attributes,
-          ),
-          file,
-          line: startLine,
-        });
-        continue;
-      }
-
-      // Warn about unknown attributes (keys not in the schema shape).
-      // The block is still accepted; only a warning is emitted so the author
-      // can spot typos like `sevrity` without losing the element entirely.
-      const knownKeys = new Set(Object.keys((schema as z.ZodObject<z.ZodRawShape>)._zod.def.shape));
-      for (const key of Object.keys(attributes)) {
-        if (!knownKeys.has(key)) {
-          parseWarnings.push({
-            message: `Unknown attribute '${key}' on ${blockType}`,
-            file,
-            line: startLine,
-          });
-        }
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = result.data as any;
-      elements.push({ ...data, kind: blockType, loc } as Element);
-    }
-  }
-
-  return { elements, parseErrors, parseWarnings, documents, diagrams, ignoreDirectives };
+  return buildModel(documents, {
+    elements: ELEMENT_SCHEMAS,
+    diagram: buildDiagram,
+    // An explicitly authored empty path is reported as an unresolved link,
+    // rather than being mistaken for an omitted field.
+    keepEmpty: ["path"],
+  });
 }

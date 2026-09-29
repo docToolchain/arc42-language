@@ -46,8 +46,7 @@
     "@arc42/mermaid": "workspace:*",
     "@asciidoctor/core": "catalog:",
     "@cli42/lib": "catalog:",
-    "marked": "catalog:",
-    "zod": "4.5.4"
+    "marked": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
