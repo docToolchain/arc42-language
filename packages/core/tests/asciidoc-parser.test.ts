@@ -171,3 +171,43 @@ describe("AsciidocParser — multiple blocks", () => {
     expect(result[1]!.blockType).toBe("building-block");
   });
 });
+
+describe("AsciidocParser — diagrams", () => {
+  test(":::diagram takes the source of the following [source,mermaid] fence", () => {
+    const content = [
+      "== Context",
+      "",
+      "[source,arc42]",
+      "----",
+      ":::diagram",
+      "id: ctx",
+      ":::",
+      "----",
+      "",
+      "[source,mermaid]",
+      "----",
+      "flowchart LR",
+      "  a --> b",
+      "----",
+    ].join("\n");
+    const diagrams = parseAsciidoc("test.arc42.adoc", content).nodes.filter(
+      (n) => n.kind === "diagram",
+    );
+    expect(diagrams).toHaveLength(1);
+    expect(diagrams[0]).toMatchObject({
+      id: "ctx",
+      source: "flowchart LR\n  a --> b",
+      endLine: 14,
+    });
+  });
+
+  test("a multi-line ignore directive works as in Markdown", () => {
+    const content = ["[source,arc42]", "----", ":::ignore", "W001 legacy", ":::", "----"].join(
+      "\n",
+    );
+    const ignores = parseAsciidoc("test.arc42.adoc", content).nodes.filter(
+      (n) => n.kind === "ignore",
+    );
+    expect(ignores).toMatchObject([{ ruleCode: "W001", reason: "legacy", startLine: 3 }]);
+  });
+});
