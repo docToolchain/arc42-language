@@ -31,6 +31,17 @@ structure needed for parsing, querying, and validation. Prose remains outside th
 than being duplicated in attributes. Most chapters use one heading, prose, and one block per
 element; chapter 4 is intentionally a single architecture-wide strategy with prose subsections.
 
+## Shared Language Engine
+
+The language-independent parts of the pipeline come from `@cli42/lib`
+([cli42](https://github.com/mrsimpson/cli42)), shared with biz42, the business-model sibling of
+this toolchain: the Markdown notation's parser, schema tools and model builder, the reference index
+derived from the schemas' cross-references, the validation engine with its structural rules, the
+Mermaid syntax boundary, authoring guidance, the semantic diff and its view, and Git snapshots and
+history. `@arc42/core` declares what makes the language arc42 — its schemas, diagram kinds, rules,
+AsciiDoc notation and code coverage — and keeps its public API; the CLI bundles the library, so it
+adds no runtime dependency.
+
 ## Registry-based Validation
 
 Validation follows an ESLint-inspired registry of rules. Each rule describes itself through
