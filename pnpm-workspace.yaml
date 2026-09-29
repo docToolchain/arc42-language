@@ -4,7 +4,7 @@ packages:
   - tools/*
 
 catalog:
-  "@cli42/lib": github:mrsimpson/cli42#301f927b46f0098370e491cf225bf89b1c75a1a1
+  "@cli42/lib": github:mrsimpson/cli42#1310ea3
   "@semantic-release/changelog": 7.0.0
   "@semantic-release/exec": 7.1.0
   "@semantic-release/github": 12.0.9

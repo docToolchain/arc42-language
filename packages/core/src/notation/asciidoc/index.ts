@@ -1,27 +1,15 @@
 // AsciiDoc notation for @arc42/core, behind its own subpath
 // (@arc42/core/notation/asciidoc) so `asciidoctor` (~1 MB) is bundled only where
-// imported. @asciidoctor/core resolves to its browser build in browser bundles.
+// imported. The renderer lives in @cli42/lib/asciidoc; @asciidoctor/core
+// resolves to its browser build in browser bundles.
 
-import { load } from "@asciidoctor/core";
+import { AsciidocProseRenderer } from "@cli42/lib/asciidoc";
 import { AsciidocParser } from "../../parser/asciidoc-parser.ts";
 import type { Parser } from "../../parser/markdown-parser.ts";
 import type { ProseRenderer } from "../prose-renderer.ts";
 import type { NotationAdapter } from "../types.ts";
 
-/**
- * Renders AsciiDoc prose to an HTML fragment using Asciidoctor. Errors are raised.
- *
- * Receives a BLOCK of consecutive prose lines joined by newlines (see
- * renderProseNodes). Multi-line constructs like AsciiDoc tables and
- * cross-references are rendered correctly because the full block is passed to
- * Asciidoctor as one document.
- */
-export class AsciidocProseRenderer implements ProseRenderer {
-  async renderProse(text: string): Promise<string> {
-    const doc = await load(text, { doctype: "article", safe: "safe", header_footer: false });
-    return (await doc.convert()) ?? "";
-  }
-}
+export { AsciidocProseRenderer };
 
 /** NotationAdapter for AsciiDoc (.arc42.adoc) workspaces. */
 export class AsciidocNotationAdapter implements NotationAdapter {
