@@ -1,32 +1,12 @@
 // Meta-model element types
 
 import type { BlockType, DocumentAst } from "../ast.ts";
-import { z } from "zod";
-import {
-  ELEMENT_SCHEMAS,
-  QualityGoalSchema,
-  QualityScenarioSchema,
-  ActorSchema,
-  SolutionStrategySchema,
-  BuildingBlockSchema,
-  InterfaceSchema,
-  RuntimeScenarioSchema,
-  DeploymentNodeSchema,
-  ConceptSchema,
-  DecisionSchema,
-  ConstraintSchema,
-  RiskSchema,
-  GlossaryTermSchema,
-} from "./schemas.ts";
+import type { ElementOf, ParseError, ParseWarning, SourceLocation } from "@cli42/lib/model";
+import type { IgnoreDirective } from "@cli42/lib/validator";
+import { chaptersOf } from "@cli42/lib/schema";
+import { ELEMENT_SCHEMAS } from "./schemas.ts";
 
-export interface SourceLocation {
-  file: string;
-  line: number;
-  /** The text of the nearest heading that precedes this element in its source file, if any. */
-  heading?: string;
-  /** Prose lines between the nearest preceding heading and this element's block, if any. */
-  prose?: string;
-}
+export type { IgnoreDirective, ParseError, ParseWarning, SourceLocation };
 
 /**
  * Canonical arc42 chapter order for element kinds.
@@ -53,15 +33,10 @@ export const ELEMENT_KIND_ORDER: readonly BlockType[] = [
 ] as const;
 
 /** arc42 chapter each element kind belongs to — derived from schema metadata. */
-export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = Object.fromEntries(
-  (Object.entries(ELEMENT_SCHEMAS) as [BlockType, z.ZodType][]).map(([kind, schema]) => {
-    const meta = z.globalRegistry.get(schema) as { arc42Chapter?: number } | undefined;
-    if (meta?.arc42Chapter === undefined) {
-      throw new Error(`Schema for '${kind}' is missing arc42Chapter in .meta()`);
-    }
-    return [kind, meta.arc42Chapter];
-  }),
-) as Readonly<Record<BlockType, number>>;
+export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = chaptersOf(
+  ELEMENT_SCHEMAS,
+  "arc42Chapter",
+);
 
 /** Human-readable arc42 chapter titles */
 export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
@@ -82,85 +57,23 @@ export const CHAPTER_TITLE: Readonly<Record<number, string>> = {
 // Element types — derived from Zod schemas + { kind, loc }
 // ---------------------------------------------------------------------------
 
-export type QualityGoal = z.infer<typeof QualityGoalSchema> & {
-  kind: "quality-goal";
-  loc: SourceLocation;
-};
+export type Element = ElementOf<typeof ELEMENT_SCHEMAS>;
 
-export type QualityScenario = z.infer<typeof QualityScenarioSchema> & {
-  kind: "quality-scenario";
-  loc: SourceLocation;
-};
+type ElementKind<K extends BlockType> = Extract<Element, { kind: K }>;
 
-export type Actor = z.infer<typeof ActorSchema> & {
-  kind: "actor";
-  loc: SourceLocation;
-};
-
-export type SolutionStrategy = z.infer<typeof SolutionStrategySchema> & {
-  kind: "solution-strategy";
-  loc: SourceLocation;
-};
-
-export type BuildingBlock = z.infer<typeof BuildingBlockSchema> & {
-  kind: "building-block";
-  loc: SourceLocation;
-};
-
-export type Interface = z.infer<typeof InterfaceSchema> & {
-  kind: "interface";
-  loc: SourceLocation;
-};
-
-export type RuntimeScenario = z.infer<typeof RuntimeScenarioSchema> & {
-  kind: "runtime-scenario";
-  loc: SourceLocation;
-};
-
-export type DeploymentNode = z.infer<typeof DeploymentNodeSchema> & {
-  kind: "deployment-node";
-  loc: SourceLocation;
-};
-
-export type Concept = z.infer<typeof ConceptSchema> & {
-  kind: "concept";
-  loc: SourceLocation;
-};
-
-export type Decision = z.infer<typeof DecisionSchema> & {
-  kind: "decision";
-  loc: SourceLocation;
-};
-
-export type Constraint = z.infer<typeof ConstraintSchema> & {
-  kind: "constraint";
-  loc: SourceLocation;
-};
-
-export type Risk = z.infer<typeof RiskSchema> & {
-  kind: "risk";
-  loc: SourceLocation;
-};
-
-export type GlossaryTerm = z.infer<typeof GlossaryTermSchema> & {
-  kind: "glossary-term";
-  loc: SourceLocation;
-};
-
-export type Element =
-  | QualityGoal
-  | QualityScenario
-  | Constraint
-  | Actor
-  | SolutionStrategy
-  | BuildingBlock
-  | Interface
-  | RuntimeScenario
-  | DeploymentNode
-  | Concept
-  | Decision
-  | Risk
-  | GlossaryTerm;
+export type QualityGoal = ElementKind<"quality-goal">;
+export type QualityScenario = ElementKind<"quality-scenario">;
+export type Actor = ElementKind<"actor">;
+export type SolutionStrategy = ElementKind<"solution-strategy">;
+export type BuildingBlock = ElementKind<"building-block">;
+export type Interface = ElementKind<"interface">;
+export type RuntimeScenario = ElementKind<"runtime-scenario">;
+export type DeploymentNode = ElementKind<"deployment-node">;
+export type Concept = ElementKind<"concept">;
+export type Decision = ElementKind<"decision">;
+export type Constraint = ElementKind<"constraint">;
+export type Risk = ElementKind<"risk">;
+export type GlossaryTerm = ElementKind<"glossary-term">;
 
 // ---------------------------------------------------------------------------
 // Diagram types — not derived from schemas (carry kind, diagramType, source, loc)
@@ -213,22 +126,6 @@ export type DiagramArtifact =
   | DeploymentDiagram
   | BuildingBlockDiagram
   | ContextDiagram;
-
-export interface ParseError {
-  message: string;
-  file: string;
-  line: number;
-}
-
-export interface ParseWarning {
-  message: string;
-  file: string;
-  line: number;
-}
-
-import type { IgnoreDirective } from "@cli42/lib/validator";
-
-export type { IgnoreDirective };
 
 export interface Workspace {
   elements: Element[];

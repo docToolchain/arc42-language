@@ -3,7 +3,7 @@
 // constant needed. Schema-level .meta() carries description/arc42Chapter/crossRefs/
 // authoringTips; field-level .meta() carries description; required/enum are structural.
 
-import { z } from "zod";
+import { z } from "@cli42/lib/schema";
 import type { BlockType } from "./ast.ts";
 import {
   ELEMENT_SCHEMAS,
