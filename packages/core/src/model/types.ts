@@ -226,14 +226,9 @@ export interface ParseWarning {
   line: number;
 }
 
-export interface IgnoreDirective {
-  ruleCode: string;
-  reason?: string;
-  file: string;
-  line: number;
-  /** True if at least one diagnostic with matching code and file was suppressed */
-  used: boolean;
-}
+import type { IgnoreDirective } from "@cli42/lib/validator";
+
+export type { IgnoreDirective };
 
 export interface Workspace {
   elements: Element[];
