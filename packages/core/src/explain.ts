@@ -3,14 +3,16 @@
 // constant needed. Schema-level .meta() carries description/arc42Chapter/crossRefs/
 // authoringTips; field-level .meta() carries description; required/enum are structural.
 
-import { z } from "@cli42/lib/schema";
-import type { BlockType } from "./ast.ts";
 import {
-  ELEMENT_SCHEMAS,
-  DIAGRAM_SCHEMAS,
-  deriveFields,
-  type CrossRefMeta,
-} from "./model/schemas.ts";
+  blockGuidance,
+  formatBlockGuidance,
+  formatIgnoreGuidance,
+  ignoreGuidance,
+} from "@cli42/lib/explain";
+import type { ExplainIgnoreResult } from "@cli42/lib/explain";
+import { metaOf } from "@cli42/lib/schema";
+import type { BlockType } from "./ast.ts";
+import { ELEMENT_SCHEMAS, DIAGRAM_SCHEMAS } from "./model/schemas.ts";
 import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, CHAPTER_TITLE } from "./model/types.ts";
 
 export type DiagramType = keyof typeof DIAGRAM_SCHEMAS;
@@ -19,18 +21,8 @@ export type DiagramType = keyof typeof DIAGRAM_SCHEMAS;
 // Public result types
 // ---------------------------------------------------------------------------
 
-export interface ExplainFieldResult {
-  name: string;
-  description: string;
-  required: boolean;
-  enumValues: string[] | null;
-}
-
-export interface ExplainCrossRefResult {
-  field: string;
-  targetKind: string;
-  cardinality: "one" | "many";
-}
+export type { ExplainCrossRefResult, ExplainFieldResult } from "@cli42/lib/explain";
+import type { ExplainCrossRefResult, ExplainFieldResult } from "@cli42/lib/explain";
 
 /** Full guidance for a single block type. */
 export interface ExplainResult {
@@ -71,45 +63,15 @@ export interface ExplainDiagramSummary {
 // Core logic
 // ---------------------------------------------------------------------------
 
-interface SchemaMeta {
-  description?: string;
-  arc42Chapter?: number;
-  crossRefs?: CrossRefMeta[];
-  authoringTips?: string[];
-}
-
 function buildResult(blockType: BlockType): ExplainResult {
   const schema = ELEMENT_SCHEMAS[blockType];
-  const meta = (z.globalRegistry.get(schema) ?? {}) as SchemaMeta;
-
-  const chapter = meta.arc42Chapter ?? ELEMENT_CHAPTER[blockType];
-  const description = meta.description ?? blockType;
-  const crossRefs = meta.crossRefs ?? [];
-  const authoringTips = meta.authoringTips ?? [];
-
-  // deriveFields works on ZodObject — unwrap the superRefine pipe wrapper if present
-  const objectSchema =
-    schema instanceof z.ZodObject
-      ? schema
-      : (schema as z.ZodPipe)._zod?.def?.in instanceof z.ZodObject
-        ? ((schema as z.ZodPipe)._zod.def.in as z.ZodObject<z.ZodRawShape>)
-        : null;
-
-  const allFields = objectSchema ? deriveFields(objectSchema) : [];
-
+  const chapter =
+    metaOf<{ arc42Chapter: number }>(schema)?.arc42Chapter ?? ELEMENT_CHAPTER[blockType];
   return {
     blockType,
     arc42Chapter: chapter,
     arc42ChapterTitle: CHAPTER_TITLE[chapter] ?? "Other",
-    description,
-    requiredFields: allFields.filter((f) => f.required),
-    optionalFields: allFields.filter((f) => !f.required),
-    crossRefs: crossRefs.map(({ field, targetKind, cardinality }) => ({
-      field,
-      targetKind,
-      cardinality,
-    })),
-    authoringTips,
+    ...blockGuidance(schema, blockType),
   };
 }
 
@@ -124,15 +86,11 @@ export function explainElement(blockType?: BlockType): ExplainResult | ExplainSu
     return buildResult(blockType);
   }
 
-  return ELEMENT_KIND_ORDER.map((bt) => {
-    const schema = ELEMENT_SCHEMAS[bt];
-    const meta = (z.globalRegistry.get(schema) ?? {}) as SchemaMeta;
-    return {
-      blockType: bt,
-      arc42Chapter: ELEMENT_CHAPTER[bt],
-      description: meta.description ?? bt,
-    };
-  });
+  return ELEMENT_KIND_ORDER.map((bt) => ({
+    blockType: bt,
+    arc42Chapter: ELEMENT_CHAPTER[bt],
+    description: blockGuidance(ELEMENT_SCHEMAS[bt], bt).description,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -140,49 +98,10 @@ export function explainElement(blockType?: BlockType): ExplainResult | ExplainSu
 // ---------------------------------------------------------------------------
 
 export function formatExplainText(result: ExplainResult): string {
-  const lines: string[] = [];
-  lines.push(
+  return formatBlockGuidance(
     `${result.blockType}  (arc42 ch. ${result.arc42Chapter} — ${result.arc42ChapterTitle})`,
+    result,
   );
-  lines.push("");
-  lines.push(`  ${result.description}`);
-
-  if (result.requiredFields.length > 0) {
-    lines.push("");
-    lines.push("  Required fields:");
-    for (const f of result.requiredFields) {
-      const enumSuffix = f.enumValues ? `  [${f.enumValues.join(" | ")}]` : "";
-      lines.push(`    ${f.name.padEnd(14)} ${f.description}${enumSuffix}`);
-    }
-  }
-
-  if (result.optionalFields.length > 0) {
-    lines.push("");
-    lines.push("  Optional fields:");
-    for (const f of result.optionalFields) {
-      const enumSuffix = f.enumValues ? `  [${f.enumValues.join(" | ")}]` : "";
-      lines.push(`    ${f.name.padEnd(14)} ${f.description}${enumSuffix}`);
-    }
-  }
-
-  if (result.crossRefs.length > 0) {
-    lines.push("");
-    lines.push("  Cross-references:");
-    for (const c of result.crossRefs) {
-      const card = c.cardinality === "many" ? "(comma-separated)" : "";
-      lines.push(`    ${c.field.padEnd(14)} → ${c.targetKind} ${card}`.trimEnd());
-    }
-  }
-
-  if (result.authoringTips.length > 0) {
-    lines.push("");
-    lines.push("  Authoring tips:");
-    for (const tip of result.authoringTips) {
-      lines.push(`    - ${tip}`);
-    }
-  }
-
-  return lines.join("\n");
 }
 
 export function formatExplainListText(summaries: ExplainSummary[]): string {
@@ -210,27 +129,7 @@ const DIAGRAM_TYPE_ORDER: DiagramType[] = [
 ];
 
 function buildDiagramResult(diagramType: DiagramType): ExplainDiagramResult {
-  const schema = DIAGRAM_SCHEMAS[diagramType];
-  const meta = (z.globalRegistry.get(schema) ?? {}) as SchemaMeta;
-
-  const description = meta.description ?? diagramType;
-  const crossRefs = meta.crossRefs ?? [];
-  const authoringTips = meta.authoringTips ?? [];
-
-  const allFields = deriveFields(schema as z.ZodObject<z.ZodRawShape>);
-
-  return {
-    diagramType,
-    description,
-    requiredFields: allFields.filter((f) => f.required),
-    optionalFields: allFields.filter((f) => !f.required),
-    crossRefs: crossRefs.map(({ field, targetKind, cardinality }) => ({
-      field,
-      targetKind,
-      cardinality,
-    })),
-    authoringTips,
-  };
+  return { diagramType, ...blockGuidance(DIAGRAM_SCHEMAS[diagramType], diagramType) };
 }
 
 /**
@@ -246,58 +145,14 @@ export function explainDiagram(
     return buildDiagramResult(diagramType);
   }
 
-  return DIAGRAM_TYPE_ORDER.map((dt) => {
-    const schema = DIAGRAM_SCHEMAS[dt];
-    const meta = (z.globalRegistry.get(schema) ?? {}) as SchemaMeta;
-    return {
-      diagramType: dt,
-      description: meta.description ?? dt,
-    };
-  });
+  return DIAGRAM_TYPE_ORDER.map((dt) => ({
+    diagramType: dt,
+    description: blockGuidance(DIAGRAM_SCHEMAS[dt], dt).description,
+  }));
 }
 
 export function formatExplainDiagramText(result: ExplainDiagramResult): string {
-  const lines: string[] = [];
-  lines.push(`diagram ${result.diagramType}`);
-  lines.push("");
-  lines.push(`  ${result.description}`);
-
-  if (result.requiredFields.length > 0) {
-    lines.push("");
-    lines.push("  Required fields:");
-    for (const f of result.requiredFields) {
-      const enumSuffix = f.enumValues ? `  [${f.enumValues.join(" | ")}]` : "";
-      lines.push(`    ${f.name.padEnd(14)} ${f.description}${enumSuffix}`);
-    }
-  }
-
-  if (result.optionalFields.length > 0) {
-    lines.push("");
-    lines.push("  Optional fields:");
-    for (const f of result.optionalFields) {
-      const enumSuffix = f.enumValues ? `  [${f.enumValues.join(" | ")}]` : "";
-      lines.push(`    ${f.name.padEnd(14)} ${f.description}${enumSuffix}`);
-    }
-  }
-
-  if (result.crossRefs.length > 0) {
-    lines.push("");
-    lines.push("  Cross-references:");
-    for (const c of result.crossRefs) {
-      const card = c.cardinality === "many" ? "(comma-separated)" : "";
-      lines.push(`    ${c.field.padEnd(14)} → ${c.targetKind} ${card}`.trimEnd());
-    }
-  }
-
-  if (result.authoringTips.length > 0) {
-    lines.push("");
-    lines.push("  Authoring tips:");
-    for (const tip of result.authoringTips) {
-      lines.push(`    - ${tip}`);
-    }
-  }
-
-  return lines.join("\n");
+  return formatBlockGuidance(`diagram ${result.diagramType}`, result);
 }
 
 export function formatExplainDiagramListText(summaries: ExplainDiagramSummary[]): string {
@@ -314,52 +169,17 @@ export function formatExplainDiagramListText(summaries: ExplainDiagramSummary[])
 // Ignore directive guidance
 // ---------------------------------------------------------------------------
 
-/** Full guidance for the :::ignore directive. */
-export interface ExplainIgnoreResult {
-  name: string;
-  description: string;
-  syntax: string[];
-  constraints: string[];
-  authoringTips: string[];
-}
+export type { ExplainIgnoreResult };
 
-const IGNORE_DATA: ExplainIgnoreResult = {
-  name: "ignore directive",
-  description:
-    "The :::ignore directive suppresses a specific warning (W) or hint (H) diagnostic on a " +
-    "given line of an arc42 document. It must appear inside a ```arc42 fence. " +
-    "Outside the fence, :::ignore is treated as prose and has no effect.\n\n" +
-    "Only warnings (W-prefix) and hints (H-prefix) can be suppressed. Errors (E-prefix) are " +
-    "structural — the affected block is excluded from the model and must be fixed, not ignored. " +
-    "Attempting to ignore an error code emits W030 instead.",
-  syntax: [
-    "Single-line form:",
-    "  :::ignore W001 reason on one line :::",
-    "",
-    "Multi-line form:",
-    "  :::ignore W001 reason on first line",
-    "  :::",
-    "",
-    "Both forms must be inside a ```arc42 fence:",
-    "  ```arc42",
-    "  :::ignore H001 decision has no addresses because it is a foundational constraint",
-    "  :::",
-    "  ```",
-  ],
-  constraints: [
-    "Only W (warning) and H (hint) rule codes can be ignored.",
-    "Attempting to ignore an E (error) code emits W030 — errors must be fixed.",
-    "An ignore directive suppresses the next matching diagnostic in the same file at or after the directive line.",
-    "An unused ignore directive emits W019 (stale ignore). Remove it when the underlying issue is resolved.",
-  ],
-  authoringTips: [
-    "Always provide a reason — it documents why the suppression is intentional.",
-    "Record each suppressed hint in architecture-evidence.md with the rule code, element id, and reason.",
-    "Run `arc42 validate` after adding an ignore to confirm the directive is used (no W019).",
-    "Run `arc42 get --type ignore` to list all ignore directives in the workspace.",
-    "If you are suppressing a warning (W), discuss with the team first — warnings usually indicate a real gap.",
-  ],
-};
+const IGNORE_DATA: ExplainIgnoreResult = ignoreGuidance({
+  cli: "arc42",
+  document: "an arc42 document",
+  fence: "arc42",
+  rejectedCode: "W030",
+  staleCode: "W019",
+  example: ":::ignore H001 decision has no addresses because it is a foundational constraint",
+  evidenceFile: "architecture-evidence.md",
+});
 
 /** Get full guidance for the :::ignore directive. */
 export function explainIgnore(): ExplainIgnoreResult {
@@ -368,26 +188,5 @@ export function explainIgnore(): ExplainIgnoreResult {
 
 /** Format ignore explain output as human-readable text. */
 export function formatExplainIgnoreText(result: ExplainIgnoreResult): string {
-  const lines: string[] = [];
-  lines.push(`Directive: ${result.name}`);
-  lines.push(`\n${result.description}`);
-
-  lines.push("\nSyntax:");
-  for (const line of result.syntax) {
-    lines.push(line ? `  ${line}` : "");
-  }
-
-  lines.push("\nConstraints:");
-  for (const c of result.constraints) {
-    lines.push(`    - ${c}`);
-  }
-
-  if (result.authoringTips.length > 0) {
-    lines.push("\n  Authoring tips:");
-    for (const tip of result.authoringTips) {
-      lines.push(`    - ${tip}`);
-    }
-  }
-
-  return lines.join("\n");
+  return formatIgnoreGuidance(result);
 }
