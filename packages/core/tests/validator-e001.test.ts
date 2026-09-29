@@ -11,14 +11,14 @@ function loc(line = 1) {
   return { file: "test.arc42.md", line };
 }
 
-describe("validator › E001", () => {
-  test("E001 — duplicate id", () => {
+describe("validator › EG01", () => {
+  test("EG01 — duplicate id", () => {
     const ws = makeWorkspace([
       { kind: "quality-goal", id: "qg-1", title: "Q", priority: "high", loc: loc(1) },
       { kind: "quality-goal", id: "qg-1", title: "Q2", priority: "low", loc: loc(5) },
     ]);
     const idx = buildIndex(ws);
     const diags = validate(ws, idx);
-    expect(diags.some((d) => d.code === "E001")).toBe(true);
+    expect(diags.some((d) => d.code === "EG01")).toBe(true);
   });
 });

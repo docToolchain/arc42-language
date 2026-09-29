@@ -7,7 +7,7 @@ import { validate } from "../src/validator/index.ts";
 function diagnosticsFor(file: string, content: string) {
   const workspace = buildWorkspace([parseMarkdown(file, content)]);
   return validate(workspace, buildIndex(workspace)).filter(
-    (diagnostic) => diagnostic.code === "E016",
+    (diagnostic) => diagnostic.code === "EG03",
   );
 }
 
@@ -30,7 +30,7 @@ title: Chapter Term
 definition: A term used to test chapter assignment.
 :::`;
 
-describe("E016 — typed elements are assigned to their canonical chapter", () => {
+describe("EG03 — typed elements are assigned to their canonical chapter", () => {
   test("reports an interface in chapter 3 and expects chapter 5", () => {
     const diagnostics = diagnosticsFor("03-system-scope.arc42.md", iface);
     expect(diagnostics).toHaveLength(1);

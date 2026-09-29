@@ -175,8 +175,6 @@ const IGNORE_DATA: ExplainIgnoreResult = ignoreGuidance({
   cli: "arc42",
   document: "an arc42 document",
   fence: "arc42",
-  rejectedCode: "W030",
-  staleCode: "W019",
   example: ":::ignore H001 decision has no addresses because it is a foundational constraint",
   evidenceFile: "architecture-evidence.md",
 });

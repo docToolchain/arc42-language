@@ -226,21 +226,25 @@ pnpm run ready   # check + test + build in one pass
 
 ### Adding a validation rule
 
+Rules every \*42 language has (codes `EGxx`, `WGxx`: duplicate ids, parse errors, prose and
+structure conventions, ignore directives) come from `@cli42/lib/rules`; arc42's own rules use
+plain codes (`E002`, `W001`, `H001`, …).
+
 1. Create `packages/core/src/validator/rules/<code>-<name>.ts` — implement the `Rule` interface
 2. Fill in `meta.docs.rationale` — explain _why_ the rule exists, not just what it checks
 3. Register it in `packages/core/src/validator/rules/index.ts`
 4. Add unit tests in `packages/core/tests/validator.test.ts`
-5. If the rule needs the raw AST (not just the element model), use `workspace.documents` — see W004/W005 for examples
+5. If the rule needs the raw AST (not just the element model), use `workspace.documents` — see the generic rules WG02/WG03 of `@cli42/lib/rules` for examples
 
 The `Rule` interface is ESLint-inspired: a self-describing `meta` object and a `check(workspace, index)` function. `arc42 rules` exposes the full registry to CLI users and agents.
 
 ### Key design decisions
 
 - **Flat hierarchy with `parent:` references** — building-block decomposition is modelled as a flat list with parent pointers, not nested blocks. Simpler to parse, simpler for agents to write.
-- **Parser stays dumb** — the parser emits all block types including unknown ones. The meta-model builder rejects unknowns with E005. This keeps the parser stable as new block types are added.
+- **Parser stays dumb** — the parser emits all block types including unknown ones. The meta-model builder rejects unknowns with EG02. This keeps the parser stable as new block types are added.
 - **Same pipeline for all commands** — `validate`, `get`, and `rules` all run the full discover→parse→build→index pipeline. No caching in v1.
 - **Rule registry** — each rule is a self-describing object. `arc42 rules` is a free by-product. Rules are composable and independently testable.
-- **`Workspace.documents[]`** — structure-aware rules (W004, W005) need the raw AST to scan node sequences. The workspace carries the parsed documents for this purpose.
+- **`Workspace.documents[]`** — structure-aware rules (WG02, WG03) need the raw AST to scan node sequences. The workspace carries the parsed documents for this purpose.
 
 ### This project's own architecture
 

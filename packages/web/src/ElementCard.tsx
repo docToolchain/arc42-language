@@ -3,7 +3,7 @@ import type { Element, Edge, IgnoreNode } from "./types";
 import styles from "./ElementCard.module.css";
 
 const RULE_LABELS: Record<string, string> = {
-  W004: "Block has no prose",
+  WG02: "Block has no prose",
   H014: "Implementation artifacts should be linked",
 };
 

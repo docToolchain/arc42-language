@@ -11,8 +11,8 @@ describe("validateWorkspace — mini-arch fixture", () => {
 
     const codes = result.diagnostics.map((d) => d.code);
 
-    // E005: qg-security missing required 'priority'
-    expect(codes).toContain("E005");
+    // EG02: qg-security missing required 'priority'
+    expect(codes).toContain("EG02");
 
     // E002: bb-auth references non-existent parent 'bb-nonexistent'
     expect(codes).toContain("E002");
@@ -29,11 +29,11 @@ describe("validateWorkspace — mini-arch fixture", () => {
     // W003: dec-auth-strategy is 'proposed' with date older than 90 days
     expect(codes).toContain("W003");
 
-    // W004: all blocks in mini-arch lack prose introductions
-    expect(codes).toContain("W004");
+    // WG02: all blocks in mini-arch lack prose introductions
+    expect(codes).toContain("WG02");
 
-    // W005: multiple blocks under the same top-level heading in each file
-    expect(codes).toContain("W005");
+    // WG03: multiple blocks under the same top-level heading in each file
+    expect(codes).toContain("WG03");
 
     // H002: qg-maintainability is not addressed by any decision
     expect(codes).toContain("H002");

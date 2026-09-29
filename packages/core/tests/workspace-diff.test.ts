@@ -331,6 +331,6 @@ describe("diffWorkspaces — invalid snapshots fail loudly", () => {
     const outside = `${block("building-block", { id: "service", title: "Service" })}\n`;
     expect(() =>
       diffWorkspaces(workspace({ [FILE]: outside }), workspace({ [FILE]: service() })),
-    ).toThrow(/05-building-blocks\.arc42\.md:2: block is not placed under any heading \(E017\)/);
+    ).toThrow(/05-building-blocks\.arc42\.md:2: block is not placed under any heading \(EG04\)/);
   });
 });

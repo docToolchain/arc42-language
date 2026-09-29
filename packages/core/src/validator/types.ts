@@ -32,7 +32,7 @@ export interface ValidationContext {
   coverageIgnore?: Set<string>;
   /**
    * Human-readable description of the DSL fence syntax for the active notation.
-   * Used by W016 to emit a notation-appropriate message.
+   * Used by WG05 to emit a notation-appropriate message.
    * Defaults to "```arc42 fence" when omitted.
    */
   fenceDescription?: string;
