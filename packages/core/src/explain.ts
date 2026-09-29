@@ -6,6 +6,7 @@
 import {
   blockGuidance,
   formatBlockGuidance,
+  formatBlockList,
   formatIgnoreGuidance,
   ignoreGuidance,
 } from "@cli42/lib/explain";
@@ -105,15 +106,14 @@ export function formatExplainText(result: ExplainResult): string {
 }
 
 export function formatExplainListText(summaries: ExplainSummary[]): string {
-  const lines: string[] = [];
-  lines.push("Block types (run `arc42 explain <type>` for full guidance):");
-  lines.push("");
-  for (const s of summaries) {
-    lines.push(
-      `  ${s.blockType.padEnd(20)} ch.${String(s.arc42Chapter).padEnd(3)}  ${s.description}`,
-    );
-  }
-  return lines.join("\n");
+  return formatBlockList(
+    "arc42",
+    summaries.map((s) => ({
+      blockType: s.blockType,
+      chapter: s.arc42Chapter,
+      description: s.description,
+    })),
+  );
 }
 
 // ---------------------------------------------------------------------------
