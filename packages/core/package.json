@@ -44,7 +44,6 @@
   },
   "dependencies": {
     "@arc42/mermaid": "workspace:*",
-    "@asciidoctor/core": "catalog:",
     "@cli42/lib": "catalog:"
   },
   "devDependencies": {
