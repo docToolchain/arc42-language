@@ -13,7 +13,6 @@ directly affect team productivity and are a contractual threshold for enterprise
 id: qg-performance
 title: Performance
 priority: high
-scenario: qs-perf-board-load
 :::
 ----
 
@@ -29,7 +28,6 @@ enforced at every layer.
 id: qg-security
 title: Security
 priority: high
-scenario: qs-sec-invalid-token
 :::
 ----
 
@@ -44,7 +42,6 @@ on the board during active sprints; downtime translates directly to blocked work
 id: qg-reliability
 title: Reliability
 priority: high
-scenario: qs-rel-pod-failure
 :::
 ----
 
@@ -59,7 +56,6 @@ authorised users within the correct tenant. This directly supports GDPR complian
 id: qg-data-privacy
 title: Data Privacy and GDPR Compliance
 priority: high
-scenario: qs-privacy-residency
 :::
 ----
 
@@ -74,7 +70,6 @@ independently deployable without requiring coordinated releases across the whole
 id: qg-maintainability
 title: Maintainability
 priority: medium
-scenario: qs-maint-independent-deploy
 :::
 ----
 

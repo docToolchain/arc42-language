@@ -158,7 +158,6 @@ function renderFields(el: Element): React.ReactNode {
   switch (el.kind) {
     case "quality-goal":
       fields.push(["priority", el.priority]);
-      if (el.scenario) fields.push(["scenario", el.scenario]);
       break;
     case "quality-scenario":
       fields.push(["quality", el.quality]);

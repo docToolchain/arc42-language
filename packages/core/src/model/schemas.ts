@@ -33,21 +33,13 @@ export const QualityGoalSchema = z
     priority: z
       .enum(["high", "medium", "low"])
       .meta({ description: "How architecture-driving this goal is" }),
-    scenario: z
-      .string()
-      .optional()
-      .meta({ description: "ID of a quality-scenario that makes this goal measurable" }),
   })
   .meta({
     description: "An architecturally significant quality attribute goal with a priority.",
     arc42Chapter: 10,
-    crossRefs: [
-      // Not indexed: the scenario elaborates the goal (quality-scenario.quality).
-      { field: "scenario", targetKind: "quality-scenario", cardinality: "one" },
-    ] satisfies CrossRefMeta[],
     authoringTips: [
       "Limit yourself to the top 3–5 quality goals whose fulfillment matters most to your key stakeholders.",
-      "Avoid buzzwords like 'high performance' — make goals concrete and measurable via quality-scenarios.",
+      "Avoid buzzwords like 'high performance' — make goals concrete and measurable via quality-scenarios, which reference the goal they elaborate (quality-scenario.quality).",
       "These are quality goals *for the architecture*, not project goals or business goals.",
       "Use the ISO 25010 quality model or Q42 checklist to ensure you haven't missed important categories.",
     ],

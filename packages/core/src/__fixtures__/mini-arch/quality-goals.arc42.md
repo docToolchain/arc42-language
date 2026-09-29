@@ -4,7 +4,6 @@
 id: qg-perf
 title: Performance
 priority: high
-scenario: System responds within 200ms under normal load.
 :::
 
 :::quality-goal
