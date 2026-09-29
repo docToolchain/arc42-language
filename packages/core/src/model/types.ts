@@ -1,12 +1,19 @@
 // Meta-model element types
 
 import type { BlockType, DocumentAst } from "../ast.ts";
-import type { ElementOf, ParseError, ParseWarning, SourceLocation } from "@cli42/lib/model";
+import { relationsOf } from "@cli42/lib/model";
+import type {
+  ElementOf,
+  MetaRelation,
+  ParseError,
+  ParseWarning,
+  SourceLocation,
+} from "@cli42/lib/model";
 import type { IgnoreDirective } from "@cli42/lib/validator";
 import { chaptersOf } from "@cli42/lib/schema";
 import { ELEMENT_SCHEMAS } from "./schemas.ts";
 
-export type { IgnoreDirective, ParseError, ParseWarning, SourceLocation };
+export type { IgnoreDirective, MetaRelation, ParseError, ParseWarning, SourceLocation };
 
 /**
  * Canonical arc42 chapter order for element kinds.
@@ -37,6 +44,13 @@ export const ELEMENT_CHAPTER: Readonly<Record<BlockType, number>> = chaptersOf(
   ELEMENT_SCHEMAS,
   "arc42Chapter",
 );
+
+/**
+ * The relations between element kinds — the meta-model — derived from the
+ * schemas' cross-references, in their direction (e.g. building-block
+ * provides interface).
+ */
+export const ELEMENT_RELATIONS: readonly MetaRelation<BlockType>[] = relationsOf(ELEMENT_SCHEMAS);
 
 /** Human-readable arc42 chapter titles */
 export const CHAPTER_TITLE: Readonly<Record<number, string>> = {

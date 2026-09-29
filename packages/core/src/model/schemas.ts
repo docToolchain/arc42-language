@@ -479,7 +479,12 @@ export const SequenceDiagramMetaSchema = z
     description:
       "Illustrates a runtime flow as a Mermaid sequence diagram. Must be linked to a runtime-scenario.",
     crossRefs: [
-      { field: "scenario", targetKind: "runtime-scenario", cardinality: "one" },
+      {
+        field: "scenario",
+        targetKind: "runtime-scenario",
+        cardinality: "one",
+        relation: "illustrates",
+      },
     ] satisfies CrossRefMeta[],
     authoringTips: [
       "The diagram body must start with the sequenceDiagram keyword.",

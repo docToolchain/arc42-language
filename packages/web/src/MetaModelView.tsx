@@ -4,7 +4,7 @@
  * What comes from core (single source of truth):
  *   - ELEMENT_KIND_ORDER  → node render order + valid BlockType set
  *   - ELEMENT_CHAPTER     → chapter number per kind
- *   - explainElement()    → edges: connections and their field names
+ *   - ELEMENT_RELATIONS   → edges: the relations between kinds, in their direction
  *
  * What lives here (pure rendering concerns):
  *   - NODE_POS            → x/y pixel positions per kind
@@ -13,14 +13,12 @@
  *   - SVG sizing constants
  *   - EDGE_OVERRIDES      → face/curve overrides for edges where autoFaces() picks
  *                           a bad attachment or parallel arrows need a bezier nudge
- *                           (keyed "{fromKind}:{field}:{resolvedToKind}")
- *   - SKIP_TARGET_KINDS   → compound targetKind strings that are too visually
- *                           ambiguous to draw (explicit skip-list)
+ *                           (keyed "{fromKind}:{relation}:{toKind}")
  *
  * Node labels are clickable and navigate to the corresponding chapter doc.
  */
 
-import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, explainElement } from "@arc42/core";
+import { ELEMENT_KIND_ORDER, ELEMENT_CHAPTER, ELEMENT_RELATIONS } from "@arc42/core";
 import type { BlockType } from "@arc42/core";
 
 // ── SVG layout constants ──────────────────────────────────────────────────────
@@ -68,9 +66,8 @@ function nodeColor(kind: BlockType): string {
  * respected. solution-strategy is the starting point (top-left); arrows
  * generally flow rightward and downward toward their dependants.
  *
- * risk and glossary-term have no outgoing crossRefs and are not targets of
- * any crossRef from the schemas. risk is a target of decision.addresses
- * (compound). glossary-term is genuinely isolated in the meta-model.
+ * risk and glossary-term start no relation. risk is a target of decision
+ * addresses. glossary-term is genuinely isolated in the meta-model.
  *
  * Columns (centre x):
  *   col1  x=82   constraint, actor
@@ -112,11 +109,11 @@ const NODE_POS: Record<BlockType, [number, number]> = {
 
 // ── Edge overrides ────────────────────────────────────────────────────────────
 //
-// Most edges are fully auto-derived from NODE_POS (faces) and crossRefs (label).
+// Most edges are fully auto-derived from NODE_POS (faces) and the relation (label).
 // This table covers exceptions where autoFaces() picks a bad face pair or
 // parallel arrows need a bezier nudge to avoid overlap.
 //
-// Key: "{fromKind}:{field}:{resolvedToKind}"
+// Key: "{fromKind}:{relation}:{toKind}"
 // All fields are optional; omitted fields fall back to auto-computed values.
 //
 // cp:        quadratic bezier control-point offset [dx,dy] from the straight midpoint
@@ -135,7 +132,7 @@ interface EdgeOverride {
 
 const EDGE_OVERRIDES: Record<string, EdgeOverride> = {
   // quality-scenario → quality-goal: the scenario elaborates the goal above it, straight up
-  "quality-scenario:quality:quality-goal": { fromFace: "top", toFace: "bottom" },
+  "quality-scenario:elaborates:quality-goal": { fromFace: "top", toFace: "bottom" },
 
   // solution-strategy → quality-goal: same row, straight right
   "solution-strategy:addresses:quality-goal": { fromFace: "right", toFace: "left" },
@@ -147,10 +144,10 @@ const EDGE_OVERRIDES: Record<string, EdgeOverride> = {
   "building-block:implements:concept": { fromFace: "top", toFace: "bottom", cp: [28, 0] },
 
   // building-block → interface: straight down, nudge left
-  "building-block:requires:interface": { fromFace: "bottom", toFace: "top", cp: [-28, 0] },
+  "building-block:requires:interface": { fromFace: "bottom", toFace: "top", cp: [-56, 0] },
 
-  // interface → building-block: straight up, nudge right to separate from ↕ pair
-  "interface:provider:building-block": { fromFace: "top", toFace: "bottom", cp: [28, 0] },
+  // building-block → interface (provides): straight down, nudge right to separate from requires
+  "building-block:provides:interface": { fromFace: "bottom", toFace: "top", cp: [56, 0] },
 
   // runtime-scenario → building-block: go left
   "runtime-scenario:involves:building-block": { fromFace: "left", toFace: "right" },
@@ -168,41 +165,12 @@ const EDGE_OVERRIDES: Record<string, EdgeOverride> = {
   // (listed here for documentation; will be a no-op)
 };
 
-// ── Compound targetKind resolution ───────────────────────────────────────────
-//
-// crossRef.targetKind can be a compound string like "quality-goal, constraint, or risk".
-// We parse it by splitting on " or " and ", " separators and validating each
-// token against ELEMENT_KIND_ORDER — no manual mapping needed.
-//
-// Some compound strings reference too many targets. We skip them explicitly.
-
-const SKIP_TARGET_KINDS = new Set<string>([
-  // No entries needed currently.
-]);
-
 // ── Kinds hidden from the visualization ──────────────────────────────────────
 //
-// glossary-term has no crossRefs in either direction — genuinely isolated in
+// glossary-term has no relations in either direction — genuinely isolated in
 // the meta-model; hiding it avoids a floating unconnected node.
 
 const HIDDEN_KINDS = new Set<BlockType>(["glossary-term"]);
-
-const VALID_KINDS = new Set<string>(ELEMENT_KIND_ORDER);
-
-/**
- * Split a crossRef targetKind string into resolved BlockType[].
- * Parses compound strings like "quality-goal, constraint, or risk" →
- * ["quality-goal", "constraint", "risk"].
- * Returns [] for any targetKind in SKIP_TARGET_KINDS.
- * Tokens not in ELEMENT_KIND_ORDER are silently filtered (defensive).
- */
-function resolveTargets(targetKind: string): BlockType[] {
-  if (SKIP_TARGET_KINDS.has(targetKind)) return [];
-  return targetKind
-    .split(/,\s+or\s+|,\s*|\s+or\s+/)
-    .map((t) => t.trim())
-    .filter((t) => VALID_KINDS.has(t)) as BlockType[];
-}
 
 // ── Geometry helpers ──────────────────────────────────────────────────────────
 
@@ -318,7 +286,7 @@ function labelMidpoint(g: EdgeGeometry): [number, number] {
   return [(g.x1 + g.x2) / 2, (g.y1 + g.y2) / 2];
 }
 
-// ── Build edges from core crossRefs ───────────────────────────────────────────
+// ── Build edges from the meta-model relations ───────────────────────────────────────────
 
 interface RenderedEdge {
   path: string;
@@ -330,41 +298,30 @@ interface RenderedEdge {
 function buildEdges(): RenderedEdge[] {
   const rendered: RenderedEdge[] = [];
 
-  for (const kind of ELEMENT_KIND_ORDER) {
+  for (const { from: kind, to, relation } of ELEMENT_RELATIONS) {
     if (HIDDEN_KINDS.has(kind)) continue;
-    const { crossRefs } = explainElement(kind);
+    for (const targetKind of to) {
+      if (targetKind === kind) continue; // skip self-references
+      if (HIDDEN_KINDS.has(targetKind)) continue; // skip hidden targets
 
-    for (const ref of crossRefs) {
-      for (const targetKind of resolveTargets(ref.targetKind)) {
-        if (targetKind === kind) continue; // skip self-references
-        if (HIDDEN_KINDS.has(targetKind)) continue; // skip hidden targets
+      const fromPos = NODE_POS[kind];
+      const toPos = NODE_POS[targetKind];
+      if (!fromPos || !toPos) continue;
 
-        const fromPos = NODE_POS[kind];
-        const toPos = NODE_POS[targetKind];
-        if (!fromPos || !toPos) continue;
+      const override = EDGE_OVERRIDES[`${kind}:${relation}:${targetKind}`];
+      const [autoFrom, autoTo] = autoFaces(fromPos, toPos);
+      const fromFace = override?.fromFace ?? autoFrom;
+      const toFace = override?.toFace ?? autoTo;
 
-        const override = EDGE_OVERRIDES[`${kind}:${ref.field}:${targetKind}`];
-        const [autoFrom, autoTo] = autoFaces(fromPos, toPos);
-        const fromFace = override?.fromFace ?? autoFrom;
-        const toFace = override?.toFace ?? autoTo;
+      const geo = resolveGeometry(fromPos, toPos, fromFace, toFace, override?.cp, override?.cubic);
+      const [lmx, lmy] = labelMidpoint(geo);
 
-        const geo = resolveGeometry(
-          fromPos,
-          toPos,
-          fromFace,
-          toFace,
-          override?.cp,
-          override?.cubic,
-        );
-        const [lmx, lmy] = labelMidpoint(geo);
-
-        rendered.push({
-          path: buildPath(geo),
-          label: ref.field,
-          labelX: lmx,
-          labelY: lmy - 3,
-        });
-      }
+      rendered.push({
+        path: buildPath(geo),
+        label: relation,
+        labelX: lmx,
+        labelY: lmy - 3,
+      });
     }
   }
 
