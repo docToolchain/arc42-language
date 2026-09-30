@@ -10,6 +10,12 @@ import type { ReferenceIndex } from "../../resolver/types.ts";
  * any actor — either directly (actor requires an interface provided by this block)
  * or transitively (some reachable block requires an interface provided by this block).
  *
+ * Reachability follows the decomposition too: a block is part of its parent,
+ * so reaching a child reaches its ancestors, and reaching a parent reaches its
+ * children, whose own `requires` are walked in turn. A layer whose interfaces
+ * are provided by its children (`actor → bb-cli → if-parser → bb-parser`, with
+ * `bb-parser` inside `bb-ingestion`) is therefore reachable.
+ *
  * Blocks with no interface participation at all are excluded: H004 already covers that.
  * Child blocks (those with a `parent`) are excluded: internal decomposition is
  * not expected to have an independent actor entry point.
@@ -55,36 +61,42 @@ export const h022BuildingBlockNoActorPath: Rule = {
       providers.push(edge.provider);
     }
 
-    // Build a set of provider ids reachable from any actor via interface edges.
+    // Decomposition: parent → children, and child → parent
+    const parentOf = new Map<string, string>();
+    const childrenOf = new Map<string, string[]>();
+    for (const el of workspace.elements) {
+      if (el.kind !== "building-block" || !el.parent) continue;
+      parentOf.set(el.id, el.parent);
+      let children = childrenOf.get(el.parent);
+      if (!children) {
+        children = [];
+        childrenOf.set(el.parent, children);
+      }
+      children.push(el.id);
+    }
+
+    // Build a set of building-block ids reachable from any actor.
     // Seed: all providers directly required by actors (using index.byId for O(1) lookup).
-    // Expand: BFS through building-block requires chains using the adjacency map.
+    // Expand: BFS through requires chains (adjacency map) and the decomposition.
     const reachable = new Set<string>();
     const queue: string[] = [];
+    const reach = (id: string) => {
+      if (reachable.has(id)) return;
+      reachable.add(id);
+      queue.push(id);
+    };
 
     for (const [consumerId, providers] of consumerToProviders) {
       const consumer = index.byId.get(consumerId);
-      if (consumer?.kind === "actor") {
-        for (const provider of providers) {
-          if (!reachable.has(provider)) {
-            reachable.add(provider);
-            queue.push(provider);
-          }
-        }
-      }
+      if (consumer?.kind === "actor") providers.forEach(reach);
     }
 
-    // BFS expansion through building-block requires chains
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const providers = consumerToProviders.get(current);
-      if (providers) {
-        for (const provider of providers) {
-          if (!reachable.has(provider)) {
-            reachable.add(provider);
-            queue.push(provider);
-          }
-        }
-      }
+      consumerToProviders.get(current)?.forEach(reach);
+      const parent = parentOf.get(current);
+      if (parent) reach(parent);
+      childrenOf.get(current)?.forEach(reach);
     }
 
     // Determine which root blocks participate in the interface graph:
