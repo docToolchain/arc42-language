@@ -437,4 +437,93 @@ describe("H022 — root building block not reachable from any actor", () => {
     ]);
     expect(h022(ws)).toHaveLength(0);
   });
+
+  describe("reachability through the decomposition (#99)", () => {
+    const actor = (requires: string[]): Element => ({
+      kind: "actor",
+      id: "actor-operator",
+      title: "Operator",
+      type: "person",
+      requires,
+      loc: loc(1),
+    });
+    const block = (id: string, requires: string[] = [], parent?: string): Element => ({
+      kind: "building-block",
+      id,
+      title: id,
+      implements: [],
+      requires,
+      ...(parent ? { parent } : {}),
+      loc: loc(),
+    });
+    const iface = (id: string, provider: string): Element => ({
+      kind: "interface",
+      id,
+      title: id,
+      provider,
+      loc: loc(),
+    });
+
+    test("layers are reachable through the CLI when their children provide its interfaces", () => {
+      // actor → if-cli → bb-cli → if-parser-eml / if-llm-client / if-writer, each
+      // provided by a child of a peer layer that also provides an interface of its own
+      const ws = makeWorkspace([
+        actor(["if-cli"]),
+        block("bb-cli", ["if-parser-eml", "if-llm-client", "if-writer"]),
+        iface("if-cli", "bb-cli"),
+        block("bb-ingestion"),
+        iface("if-ingestion", "bb-ingestion"),
+        block("bb-eml-parser", [], "bb-ingestion"),
+        iface("if-parser-eml", "bb-eml-parser"),
+        block("bb-classification"),
+        iface("if-classification", "bb-classification"),
+        block("bb-openai-client", [], "bb-classification"),
+        iface("if-llm-client", "bb-openai-client"),
+        block("bb-output"),
+        iface("if-output", "bb-output"),
+        block("bb-jsonl-writer", [], "bb-output"),
+        iface("if-writer", "bb-jsonl-writer"),
+      ]);
+      expect(h022(ws)).toHaveLength(0);
+    });
+
+    test("reaching a grandchild reaches its root", () => {
+      const ws = makeWorkspace([
+        actor(["if-deep"]),
+        block("bb-root"),
+        iface("if-root", "bb-root"),
+        block("bb-mid", [], "bb-root"),
+        block("bb-leaf", [], "bb-mid"),
+        iface("if-deep", "bb-leaf"),
+      ]);
+      expect(h022(ws)).toHaveLength(0);
+    });
+
+    test("the requires of a reached block's children are walked", () => {
+      // actor → if-api → bb-server; its child bb-handler requires if-db → bb-db
+      const ws = makeWorkspace([
+        actor(["if-api"]),
+        block("bb-server"),
+        iface("if-api", "bb-server"),
+        block("bb-handler", ["if-db"], "bb-server"),
+        block("bb-db"),
+        iface("if-db", "bb-db"),
+      ]);
+      expect(h022(ws)).toHaveLength(0);
+    });
+
+    test("still fires for a layer that no reachable block uses", () => {
+      const ws = makeWorkspace([
+        actor(["if-cli"]),
+        block("bb-cli"),
+        iface("if-cli", "bb-cli"),
+        block("bb-archive"),
+        iface("if-archive", "bb-archive"),
+        block("bb-archive-writer", [], "bb-archive"),
+        iface("if-archive-writer", "bb-archive-writer"),
+      ]);
+      const diags = h022(ws);
+      expect(diags.map((d) => d.message)).toEqual([expect.stringContaining("'bb-archive'")]);
+    });
+  });
 });
