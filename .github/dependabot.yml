@@ -1,0 +1,14 @@
+# Take each @cli42/lib release (the shared engine, github.com/mrsimpson/cli42)
+# as soon as it is published. The dependency lives in the pnpm catalog
+# (pnpm-workspace.yaml); Dependabot updates the catalog and the lockfile.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+    allow:
+      - dependency-name: "@cli42/lib"
+    # A lib release fixes or extends what the CLI ships: release it too.
+    commit-message:
+      prefix: fix(deps)
