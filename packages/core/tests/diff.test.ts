@@ -70,13 +70,49 @@ describe("architecture diff lint", () => {
     expect(result.consistencyFindings).toHaveLength(0);
   });
 
-  test("reports prose-only changes", () => {
+  test("accepts prose that describes features, not the model (#90)", () => {
     const result = lintArchitectureDiff({
       changedFiles: [FILE],
       base: workspace(architecture(service())),
-      head: workspace(architecture(service("Updated narrative"))),
+      head: workspace(architecture(service("Narrative, now with a history view"))),
     });
-    expect(result.consistencyFindings[0]?.kind).toBe("prose-without-block-change");
+    expect(result.consistencyFindings).toHaveLength(0);
+  });
+
+  test("reports prose that changes a fact of the unchanged block", () => {
+    const node = (prose: string) =>
+      section(
+        "Service",
+        prose,
+        block("building-block", { id: "service", title: "Service", technology: "Node" }),
+      );
+    const result = lintArchitectureDiff({
+      changedFiles: [FILE],
+      base: workspace(architecture(node("Runs on Node."))),
+      head: workspace(architecture(node("Runs on Deno."))),
+    });
+    expect(result.consistencyFindings).toMatchObject([
+      {
+        kind: "prose-without-block-change",
+        message: "Section prose changed without changing block 'service' — it names 'Node'.",
+      },
+    ]);
+  });
+
+  test("reports prose that names an element the model does not connect", () => {
+    const billing = section(
+      "Billing",
+      "Bills the orders.",
+      block("building-block", { id: "billing", title: "Billing" }),
+    );
+    const result = lintArchitectureDiff({
+      changedFiles: [FILE],
+      base: workspace(architecture(service(), billing)),
+      head: workspace(architecture(service("Narrative. It hands orders to Billing."), billing)),
+    });
+    expect(result.consistencyFindings).toMatchObject([
+      { kind: "prose-without-block-change", elementId: "service" },
+    ]);
   });
 
   test("accepts deletion of a block together with its prose", () => {

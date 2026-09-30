@@ -53,8 +53,14 @@ export const QualityScenarioSchema = z
       .string()
       .min(1)
       .meta({ description: "ID of the quality-goal this scenario elaborates" }),
-    stimulus: z.string().optional().meta({ description: "What triggers this scenario" }),
-    response: z.string().optional().meta({ description: "Expected system response" }),
+    stimulus: z
+      .string()
+      .optional()
+      .meta({ freeText: true, description: "What triggers this scenario" }),
+    response: z
+      .string()
+      .optional()
+      .meta({ freeText: true, description: "Expected system response" }),
     metric: z
       .string()
       .optional()
@@ -108,7 +114,10 @@ export const ActorSchema = z
     requires: splitListRequiredSchema.meta({
       description: "Comma-separated IDs of interfaces this actor requires",
     }),
-    description: z.string().optional().meta({ description: "What this actor does or needs" }),
+    description: z
+      .string()
+      .optional()
+      .meta({ freeText: true, description: "What this actor does or needs" }),
   })
   .superRefine((data, ctx) => {
     if (data.requires.length === 0) {
@@ -243,7 +252,10 @@ export const RuntimeScenarioSchema = z
     involves: splitListSchema.meta({
       description: "Comma-separated building-block IDs participating in this scenario",
     }),
-    trigger: z.string().optional().meta({ description: "What initiates this scenario" }),
+    trigger: z
+      .string()
+      .optional()
+      .meta({ freeText: true, description: "What initiates this scenario" }),
   })
   .meta({
     description:
@@ -368,10 +380,10 @@ export const RiskSchema = z
     id: z.string().min(1).meta({ description: "Unique identifier" }),
     title: z.string().min(1).meta({ description: "Short name for the risk" }),
     severity: z.enum(["high", "medium", "low"]).meta({ description: "How critical this risk is" }),
-    mitigation: z
-      .string()
-      .optional()
-      .meta({ description: "What is being done or could be done to reduce this risk" }),
+    mitigation: z.string().optional().meta({
+      freeText: true,
+      description: "What is being done or could be done to reduce this risk",
+    }),
   })
   .meta({
     description: "An architectural risk or item of technical debt with a severity assessment.",
@@ -392,7 +404,7 @@ export const GlossaryTermSchema = z
     definition: z
       .string()
       .min(1)
-      .meta({ description: "Clear, unambiguous definition of the term" }),
+      .meta({ freeText: true, description: "Clear, unambiguous definition of the term" }),
   })
   .meta({
     description: "A defined term in the architecture glossary.",

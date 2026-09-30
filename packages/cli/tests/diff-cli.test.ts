@@ -57,7 +57,7 @@ describe("CLI architecture diff acceptance guidance", () => {
     const root = repository();
     writeFileSync(
       join(root, "architecture.arc42.md"),
-      architecture("Changed prose", "Initial title"),
+      architecture("Changed prose: it now reads src.ts.", "Initial title"),
     );
 
     const result = runDiff(root, ["--strict"]);
@@ -71,12 +71,12 @@ describe("CLI architecture diff acceptance guidance", () => {
     const head = git(root, "rev-parse", "HEAD").trim();
     writeFileSync(
       join(root, "architecture.arc42.md"),
-      architecture("Staged prose", "Initial title"),
+      architecture("Staged prose.", "Initial title"),
     );
     git(root, "add", "architecture.arc42.md");
     writeFileSync(
       join(root, "architecture.arc42.md"),
-      architecture("Working prose", "Initial title"),
+      architecture("Working prose: it reads src.ts.", "Initial title"),
     );
 
     const result = runDiff(root, [], { ARC42_CONSISTENT: head });
