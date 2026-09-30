@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["local>mrsimpson/renovate-config"],
+  "packageRules": [
+    {
+      "description": "Take each @cli42/lib release (the shared engine) as soon as it is published and merge it once CI passes. The fix(deps) commit releases the CLI with it.",
+      "matchPackageNames": ["@cli42/lib"],
+      "groupName": "@cli42/lib",
+      "schedule": ["at any time"],
+      "minimumReleaseAge": null,
+      "rangeStrategy": "bump",
+      "semanticCommitType": "fix",
+      "semanticCommitScope": "deps",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "dependencyDashboardApproval": false
+    }
+  ]
+}
