@@ -72,6 +72,22 @@ describe("parseMermaid", () => {
     expect(result).toMatchObject({ ok: true, notation: "flowchart", diagramType: "flowchart-v2" });
   });
 
+  it("parses flowchart with unquoted subgraph title and bracket node labels (E014 repro)", async () => {
+    // Regression: Mermaid 11.17.2 calls DOMPurify for unquoted [Label] node shapes
+    // and unquoted `subgraph id [Title]` forms in Node environments.
+    // withoutBrowserText must strip all of these so the structural retry succeeds.
+    // Previously the fallback was skipped because withoutBrowserText produced no
+    // change (normalized === source), causing E014 to fire on valid diagrams.
+    const result = await parseMermaid({
+      notation: "flowchart",
+      source: `flowchart LR
+    subgraph bb_system [System]
+    end
+    actor_operator[Operator] --> bb_system`,
+    });
+    expect(result).toMatchObject({ ok: true, notation: "flowchart", diagramType: "flowchart-v2" });
+  });
+
   it("normalizes malformed source into a failure result", async () => {
     const result = await parseMermaid({
       notation: "architecture",
