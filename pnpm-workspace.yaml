@@ -4,7 +4,7 @@ packages:
   - tools/*
 
 catalog:
-  "@cli42/lib": github:mrsimpson/cli42#af524c1
+  "@cli42/lib": ^0.3.0
   "@semantic-release/changelog": 7.0.0
   "@semantic-release/exec": 7.1.0
   "@semantic-release/github": 12.0.9
@@ -29,6 +29,3 @@ peerDependencyRules:
   allowedVersions:
     vite: "*"
     vitest: "*"
-onlyBuiltDependencies:
-  # Git-hosted until the next release: builds its dist/ on install (prepare).
-  - "@cli42/lib"
