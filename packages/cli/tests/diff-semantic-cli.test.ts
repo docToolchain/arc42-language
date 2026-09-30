@@ -88,10 +88,12 @@ describe("arc42 diff — semantic comparison", () => {
     const withAccess = (prose: string) =>
       `${markdown(SERVICE, prose)}\n## Documentation Access\n\nThe documentation itself.\n\n\`\`\`arc42\n:::interface\nid: docs-access\ntitle: Documentation Access\nprovider: service\npath: architecture.arc42.md\n:::\n\`\`\`\n`;
     const root = repository(MD, withAccess("The service owns orders."));
-    writeFileSync(join(root, MD), withAccess("The service owns orders and invoices."));
+    writeFileSync(join(root, MD), withAccess("The service owns orders and runs on Node."));
     const result = runDiff(root, "--strict");
     expect(result.stdout).not.toContain("hint");
-    expect(result.stdout).toContain("Section prose changed without changing block 'service'.");
+    expect(result.stdout).toContain(
+      "Section prose changed without changing block 'service' — it names 'Node'.",
+    );
   });
 
   test("reads AsciiDoc on both sides", () => {
@@ -161,7 +163,7 @@ describe("arc42 diff — commit ranges", () => {
     writeFileSync(join(root, "service.ts"), "export const service = true;\n");
     commitAll(root, "feature: code only");
     git(root, "checkout", "-q", main);
-    writeFileSync(join(root, MD), markdown(SERVICE, "Main-only prose change."));
+    writeFileSync(join(root, MD), markdown(SERVICE, "Main-only prose change: it runs on Node."));
     commitAll(root, "main: prose only");
 
     const branchOnly = runDiff(root, `${main}...feature`);
@@ -169,7 +171,9 @@ describe("arc42 diff — commit ranges", () => {
     expect(branchOnly.status).toBe(0);
 
     const twoDot = runDiff(root, `${main}..feature`);
-    expect(twoDot.stdout).toContain("Section prose changed without changing block 'service'.");
+    expect(twoDot.stdout).toContain(
+      "Section prose changed without changing block 'service' — it names 'Node'.",
+    );
     expect(twoDot.status).toBe(1);
   });
 
