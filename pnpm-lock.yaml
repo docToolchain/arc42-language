@@ -7,8 +7,8 @@ settings:
 catalogs:
   default:
     '@cli42/lib':
-      specifier: ^0.6.0
-      version: 0.6.0
+      specifier: ^0.7.0
+      version: 0.7.0
     '@semantic-release/changelog':
       specifier: 7.0.0
       version: 7.0.0
@@ -81,7 +81,7 @@ importers:
         version: link:../workspace-fs
       '@cli42/lib':
         specifier: 'catalog:'
-        version: 0.6.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.7.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -99,7 +99,7 @@ importers:
         version: link:../mermaid
       '@cli42/lib':
         specifier: 'catalog:'
-        version: 0.6.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.7.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -115,7 +115,7 @@ importers:
     dependencies:
       '@cli42/lib':
         specifier: 'catalog:'
-        version: 0.6.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.7.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       mermaid:
         specifier: 11.17.2
         version: 11.17.2
@@ -171,7 +171,7 @@ importers:
         version: link:../core
       '@cli42/lib':
         specifier: 'catalog:'
-        version: 0.6.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.7.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       marked:
         specifier: ^14.0.0
         version: 14.1.4
@@ -220,7 +220,7 @@ importers:
         version: link:../core
       '@cli42/lib':
         specifier: 'catalog:'
-        version: 0.6.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 0.7.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -347,8 +347,8 @@ packages:
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
 
-  '@cli42/lib@0.6.0':
-    resolution: {integrity: sha512-kaDt3Ej6JcwI8P/5nKQ6IzYLQTkV2oscG9ikGDClG0Vn5Q2H9wLtAhzh8iiKFaVWnJffGNASJELRjG2YQuTO8A==}
+  '@cli42/lib@0.7.0':
+    resolution: {integrity: sha512-nrCcP8ZDUpF/bKoHVxYsGzYC8XqWhS3c87oY4sarSPq0SUI+P6nMsWxSMVnXh7rraUc6sZZncRwO9BKIPhFNKA==}
     engines: {node: '>=22.6'}
     peerDependencies:
       mermaid: ^11
@@ -3554,7 +3554,7 @@ snapshots:
 
   '@chevrotain/types@11.1.2': {}
 
-  '@cli42/lib@0.6.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@cli42/lib@0.7.0(mermaid@11.17.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@asciidoctor/core': 4.1.0
       marked: 14.1.4
