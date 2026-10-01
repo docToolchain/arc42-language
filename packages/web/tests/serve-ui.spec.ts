@@ -323,6 +323,20 @@ test.describe("Cross-document element card links", () => {
 
 // ─── Clickable diagram nodes ──────────────────────────────────────────────────
 
+test.describe("Ids in prose", () => {
+  test("an id mentioned in prose links to its element and opens its card", async ({ page }) => {
+    await page.goto("/#05-building-blocks.arc42.md");
+    const mention = page.locator("main a[data-id='bb-order-service']").first();
+    await expect(mention).toBeVisible({ timeout: 8000 });
+    await expect(mention).toHaveAttribute(
+      "href",
+      "#05-building-blocks.arc42.md:el-bb-order-service",
+    );
+    await mention.click();
+    await expect(page.locator("#el-bb-order-service")).toBeVisible({ timeout: 5000 });
+  });
+});
+
 test.describe("Clickable diagram nodes", () => {
   test("deployment architecture diagrams render without flowchart click directives", async ({
     page,

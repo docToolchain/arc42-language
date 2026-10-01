@@ -7,6 +7,8 @@ import type {
 } from "../../model/types.ts";
 import type { ReferenceIndex } from "../../resolver/types.ts";
 import { extractMermaidIds } from "../mermaid-utils.ts";
+import { idMatcher } from "@cli42/lib/schema";
+import { ELEMENT_SCHEMAS } from "../../model/schemas.ts";
 
 function diagnostic(diagram: BuildingBlockDiagram, message: string): Diagnostic {
   return {
@@ -55,6 +57,11 @@ export const e013BuildingBlockDiagramValidation: Rule = {
       workspace.elements.filter((e): e is Interface => e.kind === "interface").map((e) => e.id),
     );
     const knownIds = new Set([...buildingBlockIds, ...interfaceIds]);
+    // A token is a model id when it is one, or follows a kind's id scheme.
+    const isId = idMatcher(
+      ELEMENT_SCHEMAS,
+      workspace.elements.map((e) => e.id),
+    );
 
     for (const diagram of workspace.diagrams) {
       if (diagram.diagramType !== "building-block") continue;
@@ -63,10 +70,9 @@ export const e013BuildingBlockDiagramValidation: Rule = {
       const sourceIds = extractMermaidIds(diagram.source);
 
       for (const id of sourceIds) {
-        // Only flag ids that look like they could be model ids (contain a hyphen,
-        // which is the arc42 id convention) but don't match any known element.
-        // This avoids false positives on Mermaid label text and other tokens.
-        if (id.includes("-") && !knownIds.has(id)) {
+        // Only flag ids that are model ids (see idMatcher) but no building block
+        // or interface. Other tokens — Mermaid labels, subgraph names — pass.
+        if (isId(id) && !knownIds.has(id)) {
           diagnostics.push(
             diagnostic(
               diagram as BuildingBlockDiagram,

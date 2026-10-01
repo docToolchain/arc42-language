@@ -104,7 +104,7 @@ protocol: HTTP/JSON
 
 ### Catalog Lookup API
 
-The Order Service uses this contract during checkout to read current product details and stock.
+The Order Service (`bb-order-service`) uses this contract during checkout to read current product details and stock.
 
 ```arc42
 :::ignore H014 This is only a demo for the arc42, code is out of scope:::
