@@ -1,15 +1,15 @@
 import React from "react";
 import type { CoverageResult } from "./types";
+import type { ElementLinks } from "@cli42/lib/web";
 
 interface CoverageViewProps {
   coverage: CoverageResult;
-  /** Maps elementId → filename of the document it lives in (e.g. "05-building-blocks.arc42.md") */
-  elementDocMap: Map<string, string>;
+  /** Links to the elements of the workspace. */
+  links: ElementLinks;
 }
 
-function claimantHref(id: string, elementDocMap: Map<string, string>): string {
-  const docFile = elementDocMap.get(id);
-  return docFile ? `#${docFile}:el-${id}` : `#el-${id}`;
+function claimantHref(id: string, links: ElementLinks): string {
+  return links.elementHref(id) ?? `#el-${id}`;
 }
 
 const styles = {
@@ -100,7 +100,7 @@ const styles = {
   } as React.CSSProperties,
 };
 
-export function CoverageView({ coverage, elementDocMap }: CoverageViewProps) {
+export function CoverageView({ coverage, links }: CoverageViewProps) {
   if (coverage.totalFiles === 0) return null;
 
   const pct = Math.round((coverage.coveredFileCount / coverage.totalFiles) * 100);
@@ -157,7 +157,7 @@ export function CoverageView({ coverage, elementDocMap }: CoverageViewProps) {
                           {i > 0 && ", "}
                           <a
                             style={styles.link}
-                            href={claimantHref(c.id, elementDocMap)}
+                            href={claimantHref(c.id, links)}
                             onMouseOver={(e) =>
                               ((e.target as HTMLAnchorElement).style.textDecoration = "underline")
                             }

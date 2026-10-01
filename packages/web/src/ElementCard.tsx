@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { Element, Edge, IgnoreNode } from "./types";
 import styles from "./ElementCard.module.css";
+import type { ElementLinks } from "@cli42/lib/web";
 
 const RULE_LABELS: Record<string, string> = {
   WG02: "Block has no prose",
@@ -27,7 +28,7 @@ export const KIND_COLOR: Record<string, string> = {
 interface ElementCardProps {
   elementId: string;
   elementsMap: Map<string, Element>;
-  elementDocMap: Map<string, string>;
+  links: ElementLinks;
   edges: Edge[];
   accentColor?: string;
   onDismiss?: () => void;
@@ -35,19 +36,15 @@ interface ElementCardProps {
 }
 
 /** Build a hash link that navigates to the correct document and scrolls to the element anchor. */
-function refHref(targetId: string, elementDocMap: Map<string, string>): string {
-  const docFile = elementDocMap.get(targetId);
-  if (docFile) {
-    return `#${docFile}:el-${targetId}`;
-  }
+function refHref(targetId: string, links: ElementLinks): string {
   // Fallback: same-page anchor (element is in the currently visible doc)
-  return `#el-${targetId}`;
+  return links.elementHref(targetId) ?? `#el-${targetId}`;
 }
 
 export function ElementCard({
   elementId,
   elementsMap,
-  elementDocMap,
+  links,
   edges,
   accentColor,
   onDismiss,
@@ -101,7 +98,7 @@ export function ElementCard({
                   <a
                     data-testid="element-ref-chip"
                     key={`${e.to}-${e.relation}`}
-                    href={refHref(e.to, elementDocMap)}
+                    href={refHref(e.to, links)}
                     className={styles.refChip}
                   >
                     <span className={styles.refRel}>{e.relation}</span>
@@ -125,7 +122,7 @@ export function ElementCard({
                     <a
                       data-testid="element-ref-chip"
                       key={`${e.from}-${e.relation}`}
-                      href={refHref(e.from, elementDocMap)}
+                      href={refHref(e.from, links)}
                       className={`${styles.refChip} ${styles.refChipIncoming}`}
                     >
                       <span className={styles.refRel}>{e.relation}</span>

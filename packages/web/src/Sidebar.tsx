@@ -1,12 +1,16 @@
 import React, { useMemo } from "react";
 import type { DocumentAst, AstNode, HeadingNode, BlockNode, DiffDocument } from "./types";
-import { ChangeCounts } from "./ChangesView";
+import { slug as headingAnchor } from "@cli42/lib/web";
+import type { DocumentRoutes } from "@cli42/lib/web";
+import { ChangeCounts } from "@cli42/lib/web-react";
 import styles from "./Sidebar.module.css";
 import { filename } from "./utils";
 import { KIND_COLOR } from "./ElementCard";
 
 interface SidebarProps {
   documents: DocumentAst[];
+  /** The routes of the documents: their links. */
+  routes: DocumentRoutes;
   activeDocIndex: number;
   onSelectDoc: (index: number) => void;
   onSelectHeading: (headingSlug: string) => void;
@@ -16,7 +20,7 @@ interface SidebarProps {
   changes?: {
     active: boolean;
     onSelect: () => void;
-    /** Changed documents by file name. */
+    /** Changed documents by route key. */
     documents: Map<string, DiffDocument>;
   };
   /** Heading anchor → change status, for the active document of a visualized difference. */
@@ -39,6 +43,7 @@ interface SidebarProps {
 
 export function Sidebar({
   documents,
+  routes,
   activeDocIndex,
   onSelectDoc,
   onSelectHeading,
@@ -149,13 +154,13 @@ export function Sidebar({
         <ul className={styles.docs} role="list">
           {documents.map((doc, i) => {
             const isActive = i === activeDocIndex && !changes?.active;
-            const docChanges = changes?.documents.get(filename(doc.filePath));
+            const docChanges = changes?.documents.get(routes.keyOf(doc.filePath));
             return (
               <li key={doc.filePath} className={styles.doc}>
                 <a
                   data-testid="sidebar-doc-link"
                   aria-current={isActive ? "page" : undefined}
-                  href={`#${filename(doc.filePath)}`}
+                  href={routes.documentHref(doc.filePath)}
                   className={[styles.docBtn, isActive ? styles.docBtnActive : ""]
                     .filter(Boolean)
                     .join(" ")}
@@ -187,7 +192,7 @@ export function Sidebar({
                           >
                             <a
                               data-testid="sidebar-heading-link"
-                              href={`#${filename(doc.filePath)}:${slug}`}
+                              href={routes.documentHref(doc.filePath, slug)}
                               className={styles.headingLink}
                               onClick={(e) => {
                                 e.preventDefault();
@@ -271,13 +276,6 @@ function chapterLabel(doc: DocumentAst): string {
   const chapter = doc.filePath.match(/(?:^|\/)0*(\d+)-/)?.[1];
   if (chapter && heading) return `${Number(chapter)}. ${heading}`;
   return heading ?? filename(doc.filePath);
-}
-
-function headingAnchor(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
 }
 
 /** Collect the unique arc42 block types directly belonging to each heading. */

@@ -29,7 +29,7 @@ import {
   computeCoverage,
 } from "@arc42/core";
 import { builtinGetRenderers, rendererById } from "./renderer/index.ts";
-import type { BlockType, Diagnostic, DiagramType } from "@arc42/core";
+import type { BlockType, Diagnostic, DiagramType, DiffPayload } from "@arc42/core";
 import {
   HISTORY_INDEX_FILE,
   historyChunkFile,
@@ -37,8 +37,8 @@ import {
   snapshotBlobOf,
   snapshotTreeOf,
   toJsonLines,
-} from "@arc42/web/history-format";
-import type { HistoryEntry } from "@arc42/web/history-format";
+} from "@cli42/lib/web";
+import type { HistoryEntry as Entry } from "@cli42/lib/web";
 import {
   getElements,
   listArchitectureHistory,
@@ -48,6 +48,9 @@ import {
   validateWorkspace,
 } from "@arc42/workspace-fs";
 import type { ArchitectureCommit, ArchitectureHistory, DiffSpec } from "@arc42/workspace-fs";
+
+/** A pearl's entry, with arc42's difference. */
+type HistoryEntry = Entry<DiffPayload>;
 import {
   chunkCommits,
   historyCommitIds,

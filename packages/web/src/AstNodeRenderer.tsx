@@ -20,13 +20,15 @@ import { SequenceDiagramView } from "./SequenceDiagramView";
 import { DeploymentDiagramView } from "./DeploymentDiagramView";
 import { BuildingBlockDiagramView } from "./BuildingBlockDiagramView";
 import { ContextDiagramView } from "./ContextDiagramView";
-import { MermaidDiagram } from "./MermaidDiagram";
+import { MermaidDiagram, headingClass } from "@cli42/lib/web-react";
+import { slug } from "@cli42/lib/web";
+import type { ElementLinks } from "@cli42/lib/web";
 
 interface AstNodeRendererProps {
   node: AstNode;
   viewMode: "human" | "agent";
   elementsMap: Map<string, Element>;
-  elementDocMap: Map<string, string>;
+  links: ElementLinks;
   edges: Edge[];
   autoExpandElementId?: string | null;
   onAutoExpanded?: () => void;
@@ -56,7 +58,7 @@ export function AstNodeRenderer({
   node,
   viewMode,
   elementsMap,
-  elementDocMap,
+  links,
   edges,
   autoExpandElementId,
   onAutoExpanded,
@@ -76,16 +78,8 @@ export function AstNodeRenderer({
       if (node.level === 1) return null;
       // Shift levels down by one so H2 renders as h1, H3 as h2, etc.
       const Tag = `h${Math.min(node.level, 6)}` as keyof React.JSX.IntrinsicElements;
-      const anchor = node.text
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-");
-      // Helper to get heading level class (levels 1-3 have specific rules, 4+ share heading4)
-      const levelClass =
-        [docStyles.heading2, docStyles.heading3, docStyles.heading4][node.level - 1] ??
-        docStyles.heading4;
       return (
-        <Tag id={anchor} className={[docStyles.heading, levelClass].join(" ")}>
+        <Tag id={slug(node.text)} className={headingClass(node.level + 1)}>
           {node.text}
         </Tag>
       );
@@ -107,7 +101,7 @@ export function AstNodeRenderer({
           ignores={runNode.ignores}
           viewMode={viewMode}
           elementsMap={elementsMap}
-          elementDocMap={elementDocMap}
+          links={links}
           edges={edges}
           autoExpand={!!autoExpandElementId}
           onAutoExpanded={onAutoExpanded}
@@ -130,7 +124,7 @@ export function AstNodeRenderer({
           <ElementCard
             elementId={blockNode.attributes["id"] ?? ""}
             elementsMap={elementsMap}
-            elementDocMap={elementDocMap}
+            links={links}
             edges={edges}
           />
         );
@@ -153,7 +147,7 @@ export function AstNodeRenderer({
                 node={diagramNode}
                 interfaceMap={interfaceMap}
                 elementsMap={elementsMap}
-                elementDocMap={elementDocMap}
+                links={links}
               />
             );
           case "context":
@@ -162,26 +156,18 @@ export function AstNodeRenderer({
                 node={diagramNode}
                 interfaceMap={interfaceMap}
                 elementsMap={elementsMap}
-                elementDocMap={elementDocMap}
+                links={links}
               />
             );
           case "sequence":
             return <SequenceDiagramView node={diagramNode} />;
           case "deployment":
             return (
-              <DeploymentDiagramView
-                node={diagramNode}
-                elementsMap={elementsMap}
-                elementDocMap={elementDocMap}
-              />
+              <DeploymentDiagramView node={diagramNode} elementsMap={elementsMap} links={links} />
             );
           default:
             return (
-              <GenericDiagramView
-                node={diagramNode}
-                elementsMap={elementsMap}
-                elementDocMap={elementDocMap}
-              />
+              <GenericDiagramView node={diagramNode} elementsMap={elementsMap} links={links} />
             );
         }
       }
@@ -211,7 +197,7 @@ interface ProseRunProps {
   ignores: IgnoreNode[];
   viewMode: "human" | "agent";
   elementsMap: Map<string, Element>;
-  elementDocMap: Map<string, string>;
+  links: ElementLinks;
   edges: Edge[];
   autoExpand?: boolean;
   onAutoExpanded?: () => void;
@@ -224,7 +210,7 @@ function ProseRun({
   ignores,
   viewMode,
   elementsMap,
-  elementDocMap,
+  links,
   edges,
   autoExpand,
   onAutoExpanded,
@@ -292,7 +278,7 @@ function ProseRun({
           <ElementCard
             elementId={block.attributes["id"] ?? ""}
             elementsMap={elementsMap}
-            elementDocMap={elementDocMap}
+            links={links}
             edges={edges}
             accentColor={color}
             onDismiss={() => setShowCard(false)}
