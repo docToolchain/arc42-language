@@ -563,7 +563,7 @@ title: Opencode Skill
 technology: Markdown
 implements: concept-prose-first
 requires: if-cli
-path: packages/skill
+path: skills/arc42-language
 :::
 ```
 
@@ -577,7 +577,7 @@ id: if-agent-skill
 title: Skill Guide Contract
 provider: bb-skill
 protocol: SKILL.md loaded at agent startup
-path: packages/skill/SKILL.md
+path: skills/arc42-language/SKILL.md
 :::
 ```
 
@@ -595,7 +595,7 @@ id: bb-skill-biz42-context
 title: biz42 Context Skill
 technology: Markdown
 implements: concept-prose-first
-path: packages/skill-biz42-context
+path: skills/biz42-context
 :::
 ```
 
@@ -610,7 +610,7 @@ id: if-agent-biz42-skill
 title: biz42 Context Skill Guide Contract
 provider: bb-skill-biz42-context
 protocol: SKILL.md loaded at agent startup
-path: packages/skill-biz42-context/SKILL.md
+path: skills/biz42-context/SKILL.md
 :::
 ```
 
