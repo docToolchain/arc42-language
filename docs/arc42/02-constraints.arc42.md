@@ -62,6 +62,6 @@ This convention applies regardless of the notation format used (Markdown or Asci
 id: con-prose-first-authoring
 title: Architecture elements must follow the prose-first DSL convention
 category: convention
-source: packages/skill/SKILL.md and validation rules WG02/WG03
+source: skills/arc42-language/SKILL.md and validation rules WG02/WG03
 :::
 ```
