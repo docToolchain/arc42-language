@@ -629,10 +629,13 @@ offers the architecture history as a chain of pearls — one per commit that tou
 architecture documents — whose changes load lazily as they scroll into view; there, unchanged
 sections appear as headings with placeholders. A pearl also opens the whole architecture as it
 was at that commit, in the normal document view, marked as an earlier version, with navigation
-working as in the current one. It defines the format of the history it reads. Imports
-shared types from `@arc42/core/types` — a dedicated browser-safe subpath export that eliminates
-the need for a hand-maintained local type mirror. Designed to work equally as a `localhost` server
-and as a GitHub Pages static deployment.
+working as in the current one. Model ids that prose mentions link to their elements. Routing,
+the history format, the changes and history views and the Mermaid diagram are the shared web
+view of every \*42 language (`@cli42/lib/web`, `@cli42/lib/web-react`); arc42 adds its words, its
+rendering of document nodes and its code-change groups. Imports shared types from
+`@arc42/core/types` — a dedicated browser-safe subpath export that eliminates the need for a
+hand-maintained local type mirror. Designed to work equally as a `localhost` server and as a
+GitHub Pages static deployment.
 
 ```arc42
 :::building-block
@@ -685,7 +688,8 @@ path: packages/web/src/main.tsx
 Defines the files of the architecture history: the list of pearls, each pearl's change, and for
 each commit its file list and architecture files. Each file version is stored once and shared
 between commits, as is an unchanged file list. The definition is platform-neutral, so the history
-is written, served and read with the same definition.
+is written, served and read with the same definition — the one every \*42 web view reads, from
+`@cli42/lib/web`, typed here with arc42's difference.
 
 ```arc42
 :::interface
