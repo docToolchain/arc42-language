@@ -265,7 +265,10 @@ async function runDiff(dir: string, args: string[]) {
       process.env["ARC42_CONSISTENT"] === snapshots.acceptanceBase;
     const remainingFindings = accepted ? [] : findings;
     const hasStrictFindings =
-      Boolean(values.strict) && remainingFindings.some((finding) => finding.severity === "hint");
+      Boolean(values.strict) &&
+      remainingFindings.some(
+        (finding) => finding.severity === "hint" || finding.severity === "warning",
+      );
     const exitCode =
       (remainingFindings.length > 0 && result.hasBlockingFindings) || hasStrictFindings ? 1 : 0;
 
@@ -382,7 +385,8 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
     }
 
     const hasHints = result.diagnostics.some((d) => d.severity === "hint");
-    process.exit(!result.valid || (strict && hasHints) ? 1 : 0);
+    const hasWarnings = result.diagnostics.some((d) => d.severity === "warning");
+    process.exit(!result.valid || (strict && (hasHints || hasWarnings)) ? 1 : 0);
   } catch (err) {
     console.error(`Error: ${String(err)}`);
     process.exit(1);

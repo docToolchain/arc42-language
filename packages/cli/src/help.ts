@@ -71,7 +71,7 @@ Usage:
 Options:
   --format <text|json>  Output diagnostics as text or JSON (default: text)
   --quiet               Print only errors and omit the summary
-  --strict              Also exit 1 when hints are found
+  --strict              Also exit 1 when warnings or hints are found
   -h, --help            Show this help
 
 The command reads *.arc42.md or *.arc42.adoc files from the workspace, validates the model, and exits 0
@@ -149,7 +149,7 @@ Arguments:
 
 Options:
   --staged, --cached    Compare the index with HEAD, or with <reference>
-  --strict              Also exit 1 when hint findings are found
+  --strict              Also exit 1 when warning or hint findings are found
   --format <text|json>  Output format (default: text). json adds the semantic change set
   -h, --help            Show this help
 
