@@ -136,6 +136,84 @@ describe("runtime scenarios", () => {
     expect(validate(covered, buildIndex(covered)).some((d) => d.code === "H011")).toBe(false);
   });
 
+  test("H011 is satisfied when one consumer-provider pair appears in a scenario (multi-consumer)", () => {
+    // if-shared is required by bb-a, bb-b, bb-c and provided by bb-provider.
+    // Only bb-a and bb-provider are in the scenario — that should be enough.
+    const ws = workspace(
+      [
+        ":::building-block",
+        "id: bb-a",
+        "title: A",
+        "requires: if-shared",
+        ":::",
+        ":::building-block",
+        "id: bb-b",
+        "title: B",
+        "requires: if-shared",
+        ":::",
+        ":::building-block",
+        "id: bb-c",
+        "title: C",
+        "requires: if-shared",
+        ":::",
+        ":::building-block",
+        "id: bb-provider",
+        "title: Provider",
+        ":::",
+        ":::interface",
+        "id: if-shared",
+        "title: Shared Interface",
+        "provider: bb-provider",
+        ":::",
+        ":::runtime-scenario",
+        "id: scenario-a-provider",
+        "title: A uses Provider",
+        "involves: bb-a, bb-provider",
+        ":::",
+      ].join("\n"),
+    );
+    expect(validate(ws, buildIndex(ws)).some((d) => d.code === "H011")).toBe(false);
+  });
+
+  test("H011 fires for multi-consumer interface when no scenario has a consumer-provider pair", () => {
+    // if-shared has three consumers but the scenarios only involve consumers,
+    // never the provider alongside one of them — still uncovered.
+    const ws = workspace(
+      [
+        ":::building-block",
+        "id: bb-a",
+        "title: A",
+        "requires: if-shared",
+        ":::",
+        ":::building-block",
+        "id: bb-b",
+        "title: B",
+        "requires: if-shared",
+        ":::",
+        ":::building-block",
+        "id: bb-provider",
+        "title: Provider",
+        ":::",
+        ":::interface",
+        "id: if-shared",
+        "title: Shared Interface",
+        "provider: bb-provider",
+        ":::",
+        ":::runtime-scenario",
+        "id: scenario-consumers-only",
+        "title: Consumers only",
+        "involves: bb-a, bb-b",
+        ":::",
+        ":::runtime-scenario",
+        "id: scenario-provider-only",
+        "title: Provider alone",
+        "involves: bb-provider",
+        ":::",
+      ].join("\n"),
+    );
+    expect(validate(ws, buildIndex(ws)).some((d) => d.code === "H011")).toBe(true);
+  });
+
   test("does not combine participants from separate scenarios for H011", () => {
     const ws = workspace(
       [
