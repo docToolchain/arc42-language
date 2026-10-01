@@ -214,6 +214,68 @@ describe("runtime scenarios", () => {
     expect(validate(ws, buildIndex(ws)).some((d) => d.code === "H011")).toBe(true);
   });
 
+  test("H011 is satisfied for actor-consumed interfaces when the provider is in a scenario", () => {
+    // actor-user requires if-api, provided by bb-api.
+    // Actors cannot appear in involves — the provider alone must suffice.
+    const ws = workspace(
+      [
+        ":::actor",
+        "id: actor-user",
+        "title: User",
+        "type: person",
+        "requires: if-api",
+        ":::",
+        ":::building-block",
+        "id: bb-api",
+        "title: API",
+        ":::",
+        ":::interface",
+        "id: if-api",
+        "title: API",
+        "provider: bb-api",
+        ":::",
+        ":::runtime-scenario",
+        "id: scenario-api",
+        "title: API request",
+        "involves: bb-api",
+        ":::",
+      ].join("\n"),
+    );
+    expect(validate(ws, buildIndex(ws)).some((d) => d.code === "H011")).toBe(false);
+  });
+
+  test("H011 fires for actor-consumed interface when provider is not in any scenario", () => {
+    const ws = workspace(
+      [
+        ":::actor",
+        "id: actor-user",
+        "title: User",
+        "type: person",
+        "requires: if-api",
+        ":::",
+        ":::building-block",
+        "id: bb-api",
+        "title: API",
+        ":::",
+        ":::building-block",
+        "id: bb-other",
+        "title: Other",
+        ":::",
+        ":::interface",
+        "id: if-api",
+        "title: API",
+        "provider: bb-api",
+        ":::",
+        ":::runtime-scenario",
+        "id: scenario-other",
+        "title: Other",
+        "involves: bb-other",
+        ":::",
+      ].join("\n"),
+    );
+    expect(validate(ws, buildIndex(ws)).some((d) => d.code === "H011")).toBe(true);
+  });
+
   test("does not combine participants from separate scenarios for H011", () => {
     const ws = workspace(
       [

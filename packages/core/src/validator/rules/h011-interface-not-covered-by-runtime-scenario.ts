@@ -24,13 +24,17 @@ export const h011InterfaceNotCoveredByRuntimeScenario: Rule = {
       if (edges.length === 0) return [];
 
       // An interface is covered when at least one consumer→provider edge has
-      // both endpoints involved in the same runtime scenario.  The previous
-      // implementation required *all* endpoints to appear in a single scenario
-      // which is too strict for interfaces with many consumers.
+      // both endpoints involved in the same runtime scenario.  When the
+      // consumer is an actor (external system or person) it cannot appear in
+      // `involves` — the provider alone in a scenario is sufficient.
+      const isActor = (id: string) =>
+        workspace.elements.some((e) => e.id === id && e.kind === "actor");
+
       const coveredByOneScenario = scenarios.some((scenario) =>
         edges.some(
           (edge) =>
-            scenario.involves.includes(edge.consumer) && scenario.involves.includes(edge.provider),
+            scenario.involves.includes(edge.provider) &&
+            (isActor(edge.consumer) || scenario.involves.includes(edge.consumer)),
         ),
       );
       if (coveredByOneScenario) return [];
