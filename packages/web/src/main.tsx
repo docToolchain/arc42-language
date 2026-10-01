@@ -2,11 +2,24 @@ import React, { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import type { DiffPayload, WorkspacePayload } from "./types";
-import type { HistorySource } from "./useHistory";
-import { useSnapshot } from "./useSnapshot";
-import { useVersion, versionHref } from "./version";
+import { versionHref } from "@cli42/lib/web";
+import type { HistorySource, SnapshotFiles } from "@cli42/lib/web";
+import { useSnapshot, useVersion } from "@cli42/lib/web-react";
 import styles from "./App.module.css";
+import "@cli42/lib/web-react/styles.css";
 import "./styles.css";
+
+/**
+ * Build the workspace of one commit in the browser: the Core Library's loader,
+ * imported on demand, and with it only the notation the files use.
+ */
+async function loadVersion(
+  { files, paths }: SnapshotFiles,
+  commit: string,
+): Promise<WorkspacePayload> {
+  const { loadWorkspaceFromFiles } = await import("@arc42/core");
+  return loadWorkspaceFromFiles(files, paths, `commit ${commit.slice(0, 8)}`);
+}
 
 interface DiffState {
   diff: DiffPayload | null;
@@ -36,7 +49,12 @@ function Root() {
   // An earlier version, selected by ?version=<commit>, replaces the workspace.
   const version = useVersion();
   // Whether there is a history is known once the workspace has loaded.
-  const snapshot = useSnapshot(payload ? history : undefined, version);
+  const snapshot = useSnapshot(
+    payload ? history : undefined,
+    version,
+    loadVersion,
+    "This site has no architecture history.",
+  );
 
   useEffect(() => {
     // Mode 1 (arc42 build): workspace — and with --diff, the difference — injected

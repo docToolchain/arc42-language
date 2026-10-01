@@ -1,20 +1,21 @@
 import React, { useMemo } from "react";
 import type { BuildingBlockDiagramNode, Interface, Element } from "./types";
-import { MermaidDiagram } from "./MermaidDiagram";
+import { MermaidDiagram } from "@cli42/lib/web-react";
 import { resolveInterfaceLabels } from "./AstNodeRenderer";
+import type { ElementLinks } from "@cli42/lib/web";
 
 interface BuildingBlockDiagramViewProps {
   node: BuildingBlockDiagramNode;
   interfaceMap: Map<string, Interface>;
   elementsMap: Map<string, Element>;
-  elementDocMap: Map<string, string>;
+  links: ElementLinks;
 }
 
 export function BuildingBlockDiagramView({
   node,
   interfaceMap,
   elementsMap,
-  elementDocMap,
+  links,
 }: BuildingBlockDiagramViewProps) {
   const source = useMemo(
     () => resolveInterfaceLabels(node.source, interfaceMap),
@@ -26,12 +27,12 @@ export function BuildingBlockDiagramView({
     for (const [id] of elementsMap) {
       // Check if this element ID appears as a word-boundary token in the source
       if (new RegExp(`\\b${id}\\b`).test(source)) {
-        const docFile = elementDocMap.get(id);
-        if (docFile) map.set(id, `#${docFile}:el-${id}`);
+        const href = links.elementHref(id);
+        if (href) map.set(id, href);
       }
     }
     return map;
-  }, [source, elementsMap, elementDocMap]);
+  }, [source, elementsMap, links]);
 
   return <MermaidDiagram source={source} id={node.id} clickableNodes={clickableNodes} />;
 }

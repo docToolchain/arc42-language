@@ -1,17 +1,34 @@
 import React, { useMemo, useEffect, useState } from "react";
+import {
+  DocumentRoutes,
+  WorkspaceLinks,
+  changesHref,
+  formatRoute,
+  historyHref,
+  openVersion,
+  parseRoute,
+  pearlKey,
+  slug,
+  versionHref,
+} from "@cli42/lib/web";
+import type { HistorySource, Route } from "@cli42/lib/web";
+import {
+  ChangesView,
+  HistoryChain,
+  HistoryEntryView,
+  WebViewProvider,
+  useHistory,
+  useTheme,
+} from "@cli42/lib/web-react";
+import type { WebView } from "@cli42/lib/web-react";
 import type { DiffDocument, DiffPayload, WorkspacePayload, Element } from "./types";
 import { Sidebar } from "./Sidebar";
-import { DocumentView } from "./DocumentView";
+import { DocumentView, NodesRender, isArc42Block } from "./DocumentView";
+import type { NodesWorkspace } from "./DocumentView";
 import { CoverageView } from "./CoverageView";
 import { MetaModelView } from "./MetaModelView";
-import { ChangesView } from "./ChangesView";
-import { HistoryChain } from "./HistoryChain";
-import { HistoryEntryView } from "./HistoryEntryView";
-import { pearlKey, useHistory } from "./useHistory";
-import type { HistorySource } from "./useHistory";
+import { arc42ChangeExtensions } from "./changeExtensions";
 import { filename } from "./utils";
-import { useTheme } from "./useTheme";
-import { openVersion, versionHref } from "./version";
 import styles from "./App.module.css";
 
 interface AppProps {
@@ -28,103 +45,28 @@ interface AppProps {
   version?: string | null;
 }
 
-// ─── Hash-based routing ───────────────────────────────────────────────────────
+// ─── Routing ──────────────────────────────────────────────────────────────────
 //
-// URL scheme:
-//   /#05-building-blocks.arc42.md            doc only
-//   /#05-building-blocks.arc42.md:architect  doc + heading scroll
-//
-// The colon separates doc filename from heading slug. Neither filenames nor
-// heading slugs contain colons, so splitting on the first colon is safe.
+// The routes of every *42 web view (@cli42/lib/web), plus arc42's own view:
+//   #<file>[:el-<id>|:<heading>]   a chapter     #changes   the difference
+//   #history[:<commit>[:message]]  the history   #meta-model
+//   ?version=<commit>              an earlier version as a whole
 
-function parseHash(hash: string): { docFile: string; headingSlug: string | null } {
-  if (!hash || hash === "#") return { docFile: "", headingSlug: null };
-  const fragment = hash.slice(1); // strip leading #
-  const colonIdx = fragment.indexOf(":");
-  if (colonIdx === -1) return { docFile: fragment, headingSlug: null };
-  return {
-    docFile: fragment.slice(0, colonIdx),
-    headingSlug: fragment.slice(colonIdx + 1) || null,
-  };
+const APP_VIEWS = ["meta-model"] as const;
+
+function currentRoute(): Route {
+  return parseRoute(window.location.hash, { views: APP_VIEWS });
 }
 
-function hashForDoc(filePath: string, headingSlug?: string): string {
-  const base = "#" + filename(filePath);
-  return headingSlug ? `${base}:${headingSlug}` : base;
-}
-
-function docIndexFromHash(documents: WorkspacePayload["documents"], hash: string): number {
-  const { docFile } = parseHash(hash);
-  if (!docFile) return 0;
-  const idx = documents.findIndex((d) => filename(d.filePath) === docFile);
-  return idx >= 0 ? idx : 0;
-}
-
-function useHashRouter(documents: WorkspacePayload["documents"]) {
-  const [activeDocIndex, setActiveDocIndex] = useState(() =>
-    docIndexFromHash(documents, window.location.hash),
-  );
-  // When the hash contains an element anchor (el-{id}), store the target id
-  // so ProseRun components can auto-expand and scroll to the matching card.
-  const [targetElementId, setTargetElementId] = useState<string | null>(() => {
-    const { headingSlug } = parseHash(window.location.hash);
-    return headingSlug?.startsWith("el-") ? headingSlug.slice(3) : null;
-  });
-
+/** The route, following the hash. */
+function useRoute(): Route {
+  const [route, setRoute] = useState(currentRoute);
   useEffect(() => {
-    function onHashChange() {
-      const { docFile, headingSlug } = parseHash(window.location.hash);
-
-      // Only update doc state if the docFile part changed
-      const newIdx = docFile ? documents.findIndex((d) => filename(d.filePath) === docFile) : 0;
-      setActiveDocIndex(newIdx >= 0 ? newIdx : 0);
-
-      if (headingSlug?.startsWith("el-")) {
-        // Element anchor — signal ProseRun to auto-expand
-        setTargetElementId(headingSlug.slice(3));
-      } else {
-        setTargetElementId(null);
-        // Heading slug: scroll after React renders
-        if (headingSlug) {
-          requestAnimationFrame(() => {
-            document.getElementById(headingSlug)?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
-          });
-        }
-      }
-    }
-
+    const onHashChange = () => setRoute(currentRoute());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [documents]);
-
-  function navigateToDoc(index: number) {
-    const doc = documents[index];
-    if (!doc) return;
-    const newHash = hashForDoc(doc.filePath);
-    if (window.location.hash !== newHash) {
-      window.location.hash = newHash;
-    } else {
-      setActiveDocIndex(index);
-    }
-  }
-
-  function navigateToHeading(headingSlug: string) {
-    const doc = documents[activeDocIndex];
-    if (!doc) return;
-    window.location.hash = hashForDoc(doc.filePath, headingSlug);
-    // hashchange will handle scroll
-  }
-
-  return {
-    activeDocIndex,
-    targetElementId,
-    clearTargetElementId: () => setTargetElementId(null),
-    navigateToDoc,
-    navigateToHeading,
-  };
+  }, []);
+  return route;
 }
 
 // ─── App ─────────────────────────────────────────────────────────────────────
@@ -137,92 +79,94 @@ export function App({
   refreshToken = 0,
   version = null,
 }: AppProps) {
-  const {
-    activeDocIndex,
-    targetElementId,
-    clearTargetElementId,
-    navigateToDoc,
-    navigateToHeading,
-  } = useHashRouter(payload.documents);
+  const route = useRoute();
   const [viewMode, setViewMode] = useState<"human" | "agent">("human");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggle: toggleTheme } = useTheme();
 
-  // Meta-model overlay — toggled via #meta-model hash
-  const [showMetaModel, setShowMetaModel] = useState(() => window.location.hash === "#meta-model");
+  const routes = useMemo(
+    () => new DocumentRoutes(payload.documents.map((d) => d.filePath)),
+    [payload.documents],
+  );
+  const links = useMemo(() => new WorkspaceLinks(routes, payload.elements), [routes, payload]);
 
+  // The active document: the route's, else the one shown before (other views), else the first.
+  const [lastDocument, setLastDocument] = useState(0);
+  const routedIndex =
+    route.view === "document" && route.file
+      ? payload.documents.findIndex((d) => d.filePath === routes.resolve(route.file))
+      : -1;
+  const activeDocIndex =
+    route.view === "document"
+      ? Math.max(routedIndex, 0)
+      : Math.min(lastDocument, payload.documents.length - 1);
   useEffect(() => {
-    function onHashChange() {
-      setShowMetaModel(window.location.hash === "#meta-model");
-    }
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
+    if (route.view === "document") setLastDocument(activeDocIndex);
+  }, [route, activeDocIndex]);
 
-  function selectMetaModel() {
-    window.location.hash = "meta-model";
+  // Element anchors open the element's card; other anchors scroll to a heading.
+  const [targetElementId, setTargetElementId] = useState<string | null>(null);
+  useEffect(() => {
+    if (route.view !== "document") return;
+    if (route.element) {
+      setTargetElementId(route.element);
+    } else if (route.anchor) {
+      const anchor = route.anchor;
+      requestAnimationFrame(() => {
+        document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [route]);
+
+  function navigate(next: Route) {
+    window.location.hash = formatRoute(next);
     setSidebarOpen(false);
   }
+
+  function navigateToDoc(index: number) {
+    const doc = payload.documents[index];
+    if (doc) window.location.hash = routes.documentHref(doc.filePath);
+  }
+
+  function navigateToHeading(headingSlug: string) {
+    const doc = payload.documents[activeDocIndex];
+    if (doc) window.location.hash = routes.documentHref(doc.filePath, headingSlug);
+  }
+
+  const showMetaModel = route.view === "app" && route.name === "meta-model";
 
   // Changes view — #changes, and the landing page whenever a difference is shown
   const hasDiff = diff !== null || diffError !== null;
-  const isChangesHash = () =>
-    window.location.hash === "#changes" ||
-    (hasDiff && (window.location.hash === "" || window.location.hash === "#"));
-  const [showChanges, setShowChanges] = useState(isChangesHash);
-
-  useEffect(() => {
-    setShowChanges(isChangesHash());
-    function onHashChange() {
-      setShowChanges(isChangesHash());
-    }
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, [hasDiff]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function selectChanges() {
-    window.location.hash = "changes";
-    setSidebarOpen(false);
-  }
+  const showChanges =
+    route.view === "changes" ||
+    (hasDiff && route.view === "document" && route.file === "" && route.anchor === null);
 
   const changedDocuments = useMemo(
     () =>
-      new Map<string, DiffDocument>(diff?.view.documents.map((d) => [filename(d.file), d]) ?? []),
-    [diff],
+      new Map<string, DiffDocument>(
+        diff?.view.documents.map((d) => [routes.keyOf(d.file), d]) ?? [],
+      ),
+    [diff, routes],
   );
 
   // History — #history, #history:<commit|worktree>[:message]
-  const historyKeyFromHash = () =>
-    window.location.hash.startsWith("#history")
-      ? window.location.hash.slice("#history:".length).replace(/:message$/, "") || null
-      : undefined;
-  const messageFromHash = () =>
-    window.location.hash.startsWith("#history:") && window.location.hash.endsWith(":message");
-  const [historyKey, setHistoryKey] = useState<string | null | undefined>(historyKeyFromHash);
-  const [historyMessage, setHistoryMessage] = useState<boolean>(messageFromHash);
-  useEffect(() => {
-    function onHashChange() {
-      setHistoryKey(historyKeyFromHash());
-      setHistoryMessage(messageFromHash());
-    }
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const showHistory = history !== null && historyKey !== undefined;
-  const historyData = useHistory(history, refreshToken);
+  const showHistory = history !== null && route.view === "history";
+  const historyKey = route.view === "history" ? route.key : undefined;
+  const historyMessage = route.view === "history" && route.message;
+  const historyData = useHistory<DiffPayload>(history, refreshToken);
   const pearls = historyData.state.status === "ready" ? historyData.state.pearls : [];
 
   // Entering the history without a selection opens the newest pearl.
   useEffect(() => {
     if (showHistory && historyKey === null && pearls[0]) {
-      window.history.replaceState(null, "", `#history:${pearlKey(pearls[0])}`);
-      setHistoryKey(pearlKey(pearls[0]));
+      window.history.replaceState(null, "", historyHref(pearlKey(pearls[0])));
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
     }
   }, [showHistory, historyKey, pearls]);
 
   /** Open a pearl's version; with `message`, its commit message too. */
   function selectPearl(key: string, message = false) {
-    window.location.hash = `history:${key}${message ? ":message" : ""}`;
+    window.location.hash = historyHref(key, message);
   }
 
   const selectedPearl = pearls.find((pearl) => pearlKey(pearl) === historyKey);
@@ -230,8 +174,8 @@ export function App({
 
   /** Open the history; from an earlier version, back in the current one at that pearl. */
   function selectHistory() {
-    if (version) openVersion(null, `#history:${version}`);
-    else window.location.hash = "history";
+    if (version) openVersion(null, historyHref(version));
+    else window.location.hash = historyHref();
   }
 
   // Summary links of a visualized difference lead into the chapters: to the
@@ -242,9 +186,7 @@ export function App({
       for (const segment of document.segments) {
         for (const change of segment.elements) {
           const location = change.head ?? change.base;
-          if (location) {
-            files.set(change.id, { file: filename(location.file), inHead: !!change.head });
-          }
+          if (location) files.set(change.id, { file: location.file, inHead: !!change.head });
         }
       }
     }
@@ -253,192 +195,195 @@ export function App({
   function diffElementLink(elementId: string) {
     const changed = diffElementFiles.get(elementId);
     if (changed) {
-      return { href: changed.inHead ? `#${changed.file}:el-${elementId}` : `#${changed.file}` };
+      return {
+        href: changed.inHead
+          ? routes.elementHref(changed.file, elementId)
+          : routes.documentHref(changed.file),
+      };
     }
-    const file = elementDocMap.get(elementId);
-    return file ? { href: `#${file}:el-${elementId}` } : null;
+    const href = links.elementHref(elementId);
+    return href ? { href } : null;
   }
 
   function navigateToChapter(chapter: number) {
-    const doc = payload.documents.find((d) =>
+    const index = payload.documents.findIndex((d) =>
       filename(d.filePath).startsWith(String(chapter).padStart(2, "0")),
     );
-    if (doc) {
-      const idx = payload.documents.indexOf(doc);
-      navigateToDoc(idx);
-    }
+    if (index >= 0) navigateToDoc(index);
   }
 
   const elementsMap = useMemo(() => {
     const map = new Map<string, Element>();
-    for (const el of payload.elements) {
-      map.set(el.id, el);
-    }
+    for (const el of payload.elements) map.set(el.id, el);
     return map;
   }, [payload.elements]);
 
-  // Maps elementId → the filename of the doc it lives in (e.g. "05-building-blocks.arc42.md").
-  // Used by ElementCard to build cross-document ref chip links.
-  const elementDocMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const el of payload.elements) {
-      map.set(el.id, filename(el.loc.file));
-    }
-    return map;
-  }, [payload.elements]);
+  const workspace = useMemo<NodesWorkspace>(
+    () => ({ elementsMap, links, edges: payload.edges }),
+    [elementsMap, links, payload.edges],
+  );
+  const webView = useMemo<WebView>(
+    () => ({
+      labels: { model: "architecture" },
+      isBlock: isArc42Block,
+      renderNodes: (props) => <NodesRender {...props} workspace={workspace} />,
+    }),
+    [workspace],
+  );
 
   const activeDoc = payload.documents[activeDocIndex];
+  const activeDiff =
+    activeDoc && hasDiff ? changedDocuments.get(routes.keyOf(activeDoc.filePath)) : undefined;
 
   // Headings of the active chapter that the visualized difference changed.
   const activeChangedHeadings = useMemo(() => {
-    const outline = activeDoc
-      ? changedDocuments.get(filename(activeDoc.filePath))?.outline
-      : undefined;
-    if (!outline) return undefined;
+    if (!activeDiff) return undefined;
     return new Map(
-      outline
+      activeDiff.outline
         .filter((entry) => entry.status === "added" || entry.status === "modified")
-        .map((entry) => [
-          entry.title
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, "")
-            .replace(/\s+/g, "-"),
-          entry.status,
-        ]),
+        .map((entry) => [slug(entry.title), entry.status]),
     );
-  }, [activeDoc, changedDocuments]);
+  }, [activeDiff]);
   const isChapter05 = activeDoc ? filename(activeDoc.filePath).startsWith("05") : false;
 
   return (
-    <div className={styles.layout}>
-      <button
-        className={styles.menuButton}
-        type="button"
-        aria-label="Open document navigation"
-        aria-expanded={sidebarOpen}
-        onClick={() => setSidebarOpen(true)}
-      >
-        <span aria-hidden="true">☰</span>
-        <span>Contents</span>
-      </button>
-      {sidebarOpen && (
+    <WebViewProvider value={webView}>
+      <div className={styles.layout}>
         <button
-          className={styles.sidebarBackdrop}
+          className={styles.menuButton}
           type="button"
-          aria-label="Close document navigation"
-          onClick={() => setSidebarOpen(false)}
+          aria-label="Open document navigation"
+          aria-expanded={sidebarOpen}
+          onClick={() => setSidebarOpen(true)}
+        >
+          <span aria-hidden="true">☰</span>
+          <span>Contents</span>
+        </button>
+        {sidebarOpen && (
+          <button
+            className={styles.sidebarBackdrop}
+            type="button"
+            aria-label="Close document navigation"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <Sidebar
+          documents={payload.documents}
+          routes={routes}
+          activeDocIndex={activeDocIndex}
+          onSelectDoc={navigateToDoc}
+          onSelectHeading={navigateToHeading}
+          onSelectMetaModel={() => navigate({ view: "app", name: "meta-model" })}
+          showMetaModel={showMetaModel}
+          changedHeadings={activeChangedHeadings}
+          changes={
+            hasDiff
+              ? {
+                  active: showChanges,
+                  onSelect: () => navigate({ view: "changes" }),
+                  documents: changedDocuments,
+                }
+              : undefined
+          }
+          history={
+            history
+              ? {
+                  active: showHistory,
+                  onSelect: selectHistory,
+                  onSelectDocuments: () => {
+                    window.location.hash = hasDiff
+                      ? changesHref
+                      : routes.documentHref(payload.documents[activeDocIndex]?.filePath ?? "");
+                  },
+                  panel: (
+                    <HistoryChain
+                      state={historyData.state}
+                      entries={historyData.entries}
+                      chunkErrors={historyData.chunkErrors}
+                      requestChunk={historyData.requestChunk}
+                      selectedKey={historyKey ?? null}
+                      onSelect={selectPearl}
+                    />
+                  ),
+                }
+              : undefined
+          }
+          viewMode={viewMode}
+          onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
-      )}
-      <Sidebar
-        documents={payload.documents}
-        activeDocIndex={activeDocIndex}
-        onSelectDoc={navigateToDoc}
-        onSelectHeading={navigateToHeading}
-        onSelectMetaModel={selectMetaModel}
-        showMetaModel={showMetaModel}
-        changedHeadings={activeChangedHeadings}
-        changes={
-          hasDiff
-            ? { active: showChanges, onSelect: selectChanges, documents: changedDocuments }
-            : undefined
-        }
-        history={
-          history
-            ? {
-                active: showHistory,
-                onSelect: selectHistory,
-                onSelectDocuments: () => {
-                  window.location.hash = hasDiff
-                    ? "changes"
-                    : hashForDoc(payload.documents[activeDocIndex]?.filePath ?? "");
-                },
-                panel: (
-                  <HistoryChain
-                    state={historyData.state}
-                    entries={historyData.entries}
-                    chunkErrors={historyData.chunkErrors}
-                    requestChunk={historyData.requestChunk}
-                    selectedKey={historyKey ?? null}
-                    onSelect={selectPearl}
-                  />
-                ),
+        <main className={styles.main}>
+          {version && (
+            <p className={styles.versionBanner} role="status" data-testid="version-banner">
+              <span>
+                Earlier version <code>{version.slice(0, 8)}</code>
+                {versionPearl && (
+                  <>
+                    {" "}
+                    · {versionPearl.subject} · {versionPearl.date.slice(0, 10)}
+                  </>
+                )}
+              </span>
+              <a
+                href={versionHref(null)}
+                data-testid="version-leave"
+                onClick={(event) => {
+                  event.preventDefault();
+                  openVersion(null);
+                }}
+              >
+                Back to the current version
+              </a>
+            </p>
+          )}
+          {showMetaModel ? (
+            <MetaModelView onNavigateToChapter={navigateToChapter} />
+          ) : showHistory ? (
+            <HistoryEntryView
+              pearl={selectedPearl}
+              entry={historyKey ? historyData.entries.get(historyKey) : undefined}
+              chunkError={
+                selectedPearl ? historyData.chunkErrors.get(selectedPearl.chunk) : undefined
               }
-            : undefined
-        }
-        viewMode={viewMode}
-        onToggleViewMode={() => setViewMode((m) => (m === "human" ? "agent" : "human"))}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-      <main className={styles.main}>
-        {version && (
-          <p className={styles.versionBanner} role="status" data-testid="version-banner">
-            <span>
-              Earlier version <code>{version.slice(0, 8)}</code>
-              {versionPearl && (
-                <>
-                  {" "}
-                  · {versionPearl.subject} · {versionPearl.date.slice(0, 10)}
-                </>
-              )}
-            </span>
-            <a
-              href={versionHref(null)}
-              data-testid="version-leave"
-              onClick={(event) => {
-                event.preventDefault();
-                openVersion(null);
-              }}
-            >
-              Back to the current version
-            </a>
-          </p>
-        )}
-        {showMetaModel ? (
-          <MetaModelView onNavigateToChapter={navigateToChapter} />
-        ) : showHistory ? (
-          <HistoryEntryView
-            pearl={selectedPearl}
-            entry={historyKey ? historyData.entries.get(historyKey) : undefined}
-            chunkError={
-              selectedPearl ? historyData.chunkErrors.get(selectedPearl.chunk) : undefined
-            }
-            requestChunk={historyData.requestChunk}
-            viewMode={viewMode}
-            elementDocMap={elementDocMap}
-            messageOpen={historyMessage}
-            onToggleMessage={() => historyKey && selectPearl(historyKey, !historyMessage)}
-            onBrowse={(commit) => openVersion(commit)}
-          />
-        ) : showChanges ? (
-          <ChangesView
-            diff={diff}
-            error={diffError}
-            viewMode={viewMode}
-            elementLink={diffElementLink}
-            documentLink={(file) => ({ href: `#${filename(file)}` })}
-          />
-        ) : (
-          <>
-            <DocumentView
-              documents={payload.documents}
+              requestChunk={historyData.requestChunk}
               viewMode={viewMode}
-              elementsMap={elementsMap}
-              elementDocMap={elementDocMap}
-              edges={payload.edges}
-              activeDocIndex={activeDocIndex}
-              targetElementId={targetElementId}
-              onTargetConsumed={clearTargetElementId}
-              diffDocuments={hasDiff ? changedDocuments : undefined}
+              elementHref={(id) => links.elementHref(id)}
+              messageOpen={historyMessage}
+              onToggleMessage={() => historyKey && selectPearl(historyKey, !historyMessage)}
+              onBrowse={(commit) => openVersion(commit)}
+              extensions={arc42ChangeExtensions}
             />
-            {isChapter05 && payload.coverage && (
-              <CoverageView coverage={payload.coverage} elementDocMap={elementDocMap} />
-            )}
-          </>
-        )}
-      </main>
-    </div>
+          ) : showChanges ? (
+            <ChangesView
+              diff={diff}
+              error={diffError}
+              viewMode={viewMode}
+              elementLink={diffElementLink}
+              documentLink={(file) => ({ href: routes.documentHref(file) })}
+              extensions={arc42ChangeExtensions}
+            />
+          ) : (
+            <>
+              <DocumentView
+                document={activeDoc}
+                viewMode={viewMode}
+                elementsMap={elementsMap}
+                links={links}
+                edges={payload.edges}
+                targetElementId={targetElementId}
+                onTargetConsumed={() => setTargetElementId(null)}
+                diffDocument={activeDiff}
+              />
+              {isChapter05 && payload.coverage && (
+                <CoverageView coverage={payload.coverage} links={links} />
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </WebViewProvider>
   );
 }

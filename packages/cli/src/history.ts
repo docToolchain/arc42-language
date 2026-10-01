@@ -5,11 +5,15 @@ import {
   snapshotBlobFile,
   snapshotTreeFile,
   toHistoryPearls,
-} from "@arc42/web/history-format";
-import type { HistoryEntry, HistoryPearl, SnapshotTree } from "@arc42/web/history-format";
+} from "@cli42/lib/web";
+import type { HistoryEntry as Entry, HistoryPearl, SnapshotTree } from "@cli42/lib/web";
 import { MarkdownProseRenderer } from "@arc42/core/notation/markdown";
 import { loadCommitChange, readArchitectureBlob, readCommitFiles } from "@arc42/workspace-fs";
 import type { ArchitectureCommit, ArchitectureHistory } from "@arc42/workspace-fs";
+import type { DiffPayload } from "@arc42/core";
+
+/** A pearl's entry, with arc42's difference. */
+type HistoryEntry = Entry<DiffPayload>;
 
 /** Commit messages are Markdown, whatever the workspace's notation. */
 const messageRenderer = new MarkdownProseRenderer();

@@ -1,6 +1,6 @@
 import React from "react";
 import type { SequenceDiagramNode } from "./types";
-import { MermaidDiagram } from "./MermaidDiagram";
+import { MermaidDiagram } from "@cli42/lib/web-react";
 
 interface SequenceDiagramViewProps {
   node: SequenceDiagramNode;

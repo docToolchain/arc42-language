@@ -7,33 +7,8 @@
   padding: 2rem;
 }
 
-.heading {
-  margin-top: 2em;
-  margin-bottom: 0.5em;
-  scroll-margin-top: 1rem;
-}
-
-.heading1 {
-  font-size: 2rem;
-  border-bottom: 2px solid var(--border);
-  padding-bottom: 0.25em;
-}
-
 .chapterTitle {
   margin-top: 0;
-}
-
-.heading2 {
-  font-size: 1.5rem;
-}
-
-.heading3 {
-  font-size: 1.2rem;
-}
-
-.heading4 {
-  font-size: 1rem;
-  font-weight: 600;
 }
 
 .proseBlock {
