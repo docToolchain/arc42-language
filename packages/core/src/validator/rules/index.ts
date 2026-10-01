@@ -7,6 +7,7 @@
  */
 import { genericRules } from "@cli42/lib/rules";
 import { ELEMENT_CHAPTER } from "../../model/types.ts";
+import { ELEMENT_SCHEMAS } from "../../model/schemas.ts";
 import { chapterNumberFromFile } from "../../path-utils.ts";
 import type { Rule, ValidationContext } from "../types.ts";
 import { e002UnresolvedReference } from "./e002-unresolved-reference.ts";
@@ -77,6 +78,7 @@ const sharedRules: Rule[] = genericRules<ValidationContext>({
   chapterOfFile: chapterNumberFromFile,
   fenceFlag: "inArc42Fence",
   fenceDescription: (context) => context?.fenceDescription ?? "```arc42 fence",
+  schemas: ELEMENT_SCHEMAS,
 }).map((rule) => ({
   ...rule,
   meta: { ...rule.meta, docs: { ...rule.meta.docs, arc42Chapter: 0 } },

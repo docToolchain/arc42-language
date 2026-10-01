@@ -1,7 +1,8 @@
 // Zod schemas for all 13 arc42 DSL block types.
 // These are the single source of truth for field definitions, required/optional,
-// enum values, AND all guidance metadata (description, arc42Chapter, crossRefs,
-// authoringTips). Nothing is duplicated.
+// enum values, AND all guidance metadata (description, arc42Chapter, idPrefixes,
+// crossRefs, authoringTips). Nothing is duplicated. `idPrefixes` is the id scheme
+// of a kind (canonical prefix first; see WG08 in @cli42/lib/rules).
 //
 // Schema-level metadata is stored via .meta() in Zod's globalRegistry:
 //   z.globalRegistry.get(schema) → { description, arc42Chapter, crossRefs, authoringTips }
@@ -36,6 +37,7 @@ export const QualityGoalSchema = z
   })
   .meta({
     description: "An architecturally significant quality attribute goal with a priority.",
+    idPrefixes: ["qg"],
     arc42Chapter: 10,
     authoringTips: [
       "Limit yourself to the top 3–5 quality goals whose fulfillment matters most to your key stakeholders.",
@@ -68,6 +70,7 @@ export const QualityScenarioSchema = z
   })
   .meta({
     description: "A concrete scenario that makes a quality goal measurable.",
+    idPrefixes: ["qs"],
     arc42Chapter: 10,
     crossRefs: [
       { field: "quality", targetKind: "quality-goal", cardinality: "one", relation: "elaborates" },
@@ -94,6 +97,7 @@ export const ConstraintSchema = z
   })
   .meta({
     description: "A non-negotiable boundary on the architecture.",
+    idPrefixes: ["con"],
     arc42Chapter: 2,
     crossRefs: [] satisfies CrossRefMeta[],
     authoringTips: [
@@ -130,6 +134,7 @@ export const ActorSchema = z
   })
   .meta({
     description: "A human role or external system that interacts with the architecture.",
+    idPrefixes: ["actor"],
     arc42Chapter: 3,
     crossRefs: [
       { field: "requires", targetKind: "interface", cardinality: "many", relation: "requires" },
@@ -152,6 +157,7 @@ export const SolutionStrategySchema = z
   })
   .meta({
     description: "A high-level architectural strategy that addresses one or more quality goals.",
+    idPrefixes: ["strategy"],
     arc42Chapter: 4,
     crossRefs: [
       {
@@ -194,6 +200,7 @@ export const BuildingBlockSchema = z
   })
   .meta({
     description: "An independently deployable software component or group of components.",
+    idPrefixes: ["bb"],
     arc42Chapter: 5,
     crossRefs: [
       { field: "parent", targetKind: "building-block", cardinality: "one", relation: "parent" },
@@ -226,6 +233,7 @@ export const InterfaceSchema = z
   })
   .meta({
     description: "A defined interface provided by one building block and required by consumers.",
+    idPrefixes: ["if"],
     arc42Chapter: 5,
     crossRefs: [
       {
@@ -260,6 +268,7 @@ export const RuntimeScenarioSchema = z
   .meta({
     description:
       "A concrete sequence of interactions that demonstrates a quality goal or use case at runtime.",
+    idPrefixes: ["rs", "scenario"],
     arc42Chapter: 6,
     crossRefs: [
       {
@@ -296,6 +305,7 @@ export const DeploymentNodeSchema = z
   .meta({
     description:
       "An infrastructure node in the deployment view (server, container, cloud region, etc.).",
+    idPrefixes: ["dn", "node", "env"],
     arc42Chapter: 7,
     crossRefs: [
       { field: "parent", targetKind: "deployment-node", cardinality: "one", relation: "parent" },
@@ -324,6 +334,7 @@ export const ConceptSchema = z
   .meta({
     description:
       "A cross-cutting architectural concept or pattern applied across multiple building blocks.",
+    idPrefixes: ["concept"],
     arc42Chapter: 8,
     crossRefs: [] satisfies CrossRefMeta[],
     authoringTips: [
@@ -357,6 +368,7 @@ export const DecisionSchema = z
   .meta({
     description:
       "An Architecture Decision Record (ADR) documenting a significant architectural choice.",
+    idPrefixes: ["dec"],
     arc42Chapter: 9,
     crossRefs: [
       {
@@ -387,6 +399,7 @@ export const RiskSchema = z
   })
   .meta({
     description: "An architectural risk or item of technical debt with a severity assessment.",
+    idPrefixes: ["risk"],
     arc42Chapter: 11,
     crossRefs: [] satisfies CrossRefMeta[],
     authoringTips: [
@@ -408,6 +421,7 @@ export const GlossaryTermSchema = z
   })
   .meta({
     description: "A defined term in the architecture glossary.",
+    idPrefixes: ["term"],
     arc42Chapter: 12,
     crossRefs: [] satisfies CrossRefMeta[],
     authoringTips: [

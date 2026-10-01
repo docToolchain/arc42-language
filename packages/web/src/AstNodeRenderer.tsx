@@ -21,7 +21,7 @@ import { DeploymentDiagramView } from "./DeploymentDiagramView";
 import { BuildingBlockDiagramView } from "./BuildingBlockDiagramView";
 import { ContextDiagramView } from "./ContextDiagramView";
 import { MermaidDiagram, headingClass } from "@cli42/lib/web-react";
-import { slug } from "@cli42/lib/web";
+import { linkElementIds, slug } from "@cli42/lib/web";
 import type { ElementLinks } from "@cli42/lib/web";
 
 interface AstNodeRendererProps {
@@ -88,7 +88,7 @@ export function AstNodeRenderer({
     case "prose": {
       // Plain prose — used only when node wasn't merged into a prose-run.
       const proseNode = node as import("./types").ProseNode;
-      return <ProseBlock html={proseNode.renderedHtml} text={proseNode.text} />;
+      return <ProseBlock html={proseNode.renderedHtml} text={proseNode.text} links={links} />;
     }
 
     case "prose-run": {
@@ -250,7 +250,9 @@ function ProseRun({
   if (!hasBlock || viewMode === "agent") {
     return (
       <div className={styles.proseRun}>
-        {text && <ProseBlock html={renderedHtml} text={text} />}
+        {text && (
+          <ProseBlock html={renderedHtml} text={text} links={links} own={block?.attributes["id"]} />
+        )}
         {hasBlock && viewMode === "agent" && (
           <AgentBlock
             source={[...ignores.map(reconstructIgnoreSource), reconstructBlockSource(block!)].join(
@@ -301,7 +303,14 @@ function ProseRun({
       />
       <div className={styles.content}>
         <div data-testid="prose-view" className={styles.proseView}>
-          {text && <ProseBlock html={renderedHtml} text={text} />}
+          {text && (
+            <ProseBlock
+              html={renderedHtml}
+              text={text}
+              links={links}
+              own={block?.attributes["id"]}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -315,18 +324,22 @@ interface ProseBlockProps {
   html?: string;
   /** Raw source text — used as fallback when html is absent (legacy payloads). */
   text: string;
+  /** Mentioned ids of the workspace become links to their elements. */
+  links: ElementLinks;
+  /** The id of the element this prose introduces: not linked to itself. */
+  own?: string;
 }
 
-function ProseBlock({ html, text }: ProseBlockProps) {
+function ProseBlock({ html, text, links, own }: ProseBlockProps) {
   const resolvedHtml = useMemo(() => {
-    if (html !== undefined) return html;
+    if (html !== undefined) return linkElementIds(html, links, own);
     // Fallback: render Markdown client-side for legacy payloads (no ProseRenderer)
     try {
-      return marked.parse(text, { async: false }) as string;
+      return linkElementIds(marked.parse(text, { async: false }) as string, links, own);
     } catch {
       return `<p>${text}</p>`;
     }
-  }, [html, text]);
+  }, [html, text, links, own]);
   return (
     <div className={docStyles.proseBlock} dangerouslySetInnerHTML={{ __html: resolvedHtml }} />
   );
