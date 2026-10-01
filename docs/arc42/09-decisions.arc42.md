@@ -383,7 +383,7 @@ and a separate format package (there is no second reader).
 :::decision
 id: dec-history-format-in-web
 title: The Web Renderer owns the history file format; the Core Library stays free of storage
-status: accepted
+status: superseded
 date: 2026-09-26
 addresses: qg-extensibility, con-browser-bundle-safety
 :::
@@ -435,5 +435,49 @@ status: accepted
 date: 2026-09-26
 addresses: qg-extensibility, con-browser-bundle-safety
 supersedes: dec-asciidoc-in-workspace-fs
+:::
+```
+
+## One Web View for Every \*42 Language
+
+arc42, biz42 and pdt42 each had a web renderer, and biz42's was a copy of arc42's: routing,
+heading anchors, the history, the changes view and the Mermaid diagram existed several times and
+drifted apart. They now come from `@cli42/lib`: the framework-free part (routes, heading slugs,
+linking ids in prose, the history format, which the CLI also writes) from `/web`, the React views
+from `/web-react`. The Web Renderer keeps what is arc42's — the document and element rendering,
+the meta-model, coverage — and passes its words and its rendering of nodes to the shared views.
+The history format is still the web view's, now shared by every language; the Core Library still
+knows nothing of storage. The shared views bring their own look; arc42 does not keep its former
+one through workarounds. Rejected: a web package per language (the copies were the problem), and
+CSS modules in the library (bundlers would have to process them inside dependencies).
+
+```arc42
+:::decision
+id: dec-shared-web-view
+title: Routing, history format and the changes and history views come from the shared web view
+status: accepted
+date: 2026-10-01
+addresses: qg-extensibility, qg-readability
+supersedes: dec-history-format-in-web
+:::
+```
+
+## Ids Carry Their Kind's Prefix, Declared in the Schemas
+
+Ids like `bb-cli` or `if-cli-web` tell what they refer to wherever they appear. The convention was
+nowhere declared: the building-block diagram rule guessed model ids by their hyphen. Each element
+schema now declares its id prefixes (`idPrefixes`, the canonical one first), and one declaration
+serves the warning about ids off their scheme (WG08), the diagram rule (a token is an id when it is
+a known id or carries a declared prefix), `explain`, and the web view, which links ids mentioned in
+prose. Rejected: a pattern per language rule (it had drifted in biz42), and linking every token that
+looks like an id (prose words such as `real-time` would become links).
+
+```arc42
+:::decision
+id: dec-id-schemes
+title: Each element kind declares its id prefixes; rules, guidance and the web view share them
+status: accepted
+date: 2026-10-01
+addresses: qg-readability, qg-extensibility
 :::
 ```
