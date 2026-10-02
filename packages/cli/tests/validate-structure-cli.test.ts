@@ -68,6 +68,37 @@ describe("CLI validate — blocks must live in a section", () => {
   });
 });
 
+// A minimal workspace that produces a W011 warning (runtime-scenario missing `involves`)
+const scenarioWithoutInvolves =
+  "# Runtime View\n\n```arc42\n:::runtime-scenario\nid: rs-checkout\ntitle: Checkout\n:::\n```\n";
+
+describe("CLI validate — explain suggestion line", () => {
+  test("prints suggest line when warnings are present", () => {
+    const root = workspace("06-runtime-view.arc42.md", scenarioWithoutInvolves);
+    const result = validate(root);
+    expect(result.stdout).toMatch(/→ Run `arc42 explain <type>`/);
+  });
+
+  test("does not print suggest line when --quiet is set", () => {
+    const root = workspace("06-runtime-view.arc42.md", scenarioWithoutInvolves);
+    const result = validate(root, "--quiet");
+    expect(result.stdout).not.toMatch(/→ Run `arc42 explain <type>`/);
+  });
+
+  test("does not print suggest line when --format json is set", () => {
+    const root = workspace("06-runtime-view.arc42.md", scenarioWithoutInvolves);
+    const result = validate(root, "--format", "json");
+    expect(result.stdout).not.toMatch(/→ Run `arc42 explain <type>`/);
+    expect(() => JSON.parse(result.stdout)).not.toThrow();
+  });
+
+  test("does not print suggest line when workspace is clean", () => {
+    const root = workspace("architecture.arc42.md", "# Architecture\n\nNo blocks — prose only.\n");
+    const result = validate(root);
+    expect(result.stdout).not.toMatch(/→ Run `arc42 explain <type>`/);
+  });
+});
+
 afterEach(() => {
   for (const dir of createdDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
