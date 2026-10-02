@@ -32,7 +32,7 @@ so be sure to always align.
    The rule code is case-insensitive. A reason is optional but recommended. One directive suppresses
    the next matching diagnostic for that rule at or after its position in the file — place it inside
    the fence of the element to exempt, not at the top of the file. For full placement rules and how
-   to resolve stale-ignore warnings (WG06/W019), run `arc42 explain ignore`.
+   to resolve stale-ignore warnings (WG06), run `arc42 explain ignore`.
 
 7. Use `arc42 --dir <workspace> coverage --format tree` to see which source directories are claimed
    by building-block or interface elements, and which are not. Uncovered paths are not errors — they

@@ -289,7 +289,7 @@ export const RuntimeScenarioSchema = z
       "Schematic scenarios are preferred over exhaustive step-by-step traces — show the key interactions, not every message (arc42 Tip 6-3).",
       "Pair with a sequence diagram (:::diagram) to make the flow visual.",
       "W011: always set `involves` — list every building-block that participates. Omitting it triggers this warning.",
-      "H011: an interface is 'covered' when its provider building-block ID appears in this scenario's `involves` list. That is how H011 is resolved for interfaces whose provider participates here.",
+      "H011: an interface is 'covered' when its provider building-block ID — and its consumer's ID, unless the consumer is an actor — both appear in this scenario's `involves` list. Add both endpoints to `involves` to resolve H011 for building-block-to-building-block interfaces; for actor-consumed interfaces the provider alone suffices.",
     ],
   });
 
