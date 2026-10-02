@@ -381,6 +381,12 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
         ).length;
         const hints = result.diagnostics.filter((d: Diagnostic) => d.severity === "hint").length;
         console.log(`\n${errors} errors, ${warnings} warnings, ${hints} hints`);
+
+        if (errors > 0 || warnings > 0 || hints > 0) {
+          console.log(
+            `  → Run \`arc42 explain <type>\` for authoring guidance on the affected block types`,
+          );
+        }
       }
     }
 

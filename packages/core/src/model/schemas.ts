@@ -144,6 +144,7 @@ export const ActorSchema = z
       "In the business context show *what* data flows (domain inputs/outputs), not technical protocols — those belong in interfaces.",
       "Keep the context overview lean; a diagram plus a table of actors is usually enough (arc42 Tips 3-2, 3-3).",
       "Every actor must declare at least one required interface.",
+      "H022: every root building-block must be reachable from at least one actor via the interface graph. For infrastructure-only blocks (CI pipelines, operators, monitoring agents) that no end-user touches, add an explicit actor here — e.g. actor-operator or actor-ci — with a `requires` field pointing to an interface that block provides.",
     ],
   });
 
@@ -212,6 +213,8 @@ export const BuildingBlockSchema = z
       "Document the *responsibility* of every important black box — what it does, not how it does it (arc42 Tip 5-5).",
       "Organise building blocks hierarchically using parent to model decomposition across levels (arc42 Tip 5-2).",
       "Link to concepts via implements to make cross-cutting concerns traceable across the codebase (arc42 Tip 8-11).",
+      "H004: a building-block not referenced by any interface triggers this hint — either add an interface with this block as `provider`, or verify the block is not dead code.",
+      "H022: root blocks (no `parent`) must be reachable from at least one actor via the interface graph. If no actor uses this block's interfaces, add an actor in chapter 3 that requires one of its interfaces.",
     ],
   });
 
@@ -250,6 +253,8 @@ export const InterfaceSchema = z
       "Document the protocol to describe the technical contract; unit tests and runtime scenarios are also valid interface specifications (arc42 Tips 5-21, 5-22, 5-23).",
       "Keep interface descriptions focused on the external contract — implementation details belong inside the building block.",
       "Business context shows data flows; the technical interface documents the protocol/channel.",
+      "H011: every interface should appear in at least one runtime-scenario's `involves` list (chapter 6). Interfaces with no scenario coverage trigger this hint — add a scenario in ch.6, or suppress with `:::ignore H011 <reason> :::` inside the interface's fenced block.",
+      "H020: if two interfaces share the same implementation path, that triggers this hint — verify each represents a genuinely distinct contract, or suppress with `:::ignore H020 <reason> :::` inside the second interface's fenced block.",
     ],
   });
 
@@ -283,6 +288,8 @@ export const RuntimeScenarioSchema = z
       "Map every activity in the scenario to a concrete building-block via involves (arc42 Tip 6-1).",
       "Schematic scenarios are preferred over exhaustive step-by-step traces — show the key interactions, not every message (arc42 Tip 6-3).",
       "Pair with a sequence diagram (:::diagram) to make the flow visual.",
+      "W011: always set `involves` — list every building-block that participates. Omitting it triggers this warning.",
+      "H011: an interface is 'covered' when its provider building-block ID appears in this scenario's `involves` list. That is how H011 is resolved for interfaces whose provider participates here.",
     ],
   });
 

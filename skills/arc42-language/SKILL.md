@@ -22,16 +22,17 @@ so be sure to always align.
 5. When authoring or debugging a diagram, run `arc42 explain diagram <type>` to see required fields,
    allowed notations, alias syntax, and authoring tips for that diagram type.
 6. Finish with `arc42 --dir <workspace> validate` and resolve errors before continuing.
-   Warnings and hints that are intentional — for example two interfaces that deliberately share an
-   implementation path — can be suppressed with a single-line ignore directive placed inside any
-   `arc42` fence in the affected file:
+   Warnings and hints that are intentional can be suppressed with a single-line ignore directive
+   placed inside the fenced block of the specific element you want to exempt:
 
    ```arc42
    :::ignore H020 Two interfaces, same entry point — intentional split contract :::
    ```
 
    The rule code is case-insensitive. A reason is optional but recommended. One directive suppresses
-   all diagnostics for that rule in the same file. Use `arc42 rules` to look up rule codes.
+   the next matching diagnostic for that rule at or after its position in the file — place it inside
+   the fence of the element to exempt, not at the top of the file. For full placement rules and how
+   to resolve stale-ignore warnings (WG06/W019), run `arc42 explain ignore`.
 
 7. Use `arc42 --dir <workspace> coverage --format tree` to see which source directories are claimed
    by building-block or interface elements, and which are not. Uncovered paths are not errors — they
