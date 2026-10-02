@@ -190,7 +190,7 @@ test.describe("Changes view — renamed sections", () => {
       file,
       readFileSync(file, "utf8").replace("## Catalog Service\n", () => "## Catalog\n"),
     );
-    const server = await startDiffServer(root, 3399);
+    const server = await startDiffServer(root);
     try {
       await page.goto(`${server.url}/#${BB}`);
       const catalog = segment(page, "modified: Catalog");
@@ -223,7 +223,7 @@ test.describe("Changes view — value changes", () => {
           () => 'bb-order-service["Order Service\\n(Kotlin)"]',
         ),
     );
-    const server = await startDiffServer(root, 3400);
+    const server = await startDiffServer(root);
     try {
       await page.goto(`${server.url}/#${BB}`);
       const catalog = segment(page, "modified: Catalog Service");
@@ -255,7 +255,7 @@ test.describe("Changes view — value changes", () => {
 test.describe("Changes view — live updates", () => {
   test("follows edits, reports an empty difference and surfaces errors", async ({ page }) => {
     const root = createDiffRepository();
-    const server = await startDiffServer(root, 3392);
+    const server = await startDiffServer(root);
     try {
       await page.goto(`${server.url}/`);
       await expect(page.getByTestId("diff-index-item")).toHaveCount(4);
@@ -290,7 +290,7 @@ test.describe("Changes view — static build", () => {
   test("renders the difference frozen into build --diff", async ({ page, diffRepository }) => {
     const out = mkdtempSync(join(tmpdir(), "arc42-e2e-diff-site-"));
     runCli("--dir", diffRepository, "build", "--out", out, "--diff");
-    const site = await serveStatic(out, 3393);
+    const site = await serveStatic(out);
     try {
       await page.goto(`${site.url}/`);
       await expect(page.getByTestId("changes-view")).toBeVisible();

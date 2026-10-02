@@ -7,6 +7,7 @@ import { test as base, expect, type Page } from "@playwright/test";
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +16,18 @@ import * as story from "../../../scripts/bookstore-evolution.ts";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const bookstoreDir = resolve(__dirname, "../../../examples/bookstore-backend");
 export const cliPath = resolve(__dirname, "../../cli/dist/cli.mjs");
+
+/** Ask the OS for a free TCP port by binding on :0 and immediately releasing it. */
+export function getFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = createNetServer();
+    server.listen(0, "127.0.0.1", () => {
+      const port = (server.address() as { port: number }).port;
+      server.close((err) => (err ? reject(err) : resolve(port)));
+    });
+    server.on("error", reject);
+  });
+}
 
 function git(root: string, ...args: string[]): string {
   return execFileSync("git", ["-C", root, ...args], { encoding: "utf8" });
@@ -116,8 +129,9 @@ export function createEvolutionRepository(): string {
 /** Serve a directory of static files, like a static host serving an `arc42 build` output. */
 export async function serveStatic(
   root: string,
-  port: number,
+  port?: number,
 ): Promise<{ url: string; stop: () => Promise<void> }> {
+  const listenPort = port ?? (await getFreePort());
   const types: Record<string, string> = {
     ".html": "text/html",
     ".js": "text/javascript",
@@ -134,9 +148,9 @@ export async function serveStatic(
     res.writeHead(200, { "Content-Type": types[extname(path)] ?? "application/octet-stream" });
     res.end(readFileSync(path));
   });
-  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => server.listen(listenPort, "127.0.0.1", resolve));
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: `http://127.0.0.1:${listenPort}`,
     stop: () => new Promise<void>((resolve) => server.close(() => resolve())),
   };
 }
@@ -173,13 +187,18 @@ async function stopServer(server: ChildProcess): Promise<void> {
 /** Start `arc42 serve [...args]` for a directory and wait until it answers. */
 export async function startServer(
   root: string,
-  port: number,
+  port?: number,
   ...args: string[]
 ): Promise<{ url: string; stop: () => Promise<void> }> {
-  const url = `http://localhost:${port}`;
-  const server = spawn("node", [cliPath, "--dir", root, "serve", ...args, "--port", String(port)], {
-    stdio: "ignore",
-  });
+  const listenPort = port ?? (await getFreePort());
+  const url = `http://localhost:${listenPort}`;
+  const server = spawn(
+    "node",
+    [cliPath, "--dir", root, "serve", ...args, "--port", String(listenPort)],
+    {
+      stdio: "ignore",
+    },
+  );
   await waitForServer(`${url}/api/workspace`);
   return { url, stop: () => stopServer(server) };
 }
@@ -187,7 +206,7 @@ export async function startServer(
 /** Start `arc42 serve --diff [...args]` for a repository and wait until it answers. */
 export function startDiffServer(
   root: string,
-  port: number,
+  port?: number,
   ...args: string[]
 ): Promise<{ url: string; stop: () => Promise<void> }> {
   return startServer(root, port, "--diff", ...args);
@@ -210,8 +229,8 @@ export const test = base.extend<object, WorkerFixtures>({
   ],
 
   diffServerURL: [
-    async ({ diffRepository }, use, workerInfo) => {
-      const server = await startDiffServer(diffRepository, 3300 + workerInfo.workerIndex);
+    async ({ diffRepository }, use) => {
+      const server = await startDiffServer(diffRepository);
       try {
         await use(server.url);
       } finally {

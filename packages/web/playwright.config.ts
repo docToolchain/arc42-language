@@ -9,6 +9,9 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   reporter: "list",
+  // Several tests run a full `arc42 build` (CLI spawn + Vite bundle) which can
+  // take 30–40 s on a loaded machine. 90 s gives enough headroom.
+  timeout: 90000,
   use: {
     ...devices["Desktop Chrome"],
     headless: true,

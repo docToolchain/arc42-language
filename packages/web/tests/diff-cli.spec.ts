@@ -8,6 +8,7 @@ import {
   cliPath,
   createDiffRepository,
   expect,
+  getFreePort,
   runCli,
   startDiffServer,
   test,
@@ -71,7 +72,7 @@ test.describe("arc42 serve --diff", () => {
 
   test("follows the working tree and the index", async () => {
     const root = createDiffRepository();
-    const server = await startDiffServer(root, 3390);
+    const server = await startDiffServer(root);
     try {
       const findings = async () =>
         ((await (await fetch(`${server.url}/api/diff`)).json()) as Payload).findings.map(
@@ -95,13 +96,14 @@ test.describe("arc42 serve --diff", () => {
     }
   });
 
-  test("fails outside a Git repository", () => {
+  test("fails outside a Git repository", async () => {
     const dir = mkdtempSync(join(tmpdir(), "arc42-e2e-not-git-"));
+    const port = await getFreePort();
     try {
       writeFileSync(join(dir, "01-introduction.arc42.md"), "# Introduction and Goals\n\nHello.\n");
       const result = spawnSync(
         "node",
-        [cliPath, "--dir", dir, "serve", "--diff", "--port", "3391"],
+        [cliPath, "--dir", dir, "serve", "--diff", "--port", String(port)],
         {
           encoding: "utf8",
           timeout: 15000,
