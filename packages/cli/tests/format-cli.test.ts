@@ -17,7 +17,7 @@ function run(...args: string[]) {
       example,
       ...args,
     ],
-    { encoding: "utf8" },
+    { encoding: "utf8", maxBuffer: 10 * 1024 * 1024 },
   );
 }
 
