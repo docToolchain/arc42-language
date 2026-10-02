@@ -79,6 +79,15 @@ function isBlockType(s: string): s is BlockType {
   return (BLOCK_TYPES as readonly string[]).includes(s);
 }
 
+/** Flush stdout before exiting — prevents truncation when piped on macOS. */
+function exitAfterFlush(code: number): void {
+  if (process.stdout.writableNeedDrain || process.stdout.writableLength > 0) {
+    process.stdout.once("drain", () => process.exit(code));
+  } else {
+    process.exit(code);
+  }
+}
+
 const DIAGRAM_TYPES: readonly DiagramType[] = [
   "context",
   "building-block",
@@ -476,7 +485,7 @@ async function runGet(dir: string, args: string[]) {
     }
 
     console.log(renderer.render(result));
-    process.exit(0);
+    exitAfterFlush(0);
   } catch (err) {
     console.error(`Error: ${String(err)}`);
     process.exit(1);
