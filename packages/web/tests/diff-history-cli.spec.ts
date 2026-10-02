@@ -83,7 +83,7 @@ function expectHistory(pearls: Pearl[], entries: Entry[]) {
 test.describe("arc42 serve — history API", () => {
   test("serves the pearl index and lazily computed chunks as JSONL", async () => {
     const root = createHistoryRepository();
-    const server = await startServer(root, 3394);
+    const server = await startServer(root);
     try {
       const index = await fetch(`${server.url}/api/history/index.jsonl`);
       expect(index.status).toBe(200);
@@ -104,7 +104,7 @@ test.describe("arc42 serve — history API", () => {
   test("serves a commit's tree and its architecture files, read from git", async () => {
     const root = createHistoryRepository();
     const codeBlob = commitCode(root);
-    const server = await startServer(root, 3397);
+    const server = await startServer(root);
     try {
       const pearls = parseJsonLines<Pearl>(
         await (await fetch(`${server.url}/api/history/index.jsonl`)).text(),
@@ -141,7 +141,7 @@ test.describe("arc42 serve — history API", () => {
 
   test("follows new commits and uncommitted changes", async () => {
     const root = createHistoryRepository();
-    const server = await startServer(root, 3395);
+    const server = await startServer(root);
     try {
       spawnSync("git", ["-C", root, "commit", "-qam", "feat: order service in Kotlin"]);
       const subjects = async () =>
@@ -158,7 +158,7 @@ test.describe("arc42 serve — history API", () => {
   test("explains why there is no history outside a Git repository", async () => {
     const dir = mkdtempSync(join(tmpdir(), "arc42-e2e-history-not-git-"));
     writeFileSync(join(dir, "01-introduction.arc42.md"), "# Introduction and Goals\n\nHello.\n");
-    const server = await startServer(dir, 3396);
+    const server = await startServer(dir);
     try {
       const response = await fetch(`${server.url}/api/history/index.jsonl`);
       expect(response.status).toBe(422);

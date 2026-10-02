@@ -101,10 +101,9 @@ test.describe("History in arc42 serve", () => {
   let server: { url: string; stop: () => Promise<void> };
 
   // A fresh server per test: some tests commit to the repository.
-  let port = 3410;
   test.beforeEach(async () => {
     root = createHistoryRepository();
-    server = await startServer(root, port++);
+    server = await startServer(root);
   });
 
   test.afterEach(async () => {
@@ -211,7 +210,7 @@ test.describe("History outside a Git repository", () => {
   test("explains why there is no history", async ({ page }) => {
     const dir = mkdtempSync(join(tmpdir(), "arc42-e2e-history-ui-not-git-"));
     writeFileSync(join(dir, "01-introduction.arc42.md"), "# Introduction and Goals\n\nHello.\n");
-    const server = await startServer(dir, 3398);
+    const server = await startServer(dir);
     try {
       await page.goto(`${server.url}/#history`);
       await expect(page.getByTestId("history-unavailable")).toContainText("No history available.");
@@ -228,7 +227,7 @@ test.describe("History in a static build", () => {
     const root = createHistoryRepository();
     const out = mkdtempSync(join(tmpdir(), "arc42-e2e-history-ui-site-"));
     runCli("--dir", root, "build", "--out", out, "--with-history");
-    const site = await serveStatic(out, 3397);
+    const site = await serveStatic(out);
     const requested: string[] = [];
     page.on("request", (request) => requested.push(new URL(request.url()).pathname));
     try {
@@ -252,7 +251,7 @@ test.describe("History in a static build", () => {
     const root = createHistoryRepository();
     const out = mkdtempSync(join(tmpdir(), "arc42-e2e-history-ui-browse-"));
     runCli("--dir", root, "build", "--out", out, "--with-history");
-    const site = await serveStatic(out, 3399);
+    const site = await serveStatic(out);
     const requested: string[] = [];
     page.on("request", (request) => requested.push(new URL(request.url()).pathname));
     try {
@@ -291,7 +290,7 @@ test.describe("History in a static build", () => {
     for (const blob of readdirSync(join(out, "history", "blob"))) {
       rmSync(join(out, "history", "blob", blob));
     }
-    const site = await serveStatic(out, 3400);
+    const site = await serveStatic(out);
     try {
       await page.goto(`${site.url}/#history`);
       await pearl(page, SUBJECTS[3]!).getByTestId("pearl-select").click();
@@ -333,7 +332,7 @@ test.describe("History of an AsciiDoc workspace", () => {
       ),
     );
     git("commit", "-qam", "docs: the frontend is progressive");
-    const server = await startServer(root, 3401);
+    const server = await startServer(root);
     const scripts: string[] = [];
     page.on("request", (request) => {
       if (request.resourceType() === "script") scripts.push(request.url());
