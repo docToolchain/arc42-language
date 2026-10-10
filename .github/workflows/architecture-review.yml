@@ -32,12 +32,12 @@ jobs:
       changed: ${{ steps.review.outputs.changed }}
       pages: ${{ steps.review.outputs.pages }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           # The merge base with the target branch must be available.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 10.34.6
 
@@ -105,7 +105,7 @@ jobs:
           path: architecture-review
 
       - name: Report in the job summary and on the pull request
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           CHANGED: ${{ needs.review.outputs.changed }}
           PAGES: ${{ needs.review.outputs.pages }}
