@@ -82,7 +82,8 @@ workspace. The migration is complete only when:
   or overwrite reviewed content.
 
 ## Step 1 — initialize the workspace
-${isAdoc ? `Create the twelve \`*${ext}\` chapter files manually or by copying an existing workspace. There is no AsciiDoc init template yet; use \`arc42 guide chapter <N> --notation asciidoc\` to get the starter template for each chapter.` : `Run \`arc42 init template --dir <workspace>\`. Existing files are skipped, so rerunning is safe.`}
+Create the twelve \`*${ext}\` chapter files in \`<workspace>\`, one per chapter. For each chapter run
+\`arc42 guide chapter <N>${isAdoc ? " --notation asciidoc" : ""}\` and use the starter template it provides. Never overwrite an existing file.
 Check that the twelve expected \`*${ext}\` files exist. If a file already contains authored
 content, preserve it and treat it as input to the inventory.
 
