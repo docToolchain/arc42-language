@@ -15,7 +15,7 @@ catalog:
   semantic-release: 25.0.9
   typescript: ^5
   vite: npm:@voidzero-dev/vite-plus-core@latest
-  vite-plus: 0.1.24
+  vite-plus: 0.3.3
   vitest: npm:@voidzero-dev/vite-plus-test@latest
 
 catalogMode: prefer
