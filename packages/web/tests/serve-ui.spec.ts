@@ -291,7 +291,7 @@ test.describe("Cross-document element card links", () => {
     expect(await getActiveHash(page)).toContain("10-quality.arc42.md");
   });
 
-  test("clicking a cross-document ref chip auto-expands the target element card", async ({
+  test("clicking a cross-document ref chip brings the target block into view with its prose", async ({
     page,
   }) => {
     await page.goto("/#09-decisions.arc42.md");
@@ -314,17 +314,69 @@ test.describe("Cross-document element card links", () => {
     // The target chapter is shown
     await expect(page.locator('[aria-current="page"]')).toHaveText("10. Quality Requirements");
 
-    // The target element card must be auto-expanded and visible
-    await expect(
-      page.getByTestId("element-card").filter({ hasText: "qg-maintainability" }),
-    ).toBeVisible({ timeout: 3000 });
+    // The block's prose is in view, not its card
+    const run = page.locator("#el-qg-maintainability");
+    await expect(run.getByTestId("prose-view")).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId("element-card")).toHaveCount(0);
+    await expect(page.getByTestId("expanded-card")).toHaveCount(0);
+  });
+});
+
+// ─── Navigating to a block ────────────────────────────────────────────────────
+
+/** Whether the block's prose run has settled at the top of the view. */
+async function expectAtTop(page: Page, id: string) {
+  await expect
+    .poll(
+      async () =>
+        page.evaluate((el) => document.getElementById(el)?.getBoundingClientRect().top ?? 1e6, id),
+      {
+        timeout: 8000,
+      },
+    )
+    .toBeLessThan(4);
+}
+
+test.describe("Navigating to a block", () => {
+  test("scrolls to the prose of the block without opening its card", async ({ page }) => {
+    await page.goto("/#05-building-blocks.arc42.md:el-bb-catalog-service");
+    await expectAtTop(page, "el-bb-catalog-service");
+    await expect(page.getByTestId("expanded-card")).toHaveCount(0);
+    await expect(page.locator("#el-bb-catalog-service").getByTestId("prose-view")).toBeVisible();
+  });
+
+  test("still reaches the block when the page is zoomed in", async ({ page }) => {
+    // 200 % zoom of a 1280 px window: text wraps more, the page reflows after the scroll
+    await page.setViewportSize({ width: 640, height: 400 });
+    await page.goto("/#05-building-blocks.arc42.md:el-bb-catalog-service");
+    await expectAtTop(page, "el-bb-catalog-service");
+    await page.setViewportSize({ width: 390, height: 300 });
+    await page.goto("/#05-building-blocks.arc42.md:el-bb-order-service");
+    await expectAtTop(page, "el-bb-order-service");
+  });
+
+  test("what was opened in a chapter is closed when another chapter is navigated to", async ({
+    page,
+  }) => {
+    await page.goto("/#09-decisions.arc42.md");
+    await page.getByTestId("prose-stripe").first().click();
+    await expect(page.getByTestId("expanded-card")).toHaveCount(1);
+
+    await page.goto("/#10-quality.arc42.md");
+    await expect(page.locator('[aria-current="page"]')).toHaveText("10. Quality Requirements");
+    await expect(page.getByTestId("prose-stripe").first()).toBeVisible();
+    await expect(page.getByTestId("expanded-card")).toHaveCount(0);
+
+    await page.goto("/#09-decisions.arc42.md");
+    await expect(page.getByTestId("prose-stripe").first()).toBeVisible();
+    await expect(page.getByTestId("expanded-card")).toHaveCount(0);
   });
 });
 
 // ─── Clickable diagram nodes ──────────────────────────────────────────────────
 
 test.describe("Ids in prose", () => {
-  test("an id mentioned in prose links to its element and opens its card", async ({ page }) => {
+  test("an id mentioned in prose links to its element, bringing it into view", async ({ page }) => {
     await page.goto("/#05-building-blocks.arc42.md");
     const mention = page.locator("main a[data-id='bb-order-service']").first();
     await expect(mention).toBeVisible({ timeout: 8000 });
@@ -334,6 +386,7 @@ test.describe("Ids in prose", () => {
     );
     await mention.click();
     await expect(page.locator("#el-bb-order-service")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("expanded-card")).toHaveCount(0);
   });
 });
 

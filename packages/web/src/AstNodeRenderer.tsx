@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import docStyles from "./DocumentView.module.css";
 import styles from "./AstNodeRenderer.module.css";
 import { marked } from "marked";
@@ -20,7 +20,7 @@ import { SequenceDiagramView } from "./SequenceDiagramView";
 import { DeploymentDiagramView } from "./DeploymentDiagramView";
 import { BuildingBlockDiagramView } from "./BuildingBlockDiagramView";
 import { ContextDiagramView } from "./ContextDiagramView";
-import { MermaidDiagram, headingClass } from "@cli42/lib/web-react";
+import { MermaidDiagram, blockAnchor, headingClass, useBlockExpansion } from "@cli42/lib/web-react";
 import { linkElementIds, slug } from "@cli42/lib/web";
 import type { ElementLinks } from "@cli42/lib/web";
 
@@ -30,8 +30,6 @@ interface AstNodeRendererProps {
   elementsMap: Map<string, Element>;
   links: ElementLinks;
   edges: Edge[];
-  autoExpandElementId?: string | null;
-  onAutoExpanded?: () => void;
 }
 
 /**
@@ -60,8 +58,6 @@ export function AstNodeRenderer({
   elementsMap,
   links,
   edges,
-  autoExpandElementId,
-  onAutoExpanded,
 }: AstNodeRendererProps) {
   // Build interface map for label resolution in diagram views
   const interfaceMap = useMemo(() => {
@@ -103,8 +99,6 @@ export function AstNodeRenderer({
           elementsMap={elementsMap}
           links={links}
           edges={edges}
-          autoExpand={!!autoExpandElementId}
-          onAutoExpanded={onAutoExpanded}
         />
       );
     }
@@ -199,8 +193,6 @@ interface ProseRunProps {
   elementsMap: Map<string, Element>;
   links: ElementLinks;
   edges: Edge[];
-  autoExpand?: boolean;
-  onAutoExpanded?: () => void;
 }
 
 function ProseRun({
@@ -212,29 +204,9 @@ function ProseRun({
   elementsMap,
   links,
   edges,
-  autoExpand,
-  onAutoExpanded,
 }: ProseRunProps) {
-  const [showCard, setShowCard] = useState(false);
-
-  // Auto-expand when targetElementId matches this block — e.g. when navigating
-  // via a cross-document ref chip link (#doc:el-some-id).
-  useEffect(() => {
-    if (autoExpand && block !== null) {
-      setShowCard(true);
-      onAutoExpanded?.();
-      // Scroll to the card after React renders it
-      const elementId = block.attributes["id"] ?? "";
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.getElementById(`el-${elementId}`)?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        });
-      });
-    }
-  }, [autoExpand]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Opened by the reader only, and per chapter: a link to a block lands on its prose.
+  const [showCard, setShowCard] = useBlockExpansion(block?.attributes["id"] ?? "");
 
   // Determine the stripe colour from the attached block's element kind
   const stripeColor = useMemo(() => {
@@ -249,7 +221,10 @@ function ProseRun({
 
   if (!hasBlock || viewMode === "agent") {
     return (
-      <div className={styles.proseRun}>
+      <div
+        className={styles.proseRun}
+        id={block ? blockAnchor(block.attributes["id"] ?? "") : undefined}
+      >
         {text && (
           <ProseBlock html={renderedHtml} text={text} links={links} own={block?.attributes["id"]} />
         )}
@@ -292,7 +267,10 @@ function ProseRun({
   }
 
   return (
-    <div className={[styles.proseRun, styles.proseRunHasBlock].join(" ")}>
+    <div
+      className={[styles.proseRun, styles.proseRunHasBlock].join(" ")}
+      id={blockAnchor(block.attributes["id"] ?? "")}
+    >
       <button
         data-testid="prose-stripe"
         className={styles.stripe}

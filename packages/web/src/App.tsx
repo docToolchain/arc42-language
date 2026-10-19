@@ -18,6 +18,7 @@ import {
   HistoryEntryView,
   WebViewProvider,
   useHistory,
+  useScrollToBlock,
   useTheme,
 } from "@cli42/lib/web-react";
 import type { WebView } from "@cli42/lib/web-react";
@@ -104,18 +105,17 @@ export function App({
     if (route.view === "document") setLastDocument(activeDocIndex);
   }, [route, activeDocIndex]);
 
-  // Element anchors open the element's card; other anchors scroll to a heading.
-  const [targetElementId, setTargetElementId] = useState<string | null>(null);
+  // Element anchors bring the element's block into view, prose first; other anchors scroll to a heading.
+  useScrollToBlock(
+    route.view === "document" ? route.element : null,
+    payload.documents[activeDocIndex]?.filePath ?? "",
+  );
   useEffect(() => {
-    if (route.view !== "document") return;
-    if (route.element) {
-      setTargetElementId(route.element);
-    } else if (route.anchor) {
-      const anchor = route.anchor;
-      requestAnimationFrame(() => {
-        document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
+    if (route.view !== "document" || route.element || !route.anchor) return;
+    const anchor = route.anchor;
+    requestAnimationFrame(() => {
+      document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }, [route]);
 
   function navigate(next: Route) {
@@ -373,8 +373,6 @@ export function App({
                 elementsMap={elementsMap}
                 links={links}
                 edges={payload.edges}
-                targetElementId={targetElementId}
-                onTargetConsumed={() => setTargetElementId(null)}
                 diffDocument={activeDiff}
               />
               {isChapter05 && payload.coverage && (

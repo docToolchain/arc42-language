@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { groupNodes as groupDocumentNodes } from "@cli42/lib/web";
 import type { ElementLinks, RenderGroup } from "@cli42/lib/web";
-import { ChapterDiff, headingClass } from "@cli42/lib/web-react";
+import { ChapterDiff, ChapterExpansion, headingClass } from "@cli42/lib/web-react";
 import type { RenderNodesProps } from "@cli42/lib/web-react";
 import styles from "./DocumentView.module.css";
 import type {
@@ -50,8 +50,6 @@ export function NodesRender({
   proseHtml,
   content,
   viewMode,
-  targetElementId,
-  onTargetConsumed,
   workspace,
 }: RenderNodesProps & { workspace: NodesWorkspace }) {
   const own = useMemo<NodesWorkspace>(() => {
@@ -81,8 +79,6 @@ export function NodesRender({
             />
           );
         }
-        const blockId = group.block?.attributes["id"] ?? null;
-        const isTarget = blockId !== null && blockId === targetElementId;
         return (
           <AstNodeRenderer
             key={index}
@@ -99,8 +95,6 @@ export function NodesRender({
             elementsMap={own.elementsMap}
             links={own.links}
             edges={own.edges}
-            autoExpandElementId={isTarget ? targetElementId : null}
-            onAutoExpanded={isTarget ? onTargetConsumed : undefined}
           />
         );
       })}
@@ -111,8 +105,6 @@ export function NodesRender({
 interface DocumentViewProps extends NodesWorkspace {
   document: DocumentAst | undefined;
   viewMode: "human" | "agent";
-  targetElementId: string | null;
-  onTargetConsumed: () => void;
   /** The changes of a visualized difference to this document: shown inline. */
   diffDocument?: DiffDocument;
 }
@@ -125,15 +117,7 @@ export function DocumentView(props: DocumentViewProps) {
   const { document: doc, diffDocument } = props;
   if (!doc) return <div className={styles.empty}>No document selected.</div>;
   if (diffDocument) {
-    return (
-      <ChapterDiff
-        diff={diffDocument}
-        document={doc}
-        viewMode={props.viewMode}
-        targetElementId={props.targetElementId}
-        onTargetConsumed={props.onTargetConsumed}
-      />
-    );
+    return <ChapterDiff diff={diffDocument} document={doc} viewMode={props.viewMode} />;
   }
   return <PlainDocumentView {...props} document={doc} />;
 }
@@ -144,8 +128,6 @@ function PlainDocumentView({
   elementsMap,
   links,
   edges,
-  targetElementId,
-  onTargetConsumed,
 }: DocumentViewProps & { document: DocumentAst }) {
   const workspace = useMemo(() => ({ elementsMap, links, edges }), [elementsMap, links, edges]);
   const chapterTitle = useMemo(() => {
@@ -156,17 +138,13 @@ function PlainDocumentView({
   }, [doc]);
 
   return (
-    <article className={styles.documentView}>
-      {chapterTitle && (
-        <h1 className={[headingClass(1), styles.chapterTitle].join(" ")}>{chapterTitle}</h1>
-      )}
-      <NodesRender
-        nodes={doc.nodes}
-        viewMode={viewMode}
-        targetElementId={targetElementId}
-        onTargetConsumed={onTargetConsumed}
-        workspace={workspace}
-      />
-    </article>
+    <ChapterExpansion chapterKey={doc.filePath}>
+      <article className={styles.documentView}>
+        {chapterTitle && (
+          <h1 className={[headingClass(1), styles.chapterTitle].join(" ")}>{chapterTitle}</h1>
+        )}
+        <NodesRender nodes={doc.nodes} viewMode={viewMode} workspace={workspace} />
+      </article>
+    </ChapterExpansion>
   );
 }
