@@ -64,6 +64,14 @@ export interface ExplainDiagramSummary {
 // Core logic
 // ---------------------------------------------------------------------------
 
+/** Every block type accepts `x-*` attributes; say so wherever its attributes are explained. */
+const EXTENSION_TIP =
+  "Any block may carry custom `x-*` attributes (e.g. `x-phase: explore`): validate accepts them, get --format json returns them as `extensions`.";
+
+function withExtensionTip<T extends { authoringTips: string[] }>(guidance: T): T {
+  return { ...guidance, authoringTips: [...guidance.authoringTips, EXTENSION_TIP] };
+}
+
 function buildResult(blockType: BlockType): ExplainResult {
   const schema = ELEMENT_SCHEMAS[blockType];
   const chapter =
@@ -72,7 +80,7 @@ function buildResult(blockType: BlockType): ExplainResult {
     blockType,
     arc42Chapter: chapter,
     arc42ChapterTitle: CHAPTER_TITLE[chapter] ?? "Other",
-    ...blockGuidance(schema, blockType),
+    ...withExtensionTip(blockGuidance(schema, blockType)),
   };
 }
 

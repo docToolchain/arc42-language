@@ -79,13 +79,14 @@ function isBlockType(s: string): s is BlockType {
   return (BLOCK_TYPES as readonly string[]).includes(s);
 }
 
-/** Flush stdout before exiting — prevents truncation when piped on macOS. */
+/**
+ * Exit once everything written to stdout has reached the pipe. A pipe is
+ * asynchronous on some platforms, so `process.exit()` right after a large
+ * write cuts the output at the pipe buffer (64 KiB). An empty write's callback
+ * runs after all earlier writes, so it is the safe point to exit.
+ */
 function exitAfterFlush(code: number): void {
-  if (process.stdout.writableNeedDrain || process.stdout.writableLength > 0) {
-    process.stdout.once("drain", () => process.exit(code));
-  } else {
-    process.exit(code);
-  }
+  process.stdout.write("", () => process.exit(code));
 }
 
 const DIAGRAM_TYPES: readonly DiagramType[] = [
@@ -401,7 +402,7 @@ async function runValidate(dir: string, root: string | undefined, args: string[]
 
     const hasHints = result.diagnostics.some((d) => d.severity === "hint");
     const hasWarnings = result.diagnostics.some((d) => d.severity === "warning");
-    process.exit(!result.valid || (strict && (hasHints || hasWarnings)) ? 1 : 0);
+    exitAfterFlush(!result.valid || (strict && (hasHints || hasWarnings)) ? 1 : 0);
   } catch (err) {
     console.error(`Error: ${String(err)}`);
     process.exit(1);
@@ -450,7 +451,7 @@ async function runGet(dir: string, args: string[]) {
           }
         }
       }
-      process.exit(0);
+      exitAfterFlush(0);
     } catch (err) {
       console.error(`Error: ${String(err)}`);
       process.exit(1);

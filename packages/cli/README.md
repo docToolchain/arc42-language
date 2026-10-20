@@ -94,11 +94,34 @@ implements: concept-logging, concept-error-handling
 ```
 ````
 
+````
+
+## Custom attributes
+
+Any block may carry project-specific attributes whose names start with `x-`, like `x-` fields in OpenAPI. The tool passes them through without interpreting them: `arc42 validate` does not report them (no `WG01`, also not under `--strict`), and `arc42 get --format json` returns them in an `extensions` object keyed by the name without the prefix.
+
+```arc42
+:::building-block
+id: bb-skill-app
+title: lernapps-app
+parent: bb-skills-explore
+x-phase: explore
+x-actor: agent
+:::
+````
+
+```json
+"extensions": { "phase": "explore", "actor": "agent" }
 ```
+
+Values are plain strings, or a list for `key:` followed by `- item` lines; they are not checked and cannot hold references. Only the `x-` prefix is exempt: a misspelled standard attribute such as `parnet` is still reported as `WG01`. Blocks without `x-` attributes have no `extensions` field.
 
 See the [bookstore example](https://github.com/oliverjaegle/arc42-language/tree/main/examples/bookstore-backend) for a complete, valid workspace with realistic prose.
 
 ## License
 
 MIT
+
+```
+
 ```

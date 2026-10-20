@@ -34,7 +34,13 @@ so be sure to always align.
    the fence of the element to exempt, not at the top of the file. For full placement rules and how
    to resolve stale-ignore warnings (WG06), run `arc42 explain ignore`.
 
-7. Use `arc42 --dir <workspace> coverage --format tree` to see which source directories are claimed
+7. To attach project-specific data to a block (for example the process phase it supports), add an
+   attribute whose name starts with `x-`, such as `x-phase: explore`. `validate` accepts it on every
+   block type without `WG01`, and `arc42 get --format json` returns it as
+   `element.extensions.phase`. Values are plain strings or lists, not references. Misspelled
+   standard attributes (`parnet`) are still reported.
+
+8. Use `arc42 --dir <workspace> coverage --format tree` to see which source directories are claimed
    by building-block or interface elements, and which are not. Uncovered paths are not errors — they
    may be tooling, tests, or documentation that is intentionally out of model scope.
 
