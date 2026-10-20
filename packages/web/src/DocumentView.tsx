@@ -53,7 +53,12 @@ export function NodesRender({
   targetElementId,
   onTargetConsumed,
   workspace,
-}: RenderNodesProps & { workspace: NodesWorkspace }) {
+}: RenderNodesProps & {
+  workspace: NodesWorkspace;
+  /** Block to expand and scroll to; the shared views of @cli42/lib do not pass it. */
+  targetElementId?: string | null;
+  onTargetConsumed?: () => void;
+}) {
   const own = useMemo<NodesWorkspace>(() => {
     if (!content) return workspace;
     const elements = content.elements as Element[];
