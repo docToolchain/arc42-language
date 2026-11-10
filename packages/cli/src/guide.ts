@@ -6,6 +6,11 @@ function fileExtension(notation: Notation): string {
   return notation === "asciidoc" ? ".arc42.adoc" : ".arc42.md";
 }
 
+const ARCHITECTURE_PRINCIPLE = `Architecture describes how the parts of a system relate to each other and which responsibility
+each part carries so that the quality goals are achieved. Document relationships and
+responsibilities, not features or implementation details. When in doubt whether something belongs
+in the architecture documentation, ask the human.`;
+
 function chapterFilename(number: number, slug: string, notation: Notation): string {
   return `${String(number).padStart(2, "0")}-${slug}${fileExtension(notation)}`;
 }
@@ -49,6 +54,9 @@ You are the migration coordinator. Produce a complete, typed arc42 architecture 
 existing repository's documentation and source code. Delegate chapter authoring to qualified
 subagents, maintain the evidence file, and own the review gates. Never invent architectural facts,
 silently resolve contradictions, or automatically repair validation findings.
+
+## What architecture is
+${ARCHITECTURE_PRINCIPLE}
 
 ## Notation: ${isAdoc ? "AsciiDoc" : "Markdown"}
 ${
@@ -172,6 +180,9 @@ ${item.dependencies}
 You are a chapter author subagent. Write this chapter only. Do not modify other chapters, invent
 facts, or silently resolve uncertainty. Return the complete chapter content, new evidence rows, and
 all unresolved items to the coordinator.
+
+## What architecture is
+${ARCHITECTURE_PRINCIPLE}
 
 ## Before you write
 1. Read the starter template below.

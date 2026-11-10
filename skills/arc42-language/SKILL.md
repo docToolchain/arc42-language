@@ -12,6 +12,11 @@ consult them instead of relying on remembered conventions.
 Always keep interaction with the human developer high: Architecture is all about decisions and tradeoffs
 so be sure to always align.
 
+Architecture describes how the parts of a system relate to each other and which responsibility each
+part carries so that the quality goals are achieved. If a change does not alter who is responsible
+for what, or how the parts interact, the architecture documentation stays as it is: features and
+implementation details belong in the code and product docs. When in doubt, ask the human.
+
 ## Workflow
 
 1. For an existing repository, start with `arc42 guide migration` and follow its review gates.
