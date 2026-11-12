@@ -7,9 +7,9 @@ function fileExtension(notation: Notation): string {
 }
 
 const ARCHITECTURE_PRINCIPLE = `Architecture describes how the parts of a system relate to each other and which responsibility
-each part carries so that the quality goals are achieved. Document relationships and
-responsibilities, not features or implementation details. When in doubt whether something belongs
-in the architecture documentation, ask the human.`;
+each part carries so that the quality goals are achieved. Implementation details do not belong in
+it. Describe only the current state, never how it came about: change history belongs in commit
+messages.`;
 
 function chapterFilename(number: number, slug: string, notation: Notation): string {
   return `${String(number).padStart(2, "0")}-${slug}${fileExtension(notation)}`;
@@ -54,9 +54,6 @@ You are the migration coordinator. Produce a complete, typed arc42 architecture 
 existing repository's documentation and source code. Delegate chapter authoring to qualified
 subagents, maintain the evidence file, and own the review gates. Never invent architectural facts,
 silently resolve contradictions, or automatically repair validation findings.
-
-## What architecture is
-${ARCHITECTURE_PRINCIPLE}
 
 ## Notation: ${isAdoc ? "AsciiDoc" : "Markdown"}
 ${
