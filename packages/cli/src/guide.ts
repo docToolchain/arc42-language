@@ -8,8 +8,8 @@ function fileExtension(notation: Notation): string {
 
 const ARCHITECTURE_PRINCIPLE = `Architecture describes how the parts of a system relate to each other and which responsibility
 each part carries so that the quality goals are achieved. Implementation details do not belong in
-it. Describe only the current state, never how it came about ("previously", "instead of earlier
-..."): change history belongs in commit messages.`;
+it. Describe only the current state, never how it came about: change history belongs in commit
+messages.`;
 
 function chapterFilename(number: number, slug: string, notation: Notation): string {
   return `${String(number).padStart(2, "0")}-${slug}${fileExtension(notation)}`;
