@@ -13,7 +13,7 @@ catalog:
   asciidoctor: ^4.1.0
   marked: ^14.1.4
   semantic-release: 25.0.9
-  typescript: ^5
+  typescript: ^7.0.0
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vite-plus: 0.1.24
   vitest: npm:@voidzero-dev/vite-plus-test@latest
